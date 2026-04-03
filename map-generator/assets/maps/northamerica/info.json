@@ -1,0 +1,250 @@
+{
+  "name": "NorthAmerica",
+  "nations": [
+    {
+      "coordinates": [1625, 1040],
+      "name": "Florida",
+      "flag": "Florida"
+    },
+    {
+      "coordinates": [1010, 435],
+      "name": "Canada",
+      "flag": "ca"
+    },
+    {
+      "coordinates": [1250, 1130],
+      "name": "Mexico",
+      "flag": "mx"
+    },
+    {
+      "coordinates": [1460, 1275],
+      "name": "Guatemala",
+      "flag": "gt"
+    },
+    {
+      "coordinates": [1530, 1290],
+      "name": "Honduras",
+      "flag": "hn"
+    },
+    {
+      "coordinates": [1570, 1350],
+      "name": "Nicaragua",
+      "flag": "ni"
+    },
+    {
+      "coordinates": [1734, 1403],
+      "name": "Panama",
+      "flag": "pa"
+    },
+    {
+      "coordinates": [1821, 1395],
+      "name": "Colombia",
+      "flag": "co"
+    },
+    {
+      "coordinates": [1896, 1379],
+      "name": "Venezuela",
+      "flag": "ve"
+    },
+    {
+      "coordinates": [1725, 1180],
+      "name": "Cuba",
+      "flag": "cu"
+    },
+    {
+      "coordinates": [467, 333],
+      "name": "Alaska",
+      "flag": "Alaska"
+    },
+    {
+      "coordinates": [1154, 914],
+      "name": "Arizona",
+      "flag": "Arizona"
+    },
+    {
+      "coordinates": [1010, 865],
+      "name": "California",
+      "flag": "California"
+    },
+    {
+      "coordinates": [1307, 863],
+      "name": "Colorado",
+      "flag": "Colorado"
+    },
+    {
+      "coordinates": [1673, 965],
+      "name": "Georgia",
+      "flag": "Georgia_US"
+    },
+    {
+      "coordinates": [250, 1200],
+      "name": "Hawaii",
+      "flag": "Hawaii"
+    },
+    {
+      "coordinates": [1120, 760],
+      "name": "Idaho",
+      "flag": "Idaho"
+    },
+    {
+      "coordinates": [1551, 813],
+      "name": "Illinois",
+      "flag": "Illinois"
+    },
+    {
+      "coordinates": [1412, 873],
+      "name": "Kansas",
+      "flag": "Kansas"
+    },
+    {
+      "coordinates": [1651, 880],
+      "name": "Kentucky",
+      "flag": "Kentucky"
+    },
+    {
+      "coordinates": [1514, 1007],
+      "name": "Louisiana",
+      "flag": "Louisiana"
+    },
+    {
+      "coordinates": [1884, 735],
+      "name": "Maine",
+      "flag": "Maine"
+    },
+    {
+      "coordinates": [1634, 764],
+      "name": "Michigan",
+      "flag": "Michigan"
+    },
+    {
+      "coordinates": [1556, 965],
+      "name": "Mississippi",
+      "flag": "Mississippi"
+    },
+    {
+      "coordinates": [1527, 728],
+      "name": "Minnesota",
+      "flag": "Minnesota"
+    },
+    {
+      "coordinates": [1529, 880],
+      "name": "Missouri",
+      "flag": "Missouri"
+    },
+    {
+      "coordinates": [1225, 754],
+      "name": "Montana",
+      "flag": "Montana"
+    },
+    {
+      "coordinates": [1413, 789],
+      "name": "Nebraska",
+      "flag": "Nebraska"
+    },
+    {
+      "coordinates": [1090, 852],
+      "name": "Nevada",
+      "flag": "Nevada"
+    },
+    {
+      "coordinates": [1253, 933],
+      "name": "New Mexico",
+      "flag": "New_Mexico"
+    },
+    {
+      "coordinates": [1833, 792],
+      "name": "New York",
+      "flag": "New_York"
+    },
+    {
+      "coordinates": [1444, 716],
+      "name": "North Dakota",
+      "flag": "North_Dakota"
+    },
+    {
+      "coordinates": [1704, 812],
+      "name": "Ohio",
+      "flag": "Ohio"
+    },
+    {
+      "coordinates": [1397, 921],
+      "name": "Oklahoma",
+      "flag": "Oklahoma"
+    },
+    {
+      "coordinates": [976, 754],
+      "name": "Oregon",
+      "flag": "Oregon"
+    },
+    {
+      "coordinates": [1752, 716],
+      "name": "Pennsylvania",
+      "flag": "Pennsylvania"
+    },
+    {
+      "coordinates": [1716, 937],
+      "name": "South Carolina",
+      "flag": "South_Carolina"
+    },
+    {
+      "coordinates": [1419, 753],
+      "name": "South Dakota",
+      "flag": "South_Dakota"
+    },
+    {
+      "coordinates": [1648, 981],
+      "name": "Tennessee",
+      "flag": "Tennessee"
+    },
+    {
+      "coordinates": [1407, 1005],
+      "name": "Texas",
+      "flag": "Texas"
+    },
+    {
+      "coordinates": [1827, 742],
+      "name": "Vermont",
+      "flag": "Vermont"
+    },
+    {
+      "coordinates": [1767, 857],
+      "name": "Virginia",
+      "flag": "Virginia"
+    },
+    {
+      "coordinates": [994, 700],
+      "name": "Washington",
+      "flag": "Washington"
+    },
+    {
+      "coordinates": [1261, 759],
+      "name": "Wyoming",
+      "flag": "Wyoming"
+    },
+    {
+      "coordinates": [1867, 561],
+      "name": "Quebec",
+      "flag": "Quebec"
+    },
+    {
+      "coordinates": [1738, 80],
+      "name": "Santa Claus",
+      "flag": "santa_claus"
+    },
+    {
+      "coordinates": [1189, 240],
+      "name": "Polar Bears",
+      "flag": "polar_bears"
+    },
+    {
+      "coordinates": [1480, 350],
+      "name": "Frost Giants",
+      "flag": "frost_giant"
+    },
+    {
+      "coordinates": [2399, 171],
+      "name": "Greenland",
+      "flag": "gl"
+    }
+  ]
+}
