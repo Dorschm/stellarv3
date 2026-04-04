@@ -130,6 +130,17 @@ export async function startWorker() {
       },
     }),
   );
+  // Fallback: serve maps directly from resources/ in dev mode
+  app.use(
+    "/maps",
+    express.static(path.join(__dirname, "../../resources/maps"), {
+      setHeaders: (res, filePath) => {
+        if (filePath.endsWith(".webp")) {
+          res.setHeader("Content-Type", "image/webp");
+        }
+      },
+    }),
+  );
   app.use(
     rateLimit({
       windowMs: 1000, // 1 second

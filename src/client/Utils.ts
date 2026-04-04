@@ -325,19 +325,6 @@ export function formatKeyForDisplay(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
-export function createCanvas(): HTMLCanvasElement {
-  const canvas = document.createElement("canvas");
-
-  // Set canvas style to fill the screen
-  canvas.style.position = "fixed";
-  canvas.style.left = "0";
-  canvas.style.top = "0";
-  canvas.style.width = "100%";
-  canvas.style.height = "100%";
-  canvas.style.touchAction = "none";
-
-  return canvas;
-}
 /**
  * A polyfill for crypto.randomUUID that provides fallback implementations
  * for older browsers, particularly Safari versions < 15.4

@@ -1,0 +1,2681 @@
+[CENTER][SIZE=6][B]Content of Oblivion[/B][/SIZE]
+[I]Originally published on content-of-oblivion.blogspot.com[/I][/CENTER]
+
+─────────────────────────────
+
+[CENTER]
+[SIZE=5][U][B]A lot of stuff was mentioned, promises broken, things got partly introduced and then removed or only advertised and never actually made it into the MMO called "Project Entropia". [/B][/U][/SIZE]
+
+[SIZE=5][U][I](now Entropia Universe)[/I][/U][/SIZE][/CENTER]
+
+[CENTER]
+[COLOR=yellow][B]This blog is getting updated everytime something goes Oblivion.[/B][/COLOR]
+
+[COLOR=yellow][B]Just scroll down and down and dooOoooOooOOOOowwnnn.....[/B][/COLOR]
+
+[B]______________________________[/B]
+
+[COLOR=yellow][SIZE=5][B][I]Last Update : Jan. 2020 [/I][/B][/COLOR][/SIZE]
+
+[SIZE=5][B][I]_______________________[/SIZE] [/I][/B]
+
+[COLOR=red][I]Project Entropia - Fails to retain identity since 2009[/I][/COLOR]
+
+[B]Harvesting was mentioned back in 2000 and the harvester tool was there[/B]
+
+[B]in early beta. It was powered by Future AA batteries, which were[/B]
+
+[B]used as "ammo" for this tool. You just aimed at plants to gather ressources.[/B]
+
+[B][COLOR=yellow][SIZE=2](thx to "phoenixx" and "Jane QP Doe" for additional info)[/COLOR][/SIZE] [/B]
+
+[B](H-50 Farmhand Alpha)[/B][/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEi6ngIltJ2XnQy76097DkQqPPKDbrNk9k6ZlZHr-4ulYET6I2dfnl_8_2AkGrLNpaO1ItlngEkbhOeYzgBjFQyeT1y2eC_klky4-SPNradrL-Ja34gHJzJinnz4Rjhzioa8j66OJ6mn34Y/s1600/harvester.gif[/IMG]
+[CENTER]
+[COLOR=yellow]This
+ is a standard model using a close-range teleportation system to harvest
+ various forms of edible plants for personal use. It was primarily
+developed as a device for basic survival in the wild as well as an
+alternative to hunting.[/COLOR]
+
+And somewhere in Marcos "dreams" he mentioned gardening...
+
+[B]In 2008 some designer placed the farmhand behind an auctioneer...as decoration...[/B]
+
+[B][COLOR=yellow][SIZE=2][I](it was just the 3d model, no interaction possible)[/I][/COLOR][/SIZE][/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiUGB7SUD2qmTnwhTbrZWhDBfXxKg9qGW2k5lwI7vFb_pPZHrKFbLJKZ_hB8sNBseAmCM5hcEgcXGVD0E0lIDHUxaHnUHmkGmW78ThrUZykIoyPZ0Q-9nt_Jni-nZtMj6WdGuJIByefW80/s1600/farmhand.jpg[/IMG][/CENTER]
+[COLOR=yellow]Not funny... ;([/COLOR]
+
+[CENTER]
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjQ6ZO7HWMojuQ3HH3xYboBr7yuo5eeoAdYAdWdQL5W7SeJGJZqZCgMIh-5eMVaOL1SLsOwCS8_JdIDdJUlN36XmU1e2nzm-9M62ySx415mxiXvreUlMePkn2V6FwwpzY4DCo3chUuoHHQ/s1600/farmhand+texture.jpg[/IMG][/CENTER]
+[B]The texture.[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjQir-AFYqY7xmm9SG30Z-xcmN875CZ0LaZ-GE296vDlcJIO3rVJZH-8_sTVQzp_7xWZATC1xg8DIJMnANdvcdRizqEQFiR4KJB2NqLnjc0e3Fpi4XwAG4fhFcDiKFbH9VQ2IT5Mdd9Wpw/s1600/harvester+inv.jpg[/IMG]
+The inventory item of it.
+
+[COLOR=yellow]15 years later MA introduced the Terratech :[/COLOR]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgZLGiSpnaK7oevhjhRiV3i-7H0he9Fb2O9hEOUIgcbYy6i9doc3ujfNb825UEkWMnaq5zwLyJ_He4x7cSQ0NFtFFwDnuTeC0vEdAjSzDexACIkYgPV-f5Y489e4xuqdLh_4RgEKuBs2pQ/s1600/terratech.jpg[/IMG]
+Some trees show a node and can be harvested
+
+for wooden boards now.
+
+[B]The meat extractor was there, in early beta.[/B]
+
+[B]It was powered by Future AA batteries, which were[/B]
+
+[B]used as "ammo" for this tool. You just aimed at dead mobs[/B]
+
+[B]to gather ressources.[/B]
+
+[B][COLOR=yellow][SIZE=2](thx to "phoenixx" and "Jane QP Doe" for additional info)[/COLOR][/SIZE][/B]
+
+[B][COLOR=yellow][SIZE=2]
+[/COLOR][/SIZE][/B]
+
+[B](mlx-440 Meat Extractor)[/B]
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEihZEiTp8mig9a7IeuJWYS1axlZ4JRMlannivnMYcnzatu98KQgAIHv4afu1z-BGwz1oXHhqQk_CrQv3nMSfc5AQ1gbOMuKqXL3Kv0rKYtTEtY_7B9S6VmmiS9sWrzOLjmIJUqhVXpeNnY/s1600/meatex.gif[/IMG]
+[CENTER]
+[COLOR=yellow]The MXL-440 is a standard field model using conventional laser technology to
+ cut up and extract the meat before using an auto link to transfer the
+meat into the inventory. It leaves a minimum of waste, but the
+appropriate skill is required in order to operate it effectively. Like
+all Meat Extractors, the MXL-440 cannot be used as a weapon due to its
+built-in safety function.[/COLOR]
+[/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiTsCOyACk4Hhdx3GavnMIfmB6T5VT3H4l6EY1FtMTn6UYx2puoetjOo0UWZelVbzn5r2YzgTRNOjOxKygKLfs7r43nfgP3_az80ETHj3yTk-e9VsQvZVACgQEAGjRJK-NpaVWymzhaRhE/s1600/Meat_extractor.jpg[/IMG]
+[CENTER]
+[B]Use MeatExtractor with Longu Carcass![/B][/CENTER]
+
+[CENTER]
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg2IoZsGjL5um57U9lArqYJcY13VrBelu3vytUtQWLFRtjFq1Wacj4HohOkqbcO1nX4OWUbGbsTK0Q1Kt_I8Dme-mAquc-xL_a-U3TBUDWpENY-2SplXk_8VGbVC_56k7uM4uJrJHmI_8k/s1600/meat+extract+texture.jpg[/IMG][/CENTER]
+[B]The texture.[/B]
+
+[B]The inventory item of it.[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjDpYdljWo82m76bFvbq_NhsEomhizKXOmtun4DDu5xGCixRZZC94xEI4M4XROWTjFb7D2KbRtdcNo8ObzuTZ_18vYVcZPMUPqPpmDNG-KCGYqmql92yln0TOBMHMwflCNA0iY2KOI-Ah8/s1600/meat+extractor+inv.jpg[/IMG]
+
+[B]Even the Meat Extractor Skill-Icon was still present in VU 3.4 :[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhQXYsMpfyMlEp91hs_Edx9adOoEY8a_DMGOUycUW5U4kfGfkJ2uUbu92TOR2cT8pymGE3tKV7lBneoYkRw3XVUmfwE02Ru5MqSrEG9_s4Qpm5SidNrwXkCJB2PFiIARYIPt49G-OwyCog/s1600/meatxxx.jpg[/IMG]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgMFXi4PLw29C9PWVmiW3agLaoCAZg3p-vx7vcVmarMN6h5sE9CoWzB0iONdKVwXV142DAT4xdwe_EXbDkagoO8VGw17wT3u4gC0Ns4jC1zWyceMlBhOsLovl7q7iDAny6kLHMnUln5zto/s1600/foodpack.gif[/IMG]
+[CENTER]
+[B]The foodpacks were there...as an image. [/B](and unused textures)
+
+[B](VU 3.4)[/B]
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgYwcVBkBypv1iKUisEm_BKL4fJtf-an5OXUKcJUWZ7rHTZcWKnDKiF-A5lWUyIu_EK0e0X7IOF5JQmWJ92_W5DQHUSxjooDn0Plik9Eka7-axMpffRXADHFREYN_nflqLsiWQi9mA3XzE/s1600/foodx.jpg[/IMG][/CENTER]
+
+[CENTER]
+[B]This thing was called FC-100 Food-Mate : [/B][/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjyU0v5ghWzAS9h8iO6cUTECHWCqfRkE13iRYsxgrNWN3eE6rd3GCwKGQ4c2PQqTvw_8wm2o8BVV5iU2-p6zS5zFojFfs8nL7tXsGZMaYzdXVYnRo1Sez5zNDiB8gX71U3PYxKBr6fUBJY/s1600/FC-100Food-Mate.gif[/IMG]
+
+[CENTER]
+[COLOR=yellow]This is one of the most basic field kitchen models.It's
+ able to turn any type of raw food into cooked food, but it can't handle
+ Food Packs. From this perspective it's more practical for experienced
+travelers who are used to gathering their own food in the wild as they
+go.[/COLOR]
+[B]There even was a cooking skill symbol in the folders of VU 3.4 :[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg8r5MuNu5hhauqplU6nbsSHHKhkfbjRDP8Z9CwdPm1WZu6M1tincgrbM8qYW7vI7UeZPDSxIXatGkitX0H8wIwFcXvzgTvuXm0tPXFYsgShvFndYXEDwJEwZF5EUro4DiAepAdxU1N1PE/s1600/cook+skill.jpg[/IMG][/CENTER]
+
+[B]Also todays fruits (papplon, caroot, bombardo) could be found in VU 3.4.[/B]
+
+[B]Spare Ribs, Chicken Leg, bread and a cut off hand,[/B]
+
+[B]never made it into the game.(?)[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEih4v97NOKCNsJUhnHWq6ooO_-zJhTZqnH3ZviRGGheVFtuakoTF2XAy2nBVg3fRQidWg7sju-egYyi_pXXYkP_CYlaiWzMibD2WzODNepVHZ5gZMSEMg878T8TZ-05m7_Db-7lS_GGMTs/s1600/food+303.jpg[/IMG]
+
+[CENTER]
+[U][B]Overview of VU 3.0 (beta)[/B][/U]
+
+[U][B](2001-12-11)[/B][/U]
+
+[SIZE=2](click to enlarge)[/SIZE]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh4zg5sXNpdQJmS8L2A9GBU44YJVCYnxFBn3IWa4n8T3lubTlwejmcl7M38_6eNCyS5KrcRc6H6fIqwYc7ppb_EF4DMswoDIyc1nld2dLezHjMab31aqCtko9POF_y3WiBHPYHCubq90xY/s1600/AIO.jpg[/IMG][/CENTER]
+
+[B]And the old skill symbols all together :[/B]
+[CENTER]
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiAMRTL-jmlozpFYRbLy5Xr7uSZ8a7A0IO3zyoBucyjlzViGJy1ya-h1zRzd04JRT75POMGtVjecEMWzl5_WGPCO7LF0Ci34mttdOlCF95pB7gRzDWM-v7N60f1DdooCxR_SjZaCUQYAwY/s1600/skill+symbols.jpg[/IMG][/CENTER]
+
+[CENTER]
+[B]There also was a PCE-50 Field mate :[/B][/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhtuJP9obSd5YBw_gzchMglw2zhC11l794p5cccStBtIhKXfTKfqAuiOCiSrxmwS998qrqExCYLwQ3N_eaLb-dpWBoJextmtIjUGoESX4fkzDztbdzjhl6I1q8Q4emJgtq6PP5jz7NJG8c/s1600/PCE-50FieldMate.gif[/IMG]
+[CENTER]
+[COLOR=yellow]PCE stands for Portable Computer Enhancement and arethe
+ most common series of Com-Pad models on Calypso. They are originally
+constructed as rugged field models for extensive use in any type of
+environment and were never designed as fashionable urban items.[/COLOR]
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiF4Gb0PyNLliEVKG4RoxhSB4eH7qUCd9nY6AvC5m0romQpBNdlyHAFv7Ql5KVrUA4ypRXouoYueS2v6247pnJ3j6Xl3mAUgAF0NWh2Xp4Nqss5yCwrsomeWZ_ttSL4bNR-AVD4ctaNqrM/s1600/pce-50+field+mate.jpg[/IMG][/CENTER]
+
+The texture.
+
+The 1st ingame weapons :
+
+(not sure if they got removed or renamed)
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjTH321DkGd8KPV1LHq0zjKGh-StZQ_y4bZxsz1FBtX27Rgj9nlOi3w2P3yfBsXvI31zgPP0jvndHGEKpN5sOogN01AD9hHoDZKBl6HVkPvTwSQ6ae0VxQ2-5vyTrZXl_ceiGXRYEFogTk/s1600/EWE+Laser+Handgun+EP-90.gif[/IMG]
+ EWE Laser Handgun EP-90
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiMDstChyphenhyphenjBijLR9RaxfXQskTqXLYna05QZubhSHOJzBs74jLwagYZ79WvpHRuPmn4nLhc7JY_in6akaURffe8tnb7Wis7Y1aH6fuAgSsJs-HxWW4Yb2SA6sOV2StAr87xsH0MIW3xD0PY/s1600/EWE+StarBlaster+Combat+Rifle+AR5.jpg[/IMG]
+
+EWE StarBlaster Combat Rifle AR5
+
+[B]There was this window of, "Mix Injections" (unused) :[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhc2KUnIDAe-J-3Ko1jJzdg9mAsbHp091nS03ojwAHM5GuMrGPRadT1-PGaRWeaoMfVB7UEkBdtcUCKXp6zXKmNzfCuxK-BeOmzGf40C_5nJdKUWr_osq8QgpgeUCGelNDslgElPIXp3VI/s1600/mix+injections.jpg[/IMG]
+
+Maybe this skill symbol was related to it ?
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgBpUUKpxxPLlq0V9WUHdf6a2sa3bdCmPedFNExZRjh8LZCB1c0OL3j6n3sEVRtJPTm8FJPOSRIY66NVEjxJBbm5rM90DYGI08HGM0Zdb2u3X8INOZ5yP7hWXNgzroKp55rLp6fTqks2NE/s1600/mix+injections+skill.jpg[/IMG]
+
+Back in the beta version, the mix injection screen had a different design :
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEj6ejSMbCF-eX1W4OEgf-jXnfjnQGGdh5UTfXF4ThIwFc89hbsi5J6rjKyKDzGKmL2HZ3TG9Aq_mqXGeu9h9fLkRL-f-hiIOnfgb9TXd3raDonFwVq0TL2OgIqUr8WG9FyfcCfuhyr7Q98/s1600/mix+injections+2.jpg[/IMG]
+
+[B]You could find a "Biohazard Box" by Omegaton in the texture folder.[/B]
+
+[B]It has the look and feel of the standard FAP.[/B]
+
+[B]I wonder what happened using it... [/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEi_PbgaB4eDYOa-AaOKZiTKsrDdOjIYwjxadYESNxtzLYhMlBHfuqwShqtB5BnDstiEIm4l_X2h5MXPMD6R0NgnTi5aQ0ftoxDW-JzB4Sq5rsLrhFcMrTQxh-O36EskhNe1mv8sAb2z6EM/s1600/medpack2.jpg[/IMG]
+
+[B]There was this repair/recycler in the texture folder :[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhP9Gl9WCSKkRBuo9XoeSz2aKVbQMKboiJ2kZiUMMWV71ZStACr1ZP_30mfxCpZfnw4u9CT0AeqwG0Wm-Xxw77QATgzJmnQrP13xN9UHAGFOphpP7xs-6ZE8tZEkHYviuy_hkLmQhEzUQo/s1600/recycle2.jpg[/IMG]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgO9J6G1fplLBQ0W-qxd3bZ2HloQ8DbygZJQvses-Ni6E9Wa52hQ8CzTNL3ITeDLgUelrTuIiOT89xYFOFe4gFYsXocXOkO5evPB226hLlqvSUAEn0zhH1k7a_hrCK8WFbT3T1T3CUMjVw/s1600/redyne+recycler.jpg[/IMG]
+
+[B]There was this concept of a surgical glove :[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEj65ymWd1x2li0loP60QD7FOHkjj9BuaOSWX5dHm8k-wsXqv9IViEt-AIfHHGx4qfOZvNqjpPUyx-6hKkmGwQjBpVk8soZSY-SEt96SEBzyET6BWaoEemRk_fyWryWqUEms1wM8WDZ1PVI/s1600/surgicalglove.jpg[/IMG]
+
+[B]Even a monster, called Gazonk, didnt make it into the game :[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEj6zBJwVZfJURHioQtaC3Lnij09rDwYBMbS9EOSzwKHq7uMbO3n-NZjlajMqLvoh96fCmTZsEuJrYtXV4jC5uKVhyphenhyphenYeBeagXM6MggOYBqrfDgl7fsSnMdLfTfwtp_QAB4tO3-gE1k_90g8/s1600/gazonk.gif[/IMG]
+
+[B]But you could see it everytime you logged in (2004-2005) :[/B]
+
+[CENTER]
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhNObR9PazdZtaVV46MQILB4RGwyvZ_K7h049ohh-6IgGCTpwsQmnp7ueeTh_42BhbBLxCqCnfjmxdrDGsx6YsCZqzvqTKY0Y4aS00QgX9LRZPUAlJCLe2H_EkVi5AtIVoE594K24zHSXk/s1600/Entropia_Nature.jpg[/IMG][/CENTER]
+[SIZE=2][COLOR=yellow]The loading screen was called "natures eye" btw. [/COLOR][/SIZE]
+
+[SIZE=2][COLOR=yellow]and it had three versions,[/COLOR][/SIZE]
+
+[SIZE=2][COLOR=yellow]which you can see below :[/COLOR][/SIZE]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg5knd403jA1qULiqb6QiqOhWKoFp0zGfo-xMBZqGjIT1uYamqUSgR1aWQDHe6WuJeNGWhvdpxZTXMi5ghoVhncSoiQCR2acwlAb5O7S2du11qmBszyw7RxG8EQnYNXyNtCytQBwlYuROk/s1600/nature+eye+2.jpg[/IMG]
+[COLOR=yellow]With humans.[/COLOR]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgsvUWLYyY3YG7Zot6BeK8MFytlLbiNd3dP2Tesumn7kTRD2Ulc3pNpoW_yR9uLdKvqBN68_8sUB4rCrWsgPfIzJfcCxmsTSUg3cFup9R67X3Ew4Gdq3ELV4k6f9Ukl-nZGzy1Xef917VE/s1600/svensson_without_humans.jpg[/IMG]
+[COLOR=yellow]Without humans and without Gazonk, Flies and Argonaut.[/COLOR]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh2Ssi-giEJQfCMjAOM2_diRpZpdb7YEYkz19BKRCitipbTpOo8O3O65_ivEbw34AnbH3wvnFFWF3iI784Y2A_60EVXXhcu0pkMmdn-Ay79vnSClim5Mq-RNFhrOfYMtSSi-r0efhKem3A/s1600/gazonkfood.jpg[/IMG]
+
+[B]The Neco Insect also only existed on this single image :[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEir0HOgzzF7NHsYsh0Wf1ZGMnMG15pKw6rL1OgL10xsE6Wm1GTrBbiIawi8hdeU7imwWr19Mm-nQ1gtkMG9W7sKMX_gxO89AhX-P_7zotJgyaY3vDtEEFD49oFt_ZlXgaHOw1UmSfvjiVc/s1600/neco_insect.gif[/IMG]
+
+[B]Same about the "Katang" :[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEj80jmvw01fe5hoZ8yjxQ2JNMNlI1MZils1j3EA5_1M3W5actyAd-zN2rOMeSveO2eb1hyphenhyphen8oDLq48hGl9ih-cnRODW-gEJVgW2bh_cHG2_tPshsQ3Fs7lPQTcll9ujkQ7j2rwAlKjJmPmQ/s1600/katang.gif[/IMG]
+
+[B]"The old textfiles" mentioned something like: [/B]
+
+[B]"[I]What awaits you in the sewer system of Port Atlantis?[/I]"[/B]
+
+[but there never was any sewer system in PA]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEj67KlnRCaK9IfbL6eZwkoPVVjbyE-RYfytq39kVurX8wnvmguKRz1LHegt4GKwKBJ2D6JT8vHDexMirDnUsm4_AYwzks3sfDeMAC9Kn0Blm3juvmYKUg045ChqBsytmqRhKqnWkSMu2gw/s1600/mutant1.jpg[/IMG]
+[COLOR=yellow][SIZE=2]This "mutant" got sold on a T-Shirt back in the days...never [/COLOR]seen him ingame though.[/SIZE]
+
+[B]Or this mutant (probably an Umbranoid(?) :[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiQk0Q6RoUk1864iR6Xs7hrF_mh4Epji7F_b3ww8aM78Ij3Ce7wCpx1XmlN6FhkP2jrp-7wmqW6LTMSgznTEDLpHn2xYrVWIYHT7sVeGxwmmKxRkERol_wqJdFqTSszL-eLkZP68NaU-Mw/s1600/mutant.gif[/IMG]
+[COLOR=yellow]While the 1st Gauss Rifle (Kaiser-Graf HVMR-1) got looted in 2005,[/COLOR]
+
+[COLOR=yellow]one might think that the so called "mutants" already had these[/COLOR]
+
+[COLOR=yellow]type of Gauss Rifles back in 2000...at least on this image, from 2000.[/COLOR]
+
+[COLOR=yellow]Feel free to compare and decide for yourself :[/COLOR]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh-qkznXmQf3RY-LcIXsUkoijDI-9XSC1yQ1sZH8-8-K1yGixzIqaIlMZZJ_W9S9uWeZcy4UdMkZtgh_2dsAjH6D-E7cN02C9YEQP6jYauIS0CTw1j4p67Am8ANQnkIttqXrF9KMBbVMEM/s1600/gauss.JPG[/IMG]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhfQlOmDi9Diz17GNAoFEmCuewE1-Xc809zqwQrKvMGe4n0_6NlasJ9g9QWFMivD2AwOIPeqVp-awWMSz8iwsHO2022HnpiZ-ZZmDz6ile8Ibed5fQbgo_Lwuzq8U0q8HF5qTuQLlp2XTQ/s1600/060403barmaids.jpg[/IMG]
+[CENTER]
+[B]Ahhh the Stahlsteiner! We expect a shipment soon ![/B]
+[/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhrFDexgxceIoa5rhfMG-ez0elshx7cekRNBKo18Qs_5y7IfMiK7aitm3nlSnQB-SENGEIyZYKg7-Jr_kIzuxsPL0N9OnGQcQgEW_BpekTk2yM_hgoJ_hJ3Ctp_A2d3OpWoJPS1Slfg-Xg/s1600/beverages.jpg[/IMG]
+[CENTER]
+[B] Did you know that the textures of the beverages are ingame since 2001 / 2002...[/B]
+
+[B]...but, of coouurrsseee unused to this date (08.03.2017)[/B]
+
+[I]Just like many, many(!) other unused textures that find their way ingame now and then.[/I]
+
+[I]For example as secret robot transmitter.[/I]
+
+[B]The Parley BEER logo got introduced with the beach hut on Treasure Island. (2006)[/B]
+
+[B]
+Only the logo...no beer ofc.[/B]
+
+[B]If you google "Parley Beer", the 1st result will be an actor named "Parley Bear" :[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiyNPdg8_JtLbZVANXPU5pp9myqpIpDVTAZzuWGMPUBwR4n8M_Z1iksglI38GULllBascRhTq8dHvhQbG_6aybvsMEiVOVooIa0DbkCO1dzZGjTrbYDHirsAgVCeDHeLbkzX0S7oXaNjdo/s1600/parley.jpg[/IMG][/CENTER]
+http://en.wikipedia.org/wiki/Parley_Baer
+[CENTER]
+[I]Maybe David Storey (owner of Treasure Island) came up with that idea ?[/I]
+
+[COLOR=yellow][I]I just got in contact with David. Hes defenitly not responsible for any design[/I][/COLOR]
+
+[COLOR=yellow][I]or naming on his Treasure Island.[/I][/COLOR]
+
+[I][COLOR=yellow][SIZE=2]And asking MindArk is useless... :/ [/COLOR][/SIZE][/I]
+[B]For 11 years those textures stayed unused in the game folders now,[/B]
+
+[B] and only in 2008, Marco said :[/B]
+
+.
+
+[I]"I see a future system in food and drinks, probably as a buff/booster system[/I]
+
+[I]rather than a boring necessity system"[/I]
+
+[B]Then again, Marco said a lot.[/B]
+
+[B]Its 2017 now.[/B]
+
+[B]Food and Drinks went Oblivion[/B].
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh4rly1neVS9_qCTCzsJAa5ZaNQ_VDbx3k4m4jV0oSGA09d1Jy0oXrcPGqKSa_FP_cO431eTam0Wo-4BG-w_7cFI5Ch9Lfmr588XDRk2oeo5SqpQan5iSSSamx-WfnMtZbOJaukcAqIhJQ/s1600/marco1.jpg[/IMG][/CENTER]
+
+[B]Marco went Oblivion. [/B]
+
+When our bars were "active" (no beverages, just dancing people),
+
+we had music boxes on the ground and an
+
+interactive "Nova Light" (disco light) at the ceiling :
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgI1fynpkTNAKbEONdQZN8dwHHGSaNwhNs9zJ4gnU-SOpLA0m9hVsyjqPPyqyqaX-30MzEuJObQI3wWqoSXGwWa4aLWP124kuQRZRHlPnwTuA_VMUrFpAzFayhDCf9KqciN8vVS-BwJ0go/s1600/Nova+Light.jpg[/IMG]
+
+[B]You could choose one of these funky symbols[/B]
+
+[B]for your society back in time :[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgnDeunRjBFUY-ohB1vNx7AJu7VGI82bWeDkfpqfGbYAKyzmWPi3D1BliDh3NMa7P52dal6C28zwsxsao-9CwYzfCP6oXeYAxI-rSyykNF5-VOo9oNMPFFDcFtIikWAyMZUtadZ1xJvn-A/s1600/soc+symbols.jpg[/IMG]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgpoh9ANZKkBNGMQFqiUHIjEQEII6JXYC_SrsxXNinOJ3NmSZBJIcYC3PgvOWVrBV6aHz6jVbwo91OaKSAzHBQbCO2SzA_aYTMcQ2woJkZHUCNbWs7wPZgpBbDRo18chpkxG7vU-jE9W08/s1600/society1.jpg[/IMG]
+[COLOR=yellow]from early beta [/COLOR]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhBx5fCcfJJmn_vIxnihAKsjjWmzUbxnpt8r0OlpagmhY7lUJtzl0GgOP2W9mMohV4y7GRgysml6f8_lwJ6EzpWeaiwgL-T0I8GSOCRVX-FQoc9Lr9TYNcSnR4uL0P3G2l6CWH9Ylo03Ys/s1600/society2.jpg[/IMG]
+[COLOR=yellow]from early beta [/COLOR]
+
+[B]The old inventory offered some equipment opportunity :[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjwyqvPuxGvGioE0vneHWkr3hXRVhlKAp8juPppdJf1DPqMe9cjshpOCFZr8mrlkhaEH1LjVjTWjPusX8OXOcLThK_apcd6GqZOpcG-s869wBmWRaNaRJk6yL7W_VUN8oZeOVH_ssTK6zo/s1600/equip.jpg[/IMG]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhQ-qLgJTTwJqW2oQXyV7rVQQZ79h9j0hoy1ISO_Ss2ey0roucTpXD6jc4qlI0kwnbxsKaVW_61p7m928OQ0Z2VVIvtQoBwebJkH7UbYz7XjJDo0VkriLr3e_41hxDeA9oxNbiTVAkTK-k/s1600/laganaus_skill.jpg[/IMG]
+[CENTER]
+[B]Somewhere in 2007/2008 MArco said, that the "[I]Heavy Weapons Skill Symbol[/I]" [/B]
+
+[B]will be finally "fixed".[/B]
+
+[B] But it still shows the Laganaus Personal Cannon, which, according to entropedia, [/B]
+
+[B]
+does (still) not make you gain any "[I]Heavy Weapon Skills[/I]". Why should it ? lol[/B][/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg0R_vvC-MxvKnsr2mFdGhWt8DbR3oHMrw_CAQf7-luMcmfRIkdhEW_DBKDK6ofOCQF5aNveMG76Cgcoh5YywlIaD9n_sKESVEMyv6TR1-QWWj5AH_OfC2-yy4lo_mKmlXPmuHvQbDbHrI/s1600/taming.jpg[/IMG]
+[CENTER]
+[B]2005, the 1st stage of taming. [/B](gone)
+
+And we got lured with phrases like :
+
+[I]"Ride your Atrox into the sunset"  [/I]
+
+ [B]From november 2005 to 2009 we could feed and brush a very small[/B]
+
+[B]selection of calypsos wildlife. [/B]
+
+[B]The Snablesnot, the Exarosaur and the Daikiba.[/B]
+
+[B]You could make em dance and make them do acrobatics.[/B]
+
+[B]Nothing else.[/B]
+
+[SIZE=3][B][COLOR=yellow](and of course skill up "Animal Taming & Whip Skills" to infinity...which some of us really did)[/COLOR][/B][/SIZE]
+
+[I]That were 4 years and we never reached Phase 2 of taming...[/I]
+
+[B]The old stables gave us the last idea of how taming could[/B]
+
+[B]have been...riding a Longu...[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEj95gaGzY25A7dBf21GSnyNjWkVGx-ZTlUOT18Vjwi8qmRekDPf54TBeArGmwG8IQAdkaDtIg8gNwiImmZ5dctEFdzcERGO6V1o1XZ9y488ZU-se3loP0JL18h5fsDRqnk4VD1KFg5Q4mw/s1600/rider+longu.JPG[/IMG][/CENTER]
+
+[I][SIZE=3][B]Also Alf Svensson's statue of the "Allophy Rider" created the same kind of feeling:[/B][/SIZE] [/I]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEi8MplSF3mTzujD-vMP-6hFGsq2bm6P9tLDltDCYlccOlDeawXubU15ExT4uVRmnIu_eRB-ft2msAmoqtEOqsAIfXfoKJgHvncMe62ym7EfWZjrjD354ei9cE3h0miFoTulQftJvIY81BM/s1600/allophylrider.jpg[/IMG]
+
+[B]Taming got "removed" in 2009 and since then we are waiting for its return.[/B]
+
+[CENTER]
+[B]Last ETA was: "Beeing re-introduced in 2012" [/B](too bad we have 2014 already)
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjGR053H4R0JKuBUFcMlofN0nj-ep015ZZYCjt5nWzxPq9SDVtcSwayxLn6RlYUCLmVQnaDDdsosRgv5AqnP9XJr1AJrr0YqIObvcKx9Q-vmc3Diw5j6SHohnq_92dT705tkoKFYXg2iUo/s1600/taming+return+2012.jpg[/IMG][/CENTER]
+[COLOR=yellow][I]In the end of 2012 Kim Timkrans said in an interview, that their goal is to re-introduce taming[/I][/COLOR]
+
+[COLOR=yellow][I]in 2013. But to be on the safe side, he did not want to give any ETA this time...[/I][/COLOR]
+
+[U][COLOR=yellow]As of May 2013, Kim said in an interview, that the fishing-system as well as[/COLOR][/U]
+
+[U][COLOR=yellow]the taming system only exists on paper. No ETA![/COLOR][/U]
+
+[COLOR=lime][SIZE=5][U][B]2014-06-02[/U][/B] [/COLOR][/SIZE]
+
+[COLOR=lime][B][SIZE=5][U]Taadaaaa, taming probably introduced once again... [/U][/COLOR][/B][/SIZE]
+
+[COLOR=yellow][SIZE=3]Mindark once again announced various stages of taming.[/COLOR][/SIZE]
+
+[COLOR=yellow][SIZE=3]It might probably start at the end of 2014. Or somewhere in 2015. [/COLOR][/SIZE]
+
+[COLOR=yellow][SIZE=3]Who knows.[/COLOR][/SIZE]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhrB9DpTkRoFPsUwlx9wOf3NGMqMl0tQb4TfDGWHvfSs0Acwr6na3FQ4d12qLSjfr7BHQegTvYLHkVP9IVxf2yKaNz0lQn8MeAWSvNuWzuBtloh6iT3Y8eMgD81LbjUPsQsxlJlo_QlGSs/s1600/taming+2015.jpg[/IMG]
+[COLOR=yellow][SIZE=3]Together with taming, once again the announcement[/COLOR][/SIZE]
+
+[COLOR=yellow][SIZE=3]of a political system showed up, as well[/COLOR][/SIZE]
+
+[COLOR=yellow][SIZE=3]as the gazzillionth re-re-redesign of the[/COLOR][/SIZE]
+
+[COLOR=yellow][SIZE=3]so called "social interface". Yay ![/COLOR][/SIZE]
+
+[COLOR=yellow][SIZE=3]No CCS octagon and no battle octagons made it into the[/COLOR][/SIZE]
+
+[COLOR=yellow][SIZE=3]game yet. Planned for late 2014 and early 2015,[/COLOR][/SIZE]
+
+[COLOR=yellow][SIZE=3]we now have 3/2017. [/COLOR][/SIZE]
+
+What we got "out of nowhere" is a "Battle Simulator".
+
+[B]Announced at the end of january 2017.[/B]
+
+[B]Released at the end of february 2017. @_@[/B]
+
+A simple "Quake" clone in prototype stage,
+
+with glitches and bugs, noone asked for...
+
+In the end its nothing different then the "gauntlet" we already have
+
+and early pr-images of it had the name "gauntlet" in it.
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhWsmvG6tbKVCMi-1T_D3fiS_qg8vOWHvzc5UkY_haq-R_9EE4CSRCaTQyMHVxKVzbwzqsZeHlmFBhhRTqjoTSt5tEtnn3EpuZvCYxV50kpxJbqRtIrisbDkBg2ytzqTsx5qBBx4a2_Amo/s1600/battlesimulator+screenshot.jpg[/IMG]
+[COLOR=yellow][B] Avoid getting hit by the white "energy balls"[/B][/COLOR]
+
+[COLOR=yellow][B]and shoot robots and[/B][/COLOR]
+
+[COLOR=yellow][B]stationary turrets, that can actually evade,[/B][/COLOR]
+
+[COLOR=red][B]in this linear...prototype shooter.[/B][/COLOR]
+
+You have to pay 4 PED to be able to play it.
+
+Equipped with a rocket launcher and
+
+an energyball cannon.
+
+If you die or get screwed by a glitch on the map,
+
+you get nothing.
+
+If you manage to survive,
+
+you get the chance to open a box,
+
+that contains random loot (1.60 PED to xxx PED)
+
+Each week the "fastest" 3 players on the leaderboard
+
+get payed the "jackpot".
+
+[B]___________________________________________________[/B]
+
+[COLOR=lime][U][B]And about the political system :[/COLOR][/B][/U]
+[COLOR=blue][B]A voting process of "The president of virtual reality" [/COLOR][/B]
+
+[COLOR=blue][B]got initiated by MindArk in january of 2016.[/COLOR][/B]
+
+[COLOR=blue][B]You had to pay 1000$ to be able to get voted.[/COLOR][/B]
+
+[COLOR=blue][B]Only Neverdie "applied", the voting process never got [/COLOR][/B]
+
+[COLOR=blue][B]initiated as promised...and went Oblivion. [/COLOR][/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjEETRQ_ftjpmfh0QfDc6-ayLjWULMQHhIIWQRvxy3JE11wyXkV86gFFsk3-P9h3kxYSpwVsn6h3KIWdI1V3gr5UG_TP2bV_WdmJzbYm8ALbgZ6W73RXVajyIeNejpE7oNLWLdvdSW-7AY/s1600/vote+president+2016.jpg[/IMG]
+
+[B][COLOR=white]Then suddenly a facebook vote showed up. (March 2016)[/COLOR][/B]
+
+[B][COLOR=white]Community angry, nearly no voters, no competition.[/COLOR][/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiFTI7RWKbAMx1NBnpibTwKCDv4IgFgKXTfTWnbZi24gejemHXTJgQkXv_wtnwp4UlXXshRcKiE5zaaoBKVGTB7zwKnc-Jmme1FjOwtcBjEHvSR8U8VpNZ5qO1ZxyO09iigxk2bEEB_mdc/s1600/votes+president+fb.jpg[/IMG]
+
+[COLOR=white][B]Tadaaa, Neverdie is our president now. xD[/COLOR][/B]
+
+[COLOR=white][B]http://www.entropiaplanets.com/threads/be-the-president-of-virtual-reality.18892/[/COLOR][/B]
+
+[COLOR=white][B]His 1st plan is to create 3 billion jobs by, for example,[/COLOR][/B]
+
+[COLOR=white][B]introducing a teleportation fee ingame,[/COLOR][/B]
+
+[COLOR=white][B]while others would need to defend the teleporters, to avoid them getting destroyed.[/COLOR][/B]
+
+[B][COLOR=white]______________________________________________[/COLOR][/B]
+
+[B][COLOR=white]17.06.2016[/COLOR][/B]
+
+[B][COLOR=white]New elected community liaison by Mindark is Nighthawk.[/COLOR][/B]
+
+[B][COLOR=white]His 1st post was :[/COLOR][/B]
+
+[B][COLOR=white]The MindArk management team has reviewed the proposal made by the
+President of Virtual Reality concerning teleporter fees, and has
+determined that such a system does not complement the current
+development plans for Entropia Universe and therefore will not be
+implemented. [/COLOR]
+[COLOR=white]
+
+However, the proposal was very interesting, and aspects of it may find
+their way into future planned systems and features where participants
+would be more receptive to optional fees that provide enhanced
+convenience and utility.[/COLOR][/B]
+
+[B][COLOR=white]_______________________________________________[/COLOR][/B]
+
+[COLOR=white][B]Mercury initiated a forum vote,[/COLOR][/B]
+
+[COLOR=white][B]asking if people would vote him (March 2016) :[/COLOR][/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgEY6UPLTcAbUPk2Eozz-QS3AFfP9miZSDSaT3tgYMQzkG52u1BaMDnNCImyIR1UeRsGhDK5xVbmR3H69QYU2NxAt8acPVyftNnZrKZSl5e30ebDuVyn0phsrzZZJ4KC0RgR6t2-0AFeos/s1600/vote+mercury.jpg[/IMG]
+
+[COLOR=white][B]Also with the original registration process,[/COLOR][/B]
+
+[COLOR=white][B]all voters got promised an item called[/COLOR][/B]
+
+[COLOR=white][B]"Presidential Strongbox"[/COLOR][/B]
+
+[COLOR=yellow][B]Until March 2017 noone got a presidential box[/COLOR][/B]
+
+[COLOR=yellow][B]1 year passed and our President did nothing[/COLOR][/B]
+
+[COLOR=yellow][B]but throwing in the idea of a teleport fee and 3 billion jobs,[/COLOR][/B]
+
+[COLOR=yellow][B]canceled by MindArk. [/COLOR][/B]
+
+[COLOR=yellow][B]1 year...and nothing...then on february 2017 "President Neverdie" [/COLOR][/B]
+
+[COLOR=yellow][B]decided to retire (rofl) and let others be the...[/COLOR][/B]
+
+[COLOR=yellow][B]...cabinet and representatives of his Planet Rocktropia...[/COLOR][/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEieiw0OktrFM74OaBRJlele3QzHsnq_Z6a3wTwZnnul9pCFysYd7dJT-XrfgEGiVeqBp-0DHWxakfuRByWCakzEjiSX-QR81wboWNQnOJpCyyRIvp_tTD3FzgJq4Sjs94kQDPY3vmoyQtg/s1600/president+election+No+2.jpg[/IMG]
+
+[CENTER]
+[COLOR=yellow][B]To be able to "nominate yourself",[/B][/COLOR]
+
+[COLOR=yellow][B]the 1st hurdle is, you must own an estate on Rocktropia. *aawww*[/B][/COLOR]
+[/CENTER]
+
+[URL]https://www.blogger.com/blogger.g?blogID=1749222396821103574[/URL][IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjqnZSwofBau-XCTh4PN8WXMY9_J1pD_lcjPxVerVQZXrnCeAlLkyaEe0L85DHD69XVYZuefJK6uXJ1p3WZCZK24hV_HJenyjKk7Rr-U7ZUSaU6USlIQzuxNF_vURo-5BgTO1bSqZnoCu8/s1600/estate+president.jpg[/IMG]
+
+It came to my attention, that you had to login to Rocktropia on
+
+a special weekend in 2017, to recieve these item.
+
+You even had to pay with rockbucks to get all of em :
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjat-Qwwmi8fIgRMC-xAz7onsoZiWmx7Edznw_LnUaU2HDwNSFVBAabZTZalfz-JxD_tDZj9sPI9XshewJCzO_nE0cRhVufyfZQ76RB_-oxO3pmvdWrHMHGTEMS5d7FHImyQKEuywphoyk/s1600/povr+crate.jpg[/IMG]
+
+[B]___________________________________________________[/B]
+
+[COLOR=yellow][SIZE=3]MA also jumped the digimon, My Brute train.[/COLOR][/SIZE]
+
+[COLOR=yellow][SIZE=3]Another smartphone / tablet app, called ComPet(z)[/COLOR][/SIZE]
+
+[COLOR=yellow][SIZE=3]might arrive as well. (announced 2014)[/COLOR][/SIZE]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgZ1znHziWe3LkukOBUwKCwhX-Lh_XP1oqKRAC8uoboLqn177m-WDIei1bDrfZ2r86bq9IXYEGzor2HdFpFyE-Rdrr4Yykv0kvRWMpfYd-nNOHTCRL_XQ93Ek2wQsfX-ZMaYEO8nZo9hNE/s1600/taming2.jpg[/IMG]
+[COLOR=yellow][SIZE=3]wtf @ panda, cat and dog...??? [/COLOR][/SIZE]
+
+[COLOR=yellow][SIZE=3]Way to go MindArk, keep the spirit of Entropia alive.:'( [/COLOR][/SIZE]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgUwuMAqBT4uYML1ghHqYeV2KRqMO0yek_T5NgVy8CpcVIoJe8e1nknJ9AuBYVVXrNfkwvVEk-uFs8Z1q-qGEaFJfTRqYE6Yq0p-fwzzccRzBho1IXe_rHmIfRW9q9fyr0_YPkCTVEd7ho/s1600/compet+18+2.jpg[/IMG]
+
+[COLOR=#6fa8dc]Also a "web-based" battle client got announced.[/COLOR]
+
+[COLOR=#6fa8dc]You got to aquire (buy) battle-arena deeds and...[/COLOR]
+
+[COLOR=#6fa8dc]deeds, deeds with their holy revenue...you know ?[/COLOR]
+
+[COLOR=yellow][U]Typical for MindArk :[/U][/COLOR]
+
+[COLOR=yellow]Taming has not even arrived and they[/COLOR]
+
+[COLOR=yellow]announce 5 other additional things,[/COLOR]
+
+[COLOR=#6fa8dc]all connected to this taming-system. [/COLOR]
+
+Possible Result :
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjtdi6A4-1W8Oomgspvici3bGfyLHVs6eWNiTH_4R1CnMLxegpbJZyPLSanL1gSMWux7Mq1qX0zaWm3v_ztTnrVFyVb1bGJdvHDXHoM1jxKFoWnAX8-JOAnALBeAgSYp5l_zD6VnRZDBUc/s1600/bugs.jpg[/IMG]
+
+Compet(z) finally got released as beta on [B]May 17, 2016[/B].
+
+A mix of pet fighting, Hearthstone and "[I]Win money to cash it out"[/I].
+
+Made with the unity engine.
+
+MindArks main game, Entropia Universe itself, had to suffer badly from it
+
+over the past 2 years. As if it wasnt suffering enough by now.
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjw3OHN-I4Gq5GzQe5AlkSh5SMjt9BfOKK1Ge6dojSKgqET841nm-OI86eLlYpDZavDbmmAAvjxx8QnGU4QXxaZqRS7-JB-5p6o4-ygdjM4Fj4WGmSdWI3mS01XUu_iYcRdjXzcfekHkKQ/s1600/compet+make+money.jpg[/IMG]
+
+[CENTER]
+Of couursseeeeeee....
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjGBRQv1feGcsgdraP4Coo8GqRD5PkWJcOZap9h0EQra4z9HOgOgpjf4qDMGhp5TegLLLJvRcJlfDee-_DPms5Z3JLQgpUP974IqmZ58B_bFfL_9XZpmQtnGLhg9VccT9wOp_1IykFPnD4/s1600/compet+oblivion.jpg[/IMG][/CENTER]
+
+While it was announced as "a part of EU" it is not.
+
+And Pet transfers between EU  Competz just
+
+got announced again by Kim Timkrans (18.5.2016)
+
+Lets wait and SEE...
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhp1wWjNe-dxGIZEKnmo3bbmpgRCYZ2gAZkX7-88xuZqrYlavWT7CLCdadorP_57k7LEnQBb6zJHw1KspMyOUeW83qC8lug1kptlgOyLmWO-tYwzEK8JU9XezLRYCNSSCN-pe-4kEjwHRc/s1600/compets+transfer+pets+EU.jpg[/IMG]
+
+[COLOR=yellow][B]Many of us "own" Compet Deeds since 2014. [/B][/COLOR]
+
+[COLOR=yellow][B]Deeds that are supposed to make us earn revenue.[/B][/COLOR]
+
+[COLOR=yellow][B]We havent gotten any revenue since 2014. [/B][/COLOR]
+
+[COLOR=yellow][B]Its now 3 / 2017.[/B][/COLOR]
+
+1st beta of "Compet" got announced for Q1 2016.
+
+1st payouts should have arrived around the end of 2016.
+
+(30%)
+
+Then 1st payouts got announced for january 2017.
+
+Then 1st payouts got announced for late february 2017.
+
+Its now march 2017.
+
+Sitting 3 years on deeds doing nothing.
+
+On the 25th february 2018, the deeds payed out.
+
+0.35 PED (35 pec) per deed...in 1 year.
+
+So it will take you 300 years to get back what you payed
+
+once for 1 deed - 100 ped (later 120 PED)
+
+In the meantime MindArk took 2 million dollars of
+
+its loyal community, paying an undisclosed sum
+
+to N-IX...to create Compet.
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEihx2j-BIvuCnv7U3rPyeOvDAqyo4zlHcDYWSDC1e4-TYNxigP8e-pJRErJw-49VsaiGO64oKA3jHgPtbVxYLMNSfEAylHNX20HV89JmqC_RJpObnhWQZUWKjsHxRN9w6LxEDbWxoZDuu8/s1600/compet+july+2014.jpg[/IMG]
+
+[COLOR=yellow][B]In Sept. 2018, even after announcing a reboot of Compet earlier...[/B][/COLOR]
+
+[COLOR=yellow][B]MindArk announced to stop all further development and advertising on Compet : *lol*[/B][/COLOR]
+
+http://www.entropiaplanets.com/threads/compet-announcement.22209/
+
+[COLOR=yellow][SIZE=5]May 5, 2015.[/COLOR][/SIZE]
+
+[SIZE=5]MindArk announced [B][I]plans[/I],[/B] [/SIZE]
+
+[SIZE=5]to fully integrate Oculus[/SIZE]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg-r9dReM203WT_L_hxgMutEHXR1hy9wOhJfuHC_Iy5Y6FH8s6flNXgEA7oaj3B1RTqsVLGIvTCp1mbUQYMW1hw9yOAPCuIxvmKJCuG_uGWUE4-PpKCBjiYVSDpxsO2fM2IInpVeY858K0/s1600/oculus+eu.jpg[/IMG]
+
+Lets wait & SEE...and wait...
+
+...as Oculus Rift just kicked out DirectX9 support.
+
+(Thats what Entropia is based on)
+
+[B][COLOR=yellow]3 year later (March 2018), we havent heard of[/COLOR][/B]
+
+[B][COLOR=yellow]Oculus Plans again. [/COLOR][/B]
+
+[COLOR=white][U][B]The Avatar Statues[/B][/U][/COLOR]
+
+[COLOR=yellow]In 2016 MindArk wanted to auction 12 avatar statues (5000 PED each)[/COLOR]
+
+[COLOR=yellow]that you could buy and place at pre-choosen towns.[/COLOR]
+
+[COLOR=yellow]Only 3 got sold and after more then 1 year MindArk did NOT hand [/COLOR]
+
+[COLOR=yellow]them out to the buyers.[/COLOR]
+
+http://www.entropiaplanets.com/threads/the-avatar-statues-that-got-auctioned-in-2016-actually-never-arrived-next-scam-by-mindark-xd.22097/
+
+[B]Dr. Niels Barton came to us in 2005.[/B]
+
+[B]
+He mentioned the "Soul Disruptor"...which we never heard of again.[/B]
+
+[B]
+Then we found his finger and created the Globster from its DNA.[/B]
+
+[B]
+(Im sure Niels would be proud of the way his DNA was used.)[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEj2MawKqgbemQHxsBnxjwSbcfOqYzZ8XbefAhbLZ85hytPvc7gsPW55mUq88UaGThg1cPwyYOrxqQtu0lI4eZaw-8vXXP5mS7IYgvD6yJt2XX513Y4qQDGFb3xggQL7Pt8rUlRQshlmak8/s1600/profBarton.JPG[/IMG]
+
+[CENTER]
+[B]Facial Emotes! So funny in 2005...[/B]
+
+[SIZE=2](updated 3 names. Not sure about Kitty...but thanks to Abbee for NicNac ^^)[/SIZE][/CENTER]
+
+[CENTER]
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg1-MG1OwcuMpLQSxgIqTPllLYfohWmE9wGFncRbfXVZxdgb0WZXPasZogUvDZsU2-K-u5yyWCVhnM0HHDftsHb4r6qTLaQT4-_kIo3kmd_VNwnC-fpd4sIY6wfdspNlR1LECJhveN09Zg/s1600/facial+emotes+3.jpg[/IMG][/CENTER]
+
+[CENTER]
+[B]Could be funny in CryEngine 2 as well...but...you know...[/B]
+[/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiHN46k9g11muYJC6z75VRHQsCRYCNf3dCfzvWPbDj7VwH8YZKj2xizqdWp-zDA1xK9a-23fhGhX1Xop3xSxT4wxBBwgpW5IReo9tu5rfPqdW-J6ZN0kXIb4H1YpAVcsEtrRIdUKK9Ra7Q/s1600/ce2_emotes.jpg[/IMG]
+
+[CENTER]
+[B]"Good thing" is, MindArk "just" announced a new (final) avatar re-creation process.[/B]
+
+[B]It got announced to be ready in early autumn of 2012,[/B]
+
+[B]and was mentioned in their annual report.[/B]
+
+[B]Its like the 5th avatar re-re-recreation we got, but this time it[/B]
+
+[B]should become the final, more real, CryEngine 2 look,[/B]
+
+[B]a 400% performance boost included...[/B]
+
+[SIZE=2](anyway, it is 2014 already)[/SIZE]
+
+[COLOR=yellow]http://www.mindark.com/investor-relations/financial-reports/documents/SemiAnnualReportMindark2012.pdf[/COLOR]
+
+[SIZE=2][I]Kim Timkrans mentioned the new avatar re-creation once more in an interview in late 2012...[/I][/SIZE]
+
+[COLOR=yellow][B]Update (22.01.2013):[/B][/COLOR]
+
+The New Avatar System got introduced.
+
+Properly tested, one should think...but...this is MindArk.
+
+Thats why everybody will have another opportunity in 1 week,
+
+because, as so often, this system wasnt tested properly.
+
+See for yourself : [SIZE=2](this is a harmless example)[/SIZE]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEj7HkoAC6-mvWfHroivFWb0kaE66vwj3TOSlZd8OsTp45PjmicEgISzwf8JV0BphSOtfLFKyBLooh4Z9mqsIQ0fwRFafDieJGBF__ahyphenhyphenrfVnK-jl96amIWcJETj7MzupwW7onRK5tpI2d0/s1600/crunchy+fail.jpg[/IMG][/CENTER]
+
+[B]Still, we had some funny moments as well with this avatar re-creation :[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjb_EQCQyexnYaV1aXjsWSWpSEdh50P4nKV8c0HMymfLDCDzj5Nk-KBX5-Zc83nWOqBqJiXz-PBd-McDLxaR9MY6Ld2QqBcaW9dljNS1PzyLeRoxVZEUg-UFhyFTEz_NXmZkXgC2keemKo/s1600/mutants+pe+2013.jpg[/IMG]
+
+The announced 400% performance boost resulted into various crashes and fps loss...
+
+[COLOR=yellow][U][B][SIZE=5]BUT :[/COLOR][/B][/U][/SIZE]
+
+[COLOR=yellow]People on the forum also mentioned they are only getting half of the skills in space[/COLOR]
+
+[COLOR=yellow]after this "avatar update"... (24.1.2013).[/COLOR]
+
+[COLOR=yellow]And Neurobiotic Boosters just got announced. Boosters, that let you earn[/COLOR]
+
+[COLOR=yellow]an extra 50% of skills over a certain amount of time... which would be[/COLOR]
+
+[COLOR=yellow]75% skillgain of the pre-vu skillgain from now on... (in space)[/COLOR]
+
+[COLOR=yellow]Did the "old" skill system just go Oblivion ?  (in space)[/COLOR]
+
+[COLOR=yellow]Without any announcement ? [/COLOR]
+
+[SIZE=2]http://www.planetcalypsoforum.com/forums/showthread.php?237808-Skill-in-space-nerfed-to-50-gain-of-pre-vu-rate[/SIZE]
+
+[B][SIZE=5]...to be continued[/SIZE].[/B]
+
+_______________________________________________________________
+
+[COLOR=yellow][B]Around 2006 MindArk announced the introduction of "Ageia PhysX".[/B][/COLOR]
+
+An additional PCI card for your PC would enable :
+
+-stuntcar vehicles with visible damage
+
+-weapons affecting the environment
+
+-Awesome "clothes in the wind" effects
+
+-Volcano with flowing lava
+
+etc.
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjOPgrAigwPIMEWhSDZtsw1NQEQRgHkWx5_I36yo-Ro9wgyDr0cbUPM_QD3tbW6oSjaQP7X93SsZDo8wZPHldH5t7aC4n7fHxj_59Pntq7venOBAdX8Ax43RlYfZs7Sv9E_1_lYKlS83wo/s1600/asus+bfg.jpg[/IMG]
+
+[CENTER]
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjoWy4gVAQdDoap0UxmPPMYO7gVRMd0v1ayZ8vCgdsGzkK199XQRUmF_owcA4lyvwkso7Hi7uxeJR4qrj9tvYf8ekRavwYKDODHBoVkwG72N_vL5Hwo_136vSVePzTtbEEs-IgV-50UTVA/s1600/asus+bfg2.jpg[/IMG][/CENTER]
+
+It never got introduced.
+
+Nvidia aquired Ageia in 2008
+
+and let Ageia PhysX support die in early 2010.
+
+MindArk bought a CE 2 lincense at the end of 2009.
+
+_______________________________________________________________
+
+[I][COLOR=yellow][U][SIZE=3][B]MindArk started an affilate program[/B][/COLOR][/SIZE][/U][/I]
+
+[I][COLOR=yellow][U][SIZE=3][B]around the introduction of CryEngine 2.[/B][/COLOR][/SIZE][/U][/I]
+
+Not many were aware of it and only some affilate links are existing.
+
+http://account.entropiauniverse.com/new-account/?ccode=[COLOR=red]Username[/COLOR][COLOR=yellow]RandomNumber[/COLOR]
+
+The idea was to make non-Entropians click your link,
+
+create an account...and get 10% of their wasted PEDs
+
+for a lifetime !
+
+This was the original link :
+
+http://planetcalypso.eu/en/node/34
+
+Try it with the "waybackmachine"
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjIxJIkOVnrx0ktug6re-eB10CKEfSPLQVgqEFd4m3Jd5k893ZCJb3QLaVoDkm0tcU-PMYeaUDUOEcK72p7zIztMi5A0Ql7WCqnxVcs0IrPXTGtRgLAXRaxkcBUU_ehPhyyixjSPFy3UoI/s1600/affilate.jpg[/IMG]
+
+It is unknown if anyone ever got payed or if it is still possible to get an CC code.
+
+Additional informations about a german guy called "Stefan Krüger" and how
+
+he started "the official(?) affiliate program website" with his XARXA company,
+
+can be found here :
+
+http://www.entropiaplanets.com/threads/the-official-affiliate-program-by-mindark-2009-20xx-and-the-xarax-gmbh.22019/
+
+[B]But lets head back to the past :[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEi3OZQeOqDwHQl0JWgCOhD5OPsXE7xoG8uP5ZSmaJyb0FBJzcXbSTBbuCjbSz3vVs4hZT_TliW0_ab6f2DthOdcPSWIx9FzqFsnw5s90XSUjwL2hLS2GqtjroVzObE-w-jzZF7hiqGfijg/s1600/strike.JPG[/IMG]
+[CENTER]
+[B]We could even sit down in 2005. In 2009 Marco mentioned Prone-mode ! =D[/B]
+
+[B]
+(Needless to say, that "Sit&Prone" werent mentioned again.)[/B]
+
+[COLOR=yellow][SIZE=2]In 2014 we can sit down on chairs again...at least.[/COLOR][/SIZE][/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjH02bt3J3U9Lfmcfd4WfKn_cHdKOV3GdWmtui7WwpgdfrGjxgLNMUA44esBgu74sAEEpE2v7VRIkvPui7481kYknk457aH2IqkF_xRWKFQ6YWrQilvYYtiJAAph1kDdWLS1-qXm5ds9yc/s1600/stadium.jpeg[/IMG]
+[CENTER]
+[B]The mega CND Sports Stadium where...
+
+[COLOR=yellow](1st announced with the sale of CND[/COLOR] in 2005)[/B]
+
+[B]It was meant as a mega-bonus, that would have been added later...[/B]
+
+[B]...6 years passed then and no sign of a "mega sports stadium".[/B]
+
+[B][COLOR=yellow]Meanwhile Neverdie decided to sell his CND to John Foma Kalun (pesok) injuly of 2010.[/COLOR]
+
+[/B]
+
+[B][SIZE=3][I][U]And then, out of nowhere,[/SIZE] in february of 2011 :[/U][/I] [/B]
+
+[B]CND...ahem, F.O.M.A. Stadium has finally arrived ! Wohoooo...[/B]
+
+[B]...you can now drive your vehicle on a 2003 styled 3D track ![/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjzUjv6OLhXlX1gxRj4QjExLphYI2h5ocUsS205hHoGL3hKgNE-yB_2sXdaDc0BrVnwAtjGzROQEruGvuGNO-zXtOh7O9DdWfdS0gc1HRzGiFd8MsKW7lplfHlutz5JiFQJfhzAnnOgv-Y/s1600/foma+stadium.jpg[/IMG][/CENTER]
+
+[CENTER]
+[I]I leave it up to you if the "[B]Mega CND Sports Stadium[/B]" went Oblivion this way or not...[/I]
+
+[I][B]But lets go on...[/B][/I]
+[/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgricvV7t8TtsuXOxU4DdjTrH9u7iEJbtBpEXK4vNWL8uEOyQW6hfy11OBov-EH5SDobABkqQSSgucqdlUrA5xGXOLr1KmqCRNmXPUP-6KDqykGos02OjISZ8y6CZuQ8xevScEZbyoeNpE/s1600/thorio+temple.jpg[/IMG]
+[CENTER]
+[B]The Thorio Temple had a short appereance in an Episode of "Content in-Content Out". (2005)[/B]
+
+[B]Cyclops Depths (Hadsheim) has the look and feel of how the inside of this Temple could have looked like. Filled with ancient Thorifoids...would have fitted...hello, MindArk ? [/B][/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiFyHaAEpbSk2noUQ5JCzbMx-XI-IDEBs4ALRl62bFg9SsCRpPKAFHL61Gdt4ztsVWXnAftnMGAt_lDPWBVJY-dEE3TF2Gds7uYXx3sE974rtahb8aBOig-QWWAAf5adk3wcdiGFwzSSRY/s1600/060617factory2.jpg[/IMG]
+[CENTER]
+[B]The "robot factory"...or vehicle garage...or...whatever. -_-[/B]
+
+[B]
+It joined us in 2006 on Treasure Island and was left behind.[/B][/CENTER]
+
+[CENTER]
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEj7FOoc8N24ioet_55kuHemEVrDMIW-edCmT8J9J_Uv5otTY8b4eeqES-WGwGEXAZtYwWubKTs4ITZxErWEhYMYEyuket0hX2oF8DxArH59PDFget206LvKRTuc7wdz_ut3di_OYfleQk8/s1600/Ship+1.JPG[/IMG][/CENTER]
+[B]The "promised" big-hangar-update has been put on hold,[/B]
+
+[B]right after the hangars got re-introduced in april of 2011.[/B]
+
+[B][COLOR=yellow][SIZE=2](Hangars and its shuttles[/COLOR] started to beco[/SIZE]me useless[SIZE=2] around VU 10[august of 2009][/SIZE]) [/B]
+
+[B]Spacetravel is possible with cheap spaceships since june of 2011.[/B]
+
+[B]Spaceships, everybody can afford and everybody can travel through space with...[/B]
+
+[B]...no more hangars needed.[/B]
+
+[B][COLOR=yellow][SIZE=2](Keep in mind a hangar went for 5.000$ - 7.000$ back then)[/COLOR][/SIZE][/B]
+
+[B][SIZE=2]Of course the hangar owners got more or less compensated "by MindArk"[/SIZE],[/B]
+
+[B][SIZE=2]but that is another story. [/SIZE][/B]
+[CENTER]
+[B]In January of 2013 Kim Timkrans said,[/B][B]that there are "currently" no plans on doing anything with the hangars. [/B]
+[/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjEzzi466EM3JpL25KLdScE9byxGF4HuHK76tIpDqwMUcSYJUZcaNF4yBwENYAT4vN7kTK3DvA10t2zfZPip0yAI0hcEhQuNzQyfWtbh6OsgUykdL77ssArx5AD1GoLDjW_WNizD9KN_xE/s1600/cashcard.jpg[/IMG]
+[CENTER]
+[B]Also the Cash Card made its appereance in 2006.[/B]
+
+[B]
+(It will never be forgotten) ,-)[/B]
+[B]In addition to the Cash Card, MindArk contracted [/B]
+
+"[B]NEOVIA Financial" as a partner in 2009[/B][I].[/I]
+
+[SIZE=2][I](NEOVIA Financial is now known as Optimal Payments)[/I][/SIZE]
+
+[SIZE=2][I][B]http://en.wikipedia.org/wiki/Optimal_Payments[/B][/I][/SIZE]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhSIJzofNgCfhfGDmdEcWnBjVkJMmvErcmaUim-Okf5PVRHL2btheblLTT_TfwCh54uUGEbeAoKc871gp9ecAFWHRAxTxIeY0Ek9qqRI0EgkAOWoFKJ1egMrs8Em0CnmErckSU_9zQu8hE/s1600/cashcard+2.jpg[/IMG][/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjdNBSs1qcjhn8yyzyuH2CBxONQ76A5xp1yeX4hdu2NOdr_QYq07N41AVRJ5kjQrc02P4_i6lOszL0UfXi0GmJC33Wu2qNzbaPs6zdsTU1t8bmRAlA474ynD9B1Prt7yWSYSU7DAptiJXo/s1600/cashcard+front.jpg[/IMG]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjLn9Bvr7F5HqsoRKtojBI5ZBFRkp2FGaG0-YyYHOvQFCl8ghMTmiaOYv8h8T9NNqzqUCVgSgMKuM3kM6z2LvqI-aI809TDi6jlHnpGOLrWOsoMw1ZoIys4lmgsPerQhur594aO4G6ZBAQ/s1600/cashcard+back.jpg[/IMG]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh8-0lPVyC4s67xgVdezSjEklSRyqzEz_k2E1m_C2JWrLJK98BUmbqBRNTKvRO6H31sDX4-DyLAF9wVYOtUDI5xDNRA8mEnka5ROnOHyP5COQoqSCkpCqAlL1lcsumyC4q83n8znF2VSxQ/s1600/c.jpg[/IMG]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhG_NltaxMiUa_0TOuvehWvTZ20QbV2H3aSYS6q1QUCzxP7G2kAhROHMMKo4ZIISEbPRiBHSmJHXsdUkHalw-lnl6z4IholNVBw6abvr5-oK_CLyi4P1caleQlMpPlbPMISz5PR8sbECgU/s1600/d.jpg[/IMG]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEijCtwkhL4SdJ7V8Rmbm3SB1oGqz0Z11SVhf0Upg-a05tQ4SbsmVuZ1URL14MQZMWXTRahw2s8OlqUUccNwkydtGJp-79cpE0RinXg77VySV6j6B0RDzKn6jm5Gmzh_RxEVaz3WY1vRCRY/s1600/b.jpg[/IMG]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjRGglmdT_KlFWCKGzHLlAZJWbcW9oCRvO9DW3KOy8JzxE6EhY3itcKQK4HMt79ZhwX5YYiWZQhSG46VOrjcX57mUjMU6DvYfH_VZPHUlLArjgSP1k1IEBXqFMit4WpEDPIjDc7cMRHM-k/s1600/a.jpg[/IMG]
+
+[B][SIZE=2][I]T[/SIZE]he idea of the cashcard is still a[SIZE=2]l[/SIZE]ive[/I]...[/B]
+
+[U][B]Massive Ads was contracted by MindArk in March of 2006.[/B][/U]
+
+[I](To bring tons of realworld advertisements ingame.)[/I]
+
+[B]2 months later, may of 2006, arch-enemy Microsoft bought Massive Ads[/B],
+
+[B]just to shut it down in 2010.[/B]
+
+[COLOR=yellow][B][I](So,[/COLOR] Massive Ads is no longer existing since 2010)[/I][/B]
+
+[COLOR=yellow][B]But till August of 2012 MindArk was still hyping their[/B][/COLOR]
+
+[COLOR=yellow][B]"reallife advertisements [I]v[/I]ia massive ads"[/B][/COLOR]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh6QmAnzEmU6qxuqtE0DHoIhIARnk3X4iKTToKOzpCgm_SOlODk2AXMhM4hyphenhyphen2Z6M50Qrd6FIsZ4V87LXcB4ZypyLP7qeo96lrBj586s_h8URN9NAm7-fpq4dZco7RP6aYtU7lABrIfYEpw/s1600/Massivelogo.png[/IMG]
+
+[U][B]MindArk partnered with Sometrics in 2012.[/B][/U]
+
+You could do surveys and watch videos to gain pecs.
+
+Last entry of www.sometrics.com on the waybackmachine
+
+is dated Oct. 2014 and the site is down.
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEitfP_1_B5vEDHTWZcDD1F2MuITVkFAS5eGFf2ZyOaL39IFrzjpLnkTMNA0ItGyNfUFkQ2GaxhtQjb-6RSrK8Z1Wykwa-VuOU5F6puEgjmIcsBlalLGsn1smJccRaQCvbU_srGnOhrunh4/s1600/sometrics+site.jpg[/IMG]
+Sometrics was founded in 2007.
+
+Got bought by American Express in 2011.
+
+Partnered with MindArk in 2012.
+
+and shutdown in 2014.
+
+[B]Anyway, in 2006 everything seemed to be running fine, so MindArk bought a castle in germany...[/B]
+
+[I](Price in 2006 : [COLOR=yellow]195.000 Euro[/COLOR])[/I]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiK8Bcot5J3O_OD1LmkdR3M0Cll26Up_tdR9PoRCrBVkHYPQorrQy-fQZ-EAJI-AtFYOhvyJLBSRD6Ymudh9nX_ZAOn1wUK8uNQeIJT3uxab7fAOkwVGIpZfnfaSa_UG83-rx5Zh3oi1wY/s1600/castle1.jpg[/IMG]
+
+[B]Renovating, coloring and fixing everything up cost another [COLOR=yellow]1.150.000 Euro's[/COLOR]:[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjEYetGCxQ2PjRKrYafXwkxq5CpxvodpxUdwGnYGqj0ibVK2Vp3mHkmwvOYd9knHnj0xNewL1RdhK2Cd3NtX48Dm1hVg7xJJ0yliUbOezriVwtuRAoA33tyaRxGmRvFt6zElRI9K-KlSnw/s1600/castle2.jpg[/IMG]
+
+[B]The castle is for sale since a long time now. That money definitely went to Oblivion. o_O[/B]
+
+[COLOR=yellow][U][B]Update: (5.10.2013)[/B][/U][/COLOR]
+
+[COLOR=yellow]The castle got sold for approx. 500.000 Euro. (April 2013)[/COLOR]
+
+[I](thanks to akoz for the details:[/I]
+
+[I]http://www.planetcalypsoforum.com/forums/showthread.php?190865-POLL-Should-MA-spend-our-money-upgrading-entropia-or-upgrading-castles)[/I]
+
+[B]In 2007 MindArk made deals with GNN Brazil[I]...[/I]to promote Entropia in Brazil.[/B]
+
+[URL]http://www.gnn.com.br/[/URL][COLOR=yellow][I](no longer existant)[/I][/COLOR]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg0X6Zr7FfiwBza_1BLV-ydAuB5yZm3ssnIiBuJqH1bLlwye08wOCtkfPgk8dtHqOlynSz71zdgsF1hZnXn4pJUXxTLPNampeRKJdwzvbcJ4Nvkbf9h8W_LBf2g30BIEm7D2h2CaknR27U/s1600/brazil+flag.GIF[/IMG]
+
+[B] We never heard of it again anyway.[/B]
+
+[I]Not much is known about GNN, except[/I]
+
+[I]they were selling ingame money in brazil.[/I]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhbCbC7i8iddTgyLYBhkF34Y2llgFH-l9orSdH3RNUJXfK_REroq3l-vWWeRXpbtYKrY_4lO4eMOly617rdaC7u8P6ZI2Erxmn-WzYp3sfqlz_iSihzAovcJ52vQ_8K7e4N0JHnkAGEofQ/s1600/gnn+brazil+2007.jpg[/IMG]
+
+GNN Brazil 2007
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEilso815JU20gbxPC1xg935yZ2QnOM28AoZpTLlAMDiA_w_Tmb-NI5Kb1fcTBrFiUOAcXwQfFTyagDCCLrKvYZxiofnHYVbJ0t26_OBS0NldQB6Yz4n9f-4fSXdPJ7oRDlEjmnw4Z7EYis/s1600/gnn+brazil+2011.jpg[/IMG]
+GNN Brazil 2011
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiNCgqKm8XRghhgoKHK3J8IGrO9bKUA6IrNUuKPKeEV1CKcvP9Bd13KB9cvz80K1jLGiQGpLyWGYdcaPTJIBW88JPr7x4CNofFH2wrO-ieh1nD5G4J13Tzby5udUQ1SxniF_kQm9PuL_sI/s1600/gnn+brazil+2012.jpg[/IMG]
+GNN Brazil 2012 - it shutdown around april of 2012
+
+[U][I]In 2011 MindArk partnered with MOL.[/I][/U]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEi6fXBnhPWw7NkyFJuvvrqlXYd6516MRfB_liBhowjvxre13Lm2vW-CHlz30S7GYsHTkhrG0dIgZ-6_F5vaVilEauc64Alf0cDhAOPUDRn9OaptUhWoUiVBRPQUxUXMz1TJpvPZN1pujBg/s1600/mol.jpg[/IMG]
+
+However, Entropia Universe itself is not enlisted on their site www.mol.com
+
+[COLOR=yellow]Only Planet Arkadia is.[/COLOR]
+
+[SIZE=2]http://www.mindark.com/press/press-releases/documents/MindArk-MOL-Announcement.pdf[/SIZE]
+
+[SIZE=2]The press release mentioned 2 partners though (Arkadia and Cyrene). [/SIZE]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEimHDQwslJwPa1SsxgolVwEht10yMBvULPQ59i9I0advrQGRk0-jBFLbKyw4PTD3qvvQ4925_j22W5a_HN9zP_L9Hg3t84TYPtOJNcymNcBJFN8JWLC5PTcA923_En4jJF6iMdX33VggSQ/s1600/mol+sometrics.jpg[/IMG]
+
+[COLOR=yellow][U]In July 2015 a new partner program got announced [/U][/COLOR]
+
+[COLOR=yellow][U](and bitcoins mentioned everywhere):[/U][/COLOR]
+
+_________________________________
+
+Hub Culture
+
+https://www.hubculture.com/
+
+[COLOR=yellow](site created March 2002) [/COLOR]
+
+Stan Stalnaker, a marketing guy...a guy that is into bitcoins and stuff.
+
+__________________________________________
+
+Planet Employability :
+
+http://planetemployability.co.uk/
+
+[COLOR=yellow](site created Sept. 2013)[/COLOR]
+
+[SIZE=2]Registrant : ELearning 4 Africa[/SIZE]
+
+[SIZE=2]This is supposed to be a leading planet inside "Human Flourishing"...[/SIZE]
+
+____________________________________
+
+[SIZE=3]Empaticus :[SIZE=2] (Human Flourishing)[/SIZE][/SIZE]
+
+http://www.extended-reality.com/
+
+[COLOR=yellow](site created March 2015)[/COLOR]
+
+[I][SIZE=2]Some business...contact thing...where you can meet your psychologist[/SIZE][/I]
+
+[I][SIZE=2]on a planet...[/SIZE][/I]
+
+[I][SIZE=2][B]gameplay built on compassion and altruism stimulating human advancement[/I][/B] [/SIZE]
+
+Human
+Flourishing Universe - Virtual worlds for collaboration and education
+
+[SIZE=5]What ?[/SIZE]
+
+The 3 buildings of these "companies" got placed
+
+at Athena Spaceport and are still emtpy 3 years later.
+
+(22.03.2018)
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjpUHmz7pJT8ocqjNXehw6k930C9Owt027-8P0QWxFyIg7D3gH_A9w6Libt4zASY_Jd7N4WHLoulxgDUHQRMUYn2x9FoUn0eCUmDaflWcSVNF7XNLQ8N5E2JmK7wMlo7NRKY2FFA005eps/s1600/partner+buildings+2015.jpg[/IMG]
+
+[CENTER]
+[COLOR=yellow]Then there is this online casino, located in Macau,[/COLOR]
+
+[COLOR=yellow] that bought MindArks ingame assets (june 2015)[/COLOR]
+
+[COLOR=yellow]to create a 3D casino one day (right now its still 2D),[/COLOR]
+
+[COLOR=yellow]that will have the look & feel of Entropia.[/COLOR]
+
+[COLOR=yellow]But MindArk is ofc  in noOoooOoo way connected to it... *sigh*-_-[/COLOR]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhkrrczwjPVZIT-bVfKeH5lubJUtW5IeYpqXNjJj6hyzdi-PqoYgD7w9PuYxgR_1HyV6t2AqWkestQ6TGmpl77kdQvwdSwEacZpJCMRK5isT40Vnp0zdZHcg3eXtcE6JBeCzGARLjL9O9g/s1600/macau+blog.jpg[/IMG][/CENTER]
+
+[SIZE=2]https://www.vegastomacau.com/[/SIZE]
+
+[B][SIZE=2]In short, some people bought a casino software from softwiss.com,[/SIZE][/B]
+
+[B][SIZE=2]then contacted MA...feel free to read the whole story here : [/SIZE][/B]
+
+[B][SIZE=2]http://www.entropiaplanets.com/threads/the-casino-has-arrived-with-german-spammers-meet-your-psychologist-on-a-planet.18724/ [/SIZE][/B]
+
+[SIZE=3][B]   [/SIZE][/B]
+
+[SIZE=3][U][SIZE=2][B]3 years later (3/2018) the virtual casino environment[/SIZE][/SIZE][/B][/U]
+
+[SIZE=3][U][SIZE=2][B]has not yet arrived. [/SIZE][/SIZE][/B][/U]
+
+[COLOR=yellow]The original casino site shut down its services/games[/COLOR]
+
+[COLOR=yellow]one year later, in 2016.[/COLOR]
+
+[COLOR=yellow]And only uses advertisements for other casino sites now.[/COLOR]
+
+[COLOR=yellow]All items you "earned" for the 3D part are now lost.[/COLOR]
+
+[B][SIZE=3]This is what you would have missed *awwwww*. [/SIZE][/B]
+
+[B][SIZE=3]Pure casino with your
+beloved Entropia feeling + dance, move and even the "global" animations.
+ [/SIZE][/B]
+
+[B][SIZE=3]What a nice trap, Jesus Christ ! :'D
+
+But hey, they claim(ed) its still in the works...so like always, lean back and lets wait and SEE...and wait...and wait...[/SIZE][/B]
+[B][SIZE=3]
+
+So much for the Entropia based casino, that has absolutley nothing to do with Entropia !!!!11111122[/SIZE][/B]
+
+[MEDIA=youtube]eARcl9brZjQ[/MEDIA]
+
+[COLOR=yellow][SIZE=5][U][B]Did someone say crypto ?[/B][/U][/COLOR][/SIZE]
+
+[B]Now...2 years later, in december 2017, MindArk[/B]
+
+[B]itself dared to announce its own "upcoming blockchain project".[/B]
+
+[B]named: DeepToken [/B]
+
+[COLOR=yellow][B]http://www.entropiaplanets.com/threads/mindark-s-upcoming-blockchain-project.21893/#post-129520[/B][/COLOR]
+
+[B][SIZE=3]MA engaged an external team...will we ever hear of it again ?[/SIZE][/B]
+
+[COLOR=yellow][U][B]Yes, there was "news" on dec 2017 :[/B][/U][/COLOR]
+
+[COLOR=yellow]Henrik Nel Jerkrot (co-founder of deeptoken), is now MindArks new CEO.[/COLOR]
+
+[COLOR=yellow]He studied from 2011 to 2016 at Chalmers University. [/COLOR]
+
+[COLOR=yellow]He joined in 2016 (as e-sports manager, lol) and became their CEO some[/COLOR]
+
+[COLOR=yellow]months later...[/COLOR]
+
+[B][SIZE=3] The "team" beind deeptoken was/is a startup company called "Chainvine",[/SIZE][/B]
+
+[B][SIZE=3]located in sweden.[/SIZE][/B]
+
+[B][SIZE=3]http://chainvine.com/ [/SIZE][/B]
+
+[B][I]Chainvine &#8220;Monetisation through Decentralisation&#8221;[/I][/B]
+
+[B]The "token" itself is located under :[/B]
+
+[B]http://deeptoken.org/[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhh2oQOkx0kGhueKWe3ooCQsc9FGr1BmmTUenjSYvEXytkrl9GFtJunqKxjDYSilip_Vcpuc3rHDa4WEyYUaz-MPveGPMFd5Gg47oU6LGneAHKUmlzv_BydPuUVi0l-qChYSWxBBLgH46k/s1600/deep+token+2.jpg[/IMG]
+
+[B](nothing to SEE here)[/B]
+
+[B]Chainvines Oliver Nicholas Oram (now advisor at MindArk)[/B]
+
+[B]released a "guest post" on forbes.com,[/B]
+
+[B]claiming Entropia has 3 million registered accounts.[/B]
+
+[COLOR=yellow][B] https://www.forbes.com/sites/lawrencewintermeyer/2017/12/15/asked-to-advise-on-the-creation-of-a-new-world-i-said-yes/#23af9dce18b8[/B][/COLOR]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiKkOKqvz-Mk9W1NzaF8JvQtSgI4B5iQQOH_JmwXVURdSsoZPI5ZuTG0i_0LTsnuDLYs2U9dGhjmMP_HAbcjPRqV0IlgM9F6ML9pUTpLWbyg7znzrRAqcacuDH4cDimT-h7OYE2E4AgNbg/s1600/oliver+oram+chainville2.jpg[/IMG]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEj5kA59LaokbBx4-zzg5nU3OYir-KJ8C_ab3P7JlwB5TU0BWBlZEOiUTn7NcDXSmmo2iqOjBXQsQzdB-hqXdwH5xXJdifJyrU5xjSUP9Vtiq5GT-rcMY2b48TiKOcFAFuRf-wRvZ1T8qqI/s1600/oliver+oram+chainville.jpg[/IMG]
+
+[B]I made some official statistics about registered accounts,[/B]
+
+[B]beeing valid numbers since 2001. 3 million sounded beyond realistic...[/B]
+
+[COLOR=yellow][B]http://www.entropiaplanets.com/threads/active-players-accounts-forum-accounts-all-data-here.11667/page-3#post-129671 [/B][/COLOR]
+
+[B]...I did contact "Lawrene Wintermeyer" and the "author" Oliver N Oram about[/B]
+
+[B]these numbers.[/B]
+
+[COLOR=yellow][U][B]Update (feb 2018):[/B][/U][/COLOR]
+
+[B][COLOR=yellow]All Deeptoken sites are dead since january 2018. [/COLOR][/B]
+
+[B][COLOR=yellow]They returned in march and had a 3 day countdown[/COLOR][/B]
+
+[B][COLOR=yellow]for the planned sales...without advertising it [/COLOR][/B]
+
+[B][COLOR=yellow]on the official forums...[/COLOR][/B]
+
+[B][COLOR=yellow]MindArk havent made a single comment on the[/COLOR][/B]
+
+[B][COLOR=yellow]official forums ![/COLOR][/B]
+
+[B][COLOR=yellow]Not all sales are documented...and they removed the[/COLOR][/B]
+
+[B][COLOR=yellow]"Dollars recieved" on the site...epic SCAM ![/COLOR][/B]
+
+[B]http://deeptoken.net/
+
+http://deeptoken.org/
+
+http://www.deeptoken.io/
+  [/B]
+
+[B]The sites are back but nearly none deeptokens have been sold.[/B]
+
+[B]Keeping in mind you got 25% bonus of tokens after you bought some.[/B]
+
+[COLOR=yellow][B] 4.2018[/B][/COLOR]
+
+[COLOR=yellow][B] While the sale of the deeptoken failed big time, its funny to SEE[/B][/COLOR]
+
+[COLOR=yellow][B]that MA started an airdrop in the last days of the countdown[/B][/COLOR]
+
+[COLOR=yellow][B]..even if their original FAQ says :[/B][/COLOR]
+
+[B]Why is there no Pre-Sale for DeepToken?[/B]
+
+[COLOR=yellow][U]MindArk wishes to allow equal opportunity for investment in DTA. We feel
+ that distribution of DTA in discounted pre-sales or air-drops devalues
+the investments of those supporting MindArks vision.[/U][/COLOR]
+
+[COLOR=white][B] Desperate scamming of the "loayal patrons"...what a shame...[/B][/COLOR]
+
+[B]http://www.entropiaplanets.com/threads/deeptoken-airdrop-campaign.22120/[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEi9jAPrPt7WUwNl7j-5f55vbki7AVj_eHy1oYBj5ikZfa8OEPbDAOB7nZEe4u4fw1rI65jd4VXPuj2QzAIcMvUqm1jW4gRMR3hiidO_qbB0RDK_20PCuZihuNLs7ELAZsSsz10hqPikHUM/s1600/deeptoken+1+day.jpg[/IMG]
+
+Half an hour after the countdown ran out...it showed up that
+
+suddenly 12 million tokens got sold (worth 12 million us dollars)
+
+No public statement, but a post by "Cloud" claimed :
+
+"[B][I]Some investors reserved that amount, hence we now added it to the sales...[/I][/B]"
+
+...
+
+[SIZE=5]Exactly 1 year later, in dec. 2018, 8 months after the last[/SIZE]
+
+[SIZE=5]"PR-gag" (4.2018-airdrop campaign)[/SIZE]
+
+[COLOR=yellow][SIZE=5]  MindArk announced to cancel [/COLOR][/SIZE]
+
+[SIZE=5][COLOR=yellow]the Deeptoken and refund all "investors"[/COLOR] :[/SIZE]
+
+http://www.entropiaplanets.com/threads/deeptoken-announcement.22284/
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjI7rZKQT1dkq_I5wgJEb8ENdysLKaL4Uezyv8RNojoJneBdXDuLFy2U1H0vlAOJr3MNki3pgMO29nNVE-nEC-w6ANxjE-MobrfroL-vPyOI728e-BzKjwhu1GmJJFwnLjdbozLLfkEkB8/s1600/deeptoken+epic+fail.jpg[/IMG]
+
+[SIZE=5][B]Anyway, lets go back ingame, shall we ?[/B][/SIZE]
+
+[B][COLOR=yellow]There have been plans for a "Casino" already,  but I guess swedish gambling authority[/COLOR][/B]
+
+[B][COLOR=yellow]or someone else did not approve this idea.[/COLOR][/B]
+
+[B][COLOR=yellow]The following 2 textures could be found in the client for some time.[/COLOR][/B]
+
+[B][COLOR=yellow]b_casino_ornament_001_base.jpg [/COLOR][/B]
+
+[B][COLOR=yellow] b_casino_sign_001_base.jpg [/COLOR][/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjSuUhqOrxw8-2x97pEGHbr3TMvNDp_9ScWdxL2t0xnw_X_fFThTdENipWo503U-6imULuFuI-PnSzrSVfIRZn8zF6P4fLXxINE28IZ3Zlxu0Ry3xz9sQGuuh1jESrF8NMlY3sm7VMlpi0/s1600/b_casino_ornament_001_base.jpg[/IMG]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgD1rYQOfkAWxBQ4p0UbAV6YRnBNIVlQCqDSK6gKM9UiX1t8SwxKEFhToBlyDPnUNBJe6NUpzRAyQcPxiZtYzuakC2to_bOlRPLU2B4Z0g2_1TlkRrxCOc9IdR_R9c3uMwu16ige3RBi-8/s1600/b_casino_sign_001_base.jpg[/IMG]
+
+[COLOR=yellow][B]Already the Client VU 3.0 (beta 2 - 2001)[/B][/COLOR]
+
+[COLOR=yellow][B]had an animation of a casino dealer[/B][/COLOR]
+
+(and many other interesting stuff, that got introduced years later)
+
+[COLOR=yellow]Switch to 0:50 in the following video, to be able to SEE[/COLOR]
+
+[COLOR=yellow]the casino dealer character animation :[/COLOR]
+
+http://www.youtube.com/watch?v=FM42UcU9P6c
+
+[B]Oh, whats that ? :O[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjTumpU2ZtBUdJq5rnT2uw614Wq_u0g3WJdRiz5Vps51OEul59pwVooegJhPErlsqGmyR7dJW7FWLQfDxisBJBu4Fm7i67UpzLX5WOzprfQI1v7irH_eK3CV5nwY6i8xgfx9uBr1f-nGjw/s1600/pandora+tower.jpg[/IMG]
+[CENTER]
+[B]Who has not heard of it ? The infamous, gigantic tower south of Pandora. Awesome...[/B]
+
+[B]But it got removed and never could be entered. (it was empty anyway)[/B][/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgN-mi2_DFv2nu_RCLQQrOYpx4-yjXDOG9KQQZ3ynIi9WQos3vsfckGhhKQ4_pG33TmYKQ8MRxyk7Qkx7QKbN7fD8IFgP8ZXIwKGdoEzwX4G3yNv0eH1Q1EmF-6Oxnvh1Mgh2RfWDKG4f0/s1600/hadesheim+shops.JPG[/IMG]
+[CENTER]
+[B]Instead of putting all the shops and malls to Hadesheim, [/B]
+
+[B]
+MA created the malls and removed Hadesheim.[/B]
+
+[B]The capital of Calypso. [/B]
+
+[B]
+Boom![/B][/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEha1ccPr8f66798rGq18MB59Ckstrq9Sph4b5ova1E0gU3DuyygFWRJb2t9vOcg6X8YUf4eAUUrFmrq0YsXP7fsIN_WVIBFQebXDBvp3i4oD-Uwl21cCfoT66NFqEktCX3VCkd5J0JsrVg/s1600/wedding+ring.jpg[/IMG]
+[CENTER]
+[B] Who could forget the 1st Golden Wedding Band from 2006 ? =)[/B]
+(nothing special on it...except it is a one of a kind)
+
+Neomaven bought it for 12.000 PED in 2008.
+
+[COLOR=yellow][I][SIZE=2]http://www.planetcalypsoforum.com/forums/showthread.php?120139-The-one-and-only!-lt-Golden-Wedding-Ring-gt/page13[/COLOR][/I][/SIZE]
+We never heard of it again.
+
+My guess...it went to Oblivion (Neomavens storage)
+[/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjdBP33oedw8d5F1grM4CwBNDi32tn8TTqAScn42lr4t4J69xexIhx8IhWMyWQhsey_UxutVYcwceZDgXSenk53c-MczPWNUVqd4gUPSWLxzBkwW3Smcd67KF_Mo3ysdEGtXLMHViL0s2A/s1600/fishingrod.jpg[/IMG]
+[CENTER]
+[B]2008, when fishing got introduced...partly...erm...no, not really.[/B]
+
+[B]Someone just looted a useless/non-interactive fishing rod.[/B]
+
+[B]
+[SIZE=3][COLOR=yellow](4 years later, in mid 2012, Kim Timkrans said in an interview, that
+the fishing system is ready[/COLOR][/SIZE][/B][SIZE=3][B] [COLOR=yellow]and fishing will be somewhat different then
+anything else)[/COLOR][/SIZE][/B]
+
+[SIZE=3][B]I guess my last action in this universe was buying a fishing-rod[/SIZE][/B]
+
+[SIZE=3][B]and t[/SIZE]here will be 2 op[SIZE=3]tions from now on :[/SIZE] [/B]
+
+[SIZE=3][B]a.) Ill be a fisherman very sOOooooOOoOOoooOOooOon...[/SIZE][/B]
+
+[SIZE=3][B][COLOR=yellow][SIZE=2](and wont have to pay a sick markup in 2014[/COLOR][/SIZE] for my fishing rod then)[/SIZE] [/B]
+
+[SIZE=3][B]b.)[/SIZE]  Fishing [/B][B]will not be introduced in 2013 [COLOR=yellow](yup)[/COLOR][/B]
+
+[SIZE=3][B][COLOR=yellow](and there will be an announcement, that fishing will come in early 2014)[/COLOR][/SIZE][/B]
+
+[B][COLOR=yellow][SIZE=3]Its 2017 by now and no word about fishing anymore.[/COLOR] [/SIZE][/B]
+[/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhYc-XGPN0zcn0xYMKnOnWUnEH87LNipWVdUJvjV6QpazeuPCUsJFcvWTFiqV9mRg7sIP9TMFfNlHOwVvMJ3d7Ihb21YdrV6sw1YTL_MfPtZ-fyQfWzJBJ7efEY2huoq97ks0g977YU65A/s1600/fishing.jpg[/IMG]
+[CENTER]
+[B] Marco: Fishing is fun![/B][/CENTER]
+
+[CENTER]
+[U][COLOR=yellow]As of May 2013, Kim said in an interview, that the fishing-system as well as[/COLOR][/U]
+
+[U][COLOR=yellow]the taming system only exists on paper. No ETA![/COLOR][/U]
+
+[COLOR=yellow][U]But as you already read up there,[/U][/COLOR]
+
+[COLOR=yellow][U]MA announced the return of taming once again.[/U][/COLOR]
+
+[COLOR=yellow][U]Stage 1 to be expected late 2014.[/U][/COLOR]
+
+[COLOR=red][U]No word about fishing though. [/COLOR][/U]
+[/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiH-Uq9Yd06tBlMKvuxhCZYGb1-aqlHAA7UmX1V4ghWPN_GseCEfwQyI88PLNmu22Q2mLFAqYYoaalzK3Swej1xlAN6lPFh6lmmZGDrMnxxPXv8e0wUwW74l_D27_RkYvS2F1w5tejcQG0/s1600/EGG.JPG[/IMG]
+[CENTER]
+[B]Ahhhh the egg ![/B]
+[B]Looted in 2006. Everyone thought it will hatch something awesome...[/B]
+
+[B]Sold to NEVERDIE for 10,000 $... [/B](2006)
+
+[B]Sold to David Storey (Deathifier) for 69,969 $... (!) [/B](early 2010)
+
+[B] 6 years later it is still just a useless item...uhm, egg.[/B]
+
+[B]R.i.P.[/B]
+
+[COLOR=yellow][I][B]Update : 06.03.2013[/B][/I][/COLOR]
+
+[B][COLOR=yellow][I]MindArk announced that the egg will hatch...[/I][/COLOR][/B]
+
+[B][COLOR=yellow][I][SIZE=2]http://www.planetcalypso.com/news/pages/2013/03/06/5424/index.xml[/COLOR] [/I][/SIZE] [/B]
+
+March ends and the egg was mentioned in a wall of text every now and then
+
+on the forum. Robots wanted to destroy it, it seems... *lol*
+
+31.3.2013 - Egg got stolen by robots.
+
+[I][COLOR=yellow][B]15.4.2013[/B][/COLOR][/I]
+
+[U][I][COLOR=yellow][B]The egg hatched...the Feffox.[/B][/COLOR][/I][/U]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhctbE6hpKoY88g5OSuHvpsSvxD835yj7LfZBo5KIJIDO4q5rTKjZZccOT0MUVnTMBGbPBvV5Jab8Tb4zI2Q1IwgcjlW0b-eQ-6GSoFTwxjyAe7XgT3J5toc8rm-8Y4hS_C0KhKLjwBx-M/s1600/feffox1.jpg[/IMG][/CENTER]
+
+So a Feffoid fucked with the Atrox Queen.
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjyTQ8sPukEmhVRAAAZduoUI6UjjeFidyJzY_eV0skb-G0W-Ca_tI5DU9Ta_vomguNmPhyphenhyphenvtE2Uc28VTCQcwACBmGuGKaFodFj6BjgK75vbOCo3kfb5ftLdhbmWqABq2TENnV-MxJfG7Y8/s1600/fuuuuuuuuuu.jpg[/IMG]
+
+To be honest, I expected something like this after 7 years of waiting.
+
+Impressive MindArk...
+
+David Storey must be proud of this.
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEi47JhD9Bk_MZUiBo6PT9Bajsw9fXiKrBAAtFxy1M5DIUyKhzb8vNKhCib72UdmwnAyIhAWhzeX_BAVjqGqLtjww4fezBxgd8HCex1_oPlFzKEgt9dIpt7m3TSzVm1bFRDK0lGbQ_nwYf0/s1600/feffox404.jpg[/IMG]
+
+Sure, the egg hatched, but it defenitly went Oblivion. ;p
+
+[U]In an interview of may, 2013, Kim said :[/U]
+
+"We wanted to let the whole community take part in this spectatcular Atrox-Egg ending."
+
+[B]Lets head over to Minopolis...[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhE9frlgb50T8WU7kZC3niSRYrA6mBLQlmEuWtNwNcSoXH3U42tFegkPYcUcpU_TLJfQ9bk127DH9SPpbvLdcuIrdaTUzxAySYVLcJZO0TzsaIa9D6YdzB90tjVAYtWo-zpH9FcXT_ii3k/s1600/minopolis_04vs10.jpg[/IMG]
+[CENTER]
+[B]Minopolis...[/B]
+
+[B]
+(image by delerium)[/B]
+It doesnt look any different in 2013...
+
+[COLOR=yellow]Many of the old towns turned into "1x Service Center + 1x Teleporter" places...[/COLOR]
+[/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjqJ6PR3hivLvhu5WinGe4S5JRq3fK9ggb21n9X6VQPUXROqq76JkLNQKg2BgiZjBS9J7pMFKdwCjIbDQ3v7lqAX3SxAMFdhxsHo5f-m0TnqDDOg_MQoyn8e-sZaxguTzgchUgbO-0iPEQ/s1600/golftown.jpg[/IMG]
+[CENTER]
+[B]Somewhere in 2009 a gigantic, well designed golf course got introduced...[/B]
+
+[B]...non functional of course.[/B]
+[B]It got removed then, because it was considered "a step into the wrong direction".[/B]
+
+[B]It was (and still is) called "Athena Space Port" and looks like this now (2013-2017) :[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEi5XEo1JGKfJpDerYNvWt27N0kXvXWMc96PdWA8tU04JqZwmjpY4NIj1MwDuso89kD5mVey9v3KOrcisfiVL0cpe00wnUIvAdKedMwc-ghwVdKqJzi7P1o5kCSM7Wx-1c5UeIFbGOwHYFQ/s1600/athena+golf+new.jpg[/IMG][/CENTER]
+[B][I]It has the size of Port Atlantis and is usually empty. Noone there. Nothing to do there.[/I] [/B]
+
+[CENTER]
+[COLOR=yellow]But! *drumroll* ...it has a Teleporter from Pre VU 10 times,[/COLOR]
+
+[COLOR=yellow]like many other towns :[/COLOR]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh6JhrJbirfLqM6XlKDO8ecVIJs-UcJFhFvjG3DUA74Wl0ovnJU2bUZep7iCMSKJZdUvGOJYIUR8bfX6WS-A82ubQ5kyUvej65fozAJnet_vDr-i2YMMuF4tgGEunbCa8BpCWAfMYgRUdg/s1600/athena+old+tp.jpg[/IMG][/CENTER]
+[SIZE=2][COLOR=yellow][I]Woooaaahhhhhhhhh... :D[/I][/COLOR][/SIZE]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg7nJg_VyWV2DlnuW3oOLifvu5S4m27S0952uzoKKYhD-FAiQSt9TrbBE6XfTljDtLG-BEtp2Cs-CmRUKIu7ubi3PBRpZ9Bjjt5dWqiIrOBy0ScEUohpZ2UdMZSjDi98nsdvQPGIYvO_RM/s1600/old_feffoid_trader.jpg[/IMG]
+[CENTER]
+[B]Feffoid Trader. You could find em far out of towns, scattered around the immersive landscape.[/B]
+
+[B]Needless to say they are...gone. [/B][/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiYH73-mKHt1shXsfFGhLh5Woz4VCfPRdfLCXjG338eZUxpYM9aGPscE-6uXXZMsXQ3kFZ7iwGVQcMDyYBM8HdcX2k1CHq6xwDXHs8X9uDNUGIWYUQskMxErBAIRqmkPFdWIAyMn2LDYjk/s1600/faucervix_old_alpha_20sweats.jpg[/IMG]
+[CENTER]
+[B]Back in the days Faucervix was a small cuddly mob.[/B]
+
+[B]
+Its "updated" size blocked your movement and made you miss your shots, [/B]
+
+[B]
+because it attacked you from "inside"...it sucked, if you know what I mean.[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjYlf2zPx_dsZNRTUG-gvchEgYplPmmqL6FMCi2Wlm23WveTF0w_puUtvhiSo8h-4ZXvPBMv-QRRwODiCOstX1s2u9tZ1drygxaI09a2Vs-aR7sGROquZRAMIZtA7AYZVrkGU1wsmgA7B8/s1600/1damage+faucervix.JPG[/IMG][/CENTER]
+
+[CENTER]
+[COLOR=yellow][I]The Faucervix in its original size (2005).[/I][/COLOR]
+
+[B]Meanwhile Faucervix isnt 4 times as tall as your avatar anymore, but it is still [SIZE=3](too)[/SIZE]huge :[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEi6oLrzFgSHDm69YipwJM1KHaBMRZ7CQ5eABRLk0CH0vGWshQzyl_cl1w1Ww-Z-HPtdNCMwz2mK3cxoXwRbv5rr6Naj6DK4lztaYgjfRKZkO5zczjzmjzMIMubDRlwJ1RLGFs09Lb6PIP8/s1600/faucervix2012.jpg[/IMG][/CENTER]
+
+[SIZE=5][B]Do you remember the original Argonauts ?[/B][/SIZE]
+
+[SIZE=5][B][SIZE=2](or, Aggronauts, as called in the old textfiles) [/SIZE][/B][/SIZE]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh2fwc8C_SucFP2fb6o4nEdvdnT0ugNqHVyVvEhfIbDXVGRBwmY_l72-qhSr7lDvGquwDxi2AGAcQ9ERkmYsT6xHoIPGllyXOJj-qfpbTEq6UU4K7aA2zXDtxU6bj0GaFWpVHOUBQKPp4g/s1600/argo1.jpg[/IMG]
+[CENTER]
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhnk2B2-v4BFJsbvn2a12tbVRNrsQvEh8xxa6n7t8zAyA0nA2XVEqmT9NxUcT9b1rmH701FDFhyphenhyphenlQHNxSQtJNMM8m31x4jEyP92nI_Y86wF01yopmyBxMZlYLwzeFjMywgwGkG8mPV3lQo/s1600/argonaut.gif[/IMG][/CENTER]
+[COLOR=yellow]It says Argonaut in the headline...but Argounaut in the description. Bad typo ! :P[/COLOR]
+
+[B]After the Rituals Argonauts became ugly mutated 3d models.[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgBStOC2kjwmFbdmFO6rFaOq7UjIqvk2oeloh0xxu2VSGXzn9qlc1_NQ9TZbqAS4xKV-MKCfi0IO5_1t3ovOe4vReTU68r9_5EdRRcdc20mhtIov3oBgDjLQPZ0Y1EDULnIgDIBKVCAZqo/s1600/argo3000.jpg[/IMG]
+[CENTER]
+[B]What the... ?[/B][/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjbHTZa_eTZ0aPeBMXVM4b3PSj-E0CDWUQ8ICgw-_YVE1d9iSSE6-Dr24iOsWb9pubUsoB9B0A8BgAjUia5jtcH_lYynzA315IbKBUjN50hyphenhyphenBCVmSinkSPReEBX4i-kFDs6iKKM4EvrZQY/s1600/umbranoid+camp.jpg[/IMG]
+[CENTER]
+[B]Umbranoids and their towns ? Gone...[/B]
+
+[B]
+Not important, they were just part of the main-story...[/B]
+
+[B]
+(1st wave of colonists, contaminated by the robots, hunted by the 2nd wave...sick.)[/B]
+
+[B]I didnt even know the Umbranoid towns had names :O[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh7K_2Chw80n_3zuABzoh4cJpVRZXbinvggZlo8Q7xgz0Totv5ZB3yelKIldZnUtlEsIvGigxziqeH3Vtbccdy7iXck2HlNFBZ-OED6eO3GcsTy0B_yCGRZLixSl0k2-Ek3BbQlHNYyDCY/s1600/umbratowns.jpg[/IMG][/CENTER]
+
+[CENTER]
+found via waybackmachine
+
+[SIZE=2]http://web.archive.org/web/20040831134540/http://eudoria-geography.barrabas.org/index.php[/SIZE]
+[/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhXOz_Ok5ren8YvR6BXYVe5mqMcl0f53J9xp_MIx8pkpZQYVw4_e7Q244edm6huWUqoPvXsWuIKkbHr2vSttEq8szE27RVhHFLerDfPrA_YJGY1Gqq0MGdykTVfinEyXz-tIDOiLzoppKs/s1600/mf_chips.gif[/IMG]
+[CENTER]
+[B]Huge mindforce update ?[/B]
+
+[B]We got "additional skills" and... [/B]
+
+[B]...well, we got some new chips, like "Ice" or "Acid".[/B]
+
+[B]Old chips like Firestorm got renamed to ignite.[/B]
+
+[B]Huge mindforce update ?[/B][/CENTER]
+
+[CENTER]
+[B]MindForce ignored and forgotten ? No way...[/B][/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjW0fvbAs0oCJv8F1TMhurc0JAraBD0lAvFovyUfJ-cJXxlAAqN-LWfaHmvOQ68SfmIJZNyd0yIDC-6yddrYxmkE-e1w5oTIMne3o-K9SmibnWicC3MeObdaca9XELxoPXb5wExalJ6Yok/s1600/mind+expansion.jpg[/IMG]
+[CENTER]
+[B]...or what was this Mind Expansion Center for again ? -_-[/B][/CENTER]
+
+[CENTER]
+[COLOR=yellow][SIZE=2]And what did I unlock Etheral Soul Language for again ?[/COLOR][/SIZE]
+
+[SIZE=2][COLOR=yellow]Will it ever be more usefull then interpreting all the "lols and f[/COLOR][COLOR=yellow]*ck yous[/COLOR][COLOR=yellow]" out of the OoOOoooOoOO ?[/COLOR][/SIZE]
+
+[B]Lets head over to the "Scanning Profession" then.[/B]
+
+[B]It already passed the border to Oblivion :[/B]
+
+[B]Different 3D models of scanners : [/B](never introduced)
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg6Sc6Gz64YX3zwQQTje-YLS9IXh4daozI84jBd06UgZ-gf7Pquh1ACuOl3bs1BzEjFUSxZam2AL32X4XZJzD4cECZEO7Lx_cS266yiFU5ZzUFyhs_hPJke4gV_ZLG781ln1RA5Tmuvl8I/s1600/scanners_303.jpg[/IMG]
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhKRa3L8M-1_7IC75vTFmNMnEf0KDcTVfEM8deM8b7Ja0T9bBzWocc4g-1bfdIB5eZ8ERVMMv1p4RJ_bXWoUUOpKtE0Z3k9TO-_6giWIcA5aY4kifaOlsl2SJddUS-I9whC8AMJ-yKEgaU/s1600/scanner1.jpg[/IMG][/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhhQ8gWhnH6Boaz-iAz6wjdl3d_403BU1VvWFechjIXWLkPpBAjD3MiIjSsPVZHbw0ILz0HCT_9bvFR0RbfkEkwDF-Drle7t5YFs778o3TzLDvp5RTLKoUh21VA-zyXsfEck6CIpYEbA0o/s1600/scanner3.jpg[/IMG]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgkeM5OIgN4hRERc78jDjLpFhlr1oAFJYj0omTLP5531uHPWDPQ6UR50RR7LzimjpOWs3EkeS6pNeZ3fZ-pltkJ01QD91r9xi67hTmYxhKHwGdlDuIjs30eBl2maZQ5y91O-B84z5vSM1M/s1600/scanner+x.jpg[/IMG]
+
+[B]Which
+ reminds me of the new scanner sound and graphic effects... almost as
+scary as our critical hit "Mickey Mouse" dong sound...[/B]
+
+[B]There was no need at all to exchange the stylish sound of scanning,[/B]
+
+[B]adding a terrible kindergarten animation...to [SIZE=3]where was[/SIZE][/B]
+
+[B][SIZE=3]no animation at all before.[/SIZE][/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEghmadUPXqOiJTgYbL7oY-GWM281VsvdcBnmPI9YIFJTz9qVaD0V6WA4QvxmEbeIhUZJyrJDe6F7F7M4F4nz7L5NNyVJWt3CRD3og0onHGFfhw377JQ0TITnANl7LLa2w19L4ECMArt1z0/s1600/investafoe.jpg[/IMG]
+
+[B]With the recent changes of "Scanning", all professions that are connected to it,[/B]
+
+[B]became more or less useless. [/B]
+
+[B][COLOR=yellow][SIZE=2](Did someone say those profession just went to Oblivion ?)[/COLOR][/SIZE] [/B]
+
+[B]From 2004 to 2010 you could scan one enemy forever.[/B]
+
+[B][COLOR=yellow][SIZE=2](Hell, the thing is even called "Invest-a-Foe" !)[/COLOR][/SIZE][/B]
+
+[B]And it felt right to gather as much informations (skills) about[/B]
+
+[B]one enemy as possible. After all WE pay(ed) the decay.[/B]
+
+[B][COLOR=yellow][SIZE=2]( In todays Entropia you can scan an[/COLOR] enemy only once.[/SIZE])[/B]
+
+[B]There are even 4 main professions connected to scanning,[/B]
+
+[B]wich can make you unlock even more scanning related skills ![/B]
+
+[COLOR=yellow][SIZE=2](not anymore...you will SEE why, when you read on)[/COLOR][/SIZE]
+
+[B]The[SIZE=2] [SIZE=3]professions[/SIZE][/SIZE] are[SIZE=2] :[/SIZE] Humanoid/Animal/Mutant and Robot - Investigator and[/B]
+
+[B]after the "nerf" we even got Technology Investigator[/B]
+
+[B] [U]Problem 1 :[/U] [/B]
+
+[B][SIZE=3]I[/SIZE]f you want to scan A LOT, [/B]
+
+[B]you would probably have to enter a mob[SIZE=3]/robot[/SIZE] filled area to do that.[/B]
+
+[B][U]Problem 2 :[/U][/B]
+
+[B]You are probably not going to survive the hordes of mobs[SIZE=3]/robots[/SIZE],[/B]
+
+[B]without wearing a hig-end armor, ending up with lots of decay[SIZE=2][SIZE=3], probably[/SIZE][/SIZE][/B]
+
+[B][SIZE=2][SIZE=3]not worth the scanning[/SIZE] skills you got. [/SIZE][/B]
+
+[COLOR=yellow][B][SIZE=2](Sure, you could follow an expirienced hunter all day long,[/COLOR][/B][/SIZE]
+
+[COLOR=yellow][B][SIZE=2]hoping that he will protect you and not getting angry because you[/COLOR][/B][/SIZE]
+
+[B][COLOR=yellow][SIZE=2]just lured in 2 additional mobs)[/COLOR][/SIZE][/B]
+
+[B][U]Problem 3 :[/U] [/B]
+
+[B]The way scanning "works" now, you will probably never reach [/B]
+
+[B]the needed levels to unlock the following hidden skills :[/B]
+
+[COLOR=yellow][B][SIZE=2](trust me, you wont)[/COLOR][/B][/SIZE]
+
+[B]Xenobiology - [/B]Level 30 Animal or Mutant investigator
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg32vFQK0wXR06eXTTp4GXO30nR5b3g2lTo6-BsMSaBkYBS47xxl5c_ZtdT2z0l7MIF-2LRpt0s3fW8JaBv6FgrDtKmHVi57f2t8grifb9NIxhHnmBrub3JYiDfx6FR6n2iaaXVDp4y_vI/s1600/xenobiology.jpg[/IMG]
+[B]
+
+Robotology - [/B]Level 30 Robot investigator
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhlmrIxpqTd0jagwAkum17MvlUaePyvmoS1JOnLnmVm8r0fKAHEwXYeN7rhi8yMGq5ZRz-xCAK1nKdGuzXbfHTwTNg5gfzQ7fxR43WPSrZoZhtEoCSKrrmkW9YsdpdYKMHmNw6HFmYUOeo/s1600/robotology.jpg[/IMG]
+[B]
+
+Scientist -[/B] Level 60 Investigator
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEir9aCQ56TtO-sRQhHzneDJCpXY5jzOhW92oYRKzQToNYZl5Wxb4tUdkukCJAcI2VJBMKnle8Y3WWofH_gJeilLqk32ZR6BUI1YVPpHBviB5rduXh1rUNPAn2b_p2UoDzFB6mwaMvKmh1A/s1600/science.jpg[/IMG]
+
+At least the community stays together now and then and came up
+
+with a "[I]Scanning Event[/I]". Hundreds of vehicles dropped in a huge circle.
+
+While walking around and scanning each vehicle, enough time passes
+
+between the 1st and last vehicle you scanned and
+
+you could scan all day long.
+
+[COLOR=yellow][SIZE=2](I was told it is possible unlocking robotology this way. But such events do not[/COLOR][/SIZE]
+
+[COLOR=yellow][SIZE=2]happen every day and they wont help unlocking xenobiology either.)[/COLOR][/SIZE]
+
+[CENTER]
+[I][SIZE=2]I made a test with luck, using the free beacon out of Port Atlantis[/SIZE][/I]
+
+[I][SIZE=2]as a Scanner-Paradise:[/SIZE][/I]
+
+[I][SIZE=2]I nearly scanned all of the "gazzillion" robots in there[/SIZE][/I]
+
+[I][SIZE=2]and received 4 skills at all. [/SIZE][/I][COLOR=yellow][SIZE=2] [/COLOR][/SIZE]
+
+[COLOR=yellow][SIZE=2](2x Scan Robot Skill, 1x Mechanics, 1x Analysis)[/COLOR][/SIZE]
+
+[B]Also different (color)models of the Finders could be found in the texture-folder :[/B]
+
+[B][COLOR=yellow][SIZE=2](but never ingame)[/COLOR][/SIZE] [/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgG2T8MOHNtm0smqsLLQysEUZCoCtAlVoTqql21pjm_dfAK-OKZtOZOANv9neooxBAcw6JjAXHXcjRuZcrXJYrNcsaClA0vxS1Uqmj0QaaKNbnSbwPFtDPWKzbWDczFCG9yThzFLJRa0_4/s1600/finders.jpg[/IMG][/CENTER]
+
+[CENTER]
+[B]Aaahhh the malls and its landing platforms...[/B][/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgBWkU8-2o-0f1mi6YYAsCWXIGSUhuF_hJadJNNNKAooPhh0poE_OLYkvUlmwObFmcLnjSLS4078gsSQtgbDGm0b8isFxLHXoBdfZdT0cMRlHBnwFBlP1-3EaLcVt5SRxej9AiY312Bx6o/s1600/mall.jpg[/IMG]
+[CENTER]
+[B]Big announcements of the "Landing Platforms" on top of it in january 2007.[/B]
+
+[B]
+Yea, you as a mall owner can be proud of it now. The "for future-use" is now here ![/B]
+
+[B]
+But where the hell did the landing platform go... ?[/B][/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhlvWqSKQhSo2kuLOFAuCa1vnbCBWjYADH7Kotrym8KPyg1jpNWLCR1PR4SKIQ2hCfr9jezc6Gq61HiMWLqb5KFEyVjV_QIOwtR7XRq2zga-r6yMr3uf4bPATb25MOPNZPmEwnwpZfIyDY/s1600/mall_top.jpg[/IMG]
+
+[CENTER]
+[U][B]Which reminds me of the shop-de[SIZE=3]sign[/SIZE] competition...[/B][/U]
+In 2009 Mindark...ahem...FPC...wait it was "SEE Digital Studios" then,
+
+but changed to "AR Universe AB"...then to "Planet Calypso AB"...
+
+...whatever, a competition got started :
+
+[I]"Who will design the funkiest ingame shop?"[/I]
+
+[B]1st prize would have been a full set of unlimited Martial Armor (SGA Edition)[/B]
+
+[B]2nd to 5th prize would have been a full set of a unlimited Vigilante Armor (SGA Edition)[/B]
+
+People started decorating, bought additional (funky) items and uploaded (funky) images to
+
+their ingame ad-screens [COLOR=yellow][SIZE=2](for additional fees of course)[/COLOR][/SIZE].
+
+Every shop owner tried to design the best shop !
+
+[COLOR=yellow][SIZE=2](Some even invested 30.000 PED into this competition...others "only" 2000 PED)[/COLOR][/SIZE]
+
+The problem is, no jury were ever choosing a winner,
+
+hence no prizes were ever handed out[SIZE=2].[/SIZE]
+
+But its not the fault of Mindark...ahem...FPC...I mean "SEE Digital Studios", no,
+
+"AR Universe AB"......well, its "Planet Calypso AB" now...
+
+[COLOR=yellow]Poor Hanne had to post on the forum 7 months later (2010), telling the ppl the competition will be re-vived, [/COLOR]
+
+[COLOR=yellow]and the only problem is/was that people still had [/COLOR]
+
+[COLOR=yellow]problems with some furniture... o_O[/COLOR]
+
+[COLOR=yellow]And her next comment was posted in early 2011, claiming that there[/COLOR]
+
+[COLOR=yellow]are still problems with pc-signs...and they were still waiting for MindArk[/COLOR]
+
+[COLOR=yellow]to fix it...[/COLOR]
+
+[B]Btw., it is still topic on the "Planet Calypso Site" :[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEguS6TSH3PZwQVkCh_QMeGLrLhNF24w1dMlnYTQdJlqQE-LWW_yxWuNz2gybeiy8-dkAu300H9VGW-884yySSJrbRnaiZ6IjCzJ70L_tCX-UgFzcGI1b_Hrnk-XsVUteSLmYeT44Th3ips/s1600/shop+design+comp.jpg[/IMG][/CENTER]
+
+http://www.planetcalypso.com/news/pages/2009/09/11/7980/index.xml
+
+And got ofc finally closed on the forum
+
+more then 4 years later (11-04-2012) :
+
+(without handing out prices)
+
+http://www.planetcalypsoforum.com/forums/showthread.php?164003-Shop-Design-Competition
+
+[CENTER]
+[COLOR=yellow]But back to the Landing Platforms...[/COLOR]
+
+[B]The former Landing Platforms in Twin Peaks were cool though.  [/B]
+(but ofc...gone...)[/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgRMqYCGmMIziyY-qYtqTfnY-Tkhh8Pq_R2dsCL9S8FlMQPErqcAdeofWQlZCGl9x1Z5qmC3T0H9LuWVrI1CWSLxzzGYb4-iIyDiMhBqHfqYsB3DXkGEnrUXC1u5BpLj2lp6V8izfGn2zs/s1600/oldtwins.jpg[/IMG]
+[CENTER]
+[B]__________________________________________[/B]
+
+[B]MindArk announced the "Landplot System" in early 2015.[/B]
+
+You could turn your CLD into a CLD(x) and get a piece of land,
+
+to build "something" on it. You needed additional items as well,
+
+to be able to start building. [/CENTER]
+
+[CENTER]
+[COLOR=yellow]Start requirements for largest Plot is 162 CLDs :D (162*150$ =[B] 24.300$)[/B][/COLOR]
+
+[COLOR=yellow][B]+additional items to start building[/B][/COLOR]
+
+[COLOR=yellow][B]+later decoration and bazaar items[/B][/COLOR]
+
+[COLOR=yellow][B]around 30.000 $. [/B][/COLOR]
+
+[I]
+
+Each settlement features a large bazaar in the center as well as service
+ centers on the outskirts and small 10x10m plots for monuments and other
+ functions.[/I]
+
+[U][B]A preview looked promising :[/B][/U]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjSbrsGnOInMlIQ7xqv4Zt_74ChFZWu5Zk0nCcHEPKTGMxFPVp2Agom6BrlePSDKZGkg3u1E6l8FbZoe0HRziVV01lBJgLxYhqhLbZL_EEVtAvlsalgU5vaPmAcpQHa5UNAohYGm7cwFYw/s1600/landplot+x.jpg[/IMG][/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgG8Xe0tpd1HioDG6kVF95UAkL5Tlbl6Fuof8EhENMV1Fysk5fXAAZQJ7-rSiC3YznVybSCPw8OhUFrQddC-qoAcwemoQOCiGPvemLZVjK4GuBztXao-l0kA9TUVyOchVXdqDjejbXUBbI/s1600/landplot+y.jpg[/IMG]
+
+[B][COLOR=yellow]This "system" is in silent mode since 1 year now. (May 2016). [/COLOR][/B]
+
+[B][COLOR=yellow]No further announcements or updates have been made. [/COLOR][/B]
+
+[B][COLOR=yellow]But hey, 30.000$ are peanuts in this game. ;p [/COLOR][/B]
+
+[COLOR=white][B]More then 1 year later (29.6.2016) the "interface" shows up and[/COLOR][/B]
+
+[COLOR=white][B]the [/COLOR]"content update" claims "structures can now be build" :[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgBJhx_-c0D-Gxz7ZkMB8rYhMZICoIzjqFrGnbUxKi783_VjmbQ9vsEQVUrW-Rr3cHQ1TL_j2dE28wOgZBjZiZ3vRB6ccuIW761jRWAT3K7GdqnL0qfxF4i428XLvIQhPksbQa7HETAhF4/s1600/cld+menu.jpg[/IMG]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhMv2r-cU8zVAHv7vo_8zNA3RwGHdL4kA4kwLg03m2DH3YFhinKug-vCIIEtvfKXhikXlTxagZdDUrXDLNe3RJlj8Pa9sCFXmG1rq95_GZMa6rjfiocdDWekG1sWa8Xyq4Z3Na-pr0mMk4/s1600/plot+syst+preview+2.jpg[/IMG]
+
+[CENTER]
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjGSug3z_EDiTenrRKdLKDmhCMheGwgxvgjAmvQ1EYgvc4vYM6EoGvOI4iZoNm7n9rxXC5XEQ_py1oTIk4IpdN5iQUde9TmHcXifVKDBlu4saDrQVmd0KYVXzg8Lr10cLcI0elepZD9QC8/s1600/plot+syst+preview+1.jpg[/IMG][/CENTER]
+
+[B]Silence.[/B]
+
+After the interface got "introduced on 29.6.2016, it was silent for another 3 months.
+
+Then MA announced "gardening" on 24.9.2016 as "one of the things" for
+
+their next update.
+
+Gardening...which was there in the year 2000 already...
+
+Will this system get ignored soon ?
+
+Just like many of the other things that got lsot in time by now ?
+
+We will SEE...
+
+[B]29.9.2016 [/B]- A preview screenshot of "Gardening" appeared.
+
+Buy/Craft boxes where you can "hatch" fruits...
+
+...increase the value of your plot...and get rich. ;D
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgGIIGVtM-sUFNcQOKNlSgjCQXlTg1EYwOZI8eaD_RgYfVE8UMXpSp3sSOexr7mdCXhaLAOL49oq6rmr1llP86-3CZT3Pg4FrkEvY86zT6Et0oyuuKzrQs1W5Jbcb-ptPR74epEh-mIhQY/s1600/gardening.jpg[/IMG]
+
+Its march 2018 by now and all you can do is, grow some plants,
+
+that can be used to craft some weapons...
+
+[B]___________________________________________________________[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiCgartqIW4YLCM3a69OX6ebGC4B2s3XWxP1JrT4lurQIwhfj8eqcrbS09s30xResMHeiJe5STnX1z4MAaIVFhlfMgfiRBAMiHYA6v4Q8uZWGJBwkIJ4sAnJijWCRohynwa8eqoQ0X5cMc/s1600/nasa+mmo.jpg[/IMG]
+
+[CENTER]
+[B]There was a NASA MMO contest in 2008, but MindArk did NOT win the competition.[/B][/CENTER]
+
+[CENTER]
+[B]Project Whitecard Studios though, is (still) involved into it, as they and Virtual Heroes[/B]
+
+[B]won the NASA contest. (2008)[/B]
+
+[B]They planned to release a beta in 2012 and the full product in 2013.[/B]
+
+[B](Since 2nd of april 2013 the closed beta is running with at least 900 participants, according to their site) [/B]
+
+[COLOR=yellow][SIZE=2]http://en.wikipedia.org/wiki/Astronaut:_Moon,_Mars_and_Beyond[/COLOR][/SIZE]
+
+[COLOR=yellow][SIZE=2]the full game is to be expected in late 2014 now.[/COLOR] [/SIZE]
+
+[B]Maybe thats why MindArk just partnered with Project Whitecard in 2012 then ?[/B]
+
+[B]To still get a p[/B][B]iece of the cake ? [/B]
+
+[B]Project Whitecard even had to code an android app for MindArk [/B][I](2012)[/I][B], [/B]
+
+[B]that can be used to craft on your smartphone, [/B]
+
+[B]while you are at work or waiting for the bus...[/B]
+
+[B]Now you can waste even more PEDs. [/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhOWlRComR2BuJhbkYpFEWj3MxvBDa2NRztgKXq3dWWIVNsc3VBkmky6Dru7LlWyGnx4BRU3wa1g47tHYDHngPlFPCgzNOPfcPUQQESMAmiDknK8xQnzgGi8T_jYMWclO1RGSekDCj_LFU/s1600/bandit_896770.gif[/IMG][/CENTER]
+
+[B]Or as the headline trys to procure :[/B]
+
+[I][B]"Help Craft The Future Of Entropia Universe With Your Android Mobile Device"[/B][/I]
+
+[I][B][COLOR=yellow][SIZE=2](please donate to us using our smartphone app)[/COLOR][/SIZE][/B][/I]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjAFjVMG5jfdSb1-T_gV70bgv1WPsxJ76QzklUukiuv8H4yGVtSQ8tz7HVIv9dIDchWFQA40HlErg7PWuV8S_U8Cv-mtGKT8BiDZlv4ylB7oclkz8ENchQoH0gmNNH0WNW766_biWbQVbE/s1600/project+whitecard+tycoon+app+1.jpg[/IMG]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiGwicvlTyLa2nxR7LVtG2EPtPgeaXDxwnuJGxjbD2nN8a2Wej6y-dN0fZIhJ1FqaRFvbzch0EUqbF1Xy7WioUFOiPCW0wbHzr6byk3ArPFvRTsKEZtEC0c8qv3XuawaXR2kHnShKtWdv0/s1600/project+whitecard+tycoon+app+2.jpg[/IMG]
+[COLOR=white][SIZE=5]
+[/COLOR][/SIZE]
+[COLOR=yellow][I][B]The app is called "Virtual Tycoon" (woot)[/COLOR][/B][/I]
+
+[COLOR=yellow][SIZE=5][SIZE=3]Last update of it in "june 2013" - 554 votes of which more then the half[/COLOR][/SIZE][/SIZE]
+
+[COLOR=yellow][SIZE=5][SIZE=3]is not that satisfied. [/COLOR][/SIZE][/SIZE]
+
+[SIZE=5][COLOR=yellow][SIZE=3]Last comment is from 2015.[/COLOR][/SIZE][/SIZE]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh81cFIcQ9Jvd16KPmwwvmGqNqz5JF1BJyq9WIR_eIkC2wCCK3WmSfGvkMxLGiX6rRjBktgknQkf8dEENt0Ecn0DXpbtTQuJmpD8EOXn33lCSVPU707jAYUeIIuqszWThyY5LmPgKJbKYs/s1600/tycoon+app1.jpg[/IMG]
+[I][B][COLOR=yellow][SIZE=2] [/COLOR] [/SIZE][/B][/I]
+
+I wonder what people think that "accidently" tried the android app 1st...
+
+[B]And if the NASA MMO will still enter "Entropia Universe" because of this partnership, [/B]
+
+[B]is unknown and very unlikely. [/B]
+
+[B]And what happened to the ESA Project then [/B][I](March 2009)[/I][B] ?[/B]
+
+[B]In march 2009 MindArk partnered with the European Space Agency,[/B]
+
+[B]to push the idea of an educational MMO once again.[/B]
+
+[B]But we never heard of it again. [/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgCz9yQUmMD-622-PvWgc2qAIRDPYH4pcoX6pTvYdNrbG4QOYq1z1eA5lGMzVk4KNgy9rS_dPbNCQEk3VKPFI_5fFh2HMa9yEqNxxRf1egA3hv9RsoBEeukwx3-Heo5xUpf5iCRfnpptjE/s1600/esa_space_game.jpg[/IMG]
+
+[SIZE=2][COLOR=yellow]http://www.esa.int/About_Us/GSP/Application_br_09_130/%28print%29[/COLOR][/SIZE]
+
+I tried to contact ESA in 2010, 2011, 2012 and 2013
+
+and used various contact forms and emails.
+
+I never got any reply.
+
+[B]Oh well...[/B]
+
+[CENTER]
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh3pqPnHNYvDPl2o3kGvyYzZ2Y7SQLT2ThbB8QmQKSXf_bPBl9FcANIHoxINjQU6AD2AGkwpw1cRxgsT_xJT1K3dKJHxPzvALjI2Pv78uHcBPf6DVeJ473RruGIaGFF5EadWyPC571SUgA/s1600/akbal_cimi2.jpg[/IMG]
+[B] And what did the Mayas have to do with Akbal Cimi ?[/B][/CENTER]
+
+[CENTER]
+[B]   Maybe we'll find out on december 21st of 2012 ? :p [/B]
+
+[COLOR=yellow][B][SIZE=2](no, nothing[/COLOR] happened)[/SIZE] [/B][/CENTER]
+
+[CENTER]
+[B]Remember the ingame voting booths ? [/B][/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhIUSGtzCkgSkcU5_YlCjTwnTkFATVhuPn2oTzwGHrhTtBPxVVHgu02NcZFTqrgOX6xyN_yncrLEz8UBqotibtk947MHGJvo1jqcElQKeKwNShfyBGZVERcgNK1nkf5PpminFw4sn5YqsM/s1600/vote.jpg[/IMG]
+
+[CENTER]
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEib-fKmI7gFKv0DCtp5gIKs0DmtdkNGA1ppuLfscjidOkDXbyTsx4ifDLnr8PdsVQQVsYigBzkjM_UhlA8qARBG-7ChUR4yDVT03FBE9hw1xW-wtu6KRQ_X8OVsi86wHfZUHUB1ODZm1Ik/s1600/vote.jpg[/IMG][/CENTER]
+[COLOR=yellow][SIZE=2]The voting booth at Twin Peaks...[/COLOR][/SIZE]
+
+[CENTER]
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjztKNtEpXLdTboP87udnCX9knfzwJnUMLJ7iMZ2NGcM6fKrnll47PUe546WGjXD6REWeQLW1LuzFueOHPOMsKc9AR0PW8XM0Fcc4aHP1nyCVyW1txgiD1olH7U2_S5IsaISubRdO2T-6s/s1600/votex.jpg[/IMG][/CENTER]
+The interface.
+
+[COLOR=yellow][SIZE=2](back then you could vote for day&night cycles for example.[/COLOR][/SIZE]
+
+[COLOR=yellow][SIZE=2]After you voted for it, the terminal became useless.[/COLOR][/SIZE]
+
+[COLOR=yellow][SIZE=2]One day it dissapeared)[/COLOR][/SIZE]
+
+[B]Real World Terminals : [/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjCiT0KnWfARkmgEH0nso4q3rIxFCo8r6uO7s7EYTUzcCmIy9ytNhU0jT9kffB-7_3SnPcgPwIStkojRF0fiYRvt9bS_N8dS5zlfE0pA0R97sWxXaS8aLsvzdIoIxoJePXmyc3nUQYxsrw/s1600/realworld_890842.jpg[/IMG]
+
+[CENTER]
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgZ0Pe1eGlysJB4lXwRVAt6IhBHAqElvEfT0_1DIt5EQimWuPFSOs3ceB6UUy5zWzJGBmZdcBmj0iymI2z3wO_jGoksy1b-k3dthQgJvX2lNHfsqBCvRUWslz6NSyaLXko8CvSJpw2jWjg/s1600/pe1.jpg[/IMG][/CENTER]
+
+Probably connected to these...
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjQtgL1cTGHH68mkAzUxbLLgcf-P5nwJz8iXvPHcCZNWFxzbALnYQzwcEa4bQ62rE_o5I0nnItLYubJB5s3MQceJ_2NKCjDYbgPJNPn8btZJiRowwmbqAk8enmCRcjqT2KSRUdixGPPbvo/s1600/realworld+a.jpg[/IMG]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg_IvFJBgSS3tet8HUjAdmrC31lDezJg3t73oFenioZys1eK0uO3Ewm0ZTHGhXbVx78kPvv0xs_0luQeWom22K0W9y_y5anVuqTxnz3SWhTxjoOXy2-AVR3-ifw_dH0gztOIzm0a-OVM38/s1600/realworld+b.jpg[/IMG]
+And you could buy a T-Shirt in here.
+
+Probably the one with the Mutant on it.
+
+[B][COLOR=yellow][SIZE=2](thx to "phoenixx" for additional info on this terminal))[/COLOR][/SIZE][/B]
+
+[B][SIZE=3]Day and nightcycles existed as an option inside the old vote terminals[/SIZE][/B][B][SIZE=3] in the year 2005. [/SIZE][/B]
+
+[B][SIZE=3](4 hours daylight / 4 hours night-time)[/SIZE][/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEi1cCOWUFDFq4kXVhydEgabp3NHENWEGN4twVVT8KwYf2P3J7IcfwLp9XljJtu9PC-2zBE8OackXG7mop_NP5dUcR2MfeBqCfA3CrxrCYYIBpEWBdEKiHjMjW3A2OhSPYyr6en5_Fl9ZC4/s1600/moon.jpg[/IMG]
+
+When day and nightcycles got introduced,
+
+people actually started to complain,
+
+that it is "too dark" at night... ! (wtf ?)
+
+[SIZE=2](maybe also because MA was not able to introduce somekind of flashlights, except for vehicle lights)[/SIZE]
+
+So, now we have a gigantic shiny moon and not-so-dark nights,
+
+that are even shorter.
+
+Once 5 hours of night-time, turned into 2 hours. (2012)
+
+And now we have 20 minutes of night-time. (nearly no darkness)
+
+No chance for the once announced, nocturnal mobs.
+
+Day and Nightcycles went to Oblivon, Id say...
+
+[B]Ressurrection Ship : [/B](never introduced)
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjwkQgxI-jyeMyhFLia9bLzgurFXTaCUPn19OTZc_DToyxAZe9fgtAFZa9ADhrpWhYBJuPe1kVvB_rIzTWzoLTQvm94PQ7hz55xRgjbPeaOxiwHw5i1Dy1N7nICcvmvem8d92pNQoOFXh8/s1600/resship_529103.gif[/IMG]
+
+[CENTER]
+[B]Oxford/ Vexed Generations :[/B] (unfinished/bankrupt)[/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEj1pjv6Mb4iMo2idWcoc19eB3mCv6pjE8RTV4NzJyObNR1K6wlmigMEaciyYxkOqdTsRWTAf2eGk5vI8IkNjsigkITdd4UEw3sntl5OgmYcQCeyNZcliI66535LSFZQzRIg3sOARmPcLYQ/s1600/oxford.jpg[/IMG]
+[CENTER]
+[COLOR=yellow]A whole town dedicated to reallife artists like Mark Kostabi,[/COLOR]
+
+[COLOR=yellow]where you could buy virtual art for your virtual appartment. [/COLOR]
+
+[COLOR=yellow](Introduced with VU 8.3 in 2006) [/COLOR]
+
+[COLOR=yellow]It also had a underground  cave filled with the Boorum mob (Torkels Tomb) and[/COLOR]
+
+[COLOR=yellow]various shops by players. All got removed, except for the (now dead) town itself.[/COLOR]
+
+[COLOR=yellow]You could also buy reallife clothes there from[/COLOR]
+
+[COLOR=yellow]"Vexed Generations".[/COLOR]
+
+[COLOR=yellow]Vexed Generations was exisitng since 1997 and went bankrupt[/COLOR]
+
+[COLOR=yellow]right after it joined Entropia. Another coincidence ?[/COLOR]
+
+[COLOR=yellow]Vexed got removed from Entropia then.[/COLOR]
+[/CENTER]
+
+[CENTER]
+[B]The Orbs :[/B] (gone)[/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgoFSnaoCl8B0PpG0h0mi0tFTvy8ONLbXk2mV1QEi5ETNJs38VFLQpWgDJtsvzFjJqB2ZMBoYPMIjAahyphenhyphentYmA2px7HFErgZLH57L__IXn8Z5RZX_9ppDDFFj6rueGpfRL-9F2LRYplv4iM/s1600/orb1.jpg[/IMG]
+[CENTER]
+[SIZE=2][COLOR=yellow]Ya ya, it was connected to a swedish TV series[/COLOR][/SIZE]
+
+[SIZE=2][COLOR=yellow]and MindArk got some prize for it...[/COLOR][/SIZE]
+
+[SIZE=3][COLOR=yellow]http://www.mindark.com/press/press-releases/documents/Entropia_Universe_Is_First_Virtual_World_To_Contribute_To_Emmy_Award.pdf[/COLOR][/SIZE]
+
+[SIZE=3][COLOR=yellow]The show was called "[/COLOR][/SIZE][SIZE=3][COLOR=yellow][I]The Truth About Marika". [/I]We had orbs ingame[/COLOR][/SIZE]
+
+[SIZE=3][COLOR=yellow]and viewers could log into Entropia to  loot hints about the TV show.[/COLOR][/SIZE]
+
+[I][SIZE=2]This partnership was a breakthrough for television [/SIZE][/I][/CENTER]
+
+[I][SIZE=2]and the Internet in terms of creating real value [/SIZE][/I]
+
+[I][SIZE=2]for the viewers, and engaging them in multiple platforms through one program.[/SIZE][/I]
+
+[SIZE=2]Christian Bjorkman, Director of Special Projects for Mindark, explains [/SIZE]
+
+[CENTER]
+[B]Juke Cubes : [/B](gone)[/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjT3ZiTdVLVMsoAdTH8Pqff7UtbvrdaZ4kMPqBRW_gt0gApFrWvUdkOwLc3FuF26wsMDwyNQK50XRLHzGb5PQUFTizlC_s5TisncwR0Zgj1fgm8KGi_HBaKOenlI9PXnJDZTqtamnHugGw/s1600/juke.jpg[/IMG]
+[CENTER]
+The real good music existed between the years 2001 and 2008 anyway.[/CENTER]
+
+[CENTER]
+[B]Healing Ponds : [/B](gone)[/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjtdK9_ssEgyrLIqFVj41hMoj9ybXwZpCsOO_lc7PfieMmrct1lzCE7TsKr-S3E3CPtloUOpoQ9cWt7C76_0fRL4e8HV4egQljrFNviUGyEiWAH_dxWjVHJkaXYgyso_u342eGx_AKpt6E/s1600/healing_pond.jpg[/IMG]
+
+[CENTER]
+[COLOR=yellow][B]Once there was a great auction and the exchange terminals at Hadesheim :[/B][/COLOR][/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgqSEkFjl4U9crBAd507uIiuO5Oe6RNBOWhrFJT3g8LWrw1BeQgql3x-Dyfmu9RDF8_TlY7aXBcOA4Z9wxu2j7-H1W8n9tO4lVT9xVRCnqGg-LhhaDCR5SWqRRjhkzoFU-niujebjYDVE0/s1600/exchange2.jpg[/IMG]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhrES2cNCcvWJQlfEHgDRmsQ89krgniVFY3Ban9guCcdRtFIdkNGlyQpHZwH9prNl9UsQXb4Uie-UY3J4GSlED60FnMtv40C1WOUxE0q3J7fVaEphM_YXjcogo5IqfNqLG5K5mKdX2IwIg/s1600/exchange.jpg[/IMG]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgIgmUedLhINIZvjTcL9A9N7MAtuInBM-Ur_8z9EGo2zX4kxvAXoeOXLuD9J_CM5IrkqEH4FIBPMFDknxIGT0N8db1V4cvH0rCCCiPWWB4ab9ljGWcQBenE-JZsZgNhYCgsY12oI_SG_ww/s1600/exchange_3.jpg[/IMG]
+[CENTER]
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEikHjNhXZAQ7neo9Hxvs7ila8YTEbCBJ97jNzTYZem3W7lGVY2tdbBdib33Cqa4X1lvEfLS5Qz6PWLP_k0Vwlw0gsVwDY5NPYnhOLJjZKh5hDUtfTk6X9bzvGkEviaHwmkyz4JoYyvgpxc/s1600/PE_Exchange.jpg[/IMG][/CENTER]
+
+[COLOR=yellow]You could even enter the terminals in beta times and buy stocks.[/COLOR]
+
+[COLOR=yellow]Around 2003 the stock exchange got closed and your stocks got automatically[/COLOR]
+
+[COLOR=yellow]turned into (double amount) of PEDs.[/COLOR]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiJ7uy-fDodgSxcJ2AE5nRqW2FYcJe_rPRauYKyOGPRr54JDHkLKnRo3mknMh5gOWE9y6ypE_HWWdFSpKlUGC4dkDh741LNVLIuK2_4cJo4j92oHu1Dh3-xUyBEKFt0PhA_h5Huqt_lfzU/s1600/stock+1.jpg[/IMG]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjjlJ_Z40fFmoAScbRnBI0inOvVt1zdPfNqgLcvkxaAK62vym9FwO3WPrzFyMp6nf7hZyISnu7vj_QEAil4sn35v-YyFU_arEf8CtUKUv1on0qOVe1M2H3qexmcwaw9ODhSUVrqVNT_T9Y/s1600/stock+2.jpg[/IMG]
+
+All gone...ofc. (and not really functional)
+
+[CENTER]
+[SIZE=5][B]Our very own solar system...went to Oblivion :[/B][/SIZE]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhmEzzGsz0w3HWjxoFrznFjR_6sCikjLSSIUiTkOFQzI2lgRfW2QKyPT5wQe3psGZ-7YvKOT_OXo2XNWaJXcGM6u9DLfGLzfLMytJ_2pV9hhCgt2ZAYMvzn0mAodzVxHl5GwEkKLcqNmbw/s1600/solarsystem2.jpg[/IMG][/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiP0eh96Nq6m7awV65lL1yrAf4ck_w7SVrK5fWmuzKdQKwcfyIeaKQWcpg9F1LqccGN_k17-7DZQRznVSzSRmIU9bklchCUIPUCxN5qe_fgG_mXw9CHGRbFXnw1IOrkoDCzgB8RloVZLYs/s1600/solarsystem1.jpg[/IMG]
+
+Calypso even has 2 moons.
+
+You cant travel there, because they are not there...
+
+[U][SIZE=5][B]Lets continue with the vehicles :[/B][/SIZE][/U]
+
+[B]They were roaming the testservers since the early days.[SIZE=5] [SIZE=3](2002)[/SIZE][/SIZE][/B]
+
+[B]But all we [SIZE=3]had[/SIZE] between 200[SIZE=3]2[/SIZE] and 2010, were static 3D models. No interaction.[/B]
+
+[B]But even the old videotrailer of "Project Entropia" was showing[/B]
+
+[B]the old vehicles in motion.[/B]
+
+[B][COLOR=yellow]http://www.youtube.com/watch?v=Ekb_OC3qfu0&feature=youtu.be[/COLOR] [/B]
+
+1:36 Shuttles & Mechwarriors
+
+1:46 A Track Vehicle
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgqieYe8tKFmSartsA9W9Ozfoh36_w4_3Y-weLXdEY4RChj6-cnjxEb-jMdmgELKT2w5yK40MhEASy8pvrxzj_g18dX4MfMGfdc9UoLbVzmK4A4S5aIuE6Y_Aiji810KlCvgLOB3sYJLj0/s1600/mechs+track.jpg[/IMG]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjuDOkR6hpTvvoZ_ulFhZNCjJP3XM1S5m-aAy5aN3iHNszXkyZ32gPt3JrApqXEW-j_fUunR8kGUF9L4vi7eHkqWmE9cj2-5VZSoqZBOEXC83klqbU4pBxSjv3XoQrWBn1hBEva2Y_Uikg/s1600/mech.jpg[/IMG]
+R.i.P. oldskool Mech :'(
+
+[SIZE=5][U]And the video trailer[/U][/SIZE]
+
+[SIZE=5][U]made its appereance on gamespot.com in june 2002[/U][/SIZE]
+
+[B]In 2006 Frank said :[/B]
+
+[B]"[I]Frank|MindArk[/I][/B][I]: Vehicles - we're currently looking at Q4 2007 - Q1 2008[/I]"
+
+[COLOR=yellow][U][B]We finally got vehicles in 2010.[/B][/U][/COLOR]
+
+[B]Dont get me wrong, I like some of the "newly introduced" vehicles[/B]
+
+[B]inside "Entropia Universe", but... [/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiQz6qUFSgaP7PIlcnM8UOXirZsO3BaPL6xxSoei_GBiF9GHGmYTqUHIx-uuKP_omy99FMqZzjr4l1pGpV16RUlaUjLARABRv093SJbmzZMGMjvMg4vSPSRvh-drZ013E2O-ZgTeH9hEdE/s1600/old+vehicles2.jpg[/IMG]
+
+[B][I]Notice how the old vehicles were all track-vehicles. [/I][/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh0VewdlRHK5uVrNTsadgSCvveLGh5R7YS7nedMvk78QEJPl7T9qscFQK1zVKqk4cwihjRLhw5I6JpPwTN5hn7BelDU5ih7WzObwhtN2qmUseDxNhQ-1O-MFlEwhVxjP8rH2sxauMtLDPc/s1600/vehicles+old.jpg[/IMG]
+Armored transporters and combat track vehicle.
+
+Also, instead of finally introducing [I][B]all the nice spaceship models[/B][/I] from
+
+old [B]Port Atlantis[/B] or [B]Billys Spaceship Afterworld[/B], that were
+
+also all shown in the old trailer...
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjh0nl9ki4zjK1F4msBe3no3LbXTbATHjfuA02IVKygR_CLPmbTTGS7_wf_2Jea4mlPOWo9DBFoScYufs-jBsJH54_Lr9qtLYfjRjSNDapT_MQxrAPwhtNe2r1rc2CppMvCKxW-T-yQoUI/s1600/corona2.jpg[/IMG]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhTM55FRe5IDRm7fL9Dhc7siemSoiFhDUnUdlc1MkM10Ij22glR_B0hHmgKDnyRttObYT5a7HPf5QufgR3GVkGcphaotqPvyeC8zi59HpRpUeDUYUNpDsTEwRhyphenhyphenOIG3VUfOfCoNMV0Dl_g/s1600/landingshuttle.jpg[/IMG]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhS_f2TXTEM6E41lUh_GZzpiVR9avJnOu83ByhIpA-fI2Qu01UhyphenhyphenuEdrM4xqfB5jtDGvtp_uBxefDgK0as_qRxfagZkVSfENhO0GS38CmfHmkxZbfhqW0Bricl0YclgPmVVe6gYZtUzYdM/s1600/corona+sgt47.jpg[/IMG]
+A Corona SGT-47 at "Billys Spaceship Afterworld".
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhqY_U-RKcG7UY2redvQ8BB5vCcWiBKAvwJnVrwXx4CsgkzIipXq_W4bmt5Hr5KJr1M2I2of6dmWFlBAPkp0j0uXWXlWCrCvanVfSNFO0Zr7eCPluIwAre-Q3vVMKkTwXVbqQdryK_abLE/s1600/x1.jpg[/IMG]
+
+A Corona SGT-47 in midair. (Beta 2000)
+
+[B]...we got Helicopters...[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhuD-eot885owgkDP6Qb2B0Ym5QpR1kMWUl_Eimt02cQsBujm8Et9cS2iP5XfUiiea6ercNEOKOjl4uH6UXjoTJcMrd4VjZH1ITn2aKLyTW7j9Vn2HOVtF3QV5dvyXtRjibCf2BkYzlD1I/s1600/helix.jpg[/IMG]
+
+Most, if not all vehicles of  "Planet Calypso"
+
+arent even created by MindArk,
+
+but got bought for $ on 3D model sites.
+
+[COLOR=yellow][B]Just another strange feeling in this future world...[/B][/COLOR]
+
+[SIZE=2][SIZE=3]MindArk's Sayah K[/SIZE]ing trailer from 2002 has not lost its charme yet.[/SIZE]
+
+[SIZE=2][SIZE=3]Sometimes, over the years, MindArk[/SIZE] was[/SIZE] talking about a new
+
+[SIZE=2][SIZE=3]render trailer to be announced...one day...[/SIZE][/SIZE]
+
+[SIZE=2][SIZE=3]In the meantime, me and dub won the "Create a trailer"[/SIZE] contest of 2006 :[/SIZE]
+
+[SIZE=2][SIZE=3][The Video is called, "The Truth"] ^^[/SIZE] [/SIZE]
+
+[MEDIA=youtube]gDYpVn3vzGo[/MEDIA]
+
+[SIZE=2][SIZE=3]Time passed and in 2007 David Simmonds called me via phone,[/SIZE][/SIZE]
+
+[SIZE=2][SIZE=3]to talk about a "little Project they were working on".[/SIZE][/SIZE]
+
+[SIZE=2][SIZE=3]Something like "Red vs. Blue"[/SIZE] from the Halo series.[/SIZE]
+
+[SIZE=2][SIZE=3]Sounded fun, but it never became reality, as I was a one man army.[/SIZE][/SIZE]
+
+[SIZE=2][SIZE=3]I asked about a new trailer[/SIZE][/SIZE]
+
+[SIZE=2][SIZE=3]and he mentioned that they were indeed working on a new render trailer already.[/SIZE][/SIZE]
+
+[SIZE=2][SIZE=3]Its 2017 now and w[/SIZE]e [/SIZE]never got [SIZE=3]a new render trailer.[/SIZE]
+
+[SIZE=2][SIZE=3]In 2012 they partnered with "P[/SIZE]lanet Arkadia Team" though, to announce [/SIZE]
+
+[SIZE=2][SIZE=3]that they (Planet Arkadia?) [/SIZE]are finally [/SIZE]creat[SIZE=3]ing[/SIZE] a new trailer for "Entropia Universe"[SIZE=3].[/SIZE]
+
+[SIZE=2][SIZE=3]Again with a real actor, as Sayah K[/SIZE]ing. [/SIZE]
+
+[SIZE=2][SIZE=3]It was planned to release the trailer around november[/SIZE] of 2012.[/SIZE]
+
+[SIZE=2][SIZE=3]That ETA failed and it was planned to release it [/SIZE][/SIZE]in early 2013.
+
+[U][SIZE=2][SIZE=3]On april 17th of 2013,[/SIZE] David Dobson informed me :[/SIZE][/U]
+
+[SIZE=2][SIZE=3][I]Yep it's still in development, hopefully not too much longer now .[/SIZE][/SIZE][/I]
+
+[COLOR=yellow][SIZE=2][SIZE=3][I]It seems the new official video trailer is out now (5.7.2013).[/I][/COLOR][/SIZE][/SIZE]
+
+[COLOR=yellow][SIZE=2][SIZE=3][I]Using a not-so professional female voice that uses a not-so professional microphone.[/I][/COLOR][/SIZE][/SIZE]
+
+[COLOR=yellow][SIZE=2][SIZE=3][I]It still mentiones taming as a useable profession[/I][/COLOR][/SIZE][/SIZE]
+
+[COLOR=yellow][SIZE=2][SIZE=3][I]and all in all it doesnt really have the look and feel of an Official Concept Video.[/I][/COLOR][/SIZE][/SIZE]
+
+[COLOR=yellow][SIZE=2][SIZE=3][I]Feels more like a fan-made video,[/I][/COLOR][/SIZE][/SIZE]
+
+[COLOR=yellow][SIZE=2][SIZE=3][I]which isnt that bad then. ;)[/I][/COLOR][/SIZE][/SIZE]
+
+[MEDIA=youtube]cAVzmF5eaD8[/MEDIA]
+
+[B]The original official announcement, taken from the Developer Notes #4,[/B]
+
+[B]sounded way different and mentioned professionalism and[/B]
+
+[B]again a real actress ![/B]
+
+[URL]http://www.entropiauniverse.com/bulletin/buzz/2012/9/14/Developer-Notes--4.xml[/URL]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEipYt4JR5VF_yDrMbWv12-uwQLyA4ZndhLrsSWMEB1xr6TK7zHajBXO2_eQXaxlprjJcuV5lo_vV2GTnaSSiINf82S6q-sYUe-7sM-Fv5mykSyNi7JVSgT6GsRbGw8B3TTX9npG7iKvRY4/s1600/developer+notes+4.jpg[/IMG]
+
+[SIZE=3][B]On April 11, 2012,[/B][/SIZE]
+
+[SIZE=3][B]Mindark started the "Emissary Program".[/B][/SIZE]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgCGpYTdLkostlk9_gsWtJaCFy9sE7Yp-tHgBI3erxMi8dEODWVIr28MxdvqIjkJYCQwmllwwlsrFQoQGGXtunNPAO6fSpeztZSqc5jUHnqq13C3QRWkLob6PJjl3yeWX8U_XIOJjJEmR0/s1600/Entropia_Emissary_Entropia_League_of_Planets.jpg[/IMG]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhYSBvrnf0hhNOXUHAyQNPe7QLh6VuA1DCniB4F_6hHGLDKoy-58wXMcQxjpxW-8SqmwW726Q1SocjSaHP-H8VaqTqim6R2kwLitblie6m3fVNsXpHpgob3Cp6wGpCTvYzovXmy1NB_1kc/s1600/emissary1.jpg[/IMG]
+
+[B]An app on facebook, that was meant for noobs to ask[/B]
+
+[B]the "alpha players" for advice. [/B]
+
+[B]You could do surveys or answer ingame questions, to level up[/B]
+
+[B]and win prizes...[/B]
+
+[B]...prizes that never got released by MindArk, [/B]
+
+[B]as this system got shut down in the same year already[/B]
+
+[B]and never was fully working anyway.[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjsohScDq34QzXzg7pE4Lqee2C51Ep68IDAukpieeHvUrytrNL_1npqT3Gz9WdpovgAMMfYsV-llVxzoUt9o66DI0fjGYfc_TfG0avVBxruFhuiWTADSBkJ-31myQSvxAj0K6aiC2yJQ-4/s1600/emissary2.jpg[/IMG]
+
+http://www.entropiaplanets.com/wiki/Entropia_Emissary_Program
+
+[CENTER]
+[B]A download booth ? [/B](never existed)[/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh88hYBHfI-E4q5wMLSvaAsBHuy2zSQYTqXyWEGrwtbJlRDqrw7Gn2giXvxnRRi1EB1y0LDmveigCQJIjHFdPC4ldoolJaLcbZqJ5n152jIO_YibBokN5HOYa2y8Z-8pQVVqfBQBnH8UDA/s1600/download_booth.jpg[/IMG]
+
+[CENTER]
+[COLOR=yellow]Mining anyone ? We lost the "Enmatter" tools here.[/COLOR]
+
+[COLOR=yellow]Then the "Seismic Bombs" went Oblivion.[/COLOR]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg-9mEbePkUZqYbpznD5SYtvjapwZLCNWaezDtvXtCGCvaR0dzrNb7RjRD90q5JGJdt98fpx0PxUyHbihfrFODpzh_MMkvR6_xlXGPZODZv5rfWtJaahpHZCb0jdKro8RMKLXHd8jYS8gw/s1600/history+of+mining+303.jpg[/IMG][/CENTER]
+
+[COLOR=yellow]Back in 2004, when you dropped a bomb, you even had to leave the blast radius[/COLOR]
+[CENTER]
+[COLOR=yellow]before you could detonate it.[/COLOR]
+
+[B]Rocktropia still uses a design, very, very close to[/B]
+
+[B] the old Calypso Enmatter Excavator,[/B]
+
+[B]as an (L) variant :[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh_FVX9wMol0VPRBum3LE3-ennZ-p6-Uh2ZBZmf0lBZOho-OtJjsdepjqpiZMbDrt9zugACz2TdhhFEjQjxPCInlg8j1VUM3_Nh0hQpILGDW6vyuJrSWajNvMYK1WJDU3DgBjoxIvtsvx0/s1600/demonic+excavator.jpg[/IMG][/CENTER]
+
+[SIZE=5][B]Yet in 2015, the new giant building at Cape Corinth,[/B][/SIZE]
+
+[SIZE=5][B]uses this advertisement between floor 1 & 2 :[/B][/SIZE]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhQ6vUabEWDHLOBAtXmTMgORimJFHpO2y8Pg9axAR2fAotunFPjASCFrU24hs3dyQaOEIgBO4dRouctZY-fyFL0VOThyWDnFpX2Kt8XtfRQzrf3lYbkuEHLW7enHD-TnWk456_h7AfhksQ/s1600/genesis+star+excavator.jpg[/IMG]
+
+Textures and graphics get reused now and then :
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEibN2dMSjfTXcvRAZqGOZoMEPhyphenhyphenaQZ_-5V9xXaDO1BMLGlbCtugJJTQTE0Mk1UoKrO33eqdDQXT8u_gZEI-KRKTryOaQkV_1QVxjhEaeQgI73pxnYwfl4xdZyYjwEgI9THJKFw7TFNo7KA/s1600/duchev+cdf.jpg[/IMG]
+
+[B]Sometimes it hurts :[/B]
+
+(and of course it is MindArks fault)
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjj7-yMgOM0NZU11GaTHrfXYXHI_OaBCLmtoCfXKAeRkJGGWB_VYgqojPA_6ixhxvPddEZ8LwMDdXqyVPeM22SbihOPqLgVroT87bvrOY9vRdP64IystiAUsW1Rhyphenhyphen5UcH0_mz01AUgt9sk/s1600/shoes.jpg[/IMG]
+
+[COLOR=yellow]Evolution of terminals and storage :[/COLOR]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiki9APR3QH5gWbkZWGXvkNTfhsH_4p2kTVCJB_RYprYOXCR4W6Jfm97SYpTkQnbG4I2x06hX9vaoyckMe4t556_mR3HntVJcxfilu4QqghT72eSUqs5VZrpnL-cqGQbqz92qyd0SH_ysA/s1600/terminals.jpg[/IMG]
+
+95% of the items in the trade terminal suddenly turned all into
+
+(L) items with the update of 11 / 2014. On every planet.
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhL8isklqIWFm767Owts42a2I_D-AsNLuAzY7EljfLnmSwWFUANxmQ1tLrplL4eV7ajbnAE4EcYApxrFGqdtboenVHl0DE4Xkcf5Bc3MOERhugNKZ6hPsQ6N4-JK-cZgokugeskiF5gBA0/s1600/storage.jpg[/IMG]
+click for full size
+
+[CENTER]
+[B]MA had/has big plans with the ingame companies since 2004 :[/B][/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg9YUCSjvGRsZrN9Lq-MCHNteXbE64Mjc4v-GYcbqd1ZnQjzvpMVtoapF27CPmK2ft3h6sWTvgBcAlbSzl_Fpx_sdWnsOz3kphhVeBSzxtIAx_C3wWEimXV-Yegax70FOEPsc82jmYuQNo/s1600/companys.jpg[/IMG]
+[CENTER]
+These 2 have the "Proteq" logo.
+
+A company that never made it ingame.
+
+(also these images were only ingame in beta)
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjD5kppDuRzXMcgNsQH8z4y_jYYmKxSStH2rBaSCD_zW5ArRdZfFfPzTVLwAERGsUENiIJILjJioRGnw_czos_7xpMklaiL22hOTw38klDSNnPeUy0LyONQLQZXxG0UWe9lVLhzY-kiMds/s1600/proteq1.jpg[/IMG][/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjrcXiFbAWXoU6QJO2-5GzRMcYP_Ip1NAR8qxO8kdvEFGFTjJ9z3-IKlkXplxrlfTwSmfZFoLWunq6V_lpfG_nrMetS_3oUrYfFuUIxQCHvEYuW2_s5-4BFyaNODTEcgQdhYw1QNnYJsiY/s1600/proteq2.jpg[/IMG]
+
+[B]For example, in 2009, there was the Genesis Star Headquarter in Twin Peaks:[/B]
+
+[I](it offered prices for a single mining contest...and got removed then)[/I]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjf9sFV8DKIyaY24kuThdYRRPuQ95txnawSjtwjLG9SX-yuNzQr2Nk40AucKu0yWoFFt6vvOroMy-2YyRHcZEj3izn-PSvpKJQ8BMLXxiy4_L5K9QBeRT6JMyU1DPxMMG9GBIX3i8htISA/s1600/genesis+star.jpg[/IMG]
+[I]oh yeah, thats Oberon in that screenshot[/I]
+
+[B]There also was a xfire building in Port Atlantis...xfire, [/B]
+
+[B]you know...its not an ingame company, [/B]
+
+[B]but its gone. :p [/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjVWQBnp0H__dZbDJuHHIafFIlH016XCCsdeTn7orAc4frvxC3RnQW5uY1_7Tegzh6_VgXTb-Agp8rmya2NtLqJyWuMULxsVX8gcfgxDRNN89cjOM90EySRJ06NrXAOYPTJhSKqCH-hl_0/s1600/entropia_xfire_building04_lg.jpg[/IMG]
+
+[CENTER]
+[COLOR=yellow][B]But thats it, about the "ingame Companies"... not bad, eh ? :p[/B][/COLOR]
+
+[SIZE=5][B]In jan[/SIZE]uary of 2012 Kim Timkrans announced the new design of the Athene/Zephyru[/B][B]s areas. [/B]
+
+http://www.planetcalypsoforum.com/forums/showthread.php?222507-Screenshots-of-the-updated-Athene-Zephyrus-area-WIP
+
+[SIZE=5][B]The work in progress pictures looked very nice indeed.[/B][/SIZE]
+
+[COLOR=yellow][SIZE=2][B](very similar textures, if not the same textures can be found[/B][/COLOR][/SIZE]
+
+[SIZE=5][B][COLOR=yellow][SIZE=2]in the VU 5.6 folders already (2004)[/COLOR][/SIZE][/B][/SIZE]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg8l6sX3J1I-fpPQOM_rK4XgQkJyIBsnrqQ-hgbcBuPtyB6kBmXdNKmT_HtmIZG2qGUjmNIVHK9TyFFB9TInBQwrfQE4koF81o_JpjbcWDngz6-MvV6cWrJpWdIXA7xJ3HNTGjrNzfJ-KM/s1600/athena1.jpg[/IMG][/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgT9Rs_TkyTFT3I-J339WDi_UH-N_eQXNy8oaMMX6rA84Ct4pO64T4vPL1k6s8bfPDJhI-z7IDG8_s2kTZz32a9e-y7mqK1pAWU_3j7NwZNbSiubDv6v7hFvf-zcdEv6UzpHvuFsdR8OH4/s1600/athena2.jpg[/IMG]
+
+[SIZE=5][COLOR=yellow][B]But 1 year later the area still looks like this :[/B][/COLOR][/SIZE]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiKU1vOdRAN08_onBnLgP041_x-3gcW_5HL1TgQknCfZAAL8AE9lsCyOCby3Hh2fHUGCQT-4MOBfkmSyxVIN0bgDk8PFFs5zFVmrWqzvNgr4qAWpPbIoHnmbs3MjG-5ezzXSto-pWR0OE8/s1600/zyprus1.jpg[/IMG]
+[I]No sign of the awesome rock meshes used on the cliff face...[/I]
+
+[COLOR=yellow][U]Update 19.1.2013:[/U][/COLOR]
+
+[COLOR=yellow][B]One year later[/B], a standard interview ofMagyar Republic with Kim Timkrans revealed,[/COLOR]
+
+[COLOR=yellow]that this area got canceled only 2 months after the original announcement.[/COLOR]
+
+[CENTER]
+[B]Lets SEE what plans China had with us :[/B]
+
+[B][COLOR=yellow][SIZE=2](images taken from the ingame files)[/COLOR][/SIZE] [/B][/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiHVpxmzOtaGDCdV1KZa2OP9tYWb4zLgQ_Jja3QVQaDNeKyUt_8_5-CR0-gjg94DxhRBGEjYHLKVSpBLEEkYoLAtePqo2ndLyUdMfuIw7QcsChqRWrEHk61UTUJpuhdOMGS6BihGYEPC1s/s1600/china_b.jpg[/IMG]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhQJ0CadAnTyEuweuQFcifN5AT_PVIqL8lhCfvY8Vwv67861Ep4To0-CuhL4kJy9PYFnAnclMzJNoW_CaQJfFC0EAI8HxnUHG1nU8Qbhhzd_hb0HuX4AmKXhg1E3VvlnkP1DPHsZS4aeMw/s1600/china_a.jpg[/IMG]
+[CENTER]
+[B]The Cyber Recreation District [SIZE=3](CRD) [/SIZE]in Beijing had big plans with MindArk for sure.[/B]
+
+[B]Shopping planets for example. A 3D ebay, like MindArk dreamed of in 2001. [/B]
+
+[B]The contract got signed in oct. 2007, but then main developer, [SIZE=3]Chi Tau [/SIZE]Robert Lai, [/B]
+
+[B]died on June 29, 2008,[/B]
+
+[B]and everything got put on hold...or canceled...who knows...[/B]
+
+[B]CR[SIZE=3]D[/SIZE] is/[SIZE=3]w[/SIZE]as also working with Master&#173;Card, Visa and the China Everbright Bank
+ to build a financial platform, with suppliers like IBM.[SIZE=2] (hence the Bank logo I think)[/SIZE] [/B]
+3D Chinese shopping planets...
+[/CENTER]
+
+[CENTER]
+[B]Banks...uh, Pawnbroker...uhm....MindBank was there in 2000 already : [/B][/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEirF14L1M3Ko9mIYSJKAZq_DNr8gTwcMP4ARvyOLQ-GklQhhubFhu71zzJCAUlHmAe9OU4R9TNpWrxdda61Xqr6ZzHs2m_gfSTfM_W4r653kLyK1BurZm-gu_sBOr5_-rGaXkpeCESg2SY/s1600/bank_of_calypso.jpg[/IMG]
+
+[CENTER]
+Nothing is known about the "Bank of Calypso" (early beta ?)
+
+[B]In 2009 MindArk got granted a real banking license to operate[/B]
+
+[B]MindBank AB as a..real bank.[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjaaWjI40RZpCurCmR3Vf02sX435dogomhMvSow_2MxLnVhoMgUTNyn1ybV_s-26rfCvHmC8gRShIE8PtwxA4N6J4bzz7glSbYC-GyuIJPurl_nbzomG0EbUN-XV5pSc1DTQYu_eJFY_LQ/s1600/mindbank.jpg[/IMG][/CENTER]
+
+[B]It was revealed that Mind Bank failed to secure the required fundings
+for the venture (which was a sum of EUR 5 million), and thus MindArk
+requested for the permission to be revoked.[/B]
+
+[COLOR=yellow][SIZE=2]http://www.entropiaplanets.com/wiki/MindArk#Banking_License[/COLOR][/SIZE]
+
+[B]Around 2015 David Simmonds (MA) claimed in an video interview[/B]
+
+[B] on a bitcoin conference, that they have still plans to "start" the bank.[/B]
+
+[B]Probably a prepaid-card with their logo on it...we will probably never SEE it.[/B]
+
+[B][SIZE=2](but you can SEE it up there, its called cashcard ^^)[/SIZE] [/B]
+
+[COLOR=yellow]In combination with their Deeptoken Scam, MindArk announced,[/COLOR]
+
+[COLOR=yellow]that if they should sell Deptokens worth 10.000.000 $ (ten million), they would[/COLOR]
+
+[COLOR=yellow]create the MindBank again...using the money for...research...[/COLOR]
+
+[COLOR=yellow]...even if they had the license in 2009 already...makes you wonder ?[/COLOR]
+
+[B]In early 2009 the "Sissipahaw Water Treatment Plant" made its way to Calypso[/B].
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhn6GAQM3d2YpnRO8TWuxPrZyuO1ykoH2Z3DFkWBP84nGTTj6cYttR-YaCSoPZfwJORKWuxlcdmKchOKJFFkWdk8Dr8KHovwKxmTEJVpztdWtvCAz4M3XERXV_grCvtZR-Y90lue6bEqy8/s1600/water+treatment+2.jpg[/IMG]
+  [B]8 years later, in 2017, it is still a useless building with no interior.[/B]
+
+[B]The "Nymphtown Water Supply" is existing since 2002/2003.[/B]
+
+[B]Its empty as well and you cant enter it.[/B]
+
+[B]Just like most other buildings ingame.[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEif2EU4mOmePbBnOwbh-I4ypcfNIxOfRAo0do6elD0nK6zMJBxmj2koXNZqJnwoHC4qPTRey-0Szm7lyfH6nGpe70KmeqlnaZPIRzh44X5nKf8PLKex3psxX1ZjyLCOmDg-mXi-lS1QAt8/s1600/nymphtown+water+supply.jpg[/IMG]
+
+[B]After the CryEngine Update, the lettering got taken of the building.[/B]
+
+[B]The building also never had any function.[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg8j3UmrZKTM8xUAy3i17rKmq_4_BUKSMPCe2U44RMskQdR44eGDM7X-nUIYynlyGJvIpnG6jx453VUpEZscnSoEUfdEwAza7egHnWg98NOMUYUjj8v6k0ua-aUdxqUfvJTauzfUC0qZYo/s1600/water+treatment+1.jpg[/IMG]
+
+[COLOR=yellow][B]Instead of introducing new, useless buildings, why not re-re-create the town of Minopolis with its appartments, for example ? [/B][/COLOR]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjpHA10gFAIQZ_FeHzQ8Xq4Bz265_KTU1oQTaA5yU6yG18Umvd4kzTRHwx3mkLLw1k3VV7OxhBvqqSFz8IxrSZJSQfxcXGXA6KQFamKLMQOcNzjyvwhMSDnGDSX3_jv1CN3h8Ai-4NF4Ow/s1600/minoestate.JPG[/IMG]
+
+[CENTER]
+[B]Press the alarm button : [/B](gone)[/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjGt95zDxxuyXzW0bqQ21prxBgi5Ncy98Pr6urn91JZfOJgwbd-AJ-g0ddic4JhNPCwHvjTGSLANBxUfk28ItL2WdrR84T8SKGOKkskr78TqoMVzTCjj_w2sghJ0f7NnsIVpIUxAUJ3FAk/s1600/alarm.jpg[/IMG]
+
+[CENTER]
+[B]The hospitals: [/B](gone and never completed)[/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgLOLWxrtCgV9W0UajwgPClTn59TUjCMXuYZrY-vDq8zqKKyR96Uj4zsq_xYJ_QaW8ESdiqyDYCJUXd4gl-DO5vioZW-ry4gbFTmf_isVsKqASgRVSvXbDAyJI8B7AMYJ0BnuCIkIsU4Bs/s1600/hospital303.jpg[/IMG]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiOE6EVn9rrt-co4lxcsWoLmuAq3T4UWdHsbL9Fj9fDmNxrIB3zAf4rsno0jE6ixd3YrEcJkslPEhe-RWjsZHb1XyvAdEAfev4dQf520YlNItUMV-BgRZ4gufF21GpLT9V1RKWAbOG3n6k/s1600/hospital_2.jpg[/IMG]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjI1kwJrjmaoEtSFtQzw-3epQl38JcVdTS2qtdqnEQ8FQ4X41HiPABO9dyRreo_mS_uWQ_l46mYLMjPAhcSIB1K8LqUzSj2lxlVqeGNCcfG-riDKlZQgsHQWkkNET5XMUEoBCwN35LCj8A/s1600/hospital_fury_2.jpg[/IMG]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhR7iM0usXeBvGjYG1-aIlZ-tBRHfrOz1zwqf9DPiWm9Ke8cM56VM4OVNc3M9C1L4IY8DReh_V204jTRucC3EWgkpVuMKtLBNOrTsXHYGGthU6HsKYsjnDuIdGsY4H5UCDKXeVfMaIiwfk/s1600/hospital_big_707855.jpg[/IMG]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiObU8WtSAZq5i1i0K_UprXxDO_t-_2Qs-scGwzelYy7AzJKlRlRN53AaLHUCOFX1dlXDPQFNcGTu2CTvxE5-SoJvywxzTxNTXm1yO4rAU8TK1RJEw1JTd4wkCl1-FpjQNeT0MWgukwkDk/s1600/hospital_terminal_fury.jpg[/IMG]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhfyfT59zW5rUSUGwlHjGUcN2dE8eLP9knPLTJyekgpeYEbrQQa_iFq4t5zKPO7ojKJ79hoZM-7OAY-lIXSG-Fsdsmh5RIaAaml8k6sIEkNZ27RPs8kIpgFxTWdL5psaSaOyC7d6ZOA1Zk/s1600/gothenburg1.jpg[/IMG]
+[CENTER]
+[B]Ohhhh and lets not forget about the ship...[/B] (gone)
+ [I][B]Diversity. Dynamic Diversity. Entropia has grown for sure.[/B][/I]
+
+[I][B]Maybe 5 planets are already too much for a RCE world, [/B][/I]
+
+[B][I]with an [SIZE=3]rough estimated [/SIZE]amount of ca. 6.000 "active" players ?[/I][/B]
+
+[B]MindArk and SEE Virtual Worlds teamed up in 2009.[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh5-e6ciXSdjTffCj41Fs1OoTR_abt6rHJbYEcNn9GzEoSllP-oiMJoWS_VnwNLnEatvhAJS0G1G_db3cDcs20excMNutb8pfDIyKtYUlmNkP4dx-Bdqx_z0SyUGzXmNa12d1ByClonbFc/s1600/see.jpg[/IMG][/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjnV0_xbFmuRIhTn3H9pNJW3Zb7o505_GkoxxJEwxjOmq1WH8L5tcSupyKy7sSUKlx6058aE_89wN_7tLai3x5Y3ehIPZu20efiWTAx3vZ1U8oCbse-YDTM40DxxP4_DptwV85-6dLcT0E/s1600/martin+und+bill.jpg[/IMG]
+[I][SIZE=2]Martin Biallas is the founder of SEE Virtual Worlds.[/SIZE][/I]
+
+[B]There were plans of a Titanic Planet and even a "Universal Monster Planet", where you would hunt all the classic movie monsters a[SIZE=2][SIZE=3]s[/SIZE][/SIZE] Van Helsing. (2010)[/B]
+
+[B]But alas...it never went live...[/B]
+
+[B]...but forget about that for now,[/B]
+
+[U][B]THEY HAD PLANS FOR PLANET MICHAEL JACKSON !!!!!!!111[/B][/U]xD
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEju5cCJJTzUdj8TKx3ejFVyOcwy6HCdkBSLOeke6gJEVBGQGGsfewGxpPbNbE7PTG9eIXSbSgzehnbFzx8SHpYyhl7Z13yudIAXGdP4ShyYujZnFC7EWbNQOqzQn4Y2QHdkGwinvVyMdTs/s1600/planet_michael_logo.jpg[/IMG]
+
+[B]Neverdie brought SEE to MindArk and was heavily involved on Planet Michael development,[/B]
+
+[B]just like he was involved in the development of Next Island...[/B]
+
+[SIZE=2](and ofc RockTropia. And so on...) ;)[/SIZE]
+
+[COLOR=yellow][B]SEE Virtual Studios even bought Planet Calypso ([/B][I]6 million $[/I][B]) and took over its employees in january of 2011[/B][B] ! [/B][/COLOR]
+
+[COLOR=yellow][B]Then guess what...something went wrong. [/B][/COLOR]
+
+[COLOR=yellow][B]SEE only payed the 1st of 6 installments a 1 million $.[/B][/COLOR]
+
+[COLOR=yellow][B]Then, because of swedish law, MA got Calypso back and[/B][/COLOR]
+
+[COLOR=yellow][B]sold it to its own playerbase instead. [/B][/COLOR]
+
+[COLOR=yellow][B][SIZE=2]http://www.planetcalypsoforum.com/forums/showthread.php?229220-MAs-Annual-Financial-Report-for-2011 [/COLOR][/SIZE][/B]
+
+[COLOR=yellow]
+[B]SEE Virtual Studios left and dismissed most, if not all of the old Calypso employees.[/B][/COLOR][B] [COLOR=yellow](june 2011)[/COLOR][/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhJxECKq1B1FXXE5XTtiy4jp8uyIKGX4kMsEDB6vtHVtQCEm2bA_lllnJhL7GcECbQftkomcwMODDtYtkRuu37HZiQf_kApW7PWjgdqb2NsG3ZcwaVeYdtRRKDZEGBHXX8pkXbIwh3HJSo/s1600/marco.jpg[/IMG]
+
+[COLOR=yellow][I][B]Btw., I just want to mention the 60,000 Calypso Land Deeds (CLDs) here,[/B][/I][/COLOR]
+
+[COLOR=yellow][I][B]which MindArk started[SIZE=3] [/COLOR]to sell for 100$ each in the ingame auction.[/B][/I][/SIZE]
+
+[SIZE=3][I][COLOR=yellow][B]That would be a total amount of [/B][/COLOR][/I][/SIZE][SIZE=2][I][SIZE=3][B][COLOR=yellow]6 million $.[/COLOR] [/B][/SIZE][/I][/SIZE]
+
+[COLOR=yellow]So MA sold Calypso indeed to its own playerbase...[/COLOR]
+
+[B]No more Universal Monsters and Michael Jackson for you my friend.[/B]
+
+[SIZE=3][I]The last "real news" on planetmichael.com are from january 2011 anyway,[/SIZE][/I]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhO7Fv8BdwWUYLZZgSn0hBqxSXl-UK3j3TzXkCAw7FTjV-3SiK9p3Sj9OstZufjmfy3b5VWHOo7tVgYXdc1n5XC8nH9AiihHKDdvMcmspX0SIa87SyUSCHA9b_eczLHqn-EZfWcp6JZ-W8/s1600/michael.jpg[/IMG]
+
+Either SEE fucked with MA or MA fucked with SEE.
+
+Both arent angels. :p
+
+[U][B]So, what else went to Oblivion (more or less) ?[/B][/U]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiyhEZ-nJ5h8V_YX74pivd64yKfVhpbRFCbxSMQ5mMc_olxL6kCGQ3Y8nrf-WqMuJ4hy6IAkN4J9br76LHk59FDs2BfCwlFUTQlsQ1zpDoz8gCjsg1eQC54JSsVx2ok0tkbhrLEqWmB7Mg/s1600/Next+Island+Logo.jpg[/IMG]
+[B]NextIsland is more or less bankrupt [/B](everyone got fired)[B], their office empty.[/B]
+
+[B]Neverdie is no longer involved in the development process. [/B]
+
+[B]The forum and the planet itself, still online. [/B](more or less)
+
+[B]But no real news.[/B]
+
+[B][SIZE=2]Somewhere in 2012 David Post announced that[/SIZE] [SIZE=2]Next Island[/SIZE] is [SIZE=2]in[/SIZE] media blackout,[/B]
+
+[B][SIZE=2]until he gets it sold or restaffed.[/SIZE][/B]
+
+[B][SIZE=2]And in the meantime he started a campaign for a company[/SIZE][/B]
+
+[B][SIZE=2]supporting crowdfunding, for companies that do crowdfunding...[/SIZE][/B]
+
+[B][SIZE=2]...Benjamin Bakery.[/SIZE][/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEga03-qfCRg2WryTcLL0c8Xmo_X4ncshstJrbFTdtBKEu8JQLVCPFx56kxi7qshQNz4L0vPaf-Dqd6HZ4R8q2jCcJNhi6sufnVIh3szzJgJ_iK-HdtNJQrPulOg-mmmXJpH9wZDEz9vUL8/s1600/benjamin+bakery.jpg[/IMG]
+
+[B][SIZE=2]http://www.benjaminbakery.com/[/SIZE][/B]
+
+[B][SIZE=2][COLOR=yellow](it still says coming soon and has a (c) of 2012)[/COLOR] [/SIZE]  - 03.02.2015 [/B]
+[CENTER]
+[B](its down by now)[/B]
+
+What the... ?
+
+Ok, meanwhile MindArk decided to take over "NextIsland",
+
+calling it their "Outpost in Entropia Universe".
+
+[SIZE=2](2014-2015 and nothing is happening/has happened on NextIsland anyway)[/SIZE]
+
+[SIZE=2][SIZE=3]4 years later, in Oct. 2016 the society "BIG Industries" joined forces(?) with David Post,[/SIZE][/SIZE]
+
+[SIZE=2][SIZE=3]announcing "a new" Next Island, by posting very old screenshots, claiming[/SIZE][/SIZE]
+
+[SIZE=2][SIZE=3]those would be new ones.[/SIZE][/SIZE]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEi1sddTNS6HExRvhDRYr3KlpkF35Jak-_ZvQm6WNEzh179PFnTKbJoWnMBlGPQqK_HOeI_iSx12c4n3ndfjHSRCazfheVjxLUow1ZFEzcX0eZBA1S3L9qeqnHUf2gfPoMHJ11ri5JrVPLw/s320/post+relaunch+Next+island.png[/IMG] [/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgqlKTFtXYTEsUuyaSA7n2ePVztg5O1Vynru8S2HjrIwyWqHgdfYl6nHiqBucPYrlvhivm6QVyFGW2pHPYWd7zAVTZZ_5nJB36sSJq8B2ufAbltY8o16rrEWpQayMeUMEAZcA-blBmF0B0/s1600/next+isalnd+fb+comment.jpg[/IMG]
+
+[COLOR=yellow]BIG industries started posting very old screenshots in dec 2016 on facebook,[/COLOR]
+
+[COLOR=yellow]claiming its all new, awesome content...[B]super lame ! -_-[/B][/COLOR]
+[SIZE=2][COLOR=yellow][SIZE=3] [/COLOR][/SIZE] [/SIZE]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEix_bAdPPKoLY4WJnSnLUXBKAcyg9xNOGuP-IIsgyyUxYQutj4kJpxATPsoJXhSV8HGCS-Py6aL0Y0UJplShUFwYYQ88BV2OqcyD_e8cHOhioIoKHh3B_mL87qBZJnJPDxQjXHHmvIpqCM/s1600/NI+facebook+old+screenshots+4.jpg[/IMG]
+
+David Post
+
+[SIZE=3]Shaun Klein aka "Blastoise Meculus Yarlboro"[/SIZE]
+
+[SIZE=3]Troy Dunniway (ex Westwood, Disney, Microsoft, Ubisoft) [/SIZE]
+
+[SIZE=3]https://www.linkedin.com/in/tdunniway[/SIZE]
+
+[SIZE=3]Grymith Salty  [/SIZE]
+_______________________________________________
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEidKWFNEOBqZCA5pkcacPuUGgpwi6l3dcM8OXxzDCoBHQIn-2irhf0pAMVEkc8Az_v1hfFOliXsc_vPRNh40-GtUZhGB6yIeE3sUj-V7HJW6yECfmt3I3ZZ9U1Pi8oMB4xXLlifpuZPIOk/s1600/monria+logo.jpg[/IMG]
+
+MindArk mentioned the sale of a new estate,
+
+having something to do with alien lifeforms.
+
+It should have been announced in january 2013, but
+
+mnothing until mid february 2013.
+
+[COLOR=yellow][I]Update : March 2013[/I][/COLOR]
+
+[COLOR=yellow][I]A "Moon" will be up for auction (150,000$ starting bid).[/I][/COLOR]
+
+[COLOR=yellow][SIZE=2]http://www.entropiauniverse.com/entropia-universe/announcements/moon/[/COLOR][/SIZE]
+
+You bid on something that might not be ready before the end Q3 of 2013 though.
+
+"Modified Akoz Power & his Investor friends" just purchased
+
+the moon for its starting bid of [B]150.000$[/B] on 4th of april.
+
+Its called Monria.
+
+Exactly 2 years later, in april 2015
+
+Akoz & Co. already decided to sell this empty thing,
+
+because it wasnt generating income.
+
+- - -
+
+Monria got sold for[B] 94.000 $[/B] to an "Irish Company" named "Virtual Sense" "http://www.virtualsense.eu/".
+An "Irish company" based on selling/trading ingame items. According to their site, since 2009.
+
+[COLOR=yellow](inside of Entopia of course)[/COLOR]
+
+[B]The site was down since (05.07.16). [/B][B]Maybe because there is an hardware seller[/B][B]called "http://virtualsense.it/" since 2013 ? ;)[/B][B]It is up again, but havent recieved any updates since 2014 anyway.[/B]
+ Long time player "Eugenio Anhithe Wilde", his brother and his wife "Juanita Kendra Wilde" [B]AND[/B] "Dark Moon Enigma" (which is long time player MS9) now rule Monria.
+
+Great ad for MindArk. Now they can say,[B] "We sell a moon every year now"[/B] x'D
+
+________________________________________________________________
+
+[COLOR=yellow][B]In February 2016 MindArk announced a "2 way authentication system"[/B][/COLOR]
+
+[COLOR=yellow][B]which would be released as app for Smartphones[/B][/COLOR]
+
+[COLOR=yellow][B]and will natively integrate Google Authenticator.[/B][/COLOR]
+
+[COLOR=yellow][B]8 months later (9/2016) a "preview" version of it appears[/B][/COLOR]
+
+[COLOR=yellow][B]on the android market and then on the Swedish IOS Store.[/B][/COLOR]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhz8L5y6i6oR8PqxHOIMqIcWBHAEe13i37wBRsAyimqWhKiJOh5-UBEDSgK5UYB6QLbETbLGOTVFZU15xa4D8NHRfrF_q3wZdlN3ADg3bWaiwZdn6HsuU_sMDw9O6BCVcx2lfS_Bc4zS08/s1600/2+way+auth+app+pocket.jpg[/IMG]
+
+[COLOR=yellow][B]What is really sad about this auth-app is,[/B][/COLOR]
+
+[COLOR=yellow][B]that MindArk is using to to spread Spam with it...  [/B][/COLOR]
+
+[COLOR=yellow][B]Last update it recieved was in june 2017.[/B][/COLOR]
+
+[COLOR=yellow][B]Now lets wait and see. [/B][/COLOR]
+
+[COLOR=yellow][B]Gold Cards will probably no longer sold in the future,[/B][/COLOR]
+
+[COLOR=yellow][B]according to MindArk.[/B][/COLOR]
+
+________________________________________________________________
+
+[CENTER]
+[B]Want even more ?[/B]
+Steady changing of various soundfiles...WHY ?!
+
+The ingame banks...uhm pawnbrokers ?
+Build your own robot ?
+
+Weather affecting equipment ?
+
+Handgrenades ?
+
+Upgrade Replicator ?
+
+Factories where you can use noobs as slaves and pay them ?
+
+Star ships with a crew of 100 = major epic battles in the sky ?
+
+Nocturnal mobs ?
+
+IPO, MindBank ? (still in progress, but not enough money)
+
+Create towns ?
+
+[B]Love of detail ? [/B]
+
+Points of interest ?
+
+An immersive online world that lets you forget the realworld ? (like 2004-2007)
+
+CE2totheMAX ?[/CENTER]
+
+[CENTER]
+This will be updated, everytime something goes to Oblivion.[/CENTER]
+
+[CENTER]
+And now go and play...[/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhOWlRComR2BuJhbkYpFEWj3MxvBDa2NRztgKXq3dWWIVNsc3VBkmky6Dru7LlWyGnx4BRU3wa1g47tHYDHngPlFPCgzNOPfcPUQQESMAmiDknK8xQnzgGi8T_jYMWclO1RGSekDCj_LFU/s1600/bandit_896770.gif[/IMG]
+
+[CENTER]
+...and let the good times roll.
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjrCesl_kXXOjr2K332Jpm4SzcezbGzOLYTXXN5QnY9lhb3BFR8iNozffmU3QzHYQJkb5KIBrSLrhGeotJp0jl8rT3vlsT5ZyjaC_vEojSQETjvn0RLkpXONSPdWPpCkZKIVCv9YDfsVWI/s1600/mindark2003.jpg[/IMG][/CENTER]

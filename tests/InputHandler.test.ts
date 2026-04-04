@@ -2,8 +2,8 @@ import {
   AutoUpgradeEvent,
   ConfirmGhostStructureEvent,
   InputHandler,
+  UIState,
 } from "../src/client/InputHandler";
-import { UIState } from "../src/client/graphics/UIState";
 import { EventBus } from "../src/core/EventBus";
 import { UnitType } from "../src/core/game/Game";
 

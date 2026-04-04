@@ -1,0 +1,100 @@
+{
+  "name": "Orion Sector",
+  "map": {
+    "width": 3000,
+    "height": 2000,
+    "num_land_tiles": 2226041
+  },
+  "map4x": {
+    "width": 1500,
+    "height": 1000,
+    "num_land_tiles": 556485
+  },
+  "map16x": {
+    "width": 750,
+    "height": 500,
+    "num_land_tiles": 139102
+  },
+  "nations": [
+    {
+      "coordinates": [
+        750,
+        500
+      ],
+      "flag": "",
+      "name": "Betelgeuse Empire"
+    },
+    {
+      "coordinates": [
+        2250,
+        500
+      ],
+      "flag": "",
+      "name": "Rigel Consortium"
+    },
+    {
+      "coordinates": [
+        1500,
+        300
+      ],
+      "flag": "",
+      "name": "Bellatrix Union"
+    },
+    {
+      "coordinates": [
+        500,
+        1000
+      ],
+      "flag": "",
+      "name": "Saiph Republic"
+    },
+    {
+      "coordinates": [
+        2500,
+        1000
+      ],
+      "flag": "",
+      "name": "Mintaka Alliance"
+    },
+    {
+      "coordinates": [
+        1500,
+        1500
+      ],
+      "flag": "",
+      "name": "Alnilam Federation"
+    },
+    {
+      "coordinates": [
+        1000,
+        1600
+      ],
+      "flag": "",
+      "name": "Alnitak Dominion"
+    },
+    {
+      "coordinates": [
+        2000,
+        1600
+      ],
+      "flag": "",
+      "name": "Meissa Collective"
+    },
+    {
+      "coordinates": [
+        300,
+        1500
+      ],
+      "flag": "",
+      "name": "Hatsya Station"
+    },
+    {
+      "coordinates": [
+        2700,
+        1500
+      ],
+      "flag": "",
+      "name": "Tabit Outpost"
+    }
+  ]
+}

@@ -13,7 +13,6 @@ import {
   RankedType,
   Trios,
   UnitType,
-  mapCategories,
 } from "../core/game/Game";
 import { PseudoRandom } from "../core/PseudoRandom";
 import { GameConfig, PublicGameType, TeamCountConfig } from "../core/Schemas";
@@ -21,7 +20,7 @@ import { logger } from "./Logger";
 import { getMapLandTiles } from "./MapLandTiles";
 
 const log = logger.child({});
-const ARCADE_MAPS = new Set(mapCategories.arcade);
+const ARCADE_MAPS = new Set<GameMapType>();
 
 // Hard cap on player count for performance. Applied after compact-map reduction.
 const MAX_PLAYER_COUNT = 125;
@@ -29,63 +28,9 @@ const MAX_PLAYER_COUNT = 125;
 // How many times each map should appear in the playlist.
 // Note: The Partial should eventually be removed for better type safety.
 const frequency: Partial<Record<GameMapName, number>> = {
-  Africa: 7,
-  Asia: 6,
-  Australia: 4,
-  Achiran: 5,
-  Baikal: 5,
-  BetweenTwoSeas: 5,
-  BlackSea: 6,
-  Britannia: 5,
-  BritanniaClassic: 4,
-  DeglaciatedAntarctica: 4,
-  EastAsia: 5,
-  Europe: 3,
-  EuropeClassic: 3,
-  FalklandIslands: 4,
-  FaroeIslands: 4,
-  FourIslands: 4,
-  GatewayToTheAtlantic: 5,
-  GulfOfStLawrence: 4,
-  Halkidiki: 4,
-  Iceland: 4,
-  Italia: 6,
-  Japan: 6,
-  Lisbon: 4,
-  Manicouagan: 4,
-  Mars: 3,
-  Mena: 6,
-  Montreal: 6,
-  NewYorkCity: 3,
-  NorthAmerica: 5,
-  Pangaea: 5,
-  Pluto: 6,
-  SouthAmerica: 5,
-  StraitOfGibraltar: 5,
-  Svalmel: 8,
-  World: 20,
-  Lemnos: 3,
-  Passage: 4,
-  TwoLakes: 6,
-  StraitOfHormuz: 4,
-  Surrounded: 4,
-  DidierFrance: 1,
-  Didier: 1,
-  AmazonRiver: 3,
-  BosphorusStraits: 3,
-  BeringStrait: 4,
-  Sierpinski: 10,
-  TheBox: 3,
-  Yenisei: 6,
-  TradersDream: 4,
-  Hawaii: 4,
-  Alps: 4,
-  NileDelta: 4,
-  Arctic: 6,
-  SanFrancisco: 3,
-  Aegean: 6,
-  MilkyWay: 8,
-  Mediterranean: 6,
+  AsteroidBelt: 8,
+  SolSystem: 10,
+  OrionSector: 6,
 };
 
 const TEAM_WEIGHTS: { config: TeamCountConfig; weight: number }[] = [
@@ -372,11 +317,11 @@ export class MapPlaylist {
 
   public get1v1Config(): GameConfig {
     const maps = [
-      GameMapType.Australia, // 40%
-      GameMapType.Australia,
-      GameMapType.Iceland, // 20%
-      GameMapType.Asia, // 20%
-      GameMapType.EuropeClassic, // 20%
+      GameMapType.AsteroidBelt, // 40%
+      GameMapType.AsteroidBelt,
+      GameMapType.SolSystem, // 40%
+      GameMapType.SolSystem,
+      GameMapType.OrionSector, // 20%
     ];
     const isCompact = Math.random() < 0.5;
     return {
@@ -466,8 +411,8 @@ export class MapPlaylist {
         return;
       }
       let freq = frequency[key] ?? 0;
-      // Double frequency for Baikal and FourIslands in team games
-      if (type === "team" && (key === "Baikal" || key === "FourIslands")) {
+      // Double frequency for AsteroidBelt in team games
+      if (type === "team" && key === "AsteroidBelt") {
         freq *= 2;
       }
       for (let i = 0; i < freq; i++) {
@@ -479,11 +424,8 @@ export class MapPlaylist {
 
   private getTeamCount(map: GameMapType): TeamCountConfig {
     // Override team count for specific maps (75% chance)
-    if (map === GameMapType.Baikal && Math.random() < 0.75) {
+    if (map === GameMapType.AsteroidBelt && Math.random() < 0.75) {
       return 2;
-    }
-    if (map === GameMapType.FourIslands && Math.random() < 0.75) {
-      return 4;
     }
 
     const totalWeight = TEAM_WEIGHTS.reduce((sum, w) => sum + w.weight, 0);

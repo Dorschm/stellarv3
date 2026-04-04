@@ -1,0 +1,84 @@
+{
+  "name": "Sol System",
+  "map": {
+    "width": 1500,
+    "height": 1500,
+    "num_land_tiles": 696547
+  },
+  "map4x": {
+    "width": 750,
+    "height": 750,
+    "num_land_tiles": 174126
+  },
+  "map16x": {
+    "width": 375,
+    "height": 375,
+    "num_land_tiles": 43556
+  },
+  "nations": [
+    {
+      "coordinates": [
+        1000,
+        850
+      ],
+      "flag": "",
+      "name": "Earth Alliance"
+    },
+    {
+      "coordinates": [
+        450,
+        600
+      ],
+      "flag": "",
+      "name": "Venusian Republic"
+    },
+    {
+      "coordinates": [
+        850,
+        350
+      ],
+      "flag": "",
+      "name": "Jovian Federation"
+    },
+    {
+      "coordinates": [
+        300,
+        1050
+      ],
+      "flag": "",
+      "name": "Saturn Ring States"
+    },
+    {
+      "coordinates": [
+        1250,
+        1150
+      ],
+      "flag": "",
+      "name": "Uranus Collective"
+    },
+    {
+      "coordinates": [
+        200,
+        300
+      ],
+      "flag": "",
+      "name": "Neptune Dominion"
+    },
+    {
+      "coordinates": [
+        450,
+        1100
+      ],
+      "flag": "",
+      "name": "Mars Confederacy"
+    },
+    {
+      "coordinates": [
+        870,
+        720
+      ],
+      "flag": "",
+      "name": "Mercury Mining Corp"
+    }
+  ]
+}

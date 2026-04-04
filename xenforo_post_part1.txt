@@ -1,0 +1,274 @@
+[CENTER][SIZE=6][B]Content of Oblivion[/B][/SIZE]
+[I]Originally published on content-of-oblivion.blogspot.com[/I][/CENTER]
+
+─────────────────────────────
+
+[CENTER]
+[SIZE=5][U][B]A lot of stuff was mentioned, promises broken, things got partly introduced and then removed or only advertised and never actually made it into the MMO called "Project Entropia". [/B][/U][/SIZE]
+
+[SIZE=5][U][I](now Entropia Universe)[/I][/U][/SIZE][/CENTER]
+
+[CENTER]
+[COLOR=yellow][B]This blog is getting updated everytime something goes Oblivion.[/B][/COLOR]
+
+[COLOR=yellow][B]Just scroll down and down and dooOoooOooOOOOowwnnn.....[/B][/COLOR]
+
+[B]______________________________[/B]
+
+[COLOR=yellow][SIZE=5][B][I]Last Update : Jan. 2020 [/I][/B][/COLOR][/SIZE]
+
+[SIZE=5][B][I]_______________________[/SIZE] [/I][/B]
+
+[COLOR=red][I]Project Entropia - Fails to retain identity since 2009[/I][/COLOR]
+
+[B]Harvesting was mentioned back in 2000 and the harvester tool was there[/B]
+
+[B]in early beta. It was powered by Future AA batteries, which were[/B]
+
+[B]used as "ammo" for this tool. You just aimed at plants to gather ressources.[/B]
+
+[B][COLOR=yellow][SIZE=2](thx to "phoenixx" and "Jane QP Doe" for additional info)[/COLOR][/SIZE] [/B]
+
+[B](H-50 Farmhand Alpha)[/B][/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEi6ngIltJ2XnQy76097DkQqPPKDbrNk9k6ZlZHr-4ulYET6I2dfnl_8_2AkGrLNpaO1ItlngEkbhOeYzgBjFQyeT1y2eC_klky4-SPNradrL-Ja34gHJzJinnz4Rjhzioa8j66OJ6mn34Y/s1600/harvester.gif[/IMG]
+[CENTER]
+[COLOR=yellow]This
+ is a standard model using a close-range teleportation system to harvest
+ various forms of edible plants for personal use. It was primarily
+developed as a device for basic survival in the wild as well as an
+alternative to hunting.[/COLOR]
+
+And somewhere in Marcos "dreams" he mentioned gardening...
+
+[B]In 2008 some designer placed the farmhand behind an auctioneer...as decoration...[/B]
+
+[B][COLOR=yellow][SIZE=2][I](it was just the 3d model, no interaction possible)[/I][/COLOR][/SIZE][/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiUGB7SUD2qmTnwhTbrZWhDBfXxKg9qGW2k5lwI7vFb_pPZHrKFbLJKZ_hB8sNBseAmCM5hcEgcXGVD0E0lIDHUxaHnUHmkGmW78ThrUZykIoyPZ0Q-9nt_Jni-nZtMj6WdGuJIByefW80/s1600/farmhand.jpg[/IMG][/CENTER]
+[COLOR=yellow]Not funny... ;([/COLOR]
+
+[CENTER]
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjQ6ZO7HWMojuQ3HH3xYboBr7yuo5eeoAdYAdWdQL5W7SeJGJZqZCgMIh-5eMVaOL1SLsOwCS8_JdIDdJUlN36XmU1e2nzm-9M62ySx415mxiXvreUlMePkn2V6FwwpzY4DCo3chUuoHHQ/s1600/farmhand+texture.jpg[/IMG][/CENTER]
+[B]The texture.[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjQir-AFYqY7xmm9SG30Z-xcmN875CZ0LaZ-GE296vDlcJIO3rVJZH-8_sTVQzp_7xWZATC1xg8DIJMnANdvcdRizqEQFiR4KJB2NqLnjc0e3Fpi4XwAG4fhFcDiKFbH9VQ2IT5Mdd9Wpw/s1600/harvester+inv.jpg[/IMG]
+The inventory item of it.
+
+[COLOR=yellow]15 years later MA introduced the Terratech :[/COLOR]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgZLGiSpnaK7oevhjhRiV3i-7H0he9Fb2O9hEOUIgcbYy6i9doc3ujfNb825UEkWMnaq5zwLyJ_He4x7cSQ0NFtFFwDnuTeC0vEdAjSzDexACIkYgPV-f5Y489e4xuqdLh_4RgEKuBs2pQ/s1600/terratech.jpg[/IMG]
+Some trees show a node and can be harvested
+
+for wooden boards now.
+
+[B]The meat extractor was there, in early beta.[/B]
+
+[B]It was powered by Future AA batteries, which were[/B]
+
+[B]used as "ammo" for this tool. You just aimed at dead mobs[/B]
+
+[B]to gather ressources.[/B]
+
+[B][COLOR=yellow][SIZE=2](thx to "phoenixx" and "Jane QP Doe" for additional info)[/COLOR][/SIZE][/B]
+
+[B][COLOR=yellow][SIZE=2]
+[/COLOR][/SIZE][/B]
+
+[B](mlx-440 Meat Extractor)[/B]
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEihZEiTp8mig9a7IeuJWYS1axlZ4JRMlannivnMYcnzatu98KQgAIHv4afu1z-BGwz1oXHhqQk_CrQv3nMSfc5AQ1gbOMuKqXL3Kv0rKYtTEtY_7B9S6VmmiS9sWrzOLjmIJUqhVXpeNnY/s1600/meatex.gif[/IMG]
+[CENTER]
+[COLOR=yellow]The MXL-440 is a standard field model using conventional laser technology to
+ cut up and extract the meat before using an auto link to transfer the
+meat into the inventory. It leaves a minimum of waste, but the
+appropriate skill is required in order to operate it effectively. Like
+all Meat Extractors, the MXL-440 cannot be used as a weapon due to its
+built-in safety function.[/COLOR]
+[/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiTsCOyACk4Hhdx3GavnMIfmB6T5VT3H4l6EY1FtMTn6UYx2puoetjOo0UWZelVbzn5r2YzgTRNOjOxKygKLfs7r43nfgP3_az80ETHj3yTk-e9VsQvZVACgQEAGjRJK-NpaVWymzhaRhE/s1600/Meat_extractor.jpg[/IMG]
+[CENTER]
+[B]Use MeatExtractor with Longu Carcass![/B][/CENTER]
+
+[CENTER]
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg2IoZsGjL5um57U9lArqYJcY13VrBelu3vytUtQWLFRtjFq1Wacj4HohOkqbcO1nX4OWUbGbsTK0Q1Kt_I8Dme-mAquc-xL_a-U3TBUDWpENY-2SplXk_8VGbVC_56k7uM4uJrJHmI_8k/s1600/meat+extract+texture.jpg[/IMG][/CENTER]
+[B]The texture.[/B]
+
+[B]The inventory item of it.[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjDpYdljWo82m76bFvbq_NhsEomhizKXOmtun4DDu5xGCixRZZC94xEI4M4XROWTjFb7D2KbRtdcNo8ObzuTZ_18vYVcZPMUPqPpmDNG-KCGYqmql92yln0TOBMHMwflCNA0iY2KOI-Ah8/s1600/meat+extractor+inv.jpg[/IMG]
+
+[B]Even the Meat Extractor Skill-Icon was still present in VU 3.4 :[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhQXYsMpfyMlEp91hs_Edx9adOoEY8a_DMGOUycUW5U4kfGfkJ2uUbu92TOR2cT8pymGE3tKV7lBneoYkRw3XVUmfwE02Ru5MqSrEG9_s4Qpm5SidNrwXkCJB2PFiIARYIPt49G-OwyCog/s1600/meatxxx.jpg[/IMG]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgMFXi4PLw29C9PWVmiW3agLaoCAZg3p-vx7vcVmarMN6h5sE9CoWzB0iONdKVwXV142DAT4xdwe_EXbDkagoO8VGw17wT3u4gC0Ns4jC1zWyceMlBhOsLovl7q7iDAny6kLHMnUln5zto/s1600/foodpack.gif[/IMG]
+[CENTER]
+[B]The foodpacks were there...as an image. [/B](and unused textures)
+
+[B](VU 3.4)[/B]
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgYwcVBkBypv1iKUisEm_BKL4fJtf-an5OXUKcJUWZ7rHTZcWKnDKiF-A5lWUyIu_EK0e0X7IOF5JQmWJ92_W5DQHUSxjooDn0Plik9Eka7-axMpffRXADHFREYN_nflqLsiWQi9mA3XzE/s1600/foodx.jpg[/IMG][/CENTER]
+
+[CENTER]
+[B]This thing was called FC-100 Food-Mate : [/B][/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjyU0v5ghWzAS9h8iO6cUTECHWCqfRkE13iRYsxgrNWN3eE6rd3GCwKGQ4c2PQqTvw_8wm2o8BVV5iU2-p6zS5zFojFfs8nL7tXsGZMaYzdXVYnRo1Sez5zNDiB8gX71U3PYxKBr6fUBJY/s1600/FC-100Food-Mate.gif[/IMG]
+
+[CENTER]
+[COLOR=yellow]This is one of the most basic field kitchen models.It's
+ able to turn any type of raw food into cooked food, but it can't handle
+ Food Packs. From this perspective it's more practical for experienced
+travelers who are used to gathering their own food in the wild as they
+go.[/COLOR]
+[B]There even was a cooking skill symbol in the folders of VU 3.4 :[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg8r5MuNu5hhauqplU6nbsSHHKhkfbjRDP8Z9CwdPm1WZu6M1tincgrbM8qYW7vI7UeZPDSxIXatGkitX0H8wIwFcXvzgTvuXm0tPXFYsgShvFndYXEDwJEwZF5EUro4DiAepAdxU1N1PE/s1600/cook+skill.jpg[/IMG][/CENTER]
+
+[B]Also todays fruits (papplon, caroot, bombardo) could be found in VU 3.4.[/B]
+
+[B]Spare Ribs, Chicken Leg, bread and a cut off hand,[/B]
+
+[B]never made it into the game.(?)[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEih4v97NOKCNsJUhnHWq6ooO_-zJhTZqnH3ZviRGGheVFtuakoTF2XAy2nBVg3fRQidWg7sju-egYyi_pXXYkP_CYlaiWzMibD2WzODNepVHZ5gZMSEMg878T8TZ-05m7_Db-7lS_GGMTs/s1600/food+303.jpg[/IMG]
+
+[CENTER]
+[U][B]Overview of VU 3.0 (beta)[/B][/U]
+
+[U][B](2001-12-11)[/B][/U]
+
+[SIZE=2](click to enlarge)[/SIZE]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh4zg5sXNpdQJmS8L2A9GBU44YJVCYnxFBn3IWa4n8T3lubTlwejmcl7M38_6eNCyS5KrcRc6H6fIqwYc7ppb_EF4DMswoDIyc1nld2dLezHjMab31aqCtko9POF_y3WiBHPYHCubq90xY/s1600/AIO.jpg[/IMG][/CENTER]
+
+[B]And the old skill symbols all together :[/B]
+[CENTER]
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiAMRTL-jmlozpFYRbLy5Xr7uSZ8a7A0IO3zyoBucyjlzViGJy1ya-h1zRzd04JRT75POMGtVjecEMWzl5_WGPCO7LF0Ci34mttdOlCF95pB7gRzDWM-v7N60f1DdooCxR_SjZaCUQYAwY/s1600/skill+symbols.jpg[/IMG][/CENTER]
+
+[CENTER]
+[B]There also was a PCE-50 Field mate :[/B][/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhtuJP9obSd5YBw_gzchMglw2zhC11l794p5cccStBtIhKXfTKfqAuiOCiSrxmwS998qrqExCYLwQ3N_eaLb-dpWBoJextmtIjUGoESX4fkzDztbdzjhl6I1q8Q4emJgtq6PP5jz7NJG8c/s1600/PCE-50FieldMate.gif[/IMG]
+[CENTER]
+[COLOR=yellow]PCE stands for Portable Computer Enhancement and arethe
+ most common series of Com-Pad models on Calypso. They are originally
+constructed as rugged field models for extensive use in any type of
+environment and were never designed as fashionable urban items.[/COLOR]
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiF4Gb0PyNLliEVKG4RoxhSB4eH7qUCd9nY6AvC5m0romQpBNdlyHAFv7Ql5KVrUA4ypRXouoYueS2v6247pnJ3j6Xl3mAUgAF0NWh2Xp4Nqss5yCwrsomeWZ_ttSL4bNR-AVD4ctaNqrM/s1600/pce-50+field+mate.jpg[/IMG][/CENTER]
+
+The texture.
+
+The 1st ingame weapons :
+
+(not sure if they got removed or renamed)
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjTH321DkGd8KPV1LHq0zjKGh-StZQ_y4bZxsz1FBtX27Rgj9nlOi3w2P3yfBsXvI31zgPP0jvndHGEKpN5sOogN01AD9hHoDZKBl6HVkPvTwSQ6ae0VxQ2-5vyTrZXl_ceiGXRYEFogTk/s1600/EWE+Laser+Handgun+EP-90.gif[/IMG]
+ EWE Laser Handgun EP-90
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiMDstChyphenhyphenjBijLR9RaxfXQskTqXLYna05QZubhSHOJzBs74jLwagYZ79WvpHRuPmn4nLhc7JY_in6akaURffe8tnb7Wis7Y1aH6fuAgSsJs-HxWW4Yb2SA6sOV2StAr87xsH0MIW3xD0PY/s1600/EWE+StarBlaster+Combat+Rifle+AR5.jpg[/IMG]
+
+EWE StarBlaster Combat Rifle AR5
+
+[B]There was this window of, "Mix Injections" (unused) :[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhc2KUnIDAe-J-3Ko1jJzdg9mAsbHp091nS03ojwAHM5GuMrGPRadT1-PGaRWeaoMfVB7UEkBdtcUCKXp6zXKmNzfCuxK-BeOmzGf40C_5nJdKUWr_osq8QgpgeUCGelNDslgElPIXp3VI/s1600/mix+injections.jpg[/IMG]
+
+Maybe this skill symbol was related to it ?
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgBpUUKpxxPLlq0V9WUHdf6a2sa3bdCmPedFNExZRjh8LZCB1c0OL3j6n3sEVRtJPTm8FJPOSRIY66NVEjxJBbm5rM90DYGI08HGM0Zdb2u3X8INOZ5yP7hWXNgzroKp55rLp6fTqks2NE/s1600/mix+injections+skill.jpg[/IMG]
+
+Back in the beta version, the mix injection screen had a different design :
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEj6ejSMbCF-eX1W4OEgf-jXnfjnQGGdh5UTfXF4ThIwFc89hbsi5J6rjKyKDzGKmL2HZ3TG9Aq_mqXGeu9h9fLkRL-f-hiIOnfgb9TXd3raDonFwVq0TL2OgIqUr8WG9FyfcCfuhyr7Q98/s1600/mix+injections+2.jpg[/IMG]
+
+[B]You could find a "Biohazard Box" by Omegaton in the texture folder.[/B]
+
+[B]It has the look and feel of the standard FAP.[/B]
+
+[B]I wonder what happened using it... [/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEi_PbgaB4eDYOa-AaOKZiTKsrDdOjIYwjxadYESNxtzLYhMlBHfuqwShqtB5BnDstiEIm4l_X2h5MXPMD6R0NgnTi5aQ0ftoxDW-JzB4Sq5rsLrhFcMrTQxh-O36EskhNe1mv8sAb2z6EM/s1600/medpack2.jpg[/IMG]
+
+[B]There was this repair/recycler in the texture folder :[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhP9Gl9WCSKkRBuo9XoeSz2aKVbQMKboiJ2kZiUMMWV71ZStACr1ZP_30mfxCpZfnw4u9CT0AeqwG0Wm-Xxw77QATgzJmnQrP13xN9UHAGFOphpP7xs-6ZE8tZEkHYviuy_hkLmQhEzUQo/s1600/recycle2.jpg[/IMG]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgO9J6G1fplLBQ0W-qxd3bZ2HloQ8DbygZJQvses-Ni6E9Wa52hQ8CzTNL3ITeDLgUelrTuIiOT89xYFOFe4gFYsXocXOkO5evPB226hLlqvSUAEn0zhH1k7a_hrCK8WFbT3T1T3CUMjVw/s1600/redyne+recycler.jpg[/IMG]
+
+[B]There was this concept of a surgical glove :[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEj65ymWd1x2li0loP60QD7FOHkjj9BuaOSWX5dHm8k-wsXqv9IViEt-AIfHHGx4qfOZvNqjpPUyx-6hKkmGwQjBpVk8soZSY-SEt96SEBzyET6BWaoEemRk_fyWryWqUEms1wM8WDZ1PVI/s1600/surgicalglove.jpg[/IMG]
+
+[B]Even a monster, called Gazonk, didnt make it into the game :[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEj6zBJwVZfJURHioQtaC3Lnij09rDwYBMbS9EOSzwKHq7uMbO3n-NZjlajMqLvoh96fCmTZsEuJrYtXV4jC5uKVhyphenhyphenYeBeagXM6MggOYBqrfDgl7fsSnMdLfTfwtp_QAB4tO3-gE1k_90g8/s1600/gazonk.gif[/IMG]
+
+[B]But you could see it everytime you logged in (2004-2005) :[/B]
+
+[CENTER]
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhNObR9PazdZtaVV46MQILB4RGwyvZ_K7h049ohh-6IgGCTpwsQmnp7ueeTh_42BhbBLxCqCnfjmxdrDGsx6YsCZqzvqTKY0Y4aS00QgX9LRZPUAlJCLe2H_EkVi5AtIVoE594K24zHSXk/s1600/Entropia_Nature.jpg[/IMG][/CENTER]
+[SIZE=2][COLOR=yellow]The loading screen was called "natures eye" btw. [/COLOR][/SIZE]
+
+[SIZE=2][COLOR=yellow]and it had three versions,[/COLOR][/SIZE]
+
+[SIZE=2][COLOR=yellow]which you can see below :[/COLOR][/SIZE]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg5knd403jA1qULiqb6QiqOhWKoFp0zGfo-xMBZqGjIT1uYamqUSgR1aWQDHe6WuJeNGWhvdpxZTXMi5ghoVhncSoiQCR2acwlAb5O7S2du11qmBszyw7RxG8EQnYNXyNtCytQBwlYuROk/s1600/nature+eye+2.jpg[/IMG]
+[COLOR=yellow]With humans.[/COLOR]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgsvUWLYyY3YG7Zot6BeK8MFytlLbiNd3dP2Tesumn7kTRD2Ulc3pNpoW_yR9uLdKvqBN68_8sUB4rCrWsgPfIzJfcCxmsTSUg3cFup9R67X3Ew4Gdq3ELV4k6f9Ukl-nZGzy1Xef917VE/s1600/svensson_without_humans.jpg[/IMG]
+[COLOR=yellow]Without humans and without Gazonk, Flies and Argonaut.[/COLOR]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh2Ssi-giEJQfCMjAOM2_diRpZpdb7YEYkz19BKRCitipbTpOo8O3O65_ivEbw34AnbH3wvnFFWF3iI784Y2A_60EVXXhcu0pkMmdn-Ay79vnSClim5Mq-RNFhrOfYMtSSi-r0efhKem3A/s1600/gazonkfood.jpg[/IMG]
+
+[B]The Neco Insect also only existed on this single image :[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEir0HOgzzF7NHsYsh0Wf1ZGMnMG15pKw6rL1OgL10xsE6Wm1GTrBbiIawi8hdeU7imwWr19Mm-nQ1gtkMG9W7sKMX_gxO89AhX-P_7zotJgyaY3vDtEEFD49oFt_ZlXgaHOw1UmSfvjiVc/s1600/neco_insect.gif[/IMG]
+
+[B]Same about the "Katang" :[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEj80jmvw01fe5hoZ8yjxQ2JNMNlI1MZils1j3EA5_1M3W5actyAd-zN2rOMeSveO2eb1hyphenhyphen8oDLq48hGl9ih-cnRODW-gEJVgW2bh_cHG2_tPshsQ3Fs7lPQTcll9ujkQ7j2rwAlKjJmPmQ/s1600/katang.gif[/IMG]
+
+[B]"The old textfiles" mentioned something like: [/B]
+
+[B]"[I]What awaits you in the sewer system of Port Atlantis?[/I]"[/B]
+
+[but there never was any sewer system in PA]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEj67KlnRCaK9IfbL6eZwkoPVVjbyE-RYfytq39kVurX8wnvmguKRz1LHegt4GKwKBJ2D6JT8vHDexMirDnUsm4_AYwzks3sfDeMAC9Kn0Blm3juvmYKUg045ChqBsytmqRhKqnWkSMu2gw/s1600/mutant1.jpg[/IMG]
+[COLOR=yellow][SIZE=2]This "mutant" got sold on a T-Shirt back in the days...never [/COLOR]seen him ingame though.[/SIZE]
+
+[B]Or this mutant (probably an Umbranoid(?) :[/B]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiQk0Q6RoUk1864iR6Xs7hrF_mh4Epji7F_b3ww8aM78Ij3Ce7wCpx1XmlN6FhkP2jrp-7wmqW6LTMSgznTEDLpHn2xYrVWIYHT7sVeGxwmmKxRkERol_wqJdFqTSszL-eLkZP68NaU-Mw/s1600/mutant.gif[/IMG]
+[COLOR=yellow]While the 1st Gauss Rifle (Kaiser-Graf HVMR-1) got looted in 2005,[/COLOR]
+
+[COLOR=yellow]one might think that the so called "mutants" already had these[/COLOR]
+
+[COLOR=yellow]type of Gauss Rifles back in 2000...at least on this image, from 2000.[/COLOR]
+
+[COLOR=yellow]Feel free to compare and decide for yourself :[/COLOR]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh-qkznXmQf3RY-LcIXsUkoijDI-9XSC1yQ1sZH8-8-K1yGixzIqaIlMZZJ_W9S9uWeZcy4UdMkZtgh_2dsAjH6D-E7cN02C9YEQP6jYauIS0CTw1j4p67Am8ANQnkIttqXrF9KMBbVMEM/s1600/gauss.JPG[/IMG]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhfQlOmDi9Diz17GNAoFEmCuewE1-Xc809zqwQrKvMGe4n0_6NlasJ9g9QWFMivD2AwOIPeqVp-awWMSz8iwsHO2022HnpiZ-ZZmDz6ile8Ibed5fQbgo_Lwuzq8U0q8HF5qTuQLlp2XTQ/s1600/060403barmaids.jpg[/IMG]
+[CENTER]
+[B]Ahhh the Stahlsteiner! We expect a shipment soon ![/B]
+[/CENTER]
+
+[IMG]https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhrFDexgxceIoa5rhfMG-ez0elshx7cekRNBKo18Qs_5y7IfMiK7aitm3nlSnQB-SENGEIyZYKg7-Jr_kIzuxsPL0N9OnGQcQgEW_BpekTk2yM_hgoJ_hJ3Ctp_A2d3OpWoJPS1Slfg-Xg/s1600/beverages.jpg[/IMG]
+[CENTER]
+[B] Did you know that the textures of the beverages are ingame since 2001 / 2002...[/B]
+
+[B]...but, of coouurrsseee unused to this date (08.03.2017)[/B]
+
+[I]Just like many, many(!) other unused textures that find their way ingame now and then.[/I]
+
+[I]For example as secret robot transmitter.[/I]
+
+[B]The Parley BEER logo got introduced with the beach hut on Treasure Island. (2006)[/B]
+
+[B]
+Only the logo...no beer ofc.[/B]
+
+[B]If you google "Parley Beer", the 1st result will be an actor named "Parley Bear" :[/B]

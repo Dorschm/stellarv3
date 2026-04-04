@@ -56,7 +56,7 @@ export async function setup(
   // Configure the game
   const serverConfig = new TestServerConfig();
   const gameConfig: GameConfig = {
-    gameMap: GameMapType.Asia,
+    gameMap: GameMapType.SolSystem,
     gameMapSize: GameMapSize.Normal,
     gameMode: GameMode.FFA,
     gameType: GameType.Singleplayer,

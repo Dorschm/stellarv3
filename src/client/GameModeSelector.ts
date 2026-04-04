@@ -226,19 +226,17 @@ export class GameModeSelector extends LitElement {
 
   private openSinglePlayerModal = () => {
     if (!this.validateUsername()) return;
-    (
-      document.querySelector("single-player-modal") as SinglePlayerModal
-    )?.open();
+    window.showPage?.("page-single-player");
   };
 
   private openHostLobby = () => {
     if (!this.validateUsername()) return;
-    (document.querySelector("host-lobby-modal") as HostLobbyModal)?.open();
+    window.showPage?.("page-host-lobby");
   };
 
   private openJoinLobby = () => {
     if (!this.validateUsername()) return;
-    (document.querySelector("join-lobby-modal") as JoinLobbyModal)?.open();
+    window.showPage?.("page-join-lobby");
   };
 
   private renderSmallActionCard(
@@ -263,8 +261,8 @@ export class GameModeSelector extends LitElement {
     const mapType = lobby.gameConfig!.gameMap as GameMapType;
     const mapImageSrc = terrainMapFileLoader.getMapData(mapType).webpPath;
     const aspectRatio = this.mapAspectRatios.get(mapType);
-    // Use object-contain for extreme aspect ratios (e.g. Amazon River ~20:1) so
-    // the full map is visible instead of being cropped by object-cover.
+    // Use object-contain for extreme aspect ratios so the full map is visible
+    // instead of being cropped by object-cover.
     const useContain =
       aspectRatio !== undefined && (aspectRatio > 4 || aspectRatio < 0.25);
     const timeRemaining = lobby.startsAt

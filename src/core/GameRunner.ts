@@ -1,4 +1,4 @@
-import { placeName } from "../client/graphics/NameBoxCalculator";
+import { placeName } from "../client/NameBoxCalculator";
 import { getGameLogicConfig } from "./configuration/ConfigLoader";
 import { Executor } from "./execution/ExecutionManager";
 import { RecomputeRailClusterExecution } from "./execution/RecomputeRailClusterExecution";

@@ -2,14 +2,28 @@ import { EventBus, GameEvent } from "../core/EventBus";
 import { PlayerBuildableUnitType, UnitType } from "../core/game/Game";
 import { UnitView } from "../core/game/GameView";
 import { UserSettings } from "../core/game/UserSettings";
-import { UIState } from "./graphics/UIState";
 import { Platform } from "./Platform";
 import { ReplaySpeedMultiplier } from "./utilities/ReplaySpeedMultiplier";
+
+/**
+ * Minimal UIState interface preserved for backward compatibility.
+ * The canonical version lived in graphics/UIState.ts which has been removed (T7).
+ * New code should use the Zustand HUDStore instead.
+ * @deprecated — will be removed when InputHandler is fully replaced by SpaceInputHandler.
+ */
+export interface UIState {
+  attackRatio: number;
+  ghostStructure: PlayerBuildableUnitType | null;
+  overlappingRailroads: number[];
+  ghostRailPaths: import("../core/game/GameMap").TileRef[][];
+  rocketDirectionUp: boolean;
+}
 
 export class MouseUpEvent implements GameEvent {
   constructor(
     public readonly x: number,
     public readonly y: number,
+    public readonly isTileCoord: boolean = false,
   ) {}
 }
 
@@ -54,6 +68,7 @@ export class ContextMenuEvent implements GameEvent {
   constructor(
     public readonly x: number,
     public readonly y: number,
+    public readonly isTileCoord: boolean = false,
   ) {}
 }
 
@@ -137,6 +152,18 @@ export class AutoUpgradeEvent implements GameEvent {
   constructor(
     public readonly x: number,
     public readonly y: number,
+    public readonly isTileCoord: boolean = false,
+  ) {}
+}
+
+/**
+ * Emitted by SpaceMapPlane when the pointer moves over the map.
+ * Coordinates are tile coordinates (not screen pixels).
+ */
+export class TileHoverEvent implements GameEvent {
+  constructor(
+    public readonly tileX: number,
+    public readonly tileY: number,
   ) {}
 }
 
@@ -178,7 +205,7 @@ export class InputHandler {
 
   constructor(
     public uiState: UIState,
-    private canvas: HTMLCanvasElement,
+    private canvas: HTMLCanvasElement | null,
     private eventBus: EventBus,
   ) {}
 
@@ -248,19 +275,27 @@ export class InputHandler {
       ...saved,
     };
 
-    this.canvas.addEventListener("pointerdown", (e) => this.onPointerDown(e));
+    // Pointer events are only registered when a legacy 2D canvas is present.
+    // In the R3F path, SpaceMapPlane handles pointer→tile conversion directly.
+    if (this.canvas) {
+      this.canvas.addEventListener("pointerdown", (e) =>
+        this.onPointerDown(e),
+      );
+      this.canvas.addEventListener(
+        "wheel",
+        (e) => {
+          this.onScroll(e);
+          this.onShiftScroll(e);
+          e.preventDefault();
+        },
+        { passive: false },
+      );
+      this.canvas.addEventListener("contextmenu", (e) =>
+        this.onContextMenu(e),
+      );
+    }
     window.addEventListener("pointerup", (e) => this.onPointerUp(e));
-    this.canvas.addEventListener(
-      "wheel",
-      (e) => {
-        this.onScroll(e);
-        this.onShiftScroll(e);
-        e.preventDefault();
-      },
-      { passive: false },
-    );
     window.addEventListener("pointermove", this.onPointerMove.bind(this));
-    this.canvas.addEventListener("contextmenu", (e) => this.onContextMenu(e));
     window.addEventListener("mousemove", (e) => {
       if (e.movementX || e.movementY) {
         this.eventBus.emit(new MouseMoveEvent(e.clientX, e.clientY));

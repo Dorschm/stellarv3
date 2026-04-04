@@ -56,6 +56,17 @@ app.use(
     },
   }),
 );
+// Fallback: serve maps from resources/ when not found in static/ (dev mode)
+app.use(
+  "/maps",
+  express.static(path.join(__dirname, "../../resources/maps"), {
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith(".webp")) {
+        res.setHeader("Content-Type", "image/webp");
+      }
+    },
+  }),
+);
 
 app.set("trust proxy", 3);
 app.use(

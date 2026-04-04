@@ -48,6 +48,10 @@ export class TestConfig extends DefaultConfig {
     return 20;
   }
 
+  structureMinDist(): number {
+    return 0;
+  }
+
   deletionMarkDuration(): number {
     return 5;
   }

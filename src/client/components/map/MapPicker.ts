@@ -11,18 +11,14 @@ import "./MapDisplay";
 const randomMap = assetUrl("images/RandomMap.webp");
 
 const featuredMaps: GameMapType[] = [
-  GameMapType.World,
-  GameMapType.Europe,
-  GameMapType.NorthAmerica,
-  GameMapType.SouthAmerica,
-  GameMapType.Asia,
-  GameMapType.Africa,
-  GameMapType.Japan,
+  GameMapType.SolSystem,
+  GameMapType.AsteroidBelt,
+  GameMapType.OrionSector,
 ];
 
 @customElement("map-picker")
 export class MapPicker extends LitElement {
-  @property({ type: String }) selectedMap: GameMapType = GameMapType.World;
+  @property({ type: String }) selectedMap: GameMapType = GameMapType.SolSystem;
   @property({ type: Boolean }) useRandomMap = false;
   @property({ type: Boolean }) showMedals = false;
   @property({ type: Boolean }) randomMapDivider = false;

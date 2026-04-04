@@ -28,15 +28,17 @@ import { loadTerrainMap, TerrainMapData } from "../core/game/TerrainMapLoader";
 import { UserSettings } from "../core/game/UserSettings";
 import { WorkerClient } from "../core/worker/WorkerClient";
 import { getPersistentID } from "./Auth";
+import { GameBridge } from "./bridge/GameBridge";
+import { useHUDStore } from "./bridge/HUDStore";
 import {
   AutoUpgradeEvent,
   DoBoatAttackEvent,
   DoGroundAttackEvent,
-  InputHandler,
-  MouseMoveEvent,
   MouseUpEvent,
+  TileHoverEvent,
   TickMetricsEvent,
 } from "./InputHandler";
+import { SpaceInputHandler } from "./bridge/SpaceInputHandler";
 import { endGame, startGame, startTime } from "./LocalPersistantStats";
 import { terrainMapFileLoader } from "./TerrainMapFileLoader";
 import {
@@ -47,9 +49,8 @@ import {
   SendUpgradeStructureIntentEvent,
   Transport,
 } from "./Transport";
-import { createCanvas } from "./Utils";
-import { createRenderer, GameRenderer } from "./graphics/GameRenderer";
-import { GoToPlayerEvent } from "./graphics/layers/Leaderboard";
+import { GoToPlayerEvent } from "./CameraEvents";
+import { mountReactRoot, unmountReactRoot } from "./scene/ReactRoot";
 import SoundManager from "./sound/SoundManager";
 
 export interface LobbyConfig {
@@ -202,6 +203,7 @@ export function joinLobby(
         return false;
       }
       console.log("leaving game");
+      currentGameRunner?.stop();
       currentGameRunner = null;
       transport.leaveGame();
       return true;
@@ -252,8 +254,8 @@ async function createClientGame(
     lobbyConfig.gameStartInfo.players,
   );
 
-  const canvas = createCanvas();
-  const gameRenderer = createRenderer(canvas, gameView, eventBus);
+  // Create the bridge that syncs GameView -> Zustand HUDStore each tick
+  const bridge = new GameBridge(gameView, clientID);
 
   console.log(
     `creating private game got difficulty: ${lobbyConfig.gameStartInfo.config.difficulty}`,
@@ -263,8 +265,8 @@ async function createClientGame(
     lobbyConfig,
     clientID,
     eventBus,
-    gameRenderer,
-    new InputHandler(gameRenderer.uiState, canvas, eventBus),
+    new SpaceInputHandler(eventBus),
+    bridge,
     transport,
     worker,
     gameView,
@@ -276,7 +278,8 @@ export class ClientGameRunner {
   private isActive = false;
 
   private turnsSeen = 0;
-  private lastMousePosition: { x: number; y: number } | null = null;
+  /** Last tile the mouse hovered over on the R3F map plane. */
+  private lastHoveredTile: TileRef | null = null;
 
   private lastMessageTime: number = 0;
   private connectionCheckInterval: NodeJS.Timeout | null = null;
@@ -289,8 +292,8 @@ export class ClientGameRunner {
     private lobby: LobbyConfig,
     private clientID: ClientID | undefined,
     private eventBus: EventBus,
-    private renderer: GameRenderer,
-    private input: InputHandler,
+    private input: SpaceInputHandler,
+    private bridge: GameBridge,
     private transport: Transport,
     private worker: WorkerClient,
     private gameView: GameView,
@@ -359,7 +362,7 @@ export class ClientGameRunner {
     }, 20000);
 
     this.eventBus.on(MouseUpEvent, this.inputEvent.bind(this));
-    this.eventBus.on(MouseMoveEvent, this.onMouseMove.bind(this));
+    this.eventBus.on(TileHoverEvent, this.onTileHover.bind(this));
     this.eventBus.on(AutoUpgradeEvent, this.autoUpgradeEvent.bind(this));
     this.eventBus.on(
       DoBoatAttackEvent,
@@ -370,8 +373,20 @@ export class ClientGameRunner {
       this.doGroundAttackUnderCursor.bind(this),
     );
 
-    this.renderer.initialize();
     this.input.initialize();
+
+    // Mount the React/R3F scene + HUD as the primary rendering path
+    mountReactRoot(this.gameView, this.eventBus);
+
+    // Hide the Lit game-starting-modal now that the React UI is taking over
+    const startingModal = document.querySelector(
+      "game-starting-modal",
+    ) as HTMLElement | null;
+    if (startingModal) {
+      startingModal.classList.add("hidden");
+    }
+    (window as any).__gameStartingModal?.hide();
+
     this.worker.start((gu: GameUpdateViewData | ErrorUpdate) => {
       if (this.lobby.gameStartInfo === undefined) {
         throw new Error("missing gameStartInfo");
@@ -392,7 +407,9 @@ export class ClientGameRunner {
         this.eventBus.emit(new SendHashEvent(hu.tick, hu.hash));
       });
       this.gameView.update(gu);
-      this.renderer.tick();
+
+      // Sync game state into Zustand store — feeds React/R3F scene + HUD
+      this.bridge.tick();
 
       // Emit tick metrics event for performance overlay
       this.eventBus.emit(
@@ -528,6 +545,8 @@ export class ClientGameRunner {
     if (!this.isActive) return;
 
     this.isActive = false;
+    this.input.destroy();
+    unmountReactRoot();
     this.worker.cleanup();
     this.transport.leaveGame();
     if (this.connectionCheckInterval) {
@@ -540,19 +559,26 @@ export class ClientGameRunner {
     }
   }
 
+  /**
+   * Handle a left-click on the map.
+   *
+   * The R3F SpaceMapPlane emits tile coordinates directly.
+   */
   private inputEvent(event: MouseUpEvent) {
-    if (!this.isActive || this.renderer.uiState.ghostStructure !== null) {
+    if (!this.isActive || useHUDStore.getState().ghostStructure !== null) {
       return;
     }
-    const cell = this.renderer.transformHandler.screenToWorldCoordinates(
-      event.x,
-      event.y,
-    );
-    if (!this.gameView.isValidCoord(cell.x, cell.y)) {
+
+    const tileX = event.x;
+    const tileY = event.y;
+
+    if (!this.gameView.isValidCoord(tileX, tileY)) {
       return;
     }
-    console.log(`clicked cell ${cell}`);
-    const tile = this.gameView.ref(cell.x, cell.y);
+    const tile = this.gameView.ref(tileX, tileY);
+
+    // Update selectedTile in HUD store for React consumers
+    this.bridge.setSelectedTile(tile);
     if (
       this.gameView.isLand(tile) &&
       !this.gameView.hasOwner(tile) &&
@@ -576,7 +602,7 @@ export class ClientGameRunner {
         this.eventBus.emit(
           new SendAttackIntentEvent(
             this.gameView.owner(tile).id(),
-            this.myPlayer!.troops() * this.renderer.uiState.attackRatio,
+            this.myPlayer!.troops() * this.bridge.attackRatio,
           ),
         );
       } else if (this.canAutoBoat(actions.buildableUnits, tile)) {
@@ -585,32 +611,32 @@ export class ClientGameRunner {
     });
   }
 
+  /**
+   * Handle middle-click auto-upgrade.
+   *
+   * The R3F SpaceMapPlane emits tile coordinates directly.
+   */
   private autoUpgradeEvent(event: AutoUpgradeEvent) {
     if (!this.isActive) {
       return;
     }
 
-    const cell = this.renderer.transformHandler.screenToWorldCoordinates(
-      event.x,
-      event.y,
-    );
-    if (!this.gameView.isValidCoord(cell.x, cell.y)) {
+    const tileX = event.x;
+    const tileY = event.y;
+
+    if (!this.gameView.isValidCoord(tileX, tileY)) {
       return;
     }
-
-    const tile = this.gameView.ref(cell.x, cell.y);
-
+    const tile = this.gameView.ref(tileX, tileY);
     if (this.myPlayer === null) {
       if (!this.clientID) return;
       const myPlayer = this.gameView.playerByClientID(this.clientID);
       if (myPlayer === null) return;
       this.myPlayer = myPlayer;
     }
-
     if (this.gameView.inSpawnPhase()) {
       return;
     }
-
     this.findAndUpgradeNearestBuilding(tile);
   }
 
@@ -700,7 +726,7 @@ export class ClientGameRunner {
         this.eventBus.emit(
           new SendAttackIntentEvent(
             this.gameView.owner(tile).id(),
-            this.myPlayer!.troops() * this.renderer.uiState.attackRatio,
+            this.myPlayer!.troops() * this.bridge.attackRatio,
           ),
         );
       }
@@ -708,20 +734,17 @@ export class ClientGameRunner {
   }
 
   private getTileUnderCursor(): TileRef | null {
-    if (!this.isActive || !this.lastMousePosition) {
+    if (!this.isActive) {
       return null;
     }
     if (this.gameView.inSpawnPhase()) {
       return null;
     }
-    const cell = this.renderer.transformHandler.screenToWorldCoordinates(
-      this.lastMousePosition.x,
-      this.lastMousePosition.y,
-    );
-    if (!this.gameView.isValidCoord(cell.x, cell.y)) {
-      return null;
+    // R3F pointer events supply the hovered tile directly.
+    if (this.lastHoveredTile !== null) {
+      return this.lastHoveredTile;
     }
-    return this.gameView.ref(cell.x, cell.y);
+    return null;
   }
 
   private canBoatAttack(buildables: BuildableUnit[]): false | TileRef {
@@ -735,7 +758,7 @@ export class ClientGameRunner {
     this.eventBus.emit(
       new SendBoatAttackIntentEvent(
         tile,
-        this.myPlayer.troops() * this.renderer.uiState.attackRatio,
+        this.myPlayer.troops() * this.bridge.attackRatio,
       ),
     );
   }
@@ -746,18 +769,17 @@ export class ClientGameRunner {
     const canBuild = this.canBoatAttack(buildables);
     if (canBuild === false) return false;
 
-    // TODO: Global enable flag
-    // TODO: Global limit autoboat to nearby shore flag
-    // if (!enableAutoBoat) return false;
-    // if (!limitAutoBoatNear) return true;
     const distanceSquared = this.gameView.euclideanDistSquared(tile, canBuild);
     const limit = 100;
     const limitSquared = limit * limit;
     return distanceSquared < limitSquared;
   }
 
-  private onMouseMove(event: MouseMoveEvent) {
-    this.lastMousePosition = { x: event.x, y: event.y };
+  private onTileHover(event: TileHoverEvent) {
+    if (!this.gameView.isValidCoord(event.tileX, event.tileY)) {
+      return;
+    }
+    this.lastHoveredTile = this.gameView.ref(event.tileX, event.tileY);
   }
 
   private onConnectionCheck() {

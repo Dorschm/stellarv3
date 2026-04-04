@@ -1,0 +1,407 @@
+import React, { useState, useCallback, useEffect } from "react";
+import { assetUrl } from "../../core/AssetUrls";
+import {
+  BuildableUnit,
+  BuildMenus,
+  PlayerBuildableUnitType,
+  UnitType,
+  Gold,
+} from "../../core/game/Game";
+import { TileRef } from "../../core/game/GameMap";
+import { translateText } from "../Utils";
+import { renderNumber } from "../Utils";
+import {
+  BuildUnitIntentEvent,
+  SendUpgradeStructureIntentEvent,
+} from "../Transport";
+import {
+  CloseViewEvent,
+  MouseDownEvent,
+  ShowBuildMenuEvent,
+  ShowEmojiMenuEvent,
+} from "../InputHandler";
+import { useGameTick } from "./useGameTick";
+import { useEventBus } from "../bridge/useEventBus";
+import { useHUDStore } from "../bridge/HUDStore";
+
+const warshipIcon = assetUrl("images/BattleshipIconWhite.svg");
+const cityIcon = assetUrl("images/CityIconWhite.svg");
+const factoryIcon = assetUrl("images/FactoryIconWhite.svg");
+const goldCoinIcon = assetUrl("images/GoldCoinIcon.svg");
+const mirvIcon = assetUrl("images/MIRVIcon.svg");
+const missileSiloIcon = assetUrl("images/MissileSiloIconWhite.svg");
+const hydrogenBombIcon = assetUrl("images/MushroomCloudIconWhite.svg");
+const atomBombIcon = assetUrl("images/NukeIconWhite.svg");
+const portIcon = assetUrl("images/PortIcon.svg");
+const samlauncherIcon = assetUrl("images/SamLauncherIconWhite.svg");
+const shieldIcon = assetUrl("images/ShieldIconWhite.svg");
+
+export interface BuildItemDisplay {
+  unitType: PlayerBuildableUnitType;
+  icon: string;
+  description?: string;
+  key?: string;
+  countable?: boolean;
+}
+
+export const buildTable: BuildItemDisplay[][] = [
+  [
+    {
+      unitType: UnitType.AtomBomb,
+      icon: atomBombIcon,
+      description: "build_menu.desc.atom_bomb",
+      key: "unit_type.atom_bomb",
+      countable: false,
+    },
+    {
+      unitType: UnitType.MIRV,
+      icon: mirvIcon,
+      description: "build_menu.desc.mirv",
+      key: "unit_type.mirv",
+      countable: false,
+    },
+    {
+      unitType: UnitType.HydrogenBomb,
+      icon: hydrogenBombIcon,
+      description: "build_menu.desc.hydrogen_bomb",
+      key: "unit_type.hydrogen_bomb",
+      countable: false,
+    },
+    {
+      unitType: UnitType.Warship,
+      icon: warshipIcon,
+      description: "build_menu.desc.warship",
+      key: "unit_type.warship",
+      countable: true,
+    },
+    {
+      unitType: UnitType.Port,
+      icon: portIcon,
+      description: "build_menu.desc.port",
+      key: "unit_type.port",
+      countable: true,
+    },
+    {
+      unitType: UnitType.MissileSilo,
+      icon: missileSiloIcon,
+      description: "build_menu.desc.missile_silo",
+      key: "unit_type.missile_silo",
+      countable: true,
+    },
+    {
+      unitType: UnitType.SAMLauncher,
+      icon: samlauncherIcon,
+      description: "build_menu.desc.sam_launcher",
+      key: "unit_type.sam_launcher",
+      countable: true,
+    },
+    {
+      unitType: UnitType.DefensePost,
+      icon: shieldIcon,
+      description: "build_menu.desc.defense_post",
+      key: "unit_type.defense_post",
+      countable: true,
+    },
+    {
+      unitType: UnitType.City,
+      icon: cityIcon,
+      description: "build_menu.desc.city",
+      key: "unit_type.city",
+      countable: true,
+    },
+    {
+      unitType: UnitType.Factory,
+      icon: factoryIcon,
+      description: "build_menu.desc.factory",
+      key: "unit_type.factory",
+      countable: true,
+    },
+  ],
+];
+
+export const flattenedBuildTable = buildTable.flat();
+
+export function BuildMenu(): React.JSX.Element {
+  const { gameView, eventBus, tick } = useGameTick(50); // Throttle to 50ms
+
+  const [hidden, setHidden] = useState(true);
+  const [playerBuildables, setPlayerBuildables] = useState<BuildableUnit[] | null>(null);
+  const [clickedTile, setClickedTile] = useState<TileRef | null>(null);
+  const [filteredBuildTable, setFilteredBuildTable] = useState<BuildItemDisplay[][]>(buildTable);
+
+  // Listen for build menu toggle events
+  useEventBus(eventBus, ShowBuildMenuEvent, (e) => {
+    if (!gameView.myPlayer()?.isAlive()) {
+      return;
+    }
+    if (!hidden) {
+      // Players sometimes hold control while building a unit,
+      // so if the menu is already open, ignore the event.
+      return;
+    }
+    // R3F pointer events provide tile coordinates directly.
+    if (!gameView.isValidCoord(e.x, e.y)) {
+      return;
+    }
+    const tile = gameView.ref(e.x, e.y);
+    showMenu(tile);
+  });
+
+  useEventBus(eventBus, CloseViewEvent, () => {
+    hideMenu();
+  });
+
+  useEventBus(eventBus, ShowEmojiMenuEvent, () => {
+    hideMenu();
+  });
+
+  useEventBus(eventBus, MouseDownEvent, () => {
+    hideMenu();
+  });
+
+  const hideMenu = useCallback(() => {
+    setHidden(true);
+  }, []);
+
+  const showMenu = useCallback((tile: TileRef) => {
+    setClickedTile(tile);
+    setHidden(false);
+  }, []);
+
+  const refresh = useCallback(() => {
+    const tile = clickedTile;
+    if (tile) {
+      gameView
+        .myPlayer()
+        ?.buildables(tile, BuildMenus.types)
+        .then((buildables) => {
+          setPlayerBuildables(buildables);
+        });
+
+      // Remove disabled buildings from the buildtable
+      const filtered = getBuildableUnits();
+      setFilteredBuildTable(filtered);
+    }
+  }, [gameView, clickedTile]);
+
+  const getBuildableUnits = useCallback(() => {
+    return buildTable.map((row) =>
+      row.filter((item) => !gameView?.config()?.isUnitDisabled(item.unitType)),
+    );
+  }, [gameView]);
+
+  // Refresh on tick when visible
+  useEffect(() => {
+    if (!hidden) {
+      refresh();
+    }
+  }, [tick, hidden, refresh]);
+
+  const canBuildOrUpgrade = (item: BuildItemDisplay): boolean => {
+    if (gameView?.myPlayer() === null || playerBuildables === null) {
+      return false;
+    }
+    const unit = playerBuildables.find((u) => u.type === item.unitType);
+    return unit ? unit.canBuild !== false || unit.canUpgrade !== false : false;
+  };
+
+  const cost = (item: BuildItemDisplay): Gold => {
+    for (const bu of playerBuildables ?? []) {
+      if (bu.type === item.unitType) {
+        return bu.cost;
+      }
+    }
+    return 0n;
+  };
+
+  const count = (item: BuildItemDisplay): string => {
+    const player = gameView?.myPlayer();
+    if (!player) {
+      return "?";
+    }
+    return player.totalUnitLevels(item.unitType).toString();
+  };
+
+  const sendBuildOrUpgrade = (buildableUnit: BuildableUnit, tile: TileRef): void => {
+    if (buildableUnit.canUpgrade !== false) {
+      eventBus.emit(
+        new SendUpgradeStructureIntentEvent(
+          buildableUnit.canUpgrade,
+          buildableUnit.type,
+        ),
+      );
+    } else if (buildableUnit.canBuild) {
+      const rocketDirectionUp =
+        buildableUnit.type === UnitType.AtomBomb ||
+        buildableUnit.type === UnitType.HydrogenBomb
+          ? useHUDStore.getState().rocketDirectionUp
+          : undefined;
+      eventBus.emit(
+        new BuildUnitIntentEvent(buildableUnit.type, tile, rocketDirectionUp),
+      );
+    }
+    hideMenu();
+  };
+
+  if (hidden) {
+    return null as any;
+  }
+
+  const styles = {
+    buildMenu: {
+      position: "fixed" as const,
+      top: "50%",
+      left: "50%",
+      transform: "translate(-50%, -50%)",
+      zIndex: 9999,
+      backgroundColor: "#1e1e1e",
+      padding: "15px",
+      boxShadow: "0 0 20px rgba(0, 0, 0, 0.5)",
+      borderRadius: "10px",
+      display: "flex",
+      flexDirection: "column" as const,
+      alignItems: "center" as const,
+      maxWidth: "95vw",
+      maxHeight: "95vh",
+      overflowY: "auto" as const,
+    },
+    buildRow: {
+      display: "flex",
+      justifyContent: "center" as const,
+      flexWrap: "wrap" as const,
+      width: "100%",
+    },
+    buildButton: {
+      position: "relative" as const,
+      width: "120px",
+      height: "140px",
+      border: "2px solid #444",
+      backgroundColor: "#2c2c2c",
+      color: "white",
+      borderRadius: "12px",
+      cursor: "pointer",
+      transition: "all 0.3s ease",
+      display: "flex",
+      flexDirection: "column" as const,
+      justifyContent: "center" as const,
+      alignItems: "center" as const,
+      margin: "8px",
+      padding: "10px",
+      gap: "5px",
+    },
+    buildIcon: {
+      fontSize: "40px",
+      marginBottom: "5px",
+    },
+    buildName: {
+      fontSize: "14px",
+      fontWeight: "bold" as const,
+      marginBottom: "5px",
+      textAlign: "center" as const,
+    },
+    buildCost: {
+      fontSize: "14px",
+      display: "flex",
+      alignItems: "center" as const,
+      gap: "4px",
+    },
+    buildCountChip: {
+      position: "absolute" as const,
+      top: "-10px",
+      right: "-10px",
+      backgroundColor: "#2c2c2c",
+      color: "white",
+      padding: "2px 10px",
+      borderRadius: "10000px",
+      transition: "all 0.3s ease",
+      fontSize: "12px",
+      display: "flex" as const,
+      justifyContent: "center" as const,
+      alignContent: "center" as const,
+      border: "1px solid #444",
+    },
+    buildCount: {
+      fontWeight: "bold" as const,
+      fontSize: "14px",
+    },
+  };
+
+  return (
+    <div
+      style={styles.buildMenu}
+      onContextMenu={(e) => e.preventDefault()}
+    >
+      {filteredBuildTable.map((row, rowIdx) => (
+        <div key={rowIdx} style={styles.buildRow}>
+          {row.map((item) => {
+            const buildableUnit = playerBuildables?.find(
+              (bu) => bu.type === item.unitType,
+            );
+            if (buildableUnit === undefined) {
+              return null;
+            }
+            const enabled =
+              buildableUnit.canBuild !== false ||
+              buildableUnit.canUpgrade !== false;
+
+            return (
+              <button
+                key={item.unitType}
+                style={{
+                  ...styles.buildButton,
+                  backgroundColor: enabled ? "#2c2c2c" : "#1a1a1a",
+                  borderColor: enabled ? "#444" : "#333",
+                  opacity: enabled ? 1 : 0.7,
+                  cursor: enabled ? "pointer" : "not-allowed",
+                }}
+                onClick={() =>
+                  enabled &&
+                  sendBuildOrUpgrade(buildableUnit, clickedTile!)
+                }
+                disabled={!enabled}
+                title={
+                  !enabled
+                    ? translateText("build_menu.not_enough_money")
+                    : ""
+                }
+              >
+                <img
+                  src={item.icon}
+                  alt={item.unitType}
+                  width={40}
+                  height={40}
+                  style={{ opacity: enabled ? 1 : 0.5 }}
+                />
+                <span style={styles.buildName}>
+                  {item.key && translateText(item.key)}
+                </span>
+                <span style={{ fontSize: "0.6rem" }}>
+                  {item.description && translateText(item.description)}
+                </span>
+                <span style={{ ...styles.buildCost, color: enabled ? "white" : "#ff4444" }}>
+                  {renderNumber(
+                    gameView && gameView.myPlayer() ? cost(item) : 0,
+                  )}
+                  <img
+                    src={goldCoinIcon}
+                    alt="gold"
+                    width={12}
+                    height={12}
+                    style={{ verticalAlign: "middle" }}
+                  />
+                </span>
+                {item.countable && (
+                  <div style={styles.buildCountChip}>
+                    <span style={styles.buildCount}>{count(item)}</span>
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export default BuildMenu;

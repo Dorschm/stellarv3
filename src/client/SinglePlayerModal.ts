@@ -39,7 +39,7 @@ import {
 import { terrainMapFileLoader } from "./TerrainMapFileLoader";
 
 const DEFAULT_OPTIONS = {
-  selectedMap: GameMapType.World,
+  selectedMap: GameMapType.SolSystem,
   selectedDifficulty: Difficulty.Easy,
   bots: 400,
   infiniteGold: false,
@@ -640,7 +640,7 @@ export class SinglePlayerModal extends BaseModal {
     }
 
     console.log(
-      `Starting single player game with map: ${GameMapType[this.selectedMap as keyof typeof GameMapType]}${this.useRandomMap ? " (Randomly selected)" : ""}`,
+      `Starting single player game with map: ${GameMapType[this.selectedMap as unknown as keyof typeof GameMapType]}${this.useRandomMap ? " (Randomly selected)" : ""}`,
     );
     const clientID = generateID();
     const gameID = generateID();
