@@ -11,6 +11,7 @@ import { GameRightSidebar } from "./GameRightSidebar";
 import { ReplayPanel } from "./ReplayPanel";
 import { SettingsModal } from "./SettingsModal";
 import { PlayerPanel } from "./PlayerPanel";
+import { RadialMenu } from "./RadialMenu";
 import { SpawnTimer } from "./SpawnTimer";
 import { ImmunityTimer } from "./ImmunityTimer";
 import { AlertFrame } from "./AlertFrame";
@@ -80,6 +81,7 @@ export function HUDOverlay(): React.JSX.Element {
       </div>
 
       <SettingsModal />
+      <RadialMenu />
       <PlayerPanel />
       <SpawnTimer />
       <ImmunityTimer />

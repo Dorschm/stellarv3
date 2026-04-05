@@ -2,25 +2,23 @@ import React, { useState, useCallback, useEffect } from "react";
 import Countries from "resources/countries.json" with { type: "json" };
 import { assetUrl } from "../../core/AssetUrls";
 import {
-  AllPlayers,
   PlayerActions,
   PlayerProfile,
   PlayerType,
   Relation,
 } from "../../core/game/Game";
 import { TileRef } from "../../core/game/GameMap";
-import { Emoji, flattenedEmojiTable } from "../../core/Util";
 import {
   SendAllianceRequestIntentEvent,
   SendBreakAllianceIntentEvent,
   SendEmbargoAllIntentEvent,
   SendEmbargoIntentEvent,
-  SendEmojiIntentEvent,
   SendTargetPlayerIntentEvent,
 } from "../Transport";
 import {
   CloseViewEvent,
   MouseUpEvent,
+  ShowEmojiMenuEvent,
   SwapRocketDirectionEvent,
 } from "../InputHandler";
 import {
@@ -32,7 +30,12 @@ import {
 import { useGameTick } from "./useGameTick";
 import { useEventBus } from "../bridge/useEventBus";
 import { useHUDStore } from "../bridge/HUDStore";
-import { ShowPlayerPanelEvent } from "./events";
+import {
+  ShowChatModalEvent,
+  ShowDonateResourceModalEvent,
+  ShowPlayerModerationModalEvent,
+  ShowPlayerPanelEvent,
+} from "./events";
 
 const allianceIcon = assetUrl("images/AllianceIconWhite.svg");
 const chatIcon = assetUrl("images/ChatIconWhite.svg");
@@ -198,6 +201,63 @@ export function PlayerPanel(): React.JSX.Element {
     [eventBus, hidePanel],
   );
 
+  // -- Chat (legacy: ctModal.open(sender, other)) --
+  const handleChatClick = useCallback(
+    (sender: any, other: any) => {
+      eventBus.emit(new ShowChatModalEvent(sender, other));
+      hidePanel();
+    },
+    [eventBus, hidePanel],
+  );
+
+  // -- Emoji (legacy: opened EmojiTable with a callback that emitted
+  //    SendEmojiIntentEvent). In the migrated HUD, EmojiTable already
+  //    listens for ShowEmojiMenuEvent with tile coords — reuse it. --
+  const handleEmojiClick = useCallback(
+    (other: any) => {
+      if (!tile) return;
+      const tileX = gameView.x(tile);
+      const tileY = gameView.y(tile);
+      eventBus.emit(new ShowEmojiMenuEvent(tileX, tileY));
+      hidePanel();
+    },
+    [eventBus, gameView, tile, hidePanel],
+  );
+
+  // -- Donate troops / gold (legacy opened an inline send-resource modal;
+  //    in the migrated HUD we emit an event so a dedicated modal component
+  //    can consume it). --
+  const handleDonateTroopClick = useCallback(
+    (other: any) => {
+      eventBus.emit(new ShowDonateResourceModalEvent(other, "troops"));
+      setSuppressNextHide(true);
+    },
+    [eventBus],
+  );
+
+  const handleDonateGoldClick = useCallback(
+    (other: any) => {
+      eventBus.emit(new ShowDonateResourceModalEvent(other, "gold"));
+      setSuppressNextHide(true);
+    },
+    [eventBus],
+  );
+
+  // -- Moderation (lobby-creator only kick flow). --
+  const handleModerationClick = useCallback(
+    (other: any) => {
+      eventBus.emit(new ShowPlayerModerationModalEvent(other));
+      setSuppressNextHide(true);
+    },
+    [eventBus],
+  );
+
+  // -- Rocket direction toggle (self-panel only). --
+  const handleToggleRocketDirection = useCallback(() => {
+    const next = !useHUDStore.getState().rocketDirectionUp;
+    eventBus.emit(new SwapRocketDirectionEvent(next));
+  }, [eventBus]);
+
   const identityChipProps = (type: PlayerType) => {
     switch (type) {
       case PlayerType.Nation:
@@ -268,6 +328,17 @@ export function PlayerPanel(): React.JSX.Element {
   }
 
   const other = owner as any;
+  const isSelf = other.id() === myPlayer.id();
+  const rocketDirectionUp = useHUDStore.getState().rocketDirectionUp;
+  const canSendEmoji = isSelf
+    ? actions?.canSendEmojiAllPlayers
+    : actions?.interaction?.canSendEmoji;
+  const canEmbargo = actions?.interaction?.canEmbargo;
+  const canDonateGold = actions?.interaction?.canDonateGold;
+  const canDonateTroops = actions?.interaction?.canDonateTroops;
+  const canEmbargoAll = actions?.canEmbargoAll;
+  const isLobbyCreator =
+    typeof myPlayer.isLobbyCreator === "function" && myPlayer.isLobbyCreator();
   const flagCode = other.cosmetics.flag;
   const country =
     typeof flagCode === "string"
@@ -404,26 +475,49 @@ export function PlayerPanel(): React.JSX.Element {
             </div>
           )}
 
-          <div className="flex gap-2 flex-wrap">
-            {actions?.interaction?.canSendAllianceRequest && (
-              <button
-                onClick={() => handleAllianceClick(other)}
-                className="flex items-center gap-2 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition-colors"
-                title={translateText("player_panel.send_alliance")}
-              >
-                <img src={allianceIcon} alt="" className="w-4 h-4" />
-                {translateText("player_panel.send_alliance")}
-              </button>
-            )}
+          {/* Rocket direction toggle — only shown when the panel targets the
+              local player (legacy: renderRocketDirectionToggle). */}
+          {isSelf && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleToggleRocketDirection();
+              }}
+              className="mb-3 flex w-full items-center justify-between rounded-xl bg-white/5 px-3 py-2 text-left text-white hover:bg-white/10 transition"
+            >
+              <div className="flex flex-col">
+                <span className="text-sm font-semibold tracking-tight">
+                  {translateText("player_panel.flip_rocket_trajectory")}
+                </span>
+                <span className="text-xs text-zinc-300">
+                  {rocketDirectionUp
+                    ? translateText("player_panel.arc_up")
+                    : translateText("player_panel.arc_down")}
+                </span>
+              </div>
+              <span className="text-lg">🔀</span>
+            </button>
+          )}
 
-            {actions?.interaction?.canBreakAlliance && (
+          {/* Primary action row: chat / emoji / target / donate */}
+          <div className="flex gap-2 flex-wrap">
+            <button
+              onClick={() => handleChatClick(myPlayer, other)}
+              className="flex items-center gap-2 px-3 py-2 bg-zinc-700 hover:bg-zinc-600 text-white rounded transition-colors"
+              title={translateText("player_panel.chat")}
+            >
+              <img src={chatIcon} alt="" className="w-4 h-4" />
+              {translateText("player_panel.chat")}
+            </button>
+
+            {canSendEmoji && (
               <button
-                onClick={() => handleBreakAllianceClick(other)}
-                className="flex items-center gap-2 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
-                title={translateText("player_panel.break_alliance")}
+                onClick={() => handleEmojiClick(other)}
+                className="flex items-center gap-2 px-3 py-2 bg-zinc-700 hover:bg-zinc-600 text-white rounded transition-colors"
+                title={translateText("player_panel.emotes")}
               >
-                <img src={breakAllianceIcon} alt="" className="w-4 h-4" />
-                {translateText("player_panel.break_alliance")}
+                <img src={emojiIcon} alt="" className="w-4 h-4" />
+                {translateText("player_panel.emotes")}
               </button>
             )}
 
@@ -437,7 +531,128 @@ export function PlayerPanel(): React.JSX.Element {
                 {translateText("player_panel.target")}
               </button>
             )}
+
+            {canDonateTroops && (
+              <button
+                onClick={() => handleDonateTroopClick(other)}
+                className="flex items-center gap-2 px-3 py-2 bg-zinc-700 hover:bg-zinc-600 text-white rounded transition-colors"
+                title={translateText("player_panel.send_troops")}
+              >
+                <img src={donateTroopIcon} alt="" className="w-4 h-4" />
+                {translateText("player_panel.troops")}
+              </button>
+            )}
+
+            {canDonateGold && (
+              <button
+                onClick={() => handleDonateGoldClick(other)}
+                className="flex items-center gap-2 px-3 py-2 bg-zinc-700 hover:bg-zinc-600 text-white rounded transition-colors"
+                title={translateText("player_panel.send_gold")}
+              >
+                <img src={donateGoldIcon} alt="" className="w-4 h-4" />
+                {translateText("player_panel.gold")}
+              </button>
+            )}
           </div>
+
+          {/* Secondary row: alliance / embargo (only for non-self targets) */}
+          {!isSelf && (
+            <div className="mt-2 flex gap-2 flex-wrap">
+              {canEmbargo ? (
+                <button
+                  onClick={() => handleEmbargoClick(other)}
+                  className="flex items-center gap-2 px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded transition-colors"
+                  title={translateText("player_panel.stop_trade")}
+                >
+                  <img src={stopTradingIcon} alt="" className="w-4 h-4" />
+                  {translateText("player_panel.stop_trade")}
+                </button>
+              ) : (
+                <button
+                  onClick={() => handleStopEmbargoClick(other)}
+                  className="flex items-center gap-2 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded transition-colors"
+                  title={translateText("player_panel.start_trade")}
+                >
+                  <img src={startTradingIcon} alt="" className="w-4 h-4" />
+                  {translateText("player_panel.start_trade")}
+                </button>
+              )}
+
+              {actions?.interaction?.canBreakAlliance && (
+                <button
+                  onClick={() => handleBreakAllianceClick(other)}
+                  className="flex items-center gap-2 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
+                  title={translateText("player_panel.break_alliance")}
+                >
+                  <img src={breakAllianceIcon} alt="" className="w-4 h-4" />
+                  {translateText("player_panel.break_alliance")}
+                </button>
+              )}
+
+              {actions?.interaction?.canSendAllianceRequest && (
+                <button
+                  onClick={() => handleAllianceClick(other)}
+                  className="flex items-center gap-2 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition-colors"
+                  title={translateText("player_panel.send_alliance")}
+                >
+                  <img src={allianceIcon} alt="" className="w-4 h-4" />
+                  {translateText("player_panel.send_alliance")}
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Embargo-all row: only shown for self-panel, legacy
+              onStopTradingAllClick / onStartTradingAllClick. */}
+          {isSelf && (
+            <div className="mt-2 flex gap-2 flex-wrap">
+              <button
+                onClick={handleStopTradingAllClick}
+                disabled={!canEmbargoAll}
+                className={`flex items-center gap-2 px-3 py-2 rounded text-white transition-colors ${
+                  canEmbargoAll
+                    ? "bg-amber-600 hover:bg-amber-700"
+                    : "bg-zinc-800/60 text-zinc-500 cursor-not-allowed"
+                }`}
+                title={translateText("player_panel.stop_trade_all")}
+              >
+                <img src={stopTradingIcon} alt="" className="w-4 h-4" />
+                {canEmbargoAll
+                  ? translateText("player_panel.stop_trade_all")
+                  : `${translateText("player_panel.stop_trade_all")} ⏳`}
+              </button>
+
+              <button
+                onClick={handleStartTradingAllClick}
+                disabled={!canEmbargoAll}
+                className={`flex items-center gap-2 px-3 py-2 rounded text-white transition-colors ${
+                  canEmbargoAll
+                    ? "bg-emerald-600 hover:bg-emerald-700"
+                    : "bg-zinc-800/60 text-zinc-500 cursor-not-allowed"
+                }`}
+                title={translateText("player_panel.start_trade_all")}
+              >
+                <img src={startTradingIcon} alt="" className="w-4 h-4" />
+                {canEmbargoAll
+                  ? translateText("player_panel.start_trade_all")
+                  : `${translateText("player_panel.start_trade_all")} ⏳`}
+              </button>
+            </div>
+          )}
+
+          {/* Moderation row — lobby creator only (legacy renderModeration). */}
+          {isLobbyCreator && !isSelf && (
+            <div className="mt-2 flex gap-2 flex-wrap">
+              <button
+                onClick={() => handleModerationClick(other)}
+                className="flex items-center gap-2 px-3 py-2 bg-red-700 hover:bg-red-800 text-white rounded transition-colors"
+                title={translateText("player_panel.moderation")}
+              >
+                <img src={shieldIcon} alt="" className="w-4 h-4" />
+                {translateText("player_panel.moderation")}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

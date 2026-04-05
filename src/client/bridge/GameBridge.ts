@@ -108,9 +108,19 @@ export class GameBridge {
     }
   }
 
-  /** Read attackRatio from the Zustand store (replaces renderer.uiState.attackRatio). */
+  /**
+   * Read attackRatio as a normalized 0..1 multiplier (replaces renderer.uiState.attackRatio).
+   *
+   * The HUDStore stores the ratio as a percent integer (0..100) to match the
+   * ControlPanel slider's native range. Consumers that need to multiply by a
+   * troop count (e.g. SendAttackIntentEvent, SendBoatAttackIntentEvent) want a
+   * normalized 0..1 value, so convert here. The store value is clamped to
+   * [0, 100] before normalizing to guard against out-of-range writes.
+   */
   get attackRatio(): number {
-    return useHUDStore.getState().attackRatio;
+    const percent = useHUDStore.getState().attackRatio;
+    const clamped = Math.max(0, Math.min(100, percent));
+    return clamped / 100;
   }
 
   /** Update the selected tile in the HUD store (called on click / context interactions). */

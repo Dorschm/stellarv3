@@ -7,6 +7,7 @@ import { CloseViewEvent } from "../InputHandler";
 import { SendQuickChatEvent } from "../Transport";
 import { translateText } from "../Utils";
 import { useEventBus } from "../bridge/useEventBus";
+import { ShowChatModalEvent } from "./events";
 
 export type QuickChatPhrase = {
   key: string;
@@ -43,6 +44,13 @@ export function ChatModal(): React.JSX.Element {
     if (isOpen) {
       close();
     }
+  });
+
+  // External trigger from PlayerPanel (legacy: ctModal.open(sender, recipient)).
+  // We don't need to pre-select a player in the phrase flow here — the legacy
+  // flow also just opened the modal; sender/recipient are informational.
+  useEventBus(eventBus, ShowChatModalEvent, () => {
+    open();
   });
 
   const getSortedFilteredPlayers = (): PlayerView[] => {

@@ -57,6 +57,31 @@ export class CloseRadialMenuEvent implements GameEvent {
   constructor() {}
 }
 
+// -- Chat modal event — opens ChatModal with a specific sender/recipient pair
+//    (legacy PlayerPanel called ctModal.open(sender, other) directly; in the
+//    migrated HUD we use an event so any component can trigger the modal).
+export class ShowChatModalEvent implements GameEvent {
+  constructor(
+    public readonly sender: PlayerView,
+    public readonly recipient: PlayerView,
+  ) {}
+}
+
+// -- Player moderation modal event (legacy kick/moderation flow,
+//    lobby-creator only).
+export class ShowPlayerModerationModalEvent implements GameEvent {
+  constructor(public readonly target: PlayerView) {}
+}
+
+// -- Donate resource modal event (legacy send-resource modal — lets the
+//    player choose an amount of troops or gold to donate to another player).
+export class ShowDonateResourceModalEvent implements GameEvent {
+  constructor(
+    public readonly target: PlayerView,
+    public readonly mode: "troops" | "gold",
+  ) {}
+}
+
 // -- Railroad event (from RailroadLayer.ts) --
 export class RailTileChangedEvent implements GameEvent {
   constructor(public tile: TileRef) {}
