@@ -377,6 +377,21 @@ export function LangProvider({ children }: { children: ReactNode }) {
   };
 
   // Expose on window for backward compatibility
+  // Publish on `window.langSelector` so the imperative `translateText`
+  // helper in src/client/Utils.ts can find it. That helper is called
+  // *during* child render (e.g. in PlayPage, modals, HUD components), so
+  // the handle MUST exist before React commits the children — which
+  // means we set it synchronously here, not in a useEffect. A useEffect
+  // is still needed to keep the bag current when the language changes
+  // after mount (debug toggle, language switch), so both mechanisms run.
+  if (translations || defaultTranslations) {
+    (window as any).langSelector = {
+      currentLang,
+      translations,
+      defaultTranslations,
+      changeLanguage,
+    };
+  }
   useEffect(() => {
     (window as any).langSelector = {
       currentLang,
@@ -393,6 +408,17 @@ export function LangProvider({ children }: { children: ReactNode }) {
     changeLanguage,
     translateText,
   };
+
+  // Hold the first render until the default (English) language has been
+  // loaded. Without this gate, children render once with `translations`
+  // still undefined — `translateText` then returns raw keys (e.g.
+  // "main.solo") and the mounted DOM never re-renders when the async
+  // `initializeLanguage()` finally resolves. Gating here is cheap because
+  // `loadLanguage("en")` imports a bundled JSON file synchronously from
+  // the module graph; the initial paint is delayed by a single microtask.
+  if (!translations && !defaultTranslations) {
+    return null;
+  }
 
   return (
     <LangContext.Provider value={contextValue}>{children}</LangContext.Provider>

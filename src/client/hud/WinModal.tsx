@@ -18,7 +18,6 @@ import {
   TUTORIAL_VIDEO_URL,
 } from "../Utils";
 import { useGameTick } from "./useGameTick";
-import "../components/PatternButton";
 
 interface PatternContent {
   pattern: Pattern;

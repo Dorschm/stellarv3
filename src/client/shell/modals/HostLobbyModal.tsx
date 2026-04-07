@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { generateID } from "../../../core/Util";
 import { getRuntimeClientServerConfig } from "../../../core/configuration/ConfigLoader";
 import {
@@ -8,11 +8,12 @@ import {
   GameType,
   GameMapSize,
 } from "../../../core/game/Game";
-import { getApiBase } from "../../Api";
+import { getPlayToken } from "../../Auth";
 import { translateText } from "../../Utils";
 import { ModalContainer, ModalPage } from "../components/ModalPage";
 import { useClient } from "../contexts/ClientContext";
 import { useNavigation } from "../contexts/NavigationContext";
+import { LobbyInfoEvent } from "../../../core/Schemas";
 
 const MAPS: { type: GameMapType; label: string }[] = [
   { type: GameMapType.SolSystem, label: "Sol System" },
@@ -29,7 +30,7 @@ const DIFFICULTIES: { type: Difficulty; label: string }[] = [
 
 export function HostLobbyModal() {
   const { showPage } = useNavigation();
-  const { joinLobby, leaveLobby } = useClient();
+  const { eventBus, joinLobby, leaveLobby, updateGameConfig } = useClient();
 
   const [selectedMap, setSelectedMap] = useState<GameMapType>(GameMapType.SolSystem);
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>(Difficulty.Medium);
@@ -40,51 +41,201 @@ export function HostLobbyModal() {
   const [clients, setClients] = useState<{ username: string }[]>([]);
   const [starting, setStarting] = useState(false);
   const leaveLobbyOnCloseRef = useRef(true);
+  // Track whether the server lobby has been created so that config updates
+  // (from the effect below) are not emitted before create_game completes.
+  const lobbyReadyRef = useRef(false);
+  // Store the workerPath for the active lobby so handleStartGame and
+  // error paths can rebuild the same per-worker API URL used by onOpen.
+  const workerPathRef = useRef<string>("");
+
+  const buildConfigPayload = useCallback(
+    () => ({
+      gameMap: selectedMap,
+      gameMapSize: GameMapSize.Normal,
+      gameType: GameType.Private,
+      gameMode,
+      playerTeams: 2,
+      difficulty: selectedDifficulty,
+      bots,
+      infiniteGold: false,
+      donateGold: false,
+      donateTroops: false,
+      infiniteTroops: false,
+      instantBuild: false,
+      randomSpawn: false,
+      nations: "default" as const,
+      disabledUnits: [],
+    }),
+    [selectedMap, selectedDifficulty, gameMode, bots],
+  );
 
   const onOpen = useCallback(async () => {
     const gameID = generateID();
     setLobbyId(gameID);
     leaveLobbyOnCloseRef.current = true;
+    lobbyReadyRef.current = false;
 
-    // Create lobby
+    // Create lobby URL for display/copy
     const config = await getRuntimeClientServerConfig();
-    const url = `/${config.workerPath(gameID)}/game/${gameID}`;
+    const workerPath = config.workerPath(gameID);
+    workerPathRef.current = workerPath;
+    const url = `/${workerPath}/game/${gameID}`;
     setLobbyUrl(window.location.origin + url);
 
-    // Join as host
-    await joinLobby({
-      gameID,
-      source: "host",
-      gameStartInfo: {
-        gameID,
-        players: [],
-        config: {
-          gameMap: selectedMap,
-          gameMapSize: GameMapSize.Normal,
-          gameType: GameType.Private,
-          gameMode,
-          playerTeams: 2,
-          difficulty: selectedDifficulty,
-          bots,
-          infiniteGold: false,
-          donateGold: false,
-          donateTroops: false,
-          infiniteTroops: false,
-          instantBuild: false,
-          randomSpawn: false,
-          nations: "default" as const,
-          disabledUnits: [],
+    // Create the server lobby BEFORE joining. The WebSocket join path rejects
+    // unknown games with "Game not found", so create_game must succeed first.
+    // Server extracts persistentID from the Bearer token for creator identification.
+    //
+    // In dev, the API request is routed through vite's proxy via the
+    // per-worker `/w<N>` path (see vite.config.ts) — `getApiBase()` returns a
+    // non-proxied localhost URL and can't reach the cluster workers, so we
+    // use the relative `/${workerPath}/api/...` form that both dev (vite
+    // proxy) and prod (edge load balancer) resolve correctly.
+    try {
+      const token = await getPlayToken();
+      const createRes = await fetch(
+        `/${workerPath}/api/create_game/${gameID}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          // Create with defaults; selected settings are pushed via
+          // update_game_config right after join.
+          body: JSON.stringify({}),
         },
-        lobbyCreatedAt: Date.now(),
-        visibleAt: Date.now(),
-      },
-    });
-  }, [selectedMap, selectedDifficulty, gameMode, bots, joinLobby]);
+      );
+      if (!createRes.ok) {
+        console.error(
+          `Failed to create lobby ${gameID}: ${createRes.status} ${createRes.statusText}`,
+        );
+        window.dispatchEvent(
+          new CustomEvent("show-message", {
+            detail: {
+              message: "Failed to create lobby. Please try again.",
+              color: "red",
+              duration: 3500,
+            },
+          }),
+        );
+        // Abort opening-state transitions so the user can retry cleanly.
+        leaveLobbyOnCloseRef.current = false;
+        setLobbyId("");
+        setLobbyUrl("");
+        showPage("page-play");
+        return;
+      }
+    } catch (e) {
+      console.error("Error creating lobby:", e);
+      window.dispatchEvent(
+        new CustomEvent("show-message", {
+          detail: {
+            message: "Failed to create lobby. Please try again.",
+            color: "red",
+            duration: 3500,
+          },
+        }),
+      );
+      leaveLobbyOnCloseRef.current = false;
+      setLobbyId("");
+      setLobbyUrl("");
+      showPage("page-play");
+      return;
+    }
+
+    // Join as host now that the server lobby exists. joinLobby can reject
+    // for Turnstile/token/cosmetic-loading errors inside ClientContext —
+    // if it does, we must explicitly tear down the lobby we just created
+    // so it doesn't linger on the server as an orphan private lobby, and
+    // reset local modal state so the user can retry cleanly.
+    try {
+      await joinLobby({
+        gameID,
+        source: "host",
+        gameStartInfo: {
+          gameID,
+          players: [],
+          config: buildConfigPayload(),
+          lobbyCreatedAt: Date.now(),
+          visibleAt: Date.now(),
+        },
+      });
+
+      // Push current host settings to the server. The initial create used
+      // defaults; this ensures the server lobby reflects the UI selections.
+      lobbyReadyRef.current = true;
+      updateGameConfig(buildConfigPayload());
+    } catch (e) {
+      console.error("Failed to join host lobby:", e);
+
+      // Best-effort cleanup: explicitly cancel the created server lobby so
+      // it doesn't remain as an orphan in the GameManager. The creator
+      // token is used so the server can authorize the cancel.
+      try {
+        const token = await getPlayToken();
+        await fetch(`/${workerPath}/api/cancel_game/${gameID}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      } catch (cancelErr) {
+        console.warn(
+          `Failed to cancel orphan lobby ${gameID}:`,
+          cancelErr,
+        );
+      }
+
+      // Reset local modal state so the next open reinitialises cleanly.
+      leaveLobbyOnCloseRef.current = false;
+      lobbyReadyRef.current = false;
+      setLobbyId("");
+      setLobbyUrl("");
+      setStarting(false);
+
+      window.dispatchEvent(
+        new CustomEvent("show-message", {
+          detail: {
+            message: "Failed to join lobby. Please try again.",
+            color: "red",
+            duration: 3500,
+          },
+        }),
+      );
+      showPage("page-play");
+    }
+  }, [buildConfigPayload, joinLobby, showPage, updateGameConfig]);
+
+  // Whenever host settings change after the lobby is live, push the
+  // updated config to the server so UI selections are authoritatively
+  // applied before start. Without this, selections were never reflected
+  // server-side and would silently mismatch gameplay.
+  useEffect(() => {
+    if (!lobbyReadyRef.current) return;
+    updateGameConfig(buildConfigPayload());
+  }, [buildConfigPayload, updateGameConfig]);
+
+  // Track connected clients via LobbyInfoEvent. The server sends this
+  // message whenever the client roster changes (e.g. a guest joins or
+  // leaves). Updating `clients` here lets the modal display the roster
+  // so E2E fixtures can observe the visible player count.
+  useEffect(() => {
+    const onLobbyInfo = (e: LobbyInfoEvent) => {
+      if (e.lobby.clients) {
+        setClients(e.lobby.clients.map((c) => ({ username: c.username })));
+      }
+    };
+    eventBus.on(LobbyInfoEvent, onLobbyInfo);
+    return () => eventBus.off(LobbyInfoEvent, onLobbyInfo);
+  }, [eventBus]);
 
   const onClose = useCallback(() => {
     if (leaveLobbyOnCloseRef.current) {
       leaveLobby();
     }
+    lobbyReadyRef.current = false;
     setLobbyId("");
     setClients([]);
     setStarting(false);
@@ -100,17 +251,34 @@ export function HostLobbyModal() {
   const handleStartGame = useCallback(async () => {
     setStarting(true);
     try {
-      const res = await fetch(`${getApiBase()}/start_game/${lobbyId}`, { method: "POST" });
+      // Include the final host-selected config directly in the start_game
+      // request body. The server applies it before calling game.start(),
+      // which guarantees the authoritative config is in place before the
+      // game locks out further updates. This replaces the previous
+      // fire-and-forget update_game_config intent racing start_game.
+      const token = await getPlayToken();
+      const res = await fetch(
+        `/${workerPathRef.current}/api/start_game/${lobbyId}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ config: buildConfigPayload() }),
+        },
+      );
       if (!res.ok) {
         console.error("Failed to start game:", res.status);
         setStarting(false);
+        return;
       }
       leaveLobbyOnCloseRef.current = false;
     } catch (e) {
       console.error("Failed to start game:", e);
       setStarting(false);
     }
-  }, [lobbyId]);
+  }, [lobbyId, buildConfigPayload]);
 
   return (
     <ModalPage pageId="page-host-lobby" onOpen={onOpen} onClose={onClose}>

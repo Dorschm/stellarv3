@@ -3,6 +3,7 @@ import version from "resources/version.txt?raw";
 import { crazyGamesSDK } from "../CrazyGamesSDK";
 import { DesktopNavBar } from "./components/DesktopNavBar";
 import { Footer } from "./components/Footer";
+import { LangProvider } from "./components/LangSelector";
 import { MainLayout } from "./components/MainLayout";
 import { MobileNavBar } from "./components/MobileNavBar";
 import { PlayPage } from "./components/PlayPage";
@@ -63,8 +64,9 @@ export function App() {
   useHideCrazyGamesElements();
 
   return (
-    <NavigationProvider>
-      <ClientProvider>
+    <LangProvider>
+      <NavigationProvider>
+        <ClientProvider>
         {/* Mobile sidebar + backdrop */}
         <MobileNavBar />
 
@@ -105,9 +107,10 @@ export function App() {
           </div>
         </div>
 
-        {/* Token login (floating, not page-based) */}
-        <TokenLoginModal />
-      </ClientProvider>
-    </NavigationProvider>
+          {/* Token login (floating, not page-based) */}
+          <TokenLoginModal />
+        </ClientProvider>
+      </NavigationProvider>
+    </LangProvider>
   );
 }

@@ -1,7 +1,13 @@
+import { EventBus } from "../../core/EventBus";
 import { PlayerID } from "../../core/game/Game";
 import { TileRef } from "../../core/game/GameMap";
 import { GameUpdateType } from "../../core/game/GameUpdates";
 import { GameView } from "../../core/game/GameView";
+import {
+  AttackRatioEvent,
+  GhostStructureChangedEvent,
+  SwapRocketDirectionEvent,
+} from "../InputHandler";
 import {
   MessageSnapshot,
   PlayerSnapshot,
@@ -21,11 +27,51 @@ import {
  */
 export class GameBridge {
   private _msgIdCounter = 0;
+  private eventBus: EventBus | null = null;
 
   constructor(
     private gameView: GameView,
     private clientID: string | undefined,
   ) {}
+
+  // -------------------------------------------------------------------
+  // EventBus → HUDStore synchronisation
+  // -------------------------------------------------------------------
+
+  /**
+   * Subscribe to input-owned EventBus events and keep the HUDStore in sync.
+   * Must be called once after construction (before the first tick).
+   */
+  initialize(eventBus: EventBus): void {
+    this.eventBus = eventBus;
+    eventBus.on(GhostStructureChangedEvent, this.onGhostStructureChanged);
+    eventBus.on(AttackRatioEvent, this.onAttackRatioChanged);
+    eventBus.on(SwapRocketDirectionEvent, this.onSwapRocketDirection);
+  }
+
+  /** Unsubscribe from the EventBus. Safe to call multiple times. */
+  destroy(): void {
+    if (this.eventBus) {
+      this.eventBus.off(GhostStructureChangedEvent, this.onGhostStructureChanged);
+      this.eventBus.off(AttackRatioEvent, this.onAttackRatioChanged);
+      this.eventBus.off(SwapRocketDirectionEvent, this.onSwapRocketDirection);
+      this.eventBus = null;
+    }
+  }
+
+  private onGhostStructureChanged = (e: GhostStructureChangedEvent): void => {
+    useHUDStore.getState().setGhostStructure(e.ghostStructure);
+  };
+
+  private onAttackRatioChanged = (e: AttackRatioEvent): void => {
+    const state = useHUDStore.getState();
+    const newRatio = Math.max(0, Math.min(100, state.attackRatio + e.attackRatio));
+    state.setAttackRatio(newRatio);
+  };
+
+  private onSwapRocketDirection = (e: SwapRocketDirectionEvent): void => {
+    useHUDStore.getState().setRocketDirectionUp(e.rocketDirectionUp);
+  };
 
   /** Push a snapshot of current GameView state into the Zustand store. */
   tick(): void {
@@ -102,6 +148,7 @@ export class GameBridge {
           goldAmount: u.goldAmount,
           playerID: u.playerID,
           tick,
+          params: u.params,
         }));
         store.addMessages(newMessages);
       }

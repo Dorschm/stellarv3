@@ -289,6 +289,9 @@
     "map": "Map",
     "featured": "Featured",
     "all": "All",
+    "solsystem": "Sol System",
+    "asteroidbelt": "Asteroid Belt",
+    "orionsector": "Orion Sector",
     "world": "World",
     "giantworldmap": "Giant World Map",
     "europe": "Europe",
@@ -357,6 +360,7 @@
   },
   "map_categories": {
     "featured": "Featured",
+    "space": "Space",
     "continental": "Continental",
     "regional": "Regional",
     "tournament": "Tournament",
@@ -367,6 +371,26 @@
   "map_component": {
     "loading": "Loading...",
     "error": "Error"
+  },
+  "host_lobby": {
+    "title": "Host Game",
+    "map": "Map",
+    "difficulty": "Difficulty",
+    "game_mode": "Game Mode",
+    "bots": "Bots",
+    "players": "Players",
+    "start_game": "Start Game",
+    "starting": "Starting…",
+    "copy_url": "Copy URL",
+    "url_copied": "URL copied to clipboard"
+  },
+  "join_lobby": {
+    "title": "Join Private Lobby",
+    "enter_id": "Enter lobby ID",
+    "id_placeholder": "Paste lobby ID or URL",
+    "join": "Join Lobby",
+    "invalid_id": "Invalid lobby ID",
+    "connecting": "Connecting…"
   },
   "private_lobby": {
     "title": "Join Private Lobby",
@@ -734,6 +758,7 @@
     }
   },
   "build_menu": {
+    "title": "Build",
     "desc": {
       "atom_bomb": "Small explosion",
       "hydrogen_bomb": "Large explosion",
@@ -957,6 +982,10 @@
     "search_flag": "Search..."
   },
   "radial_menu": {
+    "attack": "Attack",
+    "boat": "Boat attack",
+    "player_info": "Player info",
+    "unowned": "Unowned territory",
     "delete_unit_title": "Delete Unit",
     "delete_unit_description": "Click to delete the nearest unit"
   },

@@ -9,7 +9,7 @@ import {
 } from "../../../core/game/Game";
 import { getPlayerCosmetics } from "../../Cosmetics";
 import { crazyGamesSDK } from "../../CrazyGamesSDK";
-import { genAnonUsername } from "../../UsernameInput";
+import { genAnonUsername } from "../../AnonUsername";
 import { ModalContainer, ModalPage } from "../components/ModalPage";
 import { useClient } from "../contexts/ClientContext";
 import { useNavigation } from "../contexts/NavigationContext";

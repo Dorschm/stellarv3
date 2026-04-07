@@ -2,7 +2,11 @@ import React, { useState, useCallback, useEffect, useRef } from "react";
 import { assetUrl } from "../../core/AssetUrls";
 import { crazyGamesSDK } from "../CrazyGamesSDK";
 import { PauseGameIntentEvent } from "../Transport";
-import { AlternateViewEvent, RefreshGraphicsEvent } from "../InputHandler";
+import {
+  AlternateViewEvent,
+  CloseViewEvent,
+  RefreshGraphicsEvent,
+} from "../InputHandler";
 import { translateText } from "../Utils";
 import SoundManager from "../sound/SoundManager";
 import { useGameTick } from "./useGameTick";
@@ -50,6 +54,24 @@ export function SettingsModal(): React.JSX.Element {
     setShouldPause(event.shouldPause);
     setWasPausedWhenOpened(event.isPaused);
     pauseGame(true);
+  });
+
+  // Toggle settings on Escape (CloseViewEvent). If the modal is already
+  // open, close it. Otherwise open it — but only when no other overlay
+  // (build menu, chat, radial menu) is currently visible, so a single
+  // Escape press closes the active overlay without immediately opening
+  // settings.
+  useEventBus(eventBus, CloseViewEvent, () => {
+    if (isVisible) {
+      closeModal();
+    } else {
+      const hasActiveOverlay = document.querySelector(
+        '[data-testid="build-menu"], [data-testid="chat-modal"]',
+      );
+      if (!hasActiveOverlay) {
+        openModal();
+      }
+    }
   });
 
   const pauseGame = useCallback(
@@ -207,7 +229,7 @@ export function SettingsModal(): React.JSX.Element {
 
   return (
     <div
-      className="modal-overlay fixed inset-0 bg-black/60 backdrop-blur-xs z-2000 flex items-center justify-center p-4"
+      className="modal-overlay pointer-events-auto fixed inset-0 bg-black/60 backdrop-blur-xs z-2000 flex items-center justify-center p-4"
       ref={modalOverlayRef}
       onContextMenu={(e) => e.preventDefault()}
     >

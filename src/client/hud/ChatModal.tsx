@@ -143,7 +143,7 @@ export function ChatModal(): React.JSX.Element {
   const filteredPlayers = getSortedFilteredPlayers();
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-[1000] flex items-center justify-center pointer-events-auto">
+    <div data-testid="chat-modal" className="fixed inset-0 bg-black/50 z-[1000] flex items-center justify-center pointer-events-auto">
       <div className="bg-gray-900 border border-gray-700 rounded-lg max-w-2xl w-full mx-4 max-h-[80vh] overflow-auto">
         <div className="sticky top-0 bg-gray-800 border-b border-gray-700 p-4 flex items-center justify-between">
           <h2 className="text-white font-bold text-lg">

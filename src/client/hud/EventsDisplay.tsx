@@ -242,7 +242,7 @@ export function EventsDisplay(): React.JSX.Element {
     }
 
     addEvent({
-      description: event.message,
+      description: translateText(event.message, event.params),
       type: event.messageType,
       highlight: true,
       createdAt: gameView.ticks(),

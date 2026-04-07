@@ -21,8 +21,120 @@ import {
   TogglePerformanceOverlayEvent,
   ZoomEvent,
 } from "../InputHandler";
+import { ShowSettingsModalEvent } from "../hud/events";
 import { Platform } from "../Platform";
 import { useHUDStore } from "./HUDStore";
+
+/**
+ * Minimal shape of a pointer-like event we need for modifier checks. Kept
+ * structural so both PointerEvent and React's ThreeEvent nativeEvent work.
+ */
+export interface ModifierEventLike {
+  altKey: boolean;
+  ctrlKey: boolean;
+  metaKey: boolean;
+  shiftKey: boolean;
+}
+
+/**
+ * Load keybinds from localStorage, falling back to defaults. Extracted as a
+ * top-level helper so both SpaceInputHandler and pointer-event emitters
+ * (e.g. SpaceMapPlane) can resolve the configured modifierKey / altKey.
+ */
+export function loadKeybinds(): Record<string, string> {
+  let saved: Record<string, string> = {};
+  try {
+    const parsed = JSON.parse(
+      localStorage.getItem("settings.keybinds") ?? "{}",
+    );
+    saved = Object.fromEntries(
+      Object.entries(parsed)
+        .map(([k, v]) => {
+          let val: unknown;
+          if (v && typeof v === "object" && "value" in v) {
+            val = (v as { value: unknown }).value;
+          } else {
+            val = v;
+          }
+          if (typeof val !== "string") return [k, undefined];
+          return [k, val];
+        })
+        .filter(([, v]) => typeof v === "string"),
+    ) as Record<string, string>;
+  } catch (e) {
+    console.warn("Invalid keybinds JSON:", e);
+  }
+
+  const isMac = Platform.isMac;
+
+  return {
+    toggleView: "Space",
+    coordinateGrid: "KeyM",
+    centerCamera: "KeyC",
+    moveUp: "KeyW",
+    moveDown: "KeyS",
+    moveLeft: "KeyA",
+    moveRight: "KeyD",
+    zoomOut: "KeyQ",
+    zoomIn: "KeyE",
+    attackRatioDown: "KeyT",
+    attackRatioUp: "KeyY",
+    boatAttack: "KeyB",
+    groundAttack: "KeyG",
+    swapDirection: "KeyU",
+    modifierKey: isMac ? "MetaLeft" : "ControlLeft",
+    altKey: "AltLeft",
+    buildCity: "Digit1",
+    buildFactory: "Digit2",
+    buildPort: "Digit3",
+    buildDefensePost: "Digit4",
+    buildMissileSilo: "Digit5",
+    buildSamLauncher: "Digit6",
+    buildWarship: "Digit7",
+    buildAtomBomb: "Digit8",
+    buildHydrogenBomb: "Digit9",
+    buildMIRV: "Digit0",
+    pauseGame: "KeyP",
+    gameSpeedUp: "Period",
+    gameSpeedDown: "Comma",
+    ...saved,
+  };
+}
+
+/**
+ * Evaluate whether the configured `modifierKey` keybind is pressed on a
+ * pointer event. Mirrors the legacy `InputHandler.isModifierKeyPressed`
+ * semantics so keybind remaps propagate to the R3F pointer pipeline.
+ */
+export function isModifierKeyPressed(
+  event: ModifierEventLike,
+  keybinds: Record<string, string>,
+): boolean {
+  const key = keybinds.modifierKey;
+  return (
+    ((key === "AltLeft" || key === "AltRight") && event.altKey) ||
+    ((key === "ControlLeft" || key === "ControlRight") && event.ctrlKey) ||
+    ((key === "ShiftLeft" || key === "ShiftRight") && event.shiftKey) ||
+    ((key === "MetaLeft" || key === "MetaRight") && event.metaKey)
+  );
+}
+
+/**
+ * Evaluate whether the configured `altKey` keybind is pressed on a pointer
+ * event. Mirrors the legacy `InputHandler.isAltKeyPressed` semantics.
+ */
+export function isAltKeyPressed(
+  event: ModifierEventLike,
+  keybinds: Record<string, string>,
+): boolean {
+  const key = keybinds.altKey;
+  return (
+    ((key === "AltLeft" || key === "AltRight") && event.altKey) ||
+    ((key === "ControlLeft" || key === "ControlRight") && event.ctrlKey) ||
+    ((key === "ShiftLeft" || key === "ShiftRight") && event.shiftKey) ||
+    ((key === "MetaLeft" || key === "MetaRight") && event.metaKey)
+  );
+}
 
 /**
  * Keyboard-only input handler for the new React/R3F pipeline.
@@ -74,63 +186,7 @@ export class SpaceInputHandler {
   // -------------------------------------------------------------------
 
   private loadKeybinds(): void {
-    let saved: Record<string, string> = {};
-    try {
-      const parsed = JSON.parse(
-        localStorage.getItem("settings.keybinds") ?? "{}",
-      );
-      saved = Object.fromEntries(
-        Object.entries(parsed)
-          .map(([k, v]) => {
-            let val: unknown;
-            if (v && typeof v === "object" && "value" in v) {
-              val = (v as { value: unknown }).value;
-            } else {
-              val = v;
-            }
-            if (typeof val !== "string") return [k, undefined];
-            return [k, val];
-          })
-          .filter(([, v]) => typeof v === "string"),
-      ) as Record<string, string>;
-    } catch (e) {
-      console.warn("Invalid keybinds JSON:", e);
-    }
-
-    const isMac = Platform.isMac;
-
-    this.keybinds = {
-      toggleView: "Space",
-      coordinateGrid: "KeyM",
-      centerCamera: "KeyC",
-      moveUp: "KeyW",
-      moveDown: "KeyS",
-      moveLeft: "KeyA",
-      moveRight: "KeyD",
-      zoomOut: "KeyQ",
-      zoomIn: "KeyE",
-      attackRatioDown: "KeyT",
-      attackRatioUp: "KeyY",
-      boatAttack: "KeyB",
-      groundAttack: "KeyG",
-      swapDirection: "KeyU",
-      modifierKey: isMac ? "MetaLeft" : "ControlLeft",
-      altKey: "AltLeft",
-      buildCity: "Digit1",
-      buildFactory: "Digit2",
-      buildPort: "Digit3",
-      buildDefensePost: "Digit4",
-      buildMissileSilo: "Digit5",
-      buildSamLauncher: "Digit6",
-      buildWarship: "Digit7",
-      buildAtomBomb: "Digit8",
-      buildHydrogenBomb: "Digit9",
-      buildMIRV: "Digit0",
-      pauseGame: "KeyP",
-      gameSpeedUp: "Period",
-      gameSpeedDown: "Comma",
-      ...saved,
-    };
+    this.keybinds = loadKeybinds();
   }
 
   private startMovementLoop(): void {
@@ -228,8 +284,19 @@ export class SpaceInputHandler {
 
     if (e.code === "Escape") {
       e.preventDefault();
+      // Close any open overlays first (RadialMenu, BuildMenu, etc.).
       this.eventBus.emit(new CloseViewEvent());
-      this.setGhostStructure(null);
+      const currentGhost = useHUDStore.getState().ghostStructure;
+      if (currentGhost !== null) {
+        // If a build ghost is active, just clear it — don't open settings.
+        this.setGhostStructure(null);
+      } else {
+        // No ghost structure to clear → open/toggle the settings modal
+        // (same ShowSettingsModalEvent used by the gear icon in
+        // GameRightSidebar). SettingsModal's own Escape keydown handler
+        // closes it when already visible, giving toggle semantics.
+        this.eventBus.emit(new ShowSettingsModalEvent(true));
+      }
     }
 
     // Read ghostStructure from HUD store

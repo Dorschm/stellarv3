@@ -1,4 +1,4 @@
-import React, { useRef, useCallback } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import {
   BufferGeometry,
   CatmullRomCurve3,
@@ -19,7 +19,9 @@ import {
   RailroadDestructionUpdate,
   RailroadSnapUpdate,
 } from "../../core/game/GameUpdates";
+import { GameUpdates } from "../../core/game/Game";
 import { TileRef } from "../../core/game/GameMap";
+import { SceneTickEvent } from "../InputHandler";
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -118,24 +120,35 @@ function createLaneMeshes(
 /**
  * WarpLaneRenderer — renders railroads as glowing animated "warp lanes".
  *
- * - Reads railroad construction/destruction/snap updates from GameView each tick.
+ * - Ingests railroad construction/destruction/snap updates from an
+ *   {@link SceneTickEvent} emitted once per game tick by
+ *   {@link ClientGameRunner}. This guarantees every tick is processed
+ *   exactly once — polling `GameView.updatesSinceLastTick()` from
+ *   `useFrame` would drop intermediate ticks during catch-up / reconnects.
+ * - Maintains an authoritative `laneSpecsRef` (id → tiles) so rendered
+ *   lanes can be deterministically rebuilt from scratch on remount or
+ *   after an explicit resync.
  * - Renders each lane as a TubeGeometry with emissive pulsing animation.
- * - Cargo freighter (Train) units are positioned along lane paths in UnitRenderer,
- *   but this component provides the visual lane infrastructure.
+ * - Cargo freighter (Train) units are positioned along lane paths in
+ *   UnitRenderer, but this component provides the visual lane infrastructure.
  */
 export function WarpLaneRenderer(): React.JSX.Element {
-  const { gameView: game } = useGameView();
+  const { gameView: game, eventBus } = useGameView();
 
   const groupRef = useRef<Group>(null);
   const lanesRef = useRef<Map<number, LaneState>>(new Map());
+  /**
+   * Authoritative lane specs (id → tile path) — the set of lanes that
+   * *should* exist based on every construction/snap/destruction event we
+   * have observed. Used by {@link resyncLanes} to rebuild rendered meshes
+   * from scratch after a remount or missed state.
+   */
+  const laneSpecsRef = useRef<Map<number, TileRef[]>>(new Map());
   const elapsedRef = useRef(0);
-
-  const mapWidth = game.width();
-  const mapHeight = game.height();
 
   // ── Lane management helpers ─────────────────────────────────────────
 
-  const addLane = useCallback(
+  const addLaneMeshes = useCallback(
     (id: number, tiles: TileRef[]) => {
       if (lanesRef.current.has(id)) return;
       if (!groupRef.current) return;
@@ -164,10 +177,7 @@ export function WarpLaneRenderer(): React.JSX.Element {
     [game],
   );
 
-  const removeLane = useCallback((id: number) => {
-    const lane = lanesRef.current.get(id);
-    if (!lane) return;
-
+  const disposeLaneMeshes = useCallback((lane: LaneState) => {
     if (groupRef.current) {
       groupRef.current.remove(lane.tubeMesh);
       groupRef.current.remove(lane.glowLine);
@@ -176,17 +186,62 @@ export function WarpLaneRenderer(): React.JSX.Element {
     lane.material.dispose();
     lane.glowLine.geometry.dispose();
     lane.glowMaterial.dispose();
-    lanesRef.current.delete(id);
   }, []);
 
-  // ── Per-frame update ────────────────────────────────────────────────
-  useFrame((_, delta) => {
-    elapsedRef.current += delta;
-    const t = elapsedRef.current;
+  const removeLaneMeshes = useCallback(
+    (id: number) => {
+      const lane = lanesRef.current.get(id);
+      if (!lane) return;
+      disposeLaneMeshes(lane);
+      lanesRef.current.delete(id);
+    },
+    [disposeLaneMeshes],
+  );
 
-    // ── Process game updates ──────────────────────────────────────────
-    const updates = game.updatesSinceLastTick();
-    if (updates) {
+  const addLane = useCallback(
+    (id: number, tiles: TileRef[]) => {
+      laneSpecsRef.current.set(id, tiles);
+      addLaneMeshes(id, tiles);
+    },
+    [addLaneMeshes],
+  );
+
+  const removeLane = useCallback(
+    (id: number) => {
+      laneSpecsRef.current.delete(id);
+      removeLaneMeshes(id);
+    },
+    [removeLaneMeshes],
+  );
+
+  /**
+   * Deterministic resync path — dispose all currently rendered lane meshes
+   * and rebuild them from {@link laneSpecsRef}. Safe to call at any time;
+   * used on mount so remounts reconstruct rendered state from the
+   * authoritative spec map rather than relying on replayed deltas.
+   */
+  const resyncLanes = useCallback(() => {
+    for (const lane of lanesRef.current.values()) {
+      disposeLaneMeshes(lane);
+    }
+    lanesRef.current.clear();
+
+    if (!groupRef.current) return;
+    for (const [id, tiles] of laneSpecsRef.current) {
+      addLaneMeshes(id, tiles);
+      const lane = lanesRef.current.get(id);
+      if (lane) {
+        // Lanes rebuilt from spec are already considered "built" — skip the
+        // construction fade-in so a remount does not re-trigger build-in.
+        lane.buildProgress = 1;
+        lane.built = true;
+      }
+    }
+  }, [addLaneMeshes, disposeLaneMeshes]);
+
+  // ── Process a single tick's updates ────────────────────────────────
+  const processTickUpdates = useCallback(
+    (updates: GameUpdates) => {
       // Construction
       const constructions = updates[GameUpdateType.RailroadConstructionEvent];
       if (constructions) {
@@ -218,9 +273,38 @@ export function WarpLaneRenderer(): React.JSX.Element {
           removeLane(du.id);
         }
       }
-    }
+    },
+    [addLane, removeLane],
+  );
 
-    // ── Animate existing lanes ────────────────────────────────────────
+  // ── Tick-driven ingestion via EventBus ──────────────────────────────
+  useEffect(() => {
+    const handler = (event: SceneTickEvent) => {
+      processTickUpdates(event.updates);
+    };
+    eventBus.on(SceneTickEvent, handler);
+
+    // On mount, rebuild any previously-known lanes from the authoritative
+    // spec map. This handles component remounts mid-session — without this
+    // the rendered lane set would lag until new deltas arrived.
+    resyncLanes();
+
+    return () => {
+      eventBus.off(SceneTickEvent, handler);
+      // Dispose every tracked lane mesh/geometry/material on unmount so
+      // repeated session transitions do not leak GPU resources.
+      for (const lane of lanesRef.current.values()) {
+        disposeLaneMeshes(lane);
+      }
+      lanesRef.current.clear();
+    };
+  }, [eventBus, processTickUpdates, resyncLanes, disposeLaneMeshes]);
+
+  // ── Per-frame animation only (NO update polling) ───────────────────
+  useFrame((_, delta) => {
+    elapsedRef.current += delta;
+    const t = elapsedRef.current;
+
     for (const lane of lanesRef.current.values()) {
       // Construction build-in animation
       if (!lane.built) {

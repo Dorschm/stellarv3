@@ -17,7 +17,7 @@ import {
   ServerErrorMessage,
 } from "../core/Schemas";
 import { generateID, replacer } from "../core/Util";
-import { CreateGameInputSchema } from "../core/WorkerSchemas";
+import { CreateGameInputSchema, GameInputSchema } from "../core/WorkerSchemas";
 import { archive, finalizeGameRecord } from "./Archive";
 import { Client } from "./Client";
 import { GameManager } from "./GameManager";
@@ -223,7 +223,7 @@ export async function startWorker() {
     log.info(`starting private lobby with id ${req.params.id}`);
     const game = gm.game(req.params.id);
     if (!game) {
-      return;
+      return res.status(404).json({ error: "Game not found" });
     }
     if (game.isPublic()) {
       // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
@@ -231,9 +231,89 @@ export async function startWorker() {
       log.info(
         `cannot start public game ${game.id}, game is public, ip: ${ipAnonymize(clientIP)}`,
       );
-      return;
+      return res.status(400).json({ error: "Cannot start public game" });
     }
+
+    // Authorize: only the lobby creator can start the game. This also
+    // prevents unauthorized callers from smuggling a config via the body.
+    const creatorPersistentID = game.getCreatorPersistentID();
+    if (creatorPersistentID !== undefined) {
+      const authHeader = req.headers.authorization;
+      if (!authHeader?.startsWith("Bearer ")) {
+        return res
+          .status(401)
+          .json({ error: "Authorization header required to start a game" });
+      }
+      const token = authHeader.substring("Bearer ".length);
+      const result = await verifyClientToken(token, config);
+      if (result.type !== "success") {
+        log.warn(`Invalid start_game token: ${result.message}`);
+        return res.status(401).json({ error: "Invalid token" });
+      }
+      if (result.persistentId !== creatorPersistentID) {
+        log.warn(`Non-creator attempted to start game ${game.id}`);
+        return res.status(403).json({ error: "Only the creator can start" });
+      }
+    }
+
+    // Apply the final host-selected config BEFORE starting the game. This
+    // closes the race between fire-and-forget update_game_config intents
+    // and game.start(), which otherwise locks config updates out after
+    // the game has started.
+    if (req.body && typeof req.body === "object" && req.body.config) {
+      const parsed = GameInputSchema.safeParse(req.body.config);
+      if (!parsed.success) {
+        const error = z.prettifyError(parsed.error);
+        return res.status(400).json({ error });
+      }
+      // Never allow flipping a private lobby to public via start_game.
+      if (parsed.data.gameType === GameType.Public) {
+        return res
+          .status(400)
+          .json({ error: "Cannot change game type on start" });
+      }
+      game.updateGameConfig(parsed.data);
+    }
+
     game.start();
+    res.status(200).json({ success: true });
+  });
+
+  // Cancel a private lobby that was created but never successfully joined
+  // or started. Used by the host UI to recover from a failed join so the
+  // lobby does not linger as an orphan on the server.
+  app.post("/api/cancel_game/:id", async (req, res) => {
+    const id = req.params.id;
+    const game = gm.game(id);
+    if (!game) {
+      return res.status(404).json({ error: "Game not found" });
+    }
+    if (game.isPublic()) {
+      return res.status(400).json({ error: "Cannot cancel public game" });
+    }
+
+    const creatorPersistentID = game.getCreatorPersistentID();
+    if (creatorPersistentID !== undefined) {
+      const authHeader = req.headers.authorization;
+      if (!authHeader?.startsWith("Bearer ")) {
+        return res
+          .status(401)
+          .json({ error: "Authorization header required to cancel a game" });
+      }
+      const token = authHeader.substring("Bearer ".length);
+      const result = await verifyClientToken(token, config);
+      if (result.type !== "success") {
+        log.warn(`Invalid cancel_game token: ${result.message}`);
+        return res.status(401).json({ error: "Invalid token" });
+      }
+      if (result.persistentId !== creatorPersistentID) {
+        log.warn(`Non-creator attempted to cancel game ${id}`);
+        return res.status(403).json({ error: "Only the creator can cancel" });
+      }
+    }
+
+    game.cancel();
+    log.info(`Worker ${workerId}: cancelled lobby ${id}`);
     res.status(200).json({ success: true });
   });
 

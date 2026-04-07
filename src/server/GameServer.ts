@@ -665,6 +665,30 @@ export class GameServer {
     });
   }
 
+  // Returns the persistentID of the lobby creator, or undefined if this
+  // game was not created with one (e.g. public/admin-created games).
+  public getCreatorPersistentID(): string | undefined {
+    return this.creatorPersistentID;
+  }
+
+  // Cancel a lobby that was created but never successfully started — e.g.
+  // the host failed to complete the WebSocket join handshake after
+  // create_game succeeded. Marks the game as ended so GameManager.tick()
+  // removes it on the next sweep, preventing orphan private lobbies.
+  public cancel(): void {
+    if (this._hasStarted || this._hasEnded) {
+      return;
+    }
+    this.log.info("cancelling lobby", { gameID: this.id });
+    this._hasEnded = true;
+    // Close any stray websockets that may have attached before the cancel.
+    this.websockets.forEach((ws) => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.close(1000, "lobby cancelled");
+      }
+    });
+  }
+
   public start() {
     if (this._hasStarted || this._hasEnded) {
       return;

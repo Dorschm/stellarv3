@@ -10,7 +10,7 @@ import {
   validateUsername,
 } from "../../../core/validations/username";
 import { translateText } from "../../Utils";
-import { genAnonUsername } from "../../UsernameInput";
+import { genAnonUsername } from "../../AnonUsername";
 import { useClient } from "../contexts/ClientContext";
 
 export function UsernameInput() {

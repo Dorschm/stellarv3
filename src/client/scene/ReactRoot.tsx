@@ -9,6 +9,12 @@ import {
 } from "../hud/TransformContext";
 import { HUDOverlay } from "../hud/HUDOverlay";
 import { SpaceScene } from "./SpaceScene";
+import {
+  MouseUpEvent,
+  MouseDownEvent,
+  ContextMenuEvent,
+  CloseViewEvent,
+} from "../InputHandler";
 
 /** Persistent handle so we can unmount cleanly when the game ends. */
 let reactRoot: Root | null = null;
@@ -59,6 +65,47 @@ export function mountReactRoot(gameView: GameView, eventBus: EventBus): void {
     </GameViewContext.Provider>,
   );
 
+  // Expose the active GameView and EventBus on `window` for Playwright
+  // E2E tests so specs can call `window.__gameView.ticks()` for read-only
+  // assertions and `window.__eventBus.emit(...)` for triggering game
+  // events when canvas pointer delivery is unreliable.
+  // Only attached in non-prod to keep production bundles free of this
+  // debug surface.
+  if (process.env.GAME_ENV !== "prod") {
+    const w = window as unknown as {
+      __gameView: GameView;
+      __eventBus: EventBus;
+      __emitClick: (tileX: number, tileY: number) => void;
+      __emitRightClick: (
+        tileX: number,
+        tileY: number,
+        clientX: number,
+        clientY: number,
+      ) => void;
+      __emitMouseDown: (tileX: number, tileY: number) => void;
+      __closeMenus: () => void;
+    };
+    w.__gameView = gameView;
+    w.__eventBus = eventBus;
+    w.__emitClick = (tileX: number, tileY: number) => {
+      eventBus.emit(new MouseUpEvent(tileX, tileY, true));
+    };
+    w.__emitRightClick = (
+      tileX: number,
+      tileY: number,
+      clientX: number,
+      clientY: number,
+    ) => {
+      eventBus.emit(new ContextMenuEvent(tileX, tileY, true, clientX, clientY));
+    };
+    w.__emitMouseDown = (tileX: number, tileY: number) => {
+      eventBus.emit(new MouseDownEvent(tileX, tileY));
+    };
+    w.__closeMenus = () => {
+      eventBus.emit(new CloseViewEvent());
+    };
+  }
+
   console.log("[ReactRoot] mounted as primary rendering path");
 }
 
@@ -75,5 +122,23 @@ export function unmountReactRoot(): void {
   const container = document.getElementById("react-root");
   if (container) {
     container.remove();
+  }
+
+  // Remove the E2E test hooks so tests can detect a fresh mount next game.
+  if (process.env.GAME_ENV !== "prod") {
+    const w = window as unknown as {
+      __gameView?: unknown;
+      __eventBus?: unknown;
+      __emitClick?: unknown;
+      __emitRightClick?: unknown;
+      __emitMouseDown?: unknown;
+      __closeMenus?: unknown;
+    };
+    delete w.__gameView;
+    delete w.__eventBus;
+    delete w.__emitClick;
+    delete w.__emitRightClick;
+    delete w.__emitMouseDown;
+    delete w.__closeMenus;
   }
 }

@@ -359,6 +359,18 @@ export class MapPlaylist {
     const rand = new PseudoRandom(Date.now());
     const playlist: GameMapType[] = [];
 
+    // Adapt non-consecutive window to the number of distinct maps available.
+    // The window must be strictly less than the unique map count, otherwise
+    // no valid placement exists once every distinct map appears in the tail.
+    const uniqueMapCount = new Set(maps).size;
+    const nonConsecutiveNum = Math.max(0, Math.min(5, uniqueMapCount - 1));
+
+    // If strict spacing is impossible (0 or 1 unique maps), short-circuit to
+    // a plain shuffle instead of looping through guaranteed-failure retries.
+    if (nonConsecutiveNum === 0) {
+      return rand.shuffleArray([...maps]);
+    }
+
     const numAttempts = 10000;
     for (let attempt = 0; attempt < numAttempts; attempt++) {
       playlist.length = 0;
@@ -367,7 +379,7 @@ export class MapPlaylist {
 
       let success = true;
       while (source.length > 0) {
-        if (!this.addNextMapNonConsecutive(playlist, source)) {
+        if (!this.addNextMapNonConsecutive(playlist, source, nonConsecutiveNum)) {
           success = false;
           break;
         }
@@ -388,8 +400,8 @@ export class MapPlaylist {
   private addNextMapNonConsecutive(
     playlist: GameMapType[],
     source: GameMapType[],
+    nonConsecutiveNum: number,
   ): boolean {
-    const nonConsecutiveNum = 5;
     const lastMaps = playlist.slice(-nonConsecutiveNum);
 
     for (let i = 0; i < source.length; i++) {

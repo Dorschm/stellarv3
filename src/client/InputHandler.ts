@@ -1,7 +1,8 @@
 import { EventBus, GameEvent } from "../core/EventBus";
-import { PlayerBuildableUnitType, UnitType } from "../core/game/Game";
+import { GameUpdates, PlayerBuildableUnitType, UnitType } from "../core/game/Game";
 import { UnitView } from "../core/game/GameView";
 import { UserSettings } from "../core/game/UserSettings";
+import { ShowSettingsModalEvent } from "./hud/events";
 import { Platform } from "./Platform";
 import { ReplaySpeedMultiplier } from "./utilities/ReplaySpeedMultiplier";
 
@@ -69,6 +70,12 @@ export class ContextMenuEvent implements GameEvent {
     public readonly x: number,
     public readonly y: number,
     public readonly isTileCoord: boolean = false,
+    // Optional screen-space coordinates so consumers (e.g. RadialMenu)
+    // can anchor UI near the actual click position instead of the
+    // viewport centre. Only populated when the emitter has a native
+    // pointer event (SpaceMapPlane.onContextMenu).
+    public readonly screenX?: number,
+    public readonly screenY?: number,
   ) {}
 }
 
@@ -167,6 +174,14 @@ export class TileHoverEvent implements GameEvent {
   ) {}
 }
 
+/**
+ * Emitted by SpaceMapPlane when the pointer leaves the map mesh so
+ * downstream consumers can invalidate any cached hover tile. Without this
+ * signal, boat/ground-attack hotkeys would target whatever tile the pointer
+ * last hovered — even after the cursor left the map.
+ */
+export class TileHoverClearEvent implements GameEvent {}
+
 export class ToggleCoordinateGridEvent implements GameEvent {
   constructor(public readonly enabled: boolean) {}
 }
@@ -175,6 +190,22 @@ export class TickMetricsEvent implements GameEvent {
   constructor(
     public readonly tickExecutionDuration?: number,
     public readonly tickDelay?: number,
+  ) {}
+}
+
+/**
+ * Emitted once per game tick after `GameView.update()` has been applied.
+ *
+ * Scene renderers (e.g. {@link WarpLaneRenderer}, {@link FxRenderer}) listen
+ * for this event so they can process **every** tick's updates exactly once.
+ * Polling `GameView.updatesSinceLastTick()` from `useFrame` is unsafe because
+ * multiple ticks can land between frames during reconnects / replay
+ * fast-forward / catch-up — intermediate deltas would be silently dropped.
+ */
+export class SceneTickEvent implements GameEvent {
+  constructor(
+    public readonly tick: number,
+    public readonly updates: GameUpdates,
   ) {}
 }
 
@@ -396,8 +427,18 @@ export class InputHandler {
 
       if (e.code === "Escape") {
         e.preventDefault();
+        // Close any open overlays first (RadialMenu, BuildMenu, etc.).
         this.eventBus.emit(new CloseViewEvent());
-        this.setGhostStructure(null);
+        if (this.uiState.ghostStructure !== null) {
+          // If a build ghost is active, just clear it — don't open settings.
+          this.setGhostStructure(null);
+        } else {
+          // No ghost structure to clear → open/toggle the settings modal
+          // (same ShowSettingsModalEvent used by the gear icon in
+          // GameRightSidebar). SettingsModal's own Escape keydown handler
+          // closes it when already visible, giving toggle semantics.
+          this.eventBus.emit(new ShowSettingsModalEvent(true));
+        }
       }
 
       if (

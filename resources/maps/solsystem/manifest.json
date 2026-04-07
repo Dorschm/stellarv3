@@ -3,38 +3,38 @@
   "map": {
     "width": 1500,
     "height": 1500,
-    "num_land_tiles": 696547
+    "num_land_tiles": 359427
   },
   "map4x": {
     "width": 750,
     "height": 750,
-    "num_land_tiles": 174126
+    "num_land_tiles": 90294
   },
   "map16x": {
     "width": 375,
     "height": 375,
-    "num_land_tiles": 43556
+    "num_land_tiles": 22538
   },
   "nations": [
     {
       "coordinates": [
-        1000,
-        850
+        750,
+        750
       ],
       "flag": "",
       "name": "Earth Alliance"
     },
     {
       "coordinates": [
-        450,
-        600
+        400,
+        400
       ],
       "flag": "",
       "name": "Venusian Republic"
     },
     {
       "coordinates": [
-        850,
+        1100,
         350
       ],
       "flag": "",
@@ -43,15 +43,15 @@
     {
       "coordinates": [
         300,
-        1050
+        1100
       ],
       "flag": "",
       "name": "Saturn Ring States"
     },
     {
       "coordinates": [
-        1250,
-        1150
+        1200,
+        1100
       ],
       "flag": "",
       "name": "Uranus Collective"
@@ -59,23 +59,23 @@
     {
       "coordinates": [
         200,
-        300
+        250
       ],
       "flag": "",
       "name": "Neptune Dominion"
     },
     {
       "coordinates": [
-        450,
-        1100
+        700,
+        1200
       ],
       "flag": "",
       "name": "Mars Confederacy"
     },
     {
       "coordinates": [
-        870,
-        720
+        1100,
+        700
       ],
       "flag": "",
       "name": "Mercury Mining Corp"

@@ -52,6 +52,7 @@ export interface MessageSnapshot {
   goldAmount?: bigint;
   playerID: number | null;
   tick: Tick;
+  params?: Record<string, string | number>;
 }
 
 // ---------------------------------------------------------------------------
@@ -102,6 +103,9 @@ export interface HUDState {
   setInSpawnPhase: (inSpawnPhase: boolean) => void;
   setWinner: (winner: WinUpdate | null) => void;
   addMessages: (newMessages: MessageSnapshot[]) => void;
+
+  /** Reset all slices to initial defaults. Call between game sessions. */
+  reset: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -110,19 +114,24 @@ export interface HUDState {
 
 const MAX_MESSAGES = 50;
 
-export const useHUDStore = create<HUDState>((set) => ({
-  // -- defaults --
-  ticks: 0,
-  myPlayer: null,
-  players: new Map(),
-  units: new Map(),
-  selectedTile: null,
+/** Initial default values for every data slice. */
+const INITIAL_STATE = {
+  ticks: 0 as Tick,
+  myPlayer: null as PlayerSnapshot | null,
+  players: new Map<PlayerID, PlayerSnapshot>(),
+  units: new Map<number, UnitSnapshot>(),
+  selectedTile: null as TileRef | null,
   attackRatio: 20,
-  ghostStructure: null,
+  ghostStructure: null as UnitType | null,
   rocketDirectionUp: true,
   inSpawnPhase: false,
-  winner: null,
-  messages: [],
+  winner: null as WinUpdate | null,
+  messages: [] as MessageSnapshot[],
+};
+
+export const useHUDStore = create<HUDState>((set) => ({
+  // -- defaults --
+  ...INITIAL_STATE,
 
   // -- setters --
   setTick: (tick) => set({ ticks: tick }),
@@ -139,4 +148,13 @@ export const useHUDStore = create<HUDState>((set) => ({
     set((state) => ({
       messages: [...state.messages, ...newMessages].slice(-MAX_MESSAGES),
     })),
+  reset: () =>
+    set({
+      ...INITIAL_STATE,
+      // Fresh collection instances so stale references from the previous
+      // session cannot leak through.
+      players: new Map(),
+      units: new Map(),
+      messages: [],
+    }),
 }));

@@ -28,6 +28,43 @@ export function JoinLobbyModal() {
     return () => document.removeEventListener("open-join-modal", handler);
   }, []);
 
+  // When the server-side join flow fails, ClientGameRunner dispatches a
+  // `leave-lobby` event (e.g. `full-lobby`, `host-left`). Transport also
+  // dispatches one for WebSocket close-based failures (code 1002) such
+  // as unknown lobby IDs that close with reason "Game not found", or
+  // "Unauthorized" during the pre-join handshake. Without reacting to
+  // those here, the modal would remain stuck on the connecting spinner
+  // indefinitely. Reset the join state so the user can retry.
+  useEffect(() => {
+    const onLeaveLobby = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      const cause: string | undefined = detail?.cause;
+      setIsConnecting(false);
+      setCurrentLobbyId("");
+      // Avoid treating our own close-time leaveLobby() as an error: callers
+      // may also emit leave-lobby proactively. If a `cause` is present, it
+      // indicates a server-side failure worth surfacing to the user.
+      if (cause === "full-lobby") {
+        setError(translateText("public_lobby.join_timeout"));
+      } else if (cause === "host-left") {
+        setError(translateText("kick_reason.host_left"));
+      } else if (cause === "not-found") {
+        setError(translateText("private_lobby.not_found"));
+      } else if (cause === "unauthorized") {
+        setError(translateText("private_lobby.error"));
+      } else if (cause === "connection-refused") {
+        setError(translateText("private_lobby.error"));
+      } else if (cause) {
+        setError(translateText("private_lobby.error"));
+      }
+      // Don't call leaveLobby() from onClose on the next close — the lobby
+      // is already gone from the client's perspective.
+      leaveLobbyOnCloseRef.current = false;
+    };
+    document.addEventListener("leave-lobby", onLeaveLobby);
+    return () => document.removeEventListener("leave-lobby", onLeaveLobby);
+  }, []);
+
   const handleJoin = useCallback(async (lobbyId?: string) => {
     const id = lobbyId || lobbyIdInput.trim();
     if (!id) return;

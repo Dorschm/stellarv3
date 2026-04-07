@@ -1,19 +1,55 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { translateText } from "../Utils";
 
+/**
+ * Module-level visibility state for GameStartingModal.
+ *
+ * The window hook (`__gameStartingModal.hide()` / `.show()`) is wired up at
+ * module load time rather than during React render so that callers can drive
+ * it *before* the React tree has committed. `ClientGameRunner` calls
+ * `mountReactRoot()` and then immediately calls `__gameStartingModal.hide()`
+ * — but `createRoot().render()` is async, so at that moment no component
+ * instance exists yet. Previously the hide() call was lost and the modal
+ * stayed visible forever.
+ *
+ * We solve this by storing the current visibility in a module-scoped
+ * variable. `show()`/`hide()` update that variable *and* forward to the
+ * mounted component's setter if one is registered. When the component mounts
+ * later, its initial state reads the module variable, so any pre-mount
+ * hide() is honored on first paint.
+ */
+let moduleIsVisible = true;
+let moduleSetter: ((visible: boolean) => void) | null = null;
+
+if (typeof window !== "undefined") {
+  (window as unknown as {
+    __gameStartingModal: { show: () => void; hide: () => void };
+  }).__gameStartingModal = {
+    show: () => {
+      moduleIsVisible = true;
+      moduleSetter?.(true);
+    },
+    hide: () => {
+      moduleIsVisible = false;
+      moduleSetter?.(false);
+    },
+  };
+}
+
 export function GameStartingModal(): React.JSX.Element {
-  const [isVisible, setIsVisible] = useState(true);
+  const [isVisible, setIsVisible] = useState(moduleIsVisible);
 
-  const show = () => {
-    setIsVisible(true);
-  };
-
-  const hide = () => {
-    setIsVisible(false);
-  };
-
-  // Export methods for external control if needed
-  (window as any).__gameStartingModal = { show, hide };
+  useEffect(() => {
+    moduleSetter = setIsVisible;
+    // If hide() was called before mount, the setter didn't exist yet —
+    // reconcile by re-reading the module state on mount.
+    setIsVisible(moduleIsVisible);
+    return () => {
+      if (moduleSetter === setIsVisible) {
+        moduleSetter = null;
+      }
+    };
+  }, []);
 
   return (
     <>

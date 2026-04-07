@@ -52,6 +52,11 @@ const breakAllianceIcon = assetUrl("images/TraitorIconWhite.svg");
 export function PlayerPanel(): React.JSX.Element {
   const { gameView, eventBus } = useGameTick(100);
 
+  // Reactive subscription so the rocket-direction toggle label re-renders
+  // automatically when the store value changes (set by
+  // SwapRocketDirectionEvent).
+  const rocketDirectionUp = useHUDStore((s) => s.rocketDirectionUp);
+
   const [isVisible, setIsVisible] = useState(false);
   const [tile, setTile] = useState<TileRef | null>(null);
   const [actions, setActions] = useState<PlayerActions | null>(null);
@@ -99,7 +104,6 @@ export function PlayerPanel(): React.JSX.Element {
 
   useEventBus(eventBus, SwapRocketDirectionEvent, (event) => {
     useHUDStore.getState().setRocketDirectionUp(event.rocketDirectionUp);
-    setIsVisible((prev) => !prev); // Force re-render
   });
 
   useEventBus(eventBus, ShowPlayerPanelEvent, (event) => {
@@ -329,7 +333,6 @@ export function PlayerPanel(): React.JSX.Element {
 
   const other = owner as any;
   const isSelf = other.id() === myPlayer.id();
-  const rocketDirectionUp = useHUDStore.getState().rocketDirectionUp;
   const canSendEmoji = isSelf
     ? actions?.canSendEmojiAllPlayers
     : actions?.interaction?.canSendEmoji;

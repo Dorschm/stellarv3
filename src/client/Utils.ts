@@ -10,8 +10,17 @@ import {
   Trios,
 } from "../core/game/Game";
 import { GameConfig } from "../core/Schemas";
-import type { LangSelector } from "./LangSelector";
 import { Platform } from "./Platform";
+
+interface LangSelector {
+  // DOM elements expose `isConnected`; the React LangProvider exposes its
+  // state bag on `window.langSelector` without this flag, so we treat it as
+  // optional and fall back to the window handle below.
+  isConnected?: boolean;
+  currentLang: string;
+  translations: Record<string, string> | null | undefined;
+  defaultTranslations: Record<string, string> | null | undefined;
+}
 
 export const TUTORIAL_VIDEO_URL = "https://www.youtube.com/embed/EN2oOog3pSs";
 
@@ -376,8 +385,24 @@ const EMPTY_TRANSLATION_PARAMS: Record<string, string | number> = {};
 function getCachedLangSelector(): LangSelector | null {
   const self = translateText as any;
   const cached = self.langSelector as LangSelector | null | undefined;
-  if (cached && cached.isConnected) return cached;
+  // DOM-backed custom element: if present and still attached, reuse it.
+  if (cached && cached.isConnected !== false && (cached as any).currentLang) {
+    return cached;
+  }
 
+  // Preferred path (post-React-migration): LangProvider in
+  // src/client/shell/components/LangSelector.tsx publishes its state bag on
+  // `window.langSelector` via a useEffect. This is a plain object — no
+  // DOM node — so cache it per-call but don't gate on `isConnected`.
+  const fromWindow = (window as any).langSelector as LangSelector | undefined;
+  if (fromWindow && fromWindow.currentLang) {
+    self.langSelector = fromWindow;
+    return fromWindow;
+  }
+
+  // Legacy fallback: original Lit shell registered `<lang-selector>` as a
+  // custom element. Kept for the `debug` language toggle flow and any
+  // non-migrated callers.
   const found = document.querySelector("lang-selector") as LangSelector | null;
   self.langSelector = found ?? null;
   return found;

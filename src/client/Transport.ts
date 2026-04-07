@@ -374,8 +374,38 @@ export class Transport {
         `WebSocket closed. Code: ${event.code}, Reason: ${event.reason}`,
       );
       if (event.code === 1002) {
-        // TODO: make this a modal
-        alert(`connection refused: ${event.reason}`);
+        // Protocol-level refusal from the server during the pre-join
+        // handshake (e.g. "Game not found", "Unauthorized", "Lobby full").
+        // The server has rejected this join and will not send any further
+        // messages, so surface a structured leave-lobby event that the
+        // shell modals can react to (JoinLobbyModal uses this to clear
+        // its connecting spinner and show a retryable error). Without
+        // this, JoinLobbyModal would stay stuck on the connecting state
+        // forever for invalid/unknown lobby IDs.
+        const reason = event.reason || "";
+        let cause: string;
+        if (reason === "Game not found") {
+          cause = "not-found";
+        } else if (reason === "Lobby full") {
+          cause = "full-lobby";
+        } else if (reason === "Cannot join game") {
+          cause = "kicked";
+        } else if (reason.startsWith("Unauthorized")) {
+          cause = "unauthorized";
+        } else {
+          cause = "connection-refused";
+        }
+        document.dispatchEvent(
+          new CustomEvent("leave-lobby", {
+            detail: {
+              lobby: this.lobbyConfig.gameID,
+              cause,
+              reason,
+            },
+            bubbles: true,
+            composed: true,
+          }),
+        );
       } else if (event.code !== 1000) {
         console.log(`received error code ${event.code}, reconnecting`);
         this.reconnect();

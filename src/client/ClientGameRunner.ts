@@ -13,7 +13,7 @@ import {
 import { createPartialGameRecord, findClosestBy, replacer } from "../core/Util";
 import { ServerConfig } from "../core/configuration/Config";
 import { getGameLogicConfig } from "../core/configuration/ConfigLoader";
-import { BuildableUnit, Structures, UnitType } from "../core/game/Game";
+import { BuildableUnit, BuildMenus, Structures, UnitType } from "../core/game/Game";
 import { TileRef } from "../core/game/GameMap";
 import { GameMapLoader } from "../core/game/GameMapLoader";
 import {
@@ -34,7 +34,10 @@ import {
   AutoUpgradeEvent,
   DoBoatAttackEvent,
   DoGroundAttackEvent,
+  GhostStructureChangedEvent,
   MouseUpEvent,
+  SceneTickEvent,
+  TileHoverClearEvent,
   TileHoverEvent,
   TickMetricsEvent,
 } from "./InputHandler";
@@ -42,6 +45,7 @@ import { SpaceInputHandler } from "./bridge/SpaceInputHandler";
 import { endGame, startGame, startTime } from "./LocalPersistantStats";
 import { terrainMapFileLoader } from "./TerrainMapFileLoader";
 import {
+  BuildUnitIntentEvent,
   SendAttackIntentEvent,
   SendBoatAttackIntentEvent,
   SendHashEvent,
@@ -50,6 +54,7 @@ import {
   Transport,
 } from "./Transport";
 import { GoToPlayerEvent } from "./CameraEvents";
+import { ShowPlayerPanelEvent } from "./hud/events";
 import { mountReactRoot, unmountReactRoot } from "./scene/ReactRoot";
 import SoundManager from "./sound/SoundManager";
 
@@ -363,6 +368,7 @@ export class ClientGameRunner {
 
     this.eventBus.on(MouseUpEvent, this.inputEvent.bind(this));
     this.eventBus.on(TileHoverEvent, this.onTileHover.bind(this));
+    this.eventBus.on(TileHoverClearEvent, this.onTileHoverClear.bind(this));
     this.eventBus.on(AutoUpgradeEvent, this.autoUpgradeEvent.bind(this));
     this.eventBus.on(
       DoBoatAttackEvent,
@@ -374,6 +380,15 @@ export class ClientGameRunner {
     );
 
     this.input.initialize();
+
+    // Wire up EventBus → HUDStore synchronisation so keyboard hotkeys
+    // (ghost structure, attack ratio, rocket direction) update the store
+    // before ClientGameRunner.inputEvent() reads it.
+    this.bridge.initialize(this.eventBus);
+
+    // Reset the HUD store so no stale data from a previous session leaks
+    // into the new game (winner, messages, ghostStructure, etc.).
+    useHUDStore.getState().reset();
 
     // Mount the React/R3F scene + HUD as the primary rendering path
     mountReactRoot(this.gameView, this.eventBus);
@@ -410,6 +425,12 @@ export class ClientGameRunner {
 
       // Sync game state into Zustand store — feeds React/R3F scene + HUD
       this.bridge.tick();
+
+      // Fan out this tick's updates to scene renderers (WarpLaneRenderer,
+      // FxRenderer). This is the authoritative per-tick scene feed — render
+      // components must NOT poll updatesSinceLastTick() from useFrame, or
+      // they will silently drop intermediate ticks during catch-up.
+      this.eventBus.emit(new SceneTickEvent(gu.tick, gu.updates));
 
       // Emit tick metrics event for performance overlay
       this.eventBus.emit(
@@ -546,7 +567,10 @@ export class ClientGameRunner {
 
     this.isActive = false;
     this.input.destroy();
+    this.bridge.destroy();
     unmountReactRoot();
+    // Clear all session-scoped HUD data so nothing leaks into the next game.
+    useHUDStore.getState().reset();
     this.worker.cleanup();
     this.transport.leaveGame();
     if (this.connectionCheckInterval) {
@@ -565,7 +589,7 @@ export class ClientGameRunner {
    * The R3F SpaceMapPlane emits tile coordinates directly.
    */
   private inputEvent(event: MouseUpEvent) {
-    if (!this.isActive || useHUDStore.getState().ghostStructure !== null) {
+    if (!this.isActive) {
       return;
     }
 
@@ -579,6 +603,56 @@ export class ClientGameRunner {
 
     // Update selectedTile in HUD store for React consumers
     this.bridge.setSelectedTile(tile);
+
+    // Ghost placement flow: if the user selected a structure via the build
+    // hotkeys (SpaceInputHandler.resolveBuildKeybind → GhostStructureChangedEvent),
+    // a subsequent click on the map should commit the build by emitting the
+    // correct intent. Mirror BuildMenu.sendBuildOrUpgrade: resolve buildables
+    // for this tile, find the matching unit type, then emit
+    // SendUpgradeStructureIntentEvent when canUpgrade is available, or
+    // BuildUnitIntentEvent when canBuild is valid.
+    const ghostStructure = useHUDStore.getState().ghostStructure;
+    if (ghostStructure !== null) {
+      if (this.gameView.inSpawnPhase()) {
+        return;
+      }
+      if (this.myPlayer === null) {
+        if (!this.clientID) return;
+        const myPlayer = this.gameView.playerByClientID(this.clientID);
+        if (myPlayer === null) return;
+        this.myPlayer = myPlayer;
+      }
+      this.myPlayer.buildables(tile, BuildMenus.types).then((buildables) => {
+        const buildableUnit = buildables.find(
+          (bu) => bu.type === ghostStructure,
+        );
+        if (!buildableUnit) return;
+        if (buildableUnit.canUpgrade !== false) {
+          this.eventBus.emit(
+            new SendUpgradeStructureIntentEvent(
+              buildableUnit.canUpgrade,
+              buildableUnit.type,
+            ),
+          );
+        } else if (buildableUnit.canBuild) {
+          const rocketDirectionUp =
+            ghostStructure === UnitType.AtomBomb ||
+            ghostStructure === UnitType.HydrogenBomb
+              ? useHUDStore.getState().rocketDirectionUp
+              : undefined;
+          this.eventBus.emit(
+            new BuildUnitIntentEvent(ghostStructure, tile, rocketDirectionUp),
+          );
+        }
+        // Clear the ghost after a placement so the next click returns to
+        // normal click behaviour (attack / open panel) instead of building
+        // the same structure repeatedly. Matches the legacy onContextMenu
+        // flow in InputHandler.setGhostStructure(null).
+        this.eventBus.emit(new GhostStructureChangedEvent(null));
+      });
+      return;
+    }
+
     if (
       this.gameView.isLand(tile) &&
       !this.gameView.hasOwner(tile) &&
@@ -597,7 +671,10 @@ export class ClientGameRunner {
       if (myPlayer === null) return;
       this.myPlayer = myPlayer;
     }
-    this.myPlayer.actions(tile, [UnitType.TransportShip]).then((actions) => {
+    // Fetch the full action set (null = all structures) so that we can
+    // both decide attack/boat behaviour and pass a valid PlayerActions
+    // payload to the PlayerPanel when no attack is possible.
+    this.myPlayer.actions(tile, null).then((actions) => {
       if (actions.canAttack) {
         this.eventBus.emit(
           new SendAttackIntentEvent(
@@ -605,8 +682,19 @@ export class ClientGameRunner {
             this.myPlayer!.troops() * this.bridge.attackRatio,
           ),
         );
-      } else if (this.canAutoBoat(actions.buildableUnits, tile)) {
+        return;
+      }
+      if (this.canAutoBoat(actions.buildableUnits, tile)) {
         this.sendBoatAttackIntent(tile);
+        return;
+      }
+      // No attack / boat path available — if the tile is owned by a player
+      // (self or other), open the PlayerPanel so alliance / embargo / target
+      // / chat actions remain reachable. This is the direct R3F-path trigger
+      // for ShowPlayerPanelEvent, replacing the legacy layer flow.
+      const owner = this.gameView.owner(tile);
+      if (owner.isPlayer()) {
+        this.eventBus.emit(new ShowPlayerPanelEvent(actions, tile));
       }
     });
   }
@@ -740,7 +828,10 @@ export class ClientGameRunner {
     if (this.gameView.inSpawnPhase()) {
       return null;
     }
-    // R3F pointer events supply the hovered tile directly.
+    // R3F pointer events supply the hovered tile directly — but only while
+    // the pointer is actually over the map. TileHoverClearEvent resets
+    // lastHoveredTile to null on pointer-out so boat/ground-attack hotkeys
+    // do not fire on whatever tile the cursor last grazed.
     if (this.lastHoveredTile !== null) {
       return this.lastHoveredTile;
     }
@@ -780,6 +871,13 @@ export class ClientGameRunner {
       return;
     }
     this.lastHoveredTile = this.gameView.ref(event.tileX, event.tileY);
+  }
+
+  private onTileHoverClear() {
+    // Pointer left the map — drop the cached hover tile so subsequent
+    // boat/ground-attack hotkeys fall through to no-op rather than
+    // targeting a stale tile.
+    this.lastHoveredTile = null;
   }
 
   private onConnectionCheck() {

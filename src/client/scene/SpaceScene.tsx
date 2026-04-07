@@ -6,6 +6,7 @@ import { UnitRenderer } from "./UnitRenderer";
 import { WarpLaneRenderer } from "./WarpLaneRenderer";
 import { FxRenderer } from "./FxRenderer";
 import { CameraController } from "./CameraController";
+import { PlanetLandmarks } from "./PlanetLandmarks";
 
 /**
  * Top-level R3F scene — the **primary** rendering path.
@@ -26,18 +27,47 @@ export function SpaceScene(): React.JSX.Element {
         width: "100%",
         height: "100%",
         touchAction: "none",
+        pointerEvents: "auto",
       }}
       gl={{ antialias: false, alpha: false }}
-      camera={{ position: [0, 0, 500], fov: 60, near: 1, far: 5000 }}
+      camera={{ position: [0, -300, 350], fov: 60, near: 1, far: 8000, up: [0, 0, 1] }}
       onCreated={({ gl }) => {
         gl.setClearColor("#050510");
       }}
     >
-      {/* Lighting — dim ambient for space feel + directional for 3D mesh readability */}
-      <ambientLight intensity={0.4} />
-      <directionalLight position={[200, 200, 400]} intensity={1.2} />
-      {/* Secondary fill light from below to give ships subtle rim lighting */}
-      <directionalLight position={[-100, -100, -200]} intensity={0.3} color="#4488ff" />
+      {/* Lighting — dim ambient for space feel + directional for 3D mesh readability.
+          Positioned for the default ~45° angled camera view. */}
+      <ambientLight intensity={0.5} />
+      {/* Key light — above and behind the default camera angle */}
+      <directionalLight position={[100, -300, 500]} intensity={1.2} />
+      {/* Fill light — opposite side, cool blue tint for space ambiance */}
+      <directionalLight position={[-200, 200, 300]} intensity={0.4} color="#4488ff" />
+      {/* Low-cost static point lights dedicated to FX readability. They sit
+          above the map plane and give transient explosions / spawns / nukes
+          a dynamic highlight that directional lighting alone can't produce.
+          Dynamic per-event point lights are emitted by FxRenderer on top of
+          these (see spawnExplosion(..., withLight: true)). */}
+      <pointLight
+        position={[0, 0, 150]}
+        intensity={0.8}
+        distance={1200}
+        decay={2}
+        color="#88bbff"
+      />
+      <pointLight
+        position={[-250, 200, 100]}
+        intensity={0.5}
+        distance={700}
+        decay={2}
+        color="#ffaa66"
+      />
+      <pointLight
+        position={[250, -200, 100]}
+        intensity={0.5}
+        distance={700}
+        decay={2}
+        color="#66aaff"
+      />
 
       {/* Starfield background */}
       <Stars
@@ -53,6 +83,7 @@ export function SpaceScene(): React.JSX.Element {
       {/* The game map plane with terrain + territory DataTexture */}
       <Suspense fallback={null}>
         <SpaceMapPlane />
+        <PlanetLandmarks />
         <WarpLaneRenderer />
         <UnitRenderer />
         <FxRenderer />

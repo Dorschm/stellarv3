@@ -254,6 +254,7 @@ export function BuildMenu(): React.JSX.Element {
       left: "50%",
       transform: "translate(-50%, -50%)",
       zIndex: 9999,
+      pointerEvents: "auto" as const,
       backgroundColor: "#1e1e1e",
       padding: "15px",
       boxShadow: "0 0 20px rgba(0, 0, 0, 0.5)",
@@ -328,6 +329,7 @@ export function BuildMenu(): React.JSX.Element {
 
   return (
     <div
+      data-testid="build-menu"
       style={styles.buildMenu}
       onContextMenu={(e) => e.preventDefault()}
     >

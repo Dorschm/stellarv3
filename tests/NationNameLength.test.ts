@@ -1,3 +1,4 @@
+// @vitest-environment node
 import fs from "fs";
 import { globSync } from "glob";
 

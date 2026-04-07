@@ -8,7 +8,7 @@ import {
 } from "react";
 import { UserMeResponse } from "../../../core/ApiSchemas";
 import { EventBus } from "../../../core/EventBus";
-import { GAME_ID_REGEX } from "../../../core/Schemas";
+import { GAME_ID_REGEX, LobbyInfoEvent } from "../../../core/Schemas";
 import { GameEnv } from "../../../core/configuration/Config";
 import { getRuntimeClientServerConfig } from "../../../core/configuration/ConfigLoader";
 import { GameType } from "../../../core/game/Game";
@@ -22,7 +22,7 @@ import {
   SendKickPlayerIntentEvent,
   SendUpdateGameConfigIntentEvent,
 } from "../../Transport";
-import { genAnonUsername } from "../../UsernameInput";
+import { genAnonUsername } from "../../AnonUsername";
 import {
   getDiscordAvatarUrl,
   incrementGamesPlayed,
@@ -116,6 +116,18 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     lobbyHandleRef.current = lobbyHandle;
   }, [lobbyHandle]);
+
+  // Expose a deterministic body data-attribute when the client has
+  // connected to a lobby WebSocket and received the server's lobby_info
+  // acknowledgement. E2E fixtures can wait on this signal to confirm the
+  // join has completed rather than relying on timing.
+  useEffect(() => {
+    const onLobbyInfo = () => {
+      document.body.dataset.lobbyConnected = "true";
+    };
+    eventBus.on(LobbyInfoEvent, onLobbyInfo);
+    return () => eventBus.off(LobbyInfoEvent, onLobbyInfo);
+  }, [eventBus]);
 
   // Initialize CrazyGames and Turnstile
   useEffect(() => {
@@ -296,6 +308,7 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
       lobbyHandleRef.current = null;
       setLobbyHandle(null);
       currentUrlRef.current = null;
+      delete document.body.dataset.lobbyConnected;
 
       try {
         history.replaceState(null, "", "/");

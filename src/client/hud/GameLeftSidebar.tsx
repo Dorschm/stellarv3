@@ -83,7 +83,7 @@ function GameLeftSidebar(): React.JSX.Element {
 
   return (
     <aside
-      className={`fixed top-0 min-[1200px]:top-4 left-0 min-[1200px]:left-4 z-900 flex flex-col max-h-[calc(100vh-80px)] overflow-y-auto p-2 bg-gray-800/92 backdrop-blur-sm shadow-xs min-[1200px]:rounded-lg rounded-br-lg ${
+      className={`pointer-events-auto fixed top-0 min-[1200px]:top-4 left-0 min-[1200px]:left-4 z-900 flex flex-col max-h-[calc(100vh-80px)] overflow-y-auto p-2 bg-gray-800/92 backdrop-blur-sm shadow-xs min-[1200px]:rounded-lg rounded-br-lg ${
         isLeaderboardShow || isTeamLeaderboardShow
           ? "max-[400px]:w-full max-[400px]:rounded-none"
           : ""

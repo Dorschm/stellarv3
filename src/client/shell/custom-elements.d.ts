@@ -7,6 +7,20 @@
  * its entry here should be removed.
  */
 
+declare global {
+  interface Window {
+    turnstile: any;
+    adsEnabled: boolean;
+    PageOS: {
+      session: {
+        newPageView: () => void;
+      };
+    };
+    currentPageId?: string;
+    showPage?: (pageId: string) => void;
+  }
+}
+
 import "react";
 declare module "react" {
   // eslint-disable-next-line @typescript-eslint/no-namespace

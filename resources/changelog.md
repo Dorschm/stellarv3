@@ -1,3 +1,96 @@
+🛰️ **Sector Command — Lobby Reliability Patch**
+
+*Before any fleet can jump, Command needs a stable dock. This patch hardens the pre-flight sequence: starbase provisioning, fleet roster handshake, and docking-clamp release are now atomic, fault-tolerant, and fully recoverable. No more ghost sectors, no more frozen loading spinners while your wingmates wait in the void.*
+
+🛸 **Host Starbase: Join-Failure Recovery**
+
+- Hosting a private sector now runs in two confirmed phases: **provision** (the starbase is registered on the sector server) and **dock** (the host's command uplink joins it). If the uplink fails (Turnstile challenge, auth token expiry, cosmetic load error), the client now catches the fault cleanly instead of crashing into an unhandled async rejection.
+- On uplink failure the host modal fully resets local state — sector ID, sharable jump-link, starting flag, and ready marker — so the next host attempt boots from a pristine baseline.
+- A user-facing red status beacon ("Failed to join lobby. Please try again.") now appears instead of a silent hang, and the shell returns the pilot to the Play bay for an immediate retry.
+- **Orphan-lobby cleanup:** a new authenticated `/api/cancel_game/:id` endpoint tears the abandoned starbase down server-side when the host uplink never completes. `GameServer.cancel()` marks the lobby ended so the `GameManager` sweep reclaims it on the next tick — no more ghost private sectors lingering in memory after a failed host boot.
+
+⚛️ **Atomic Fleet Launch — No More Config Races**
+
+- Starting a sector match used to emit an `updateGameConfig` intent over WebSocket and *immediately* fire `POST /start_game/:id`, which could execute before the config intent arrived. Once `GameServer` locked the game to "started", any in-flight config update was rejected, so matches could launch with stale or default settings despite host UI selections.
+- The host's **Start Game** button now bundles the final sector config (map, difficulty, game mode, bot count, team settings) directly into the `start_game` request body.
+- Server-side, `/api/start_game/:id` validates the payload with `GameInputSchema`, blocks any attempt to flip a private lobby to `Public` via start, applies the config via `game.updateGameConfig(...)`, and *only then* calls `game.start()`. The authoritative config is guaranteed to be in place before the match clock begins — the fire-and-forget race is eliminated.
+- The creator-only authorization check on `start_game` ensures no other pilot can smuggle a config change through this path.
+
+📡 **Join Modal: WebSocket Close-Code Recovery**
+
+- Previously, trying to join a nonexistent or malformed-but-valid sector ID would leave the Join modal stuck on the connecting spinner indefinitely. The server was closing the WebSocket with code `1002` and reason `Game not found`, but the client only logged it — no recovery event ever reached the shell state.
+- `Transport.ts` now maps every `1002` handshake-refusal to a structured `leave-lobby` event with a typed `cause`:
+  - `Game not found` → `not-found`
+  - `Lobby full` → `full-lobby`
+  - `Cannot join game` → `kicked`
+  - `Unauthorized: …` → `unauthorized`
+  - Anything else → `connection-refused`
+- `JoinLobbyModal` listens for these structured events and clears `isConnecting`, resets the tracked sector ID, and surfaces a localized error ("Lobby not found. Please check the ID and try again." / "An error occurred. …") so the pilot can retry immediately without refreshing the page.
+- Same pipeline handles the existing `leave-lobby` emissions from `ClientGameRunner` (full-lobby / host-left), so every failure mode — server-side error message, pre-join handshake close, or mid-session kick — funnels through one recovery path.
+
+🔧 **Under the Hood**
+
+- Added `GameServer.cancel()`: closes any stray websockets and marks the lobby `_hasEnded = true`, but only if the game hasn't already started or ended (idempotent safety for concurrent failure paths).
+- `Worker.ts` `/api/start_game/:id` now parses an optional `{ config }` body through `GameInputSchema` before reaching `game.start()`.
+- `Worker.ts` adds `/api/cancel_game/:id`, mirroring the creator-token authorization of `start_game` so only the original host can tear down a starbase they provisioned.
+- Transport's close handler distinguishes protocol-level rejections (`1002`) from normal closes (`1000`) and reconnection-worthy errors — the first surfaces a shell event, the second triggers a reconnect attempt.
+
+---
+
+🚀 **StellarGame V3 — 3D Space Edition**
+
+*The battlefield is no longer a map — it's a sector of deep space. This update rebuilds the entire rendering pipeline on React Three Fiber and re-skins every piece of terrain as a cosmic environment. Every tile you fight over is now a slice of the galaxy.*
+
+🌌 **New 3D Space Rendering Pipeline**
+
+- Full React Three Fiber scene graph replaces the legacy 2D canvas renderer
+- Top-down orthographic-feel camera with true 3D depth, smooth pan, and scroll-wheel zoom
+- Animated starfield background (5,000 stars, parallax-depth fade) wraps the play area
+- Dim ambient + directional "sunlight" lighting rig gives every unit a subtle 3D read
+- DataTexture-backed map plane streams territory colour updates straight to the GPU — built to scale to 4096×4096 sector maps
+
+🪐 **Space-Themed Terrain Palette**
+
+- **Ocean / Lake** → Deep space — near-black voids that darken the further you are from any landmass
+- **Shore** → Nebula fringe — muted violet haze marking the edge of habitable sectors
+- **Plains** → Habitable sector — soft teal and cyan glow where your colonies can thrive
+- **Highland** → Dense nebula — warm amber and orange clouds hiding defensive terrain
+- **Mountain** → Asteroid field — bright silver/white debris belts that break line of sight
+- Fallout tiles now glow as radioactive green clouds drifting across the sector
+
+🛰️ **Reworked Scene Components**
+
+- `SpaceScene` — top-level Canvas with starfield, lighting, and scene composition
+- `SpaceMapPlane` — DataTexture terrain + territory composition, click/drag/hover routing
+- `UnitRenderer` — 3D unit instancing on the sector plane
+- `WarpLaneRenderer` — connection/flight-path rendering between allied structures
+- `FxRenderer` — tick-driven visual effects layer
+- `CameraController` — EventBus-driven GoTo animations, WASD/QE pan & zoom, scroll dolly
+
+🎮 **Input & Camera Improvements**
+
+- **Left-click & drag now pans the camera** across the sector — emits `DragEvent` during pointer drag while still preserving left-click tile selection, right-click context menu, and middle-click auto-upgrade
+- Click-vs-drag is latched once the pointer crosses the 10px threshold, so drag-ends never accidentally fire a tile action
+- `TileHoverClearEvent` fires when the pointer leaves the map — boat and ground attack hotkeys (B / G) no longer target a stale tile after the cursor drifts off-map
+- Keyboard-only `SpaceInputHandler` cleanly separates hotkeys from pointer input (pointer input now lives entirely in R3F)
+- Scroll-wheel zoom, WASD pan, and QE dolly all feed the same unified DragEvent/ZoomEvent pipeline
+
+⚡ **Performance & Rendering Optimisations**
+
+- Territory texture recomposition is now **tick-gated** — the composite buffer and GPU upload are refreshed once per game tick instead of every render frame, using a `lastProcessedTickRef` monotonic marker
+- `texture.needsUpdate` is only raised when tiles actually mutate, eliminating redundant GPU uploads on idle frames
+- Per-pixel alpha compositing is restricted to the changed-tile set on each tick (fast path), not the full buffer
+- Initial terrain paint seeds the processed-tick counter so the first post-mount frame doesn't redo the initial tile batch
+- Map texture is clamped to a 4096×4096 GPU budget for compatibility with mid-range hardware
+
+🧹 **Cleanup**
+
+- Legacy 2D graphics layer retired in favour of the R3F pipeline
+- Ad integration removed from the core build
+- Initial StellarGame V3 commit establishes the clean space-themed baseline
+
+---
+
 - This is a sample changelog based off of v0.24.0.
 - This file will be replaced with real release notes during the release build process.
   - Indented bullets look like this

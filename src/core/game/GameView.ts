@@ -37,7 +37,7 @@ import {
   UnitUpdate,
 } from "./GameUpdates";
 import { MotionPlanRecord, unpackMotionPlans } from "./MotionPlans";
-import { TerrainMapData } from "./TerrainMapLoader";
+import { Nation, TerrainMapData } from "./TerrainMapLoader";
 import { TerraNulliusImpl } from "./TerraNulliusImpl";
 import { UnitGrid, UnitPredicate } from "./UnitGrid";
 import { UserSettings } from "./UserSettings";
@@ -1224,6 +1224,9 @@ export class GameView implements GameMap {
   }
   numLandTiles(): number {
     return this._map.numLandTiles();
+  }
+  nations(): Nation[] {
+    return this._mapData.nations;
   }
   isValidCoord(x: number, y: number): boolean {
     return this._map.isValidCoord(x, y);

@@ -5,6 +5,7 @@ import { TileRef } from "../../core/game/GameMap";
 import { PlayerView } from "../../core/game/GameView";
 import { translateText } from "../Utils";
 import { useGameView } from "../bridge/GameViewContext";
+import { useHUDStore } from "../bridge/HUDStore";
 import { useEventBus } from "../bridge/useEventBus";
 import {
   CloseViewEvent,
@@ -67,38 +68,48 @@ export function RadialMenu(): React.JSX.Element | null {
   }, []);
 
   // -- Listen for context-menu clicks from SpaceMapPlane ---------------------
-  useEventBus(eventBus, ContextMenuEvent, (e: ContextMenuEvent) => {
-    // SpaceMapPlane always emits tile coordinates (isTileCoord = true).
-    // Guard anyway in case a legacy emitter reaches us.
-    if (!e.isTileCoord) return;
-    if (!gameView.isValidCoord(e.x, e.y)) return;
-    const myPlayer = gameView.myPlayer();
-    if (myPlayer === null) return;
+  const onContextMenu = useCallback(
+    (e: ContextMenuEvent) => {
+      // SpaceMapPlane always emits tile coordinates (isTileCoord = true).
+      // Guard anyway in case a legacy emitter reaches us.
+      if (!e.isTileCoord) return;
+      if (!gameView.isValidCoord(e.x, e.y)) return;
+      const myPlayer = gameView.myPlayer();
+      if (myPlayer === null) return;
 
-    const clickedTile = gameView.ref(e.x, e.y);
-    // Use the tile-space coordinates as the on-screen anchor fallback; we
-    // render the menu centered on viewport since we don't have a screen-space
-    // projection handy in the migrated path.
-    setAnchor({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
-    setTile(clickedTile);
-    setActions(null);
-    setIsVisible(true);
+      const clickedTile = gameView.ref(e.x, e.y);
+      // Prefer the screen-space coordinates carried on the event when the
+      // emitter had a native pointer event; fall back to the viewport centre
+      // when they're absent (e.g. legacy emitters without a DOM event).
+      const anchorX =
+        typeof e.screenX === "number" ? e.screenX : window.innerWidth / 2;
+      const anchorY =
+        typeof e.screenY === "number" ? e.screenY : window.innerHeight / 2;
+      setAnchor({ x: anchorX, y: anchorY });
+      setTile(clickedTile);
+      setActions(null);
+      setIsVisible(true);
 
-    myPlayer.actions(clickedTile, null).then((resolved) => {
-      setActions(resolved);
-    });
-  });
+      myPlayer.actions(clickedTile, null).then((resolved) => {
+        setActions(resolved);
+      });
+    },
+    [gameView],
+  );
+  useEventBus(eventBus, ContextMenuEvent, onContextMenu);
 
   // -- Auto-close handlers ---------------------------------------------------
-  useEventBus(eventBus, CloseViewEvent, () => {
-    if (isVisible) hide();
-  });
-  useEventBus(eventBus, CloseRadialMenuEvent, () => {
-    if (isVisible) hide();
-  });
-  useEventBus(eventBus, MouseDownEvent, () => {
-    if (isVisible) hide();
-  });
+  // These are wrapped in useCallback so their identity is stable across
+  // renders — otherwise useEventBus would tear down and re-subscribe on
+  // every render. `hide()` is itself a stable useCallback and is safe to
+  // call when the menu is already hidden (React bails out on unchanged
+  // state), so the callbacks do not need to close over `isVisible`.
+  const onAutoClose = useCallback(() => {
+    hide();
+  }, [hide]);
+  useEventBus(eventBus, CloseViewEvent, onAutoClose);
+  useEventBus(eventBus, CloseRadialMenuEvent, onAutoClose);
+  useEventBus(eventBus, MouseDownEvent, onAutoClose);
 
   // Close on Escape
   useEffect(() => {
@@ -142,9 +153,6 @@ export function RadialMenu(): React.JSX.Element | null {
     if (!myPlayer || !actions?.canAttack) return;
     // GameBridge.attackRatio (0..1) is canonical, but we don't have the
     // bridge instance here. Read directly from the HUDStore and normalize.
-    const {
-      useHUDStore,
-    } = require("../bridge/HUDStore") as typeof import("../bridge/HUDStore");
     const percent = useHUDStore.getState().attackRatio;
     const ratio = Math.max(0, Math.min(100, percent)) / 100;
     eventBus.emit(
@@ -162,9 +170,6 @@ export function RadialMenu(): React.JSX.Element | null {
       (bu) => bu.type === UnitType.TransportShip && bu.canBuild !== false,
     );
     if (!canBoat) return;
-    const {
-      useHUDStore,
-    } = require("../bridge/HUDStore") as typeof import("../bridge/HUDStore");
     const percent = useHUDStore.getState().attackRatio;
     const ratio = Math.max(0, Math.min(100, percent)) / 100;
     eventBus.emit(

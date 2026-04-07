@@ -1,4 +1,10 @@
 import React from "react";
+import { useGameView } from "../bridge/GameViewContext";
+import { useEventBus } from "../bridge/useEventBus";
+import {
+  ShowDonateResourceModalEvent,
+  ShowPlayerModerationModalEvent,
+} from "./events";
 import { AttacksDisplay } from "./AttacksDisplay";
 import { ControlPanel } from "./ControlPanel";
 import { UnitDisplay } from "./UnitDisplay";
@@ -23,6 +29,35 @@ import { PlayerInfoOverlay } from "./PlayerInfoOverlay";
 import { HeadsUpMessage } from "./HeadsUpMessage";
 import { InGamePromo } from "./InGamePromo";
 import { GameStartingModal } from "./GameStartingModal";
+
+/**
+ * Short-term stub: the legacy Lit `<send-resource-modal>` and
+ * `<player-moderation-modal>` components have not yet been ported to React.
+ * PlayerPanel still emits `ShowDonateResourceModalEvent` and
+ * `ShowPlayerModerationModalEvent` when the donate / moderation buttons
+ * are clicked, but without this listener the events were silently dropped,
+ * so clicking those buttons appeared to do nothing. Log a console warning
+ * so the regression is visible until dedicated modal components are built.
+ */
+function UnimplementedModalWarnings(): null {
+  const { eventBus } = useGameView();
+
+  useEventBus(eventBus, ShowDonateResourceModalEvent, (e) => {
+    console.warn(
+      `[HUD] ShowDonateResourceModalEvent (${e.mode}) received but the ` +
+        `corresponding React modal has not been implemented yet.`,
+    );
+  });
+
+  useEventBus(eventBus, ShowPlayerModerationModalEvent, () => {
+    console.warn(
+      `[HUD] ShowPlayerModerationModalEvent received but the corresponding ` +
+        `React moderation modal has not been implemented yet.`,
+    );
+  });
+
+  return null;
+}
 
 /**
  * Root React component for the entire in-game HUD.
@@ -75,7 +110,7 @@ export function HUDOverlay(): React.JSX.Element {
       <WinModal />
 
       {/* Right sidebar */}
-      <div className="flex flex-col items-end fixed top-0 right-0 min-[1200px]:top-4 min-[1200px]:right-4 z-[1000] gap-2">
+      <div className="pointer-events-auto flex flex-col items-end fixed top-0 right-0 min-[1200px]:top-4 min-[1200px]:right-4 z-[1000] gap-2">
         <GameRightSidebar />
         <ReplayPanel visible={false} isSingleplayer={false} />
       </div>
@@ -93,6 +128,7 @@ export function HUDOverlay(): React.JSX.Element {
       <PlayerInfoOverlay />
       <HeadsUpMessage />
       <InGamePromo />
+      <UnimplementedModalWarnings />
     </>
   );
 }
