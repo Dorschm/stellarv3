@@ -1,3 +1,4 @@
+import { useFrame } from "@react-three/fiber";
 import React, { useCallback, useEffect, useRef } from "react";
 import {
   Color,
@@ -8,14 +9,13 @@ import {
   RingGeometry,
   SphereGeometry,
 } from "three";
-import { useFrame } from "@react-three/fiber";
-import { useGameView } from "../bridge/GameViewContext";
-import { GameUpdateType } from "../../core/game/GameUpdates";
 import { GameUpdates, UnitType } from "../../core/game/Game";
 import { TileRef } from "../../core/game/GameMap";
+import { GameUpdateType } from "../../core/game/GameUpdates";
 import { UnitView } from "../../core/game/GameView";
-import SoundManager, { SoundEffect } from "../sound/SoundManager";
+import { useGameView } from "../bridge/GameViewContext";
 import { SceneTickEvent } from "../InputHandler";
+import SoundManager, { SoundEffect } from "../sound/SoundManager";
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -93,16 +93,17 @@ function createRingGeo(innerRadius: number, outerRadius: number): RingGeometry {
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 function tileToWorld(
-  game: { x: (t: TileRef) => number; y: (t: TileRef) => number; width: () => number; height: () => number },
+  game: {
+    x: (t: TileRef) => number;
+    y: (t: TileRef) => number;
+    width: () => number;
+    height: () => number;
+  },
   tile: TileRef,
 ): [number, number, number] {
   const halfW = game.width() / 2;
   const halfH = game.height() / 2;
-  return [
-    game.x(tile) - halfW,
-    -(game.y(tile) - halfH),
-    FX_HEIGHT,
-  ];
+  return [game.x(tile) - halfW, -(game.y(tile) - halfH), FX_HEIGHT];
 }
 
 // ─── Component ──────────────────────────────────────────────────────────────
@@ -182,13 +183,7 @@ export function FxRenderer(): React.JSX.Element {
   );
 
   const spawnShockwave = useCallback(
-    (
-      x: number,
-      y: number,
-      z: number,
-      maxRadius: number,
-      duration: number,
-    ) => {
+    (x: number, y: number, z: number, maxRadius: number, duration: number) => {
       if (!groupRef.current) return;
 
       const ringGeo = createRingGeo(0.8, 1.0);
@@ -319,7 +314,15 @@ export function FxRenderer(): React.JSX.Element {
     (unit: UnitView, radius: number) => {
       const [x, y, z] = tileToWorld(game, unit.lastTile());
       // Large expanding sphere — with a dedicated point light for readability
-      spawnExplosion(x, y, z, radius * 0.5, 1500, new Color(1.0, 0.5, 0.1), true);
+      spawnExplosion(
+        x,
+        y,
+        z,
+        radius * 0.5,
+        1500,
+        new Color(1.0, 0.5, 0.1),
+        true,
+      );
       // Bright core flash
       spawnExplosion(x, y, z, radius * 0.2, 600, new Color(1.0, 1.0, 0.8));
       // Shockwave ring
@@ -383,40 +386,40 @@ export function FxRenderer(): React.JSX.Element {
           if (unitView.isActive()) continue; // Only handle death/detonation
 
           switch (unitView.type()) {
-            case UnitType.AtomBomb:
-            case UnitType.MIRVWarhead:
+            case UnitType.AntimatterTorpedo:
+            case UnitType.ClusterWarheadSubmunition:
               if (unitView.reachedTarget()) {
                 handleNukeDetonation(unitView, 70);
               } else {
                 handleSAMInterception(unitView);
               }
               break;
-            case UnitType.HydrogenBomb:
+            case UnitType.NovaBomb:
               if (unitView.reachedTarget()) {
                 handleNukeDetonation(unitView, 160);
               } else {
                 handleSAMInterception(unitView);
               }
               break;
-            case UnitType.Shell:
+            case UnitType.PlasmaBolt:
               if (unitView.reachedTarget()) {
                 handleShellImpact(unitView);
               }
               break;
-            case UnitType.Warship:
+            case UnitType.Battlecruiser:
               handleWarshipDestruction(unitView);
               break;
-            case UnitType.Train:
+            case UnitType.Frigate:
               if (!unitView.reachedTarget()) {
                 handleTrainDestruction(unitView);
               }
               break;
-            case UnitType.DefensePost:
-            case UnitType.City:
-            case UnitType.Port:
-            case UnitType.MissileSilo:
-            case UnitType.SAMLauncher:
-            case UnitType.Factory:
+            case UnitType.DefenseStation:
+            case UnitType.Colony:
+            case UnitType.Spaceport:
+            case UnitType.OrbitalStrikePlatform:
+            case UnitType.PointDefenseArray:
+            case UnitType.Foundry:
               handleStructureDestruction(unitView);
               break;
           }
@@ -438,11 +441,7 @@ export function FxRenderer(): React.JSX.Element {
             const loc = conquered.nameLocation();
             const halfW = game.width() / 2;
             const halfH = game.height() / 2;
-            spawnConquestFx(
-              loc.x - halfW,
-              -(loc.y - halfH),
-              FX_HEIGHT,
-            );
+            spawnConquestFx(loc.x - halfW, -(loc.y - halfH), FX_HEIGHT);
           }
         }
       }
@@ -563,7 +562,8 @@ export function FxRenderer(): React.JSX.Element {
           // Quick bright flash that fades out
           const fadeT = t < 0.2 ? t / 0.2 : (1 - t) / 0.8;
           for (const mesh of fx.meshes) {
-            (mesh.material as MeshBasicMaterial).opacity = 0.8 * Math.max(0, fadeT);
+            (mesh.material as MeshBasicMaterial).opacity =
+              0.8 * Math.max(0, fadeT);
           }
           break;
         }
@@ -572,7 +572,8 @@ export function FxRenderer(): React.JSX.Element {
           const pulseScale = 3 + 5 * easeOutCubic(t);
           for (const mesh of fx.meshes) {
             mesh.scale.set(pulseScale, pulseScale, pulseScale);
-            (mesh.material as MeshBasicMaterial).opacity = 0.7 * (1 - easeInQuad(t));
+            (mesh.material as MeshBasicMaterial).opacity =
+              0.7 * (1 - easeInQuad(t));
           }
           break;
         }
@@ -588,7 +589,8 @@ export function FxRenderer(): React.JSX.Element {
           if (glowMesh) {
             const glowScale = 2 + 4 * easeOutCubic(t);
             glowMesh.scale.set(glowScale, glowScale, glowScale);
-            (glowMesh.material as MeshBasicMaterial).opacity = 0.6 * (1 - easeInQuad(t));
+            (glowMesh.material as MeshBasicMaterial).opacity =
+              0.6 * (1 - easeInQuad(t));
           }
           break;
         }

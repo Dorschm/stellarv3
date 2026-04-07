@@ -14,7 +14,7 @@ describe("AllianceRequestExecution", () => {
     game = await setup(
       "plains",
       {
-        infiniteGold: true,
+        infiniteCredits: true,
         instantBuild: true,
         infiniteTroops: true,
       },
@@ -86,9 +86,14 @@ describe("AllianceRequestExecution", () => {
     expect(player2.incomingAllianceRequests().length).toBe(1);
 
     // Player 1 Builds a silo & launches a missile at player 2.
-    constructionExecution(game, player1, 0, 0, UnitType.MissileSilo);
+    constructionExecution(game, player1, 0, 0, UnitType.OrbitalStrikePlatform);
     game.addExecution(
-      new NukeExecution(UnitType.AtomBomb, player1, game.ref(0, 1), null),
+      new NukeExecution(
+        UnitType.AntimatterTorpedo,
+        player1,
+        game.ref(0, 1),
+        null,
+      ),
     );
     game.executeNextTick();
     game.executeNextTick();

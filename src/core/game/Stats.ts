@@ -6,7 +6,7 @@ export interface Stats {
   getPlayerStats(player: Player): PlayerStats | null;
   stats(): AllPlayersStats;
 
-  numMirvsLaunched(): bigint;
+  numClusterWarheadsLaunched(): bigint;
 
   // Player attacks target
   attack(
@@ -29,37 +29,41 @@ export interface Stats {
   lobbyFillTime(fillTimeMs: number): void;
 
   // Player sends a trade ship to target
-  boatSendTrade(player: Player, target: Player): void;
+  freighterSendTrade(player: Player, target: Player): void;
 
   // Player's trade ship arrives at target, both players earn gold
-  boatArriveTrade(player: Player, target: Player, gold: number | bigint): void;
+  freighterArriveTrade(
+    player: Player,
+    target: Player,
+    gold: number | bigint,
+  ): void;
 
   // Player's trade ship, captured from target, arrives. Player earns gold.
-  boatCapturedTrade(
+  freighterCapturedTrade(
     player: Player,
     target: Player,
     gold: number | bigint,
   ): void;
 
   // Player destroys target's trade ship
-  boatDestroyTrade(player: Player, target: Player): void;
+  freighterDestroyTrade(player: Player, target: Player): void;
 
   // Player sends a transport ship to target with troops
-  boatSendTroops(
+  shuttleSendTroops(
     player: Player,
     target: Player | TerraNullius,
     troops: number | bigint,
   ): void;
 
   // Player's transport ship arrives at target with troops
-  boatArriveTroops(
+  shuttleArriveTroops(
     player: Player,
     target: Player | TerraNullius,
     troops: number | bigint,
   ): void;
 
   // Player destroys target's transport ship with troops
-  boatDestroyTroops(
+  shuttleDestroyTroops(
     player: Player,
     target: Player,
     troops: number | bigint,
@@ -79,10 +83,10 @@ export interface Stats {
   bombIntercept(player: Player, type: NukeType, count: number | bigint): void;
 
   // Player earns gold from conquering tiles or trade ships from captured
-  goldWar(player: Player, captured: Player, gold: number | bigint): void;
+  creditsWar(player: Player, captured: Player, gold: number | bigint): void;
 
   // Player earns gold from workers
-  goldWork(player: Player, gold: number | bigint): void;
+  creditsWork(player: Player, gold: number | bigint): void;
 
   // Player builds a unit of type
   unitBuild(player: Player, type: OtherUnitType): void;
@@ -103,8 +107,8 @@ export interface Stats {
   playerKilled(player: Player, tick: number): void;
 
   // Player's train arrives at any station, generating gold
-  trainSelfTrade(player: Player, gold: number | bigint): void;
+  frigateSelfTrade(player: Player, gold: number | bigint): void;
 
   // Another player's train arrives at own station
-  trainExternalTrade(player: Player, goldPlayer: number | bigint);
+  frigateExternalTrade(player: Player, goldPlayer: number | bigint);
 }

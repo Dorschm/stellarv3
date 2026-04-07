@@ -2,7 +2,10 @@ import { AttackExecution } from "../src/core/execution/AttackExecution";
 import { SpawnExecution } from "../src/core/execution/SpawnExecution";
 import { Game, Player, PlayerInfo, PlayerType } from "../src/core/game/Game";
 import { GameID } from "../src/core/Schemas";
-import { GOLD_INDEX_WAR, GOLD_INDEX_WORK } from "../src/core/StatsSchemas";
+import {
+  CREDITS_INDEX_WAR,
+  CREDITS_INDEX_WORK,
+} from "../src/core/StatsSchemas";
 import { setup } from "./util/Setup";
 
 let game: Game;
@@ -47,12 +50,13 @@ describe("AttackStats", () => {
     expect(player1.sharesBorderWith(player2)).toBeTruthy();
 
     const attackerStatsBefore = game.stats().stats()[player1.clientID()!];
-    const warGoldBefore = attackerStatsBefore?.gold?.[GOLD_INDEX_WAR] ?? 0n;
+    const warGoldBefore =
+      attackerStatsBefore?.credits?.[CREDITS_INDEX_WAR] ?? 0n;
 
     performAttack(game, player1, player2);
 
     const attackerStatsAfter = game.stats().stats()[player1.clientID()!];
-    const warGoldAfter = attackerStatsAfter?.gold?.[GOLD_INDEX_WAR] ?? 0n;
+    const warGoldAfter = attackerStatsAfter?.credits?.[CREDITS_INDEX_WAR] ?? 0n;
 
     expect(warGoldAfter).toBe(warGoldBefore);
   });
@@ -97,10 +101,10 @@ function expectWarGoldStatIsIncreasedAfterKill(
   const defenderStats = game.stats().stats()[defender.clientID()!];
 
   // Verify that all defender's gold was recorded as war gold in the attacker's stats
-  expect(attackerStats?.gold?.[GOLD_INDEX_WAR]).toBeDefined();
-  expect(defenderStats?.gold?.[GOLD_INDEX_WORK]).toBeDefined();
-  expect(attackerStats?.gold?.[GOLD_INDEX_WAR]).toBe(
-    defenderStats?.gold?.reduce((acc, g) => acc + g, 0n),
+  expect(attackerStats?.credits?.[CREDITS_INDEX_WAR]).toBeDefined();
+  expect(defenderStats?.credits?.[CREDITS_INDEX_WORK]).toBeDefined();
+  expect(attackerStats?.credits?.[CREDITS_INDEX_WAR]).toBe(
+    defenderStats?.credits?.reduce((acc, g) => acc + g, 0n),
   );
 }
 

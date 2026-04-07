@@ -295,16 +295,16 @@
     "title": "Wybierz język"
   },
   "unit_type": {
-    "city": "Miasto",
-    "defense_post": "Punkt Obronny",
-    "port": "Port",
-    "warship": "Okręt wojenny",
-    "missile_silo": "Silos rakietowy",
-    "sam_launcher": "Wyrzutnia SAM",
-    "atom_bomb": "Bomba atomowa",
-    "hydrogen_bomb": "Bomba wodorowa",
-    "mirv": "MIRV",
-    "factory": "Fabryka"
+    "colony": "Miasto",
+    "defense_station": "Punkt Obronny",
+    "spaceport": "Port",
+    "battlecruiser": "Okręt wojenny",
+    "orbital_strike_platform": "Silos rakietowy",
+    "point_defense_array": "Wyrzutnia SAM",
+    "antimatter_torpedo": "Bomba atomowa",
+    "nova_bomb": "Bomba wodorowa",
+    "cluster_warhead": "MIRV",
+    "foundry": "Fabryka"
   },
   "user_setting": {
     "title": "Ustawienia użytkownika",
@@ -368,8 +368,8 @@
     "attack_ratio_down": "Zmniejsz współczynnik ataku",
     "attack_ratio_down_desc": "Zmniejsz współczynnik ataku o 10%",
     "attack_keybinds": "Skróty klawiszowe ataku",
-    "boat_attack": "Atak łodzią",
-    "boat_attack_desc": "Wyślij atak łodzią na pole pod kursorem.",
+    "shuttle_attack": "Atak łodzią",
+    "shuttle_attack_desc": "Wyślij atak łodzią na pole pod kursorem.",
     "ground_attack": "Atak lądowy",
     "ground_attack_desc": "Wyślij atak lądowy na pole pod kursorem.",
     "zoom_controls": "Sterowanie przybliżeniem",
@@ -419,7 +419,7 @@
     "help": {
       "troops": "Proszę, daj mi żołnierzy!",
       "troops_frontlines": "Wyślij jednostki na front!",
-      "gold": "Proszę, daj mi złoto!",
+      "credits": "Proszę, daj mi złoto!",
       "no_attack": "Proszę, nie atakuj mnie!",
       "sorry_attack": "Przepraszam, nie chciałem zaatakować.",
       "alliance": "Sojusz?",
@@ -428,17 +428,17 @@
     },
     "attack": {
       "attack": "Zaatakuj [P1]!",
-      "mirv": "Wystrzel MIRV w [P1]!",
+      "cluster_warhead": "Wystrzel MIRV w [P1]!",
       "focus": "Skup atak na [P1]!",
       "finish": "Wykończmy [P1]!",
-      "build_warships": "Buduj okręty wojenne!"
+      "build_battlecruisers": "Buduj okręty wojenne!"
     },
     "defend": {
       "defend": "Broń [P1]!",
       "defend_from": "Broń się przed [P1]!",
       "dont_attack": "Nie atakuj [P1]!",
       "ally": "[P1] jest moim sojusznikiem!",
-      "build_posts": "Buduj posterunki obronne!"
+      "build_defense_stations": "Buduj posterunki obronne!"
     },
     "greet": {
       "hello": "Cześć!",
@@ -470,7 +470,7 @@
     "warnings": {
       "strong": "[P1] jest silny.",
       "weak": "[P1] jest słaby.",
-      "mirv_soon": "[P1] może wkrótce uruchomić MIRV!",
+      "cluster_warhead_soon": "[P1] może wkrótce uruchomić MIRV!",
       "number1_warning": "Gracz nr 1 wkrótce wygra, chyba że się połączymy!",
       "stalemate": "Zróbmy sojusz. To impas, oboje przegramy.",
       "has_allies": "[P1] ma wielu sojuszników.",
@@ -479,8 +479,8 @@
       "betrayed_me": "[P1] mnie zdradził!",
       "getting_big": "[P1] zbyt szybko rośnie!",
       "danger_base": "[P1] jest niezabezpieczony",
-      "saving_for_mirv": "[P1] oszczędza, aby uruchomić MIRV.",
-      "mirv_ready": "[P1] ma wystarczającą ilość złota, aby uruchomić MIRV!",
+      "saving_for_cluster_warhead": "[P1] oszczędza, aby uruchomić MIRV.",
+      "cluster_warhead_ready": "[P1] ma wystarczającą ilość złota, aby uruchomić MIRV!",
       "snowballing": "[P1] zbyt szybko rośnie!",
       "cheating": "[P1] oszukuje!",
       "stop_trading": "Przestań handlować z [P1]!"
@@ -488,16 +488,16 @@
   },
   "build_menu": {
     "desc": {
-      "atom_bomb": "Mała Eksplozja",
-      "hydrogen_bomb": "Duża eksplozja",
-      "mirv": "Potężny wybuch skierowany tylko na konkretnego gracza",
-      "missile_silo": "Używane do wystrzelania bomb nuklearnych",
-      "sam_launcher": "Chroni przed przychodzącymi bombami nuklearnymi",
-      "warship": "Przechwytuje statki handlowe, niszczy okręty wojenne i łodzie",
-      "port": "Wysyła statki handlowe, aby wygenerować złoto",
-      "defense_post": "Wzmacnia obronę pobliskich granic",
-      "city": "Zwiększa maksymalną populację",
-      "factory": "Tworzy linie kolejowe i przywołuje pociągi"
+      "antimatter_torpedo": "Mała Eksplozja",
+      "nova_bomb": "Duża eksplozja",
+      "cluster_warhead": "Potężny wybuch skierowany tylko na konkretnego gracza",
+      "orbital_strike_platform": "Używane do wystrzelania bomb nuklearnych",
+      "point_defense_array": "Chroni przed przychodzącymi bombami nuklearnymi",
+      "battlecruiser": "Przechwytuje statki handlowe, niszczy okręty wojenne i łodzie",
+      "spaceport": "Wysyła statki handlowe, aby wygenerować złoto",
+      "defense_station": "Wzmacnia obronę pobliskich granic",
+      "colony": "Zwiększa maksymalną populację",
+      "foundry": "Tworzy linie kolejowe i przywołuje pociągi"
     },
     "not_enough_money": "Za mało złota"
   },
@@ -521,12 +521,12 @@
     "player": "Gracz",
     "team": "Zespół",
     "owned": "Posiadane",
-    "gold": "Złoto",
+    "credits": "Złoto",
     "troops": "Wojsko",
     "launchers": "Wyrzutnie rakiet",
-    "sams": "SAM",
-    "warships": "Okręty wojenne",
-    "cities": "Miasta",
+    "point_defense": "SAM",
+    "battlecruisers": "Okręty wojenne",
+    "colonies": "Miasta",
     "show_control": "Pokaż okupację",
     "show_units": "Pokaż jednostki"
   },
@@ -600,7 +600,7 @@
     "attack_ratio": "Współczynnik ataku"
   },
   "player_panel": {
-    "gold": "Złoto",
+    "credits": "Złoto",
     "troops": "Wojsko",
     "betrayals": "Liczba Zdrad",
     "traitor": "Zdrajca",
@@ -623,7 +623,7 @@
     "alliance": "Sojusz",
     "send_alliance": "Poproś o Sojusz",
     "send_troops": "Wyślij wojska",
-    "send_gold": "Wyślij Złoto",
+    "send_credits": "Wyślij Złoto",
     "emotes": "Emotikony"
   },
   "send_troops_modal": {
@@ -637,7 +637,7 @@
     "aria_slider": "Suwak Jednostek",
     "capacity_note": "Odbiorca może teraz zaakceptować tylko {amount}."
   },
-  "send_gold_modal": {
+  "send_credits_modal": {
     "title_with_name": "Wyślij Złoto do {name}",
     "available_tooltip": "Obecnie dostępne złoto",
     "aria_slider": "Suwak Ilości Złota",
@@ -714,25 +714,25 @@
     "received": "Otrzymano",
     "cancelled": "Anulowano",
     "count": "Ilość",
-    "gold": "Złoto",
+    "credits": "Złoto",
     "workers": "Robotnicy",
     "war": "Wojna",
     "trade": "Handel",
     "steal": "Kradzież",
     "unit": {
-      "city": "Miasto",
-      "port": "Port",
-      "defp": "Punkt Obronny",
-      "saml": "Wyrzutnia SAM",
-      "silo": "Silos rakietowy",
-      "wshp": "Okręt wojenny",
-      "fact": "Fabryka",
-      "trade": "Statek Handlowy",
-      "trans": "Statek Transportowy",
-      "abomb": "Bomba atomowa",
-      "hbomb": "Bomba wodorowa",
-      "mirv": "MIRV",
-      "mirvw": "Głowica MIRV"
+      "colony": "Miasto",
+      "spaceport": "Port",
+      "defs": "Punkt Obronny",
+      "pda": "Wyrzutnia SAM",
+      "osp": "Silos rakietowy",
+      "bcrs": "Okręt wojenny",
+      "fndy": "Fabryka",
+      "tfreight": "Statek Handlowy",
+      "ashuttle": "Statek Transportowy",
+      "ator": "Bomba atomowa",
+      "nbomb": "Bomba wodorowa",
+      "cwhead": "MIRV",
+      "cwsub": "Głowica MIRV"
     }
   },
   "game_list": {

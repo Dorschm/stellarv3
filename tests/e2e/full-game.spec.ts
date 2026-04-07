@@ -1,10 +1,10 @@
 import { expect, Page, test } from "@playwright/test";
 import {
-  startSingleplayerGame,
-  findOwnedTile,
   findInteriorOwnedTile,
+  findOwnedTile,
   findSpawnTile,
   rightClickOnGameTile,
+  startSingleplayerGame,
   waitForBorderEnemyTile,
   waitForTicksAbove,
 } from "./fixtures/game-fixtures";
@@ -75,7 +75,7 @@ test.describe("Full gameplay (singleplayer)", () => {
           myPlayer(): {
             numTilesOwned(): number;
             troops(): number;
-            gold(): bigint;
+            credits(): bigint;
           } | null;
         };
       };
@@ -84,7 +84,7 @@ test.describe("Full gameplay (singleplayer)", () => {
       return {
         tiles: mp.numTilesOwned(),
         troops: mp.troops(),
-        gold: Number(mp.gold()),
+        gold: Number(mp.credits()),
       };
     });
     expect(snapshot).not.toBeNull();
@@ -98,7 +98,7 @@ test.describe("Full gameplay (singleplayer)", () => {
           ticks(): number;
           myPlayer(): {
             troops(): number;
-            gold(): bigint;
+            credits(): bigint;
           } | null;
         };
       };
@@ -106,7 +106,7 @@ test.describe("Full gameplay (singleplayer)", () => {
       return {
         tick: w.__gameView.ticks(),
         troops: mp.troops(),
-        gold: Number(mp.gold()),
+        gold: Number(mp.credits()),
       };
     });
 
@@ -117,12 +117,12 @@ test.describe("Full gameplay (singleplayer)", () => {
         __gameView: {
           myPlayer(): {
             troops(): number;
-            gold(): bigint;
+            credits(): bigint;
           } | null;
         };
       };
       const mp = w.__gameView.myPlayer()!;
-      return { troops: mp.troops(), gold: Number(mp.gold()) };
+      return { troops: mp.troops(), gold: Number(mp.credits()) };
     });
 
     expect(after.troops).toBeGreaterThan(baseline.troops);
@@ -144,14 +144,8 @@ test.describe("Full gameplay (singleplayer)", () => {
     // SendAttackIntentEvent(null, troops) → terra nullius expansion.
     const unownedTile = await findSpawnTile(page);
     expect(unownedTile).not.toBeNull();
-    await rightClickOnGameTile(
-      page,
-      unownedTile!.tileX,
-      unownedTile!.tileY,
-    );
-    const attackButton = page
-      .getByRole("button", { name: /attack/i })
-      .first();
+    await rightClickOnGameTile(page, unownedTile!.tileX, unownedTile!.tileY);
+    const attackButton = page.getByRole("button", { name: /attack/i }).first();
     await expect(attackButton).toBeEnabled({ timeout: 10_000 });
     await attackButton.click();
 
@@ -180,10 +174,10 @@ test.describe("Full gameplay (singleplayer)", () => {
           await page.evaluate(() => {
             const w = window as unknown as {
               __gameView: {
-                myPlayer(): { gold(): bigint } | null;
+                myPlayer(): { credits(): bigint } | null;
               };
             };
-            return Number(w.__gameView.myPlayer()?.gold() ?? 0n);
+            return Number(w.__gameView.myPlayer()?.credits() ?? 0n);
           }),
         { timeout: 120_000, intervals: [1000, 2000] },
       )
@@ -211,9 +205,7 @@ test.describe("Full gameplay (singleplayer)", () => {
 
     // Wait for buildable data to load (buttons are rendered after async
     // `buildables()` resolves).
-    const enabledButton = buildMenu
-      .locator("button:not([disabled])")
-      .first();
+    const enabledButton = buildMenu.locator("button:not([disabled])").first();
     await expect(enabledButton).toBeVisible({ timeout: 10_000 });
 
     // Read the unit type from the enabled button's image alt text.
@@ -229,19 +221,16 @@ test.describe("Full gameplay (singleplayer)", () => {
     await expect
       .poll(
         async () =>
-          await page.evaluate(
-            (type) => {
-              const w = window as unknown as {
-                __gameView: {
-                  myPlayer(): {
-                    units(...types: string[]): unknown[];
-                  } | null;
-                };
+          await page.evaluate((type) => {
+            const w = window as unknown as {
+              __gameView: {
+                myPlayer(): {
+                  units(...types: string[]): unknown[];
+                } | null;
               };
-              return w.__gameView.myPlayer()?.units(type).length ?? 0;
-            },
-            unitType!,
-          ),
+            };
+            return w.__gameView.myPlayer()?.units(type).length ?? 0;
+          }, unitType!),
         { timeout: 60_000, intervals: [500, 1000] },
       )
       .toBeGreaterThan(0);
@@ -267,14 +256,8 @@ test.describe("Full gameplay (singleplayer)", () => {
     // eventually border a bot.
     const enemyTile = await waitForBorderEnemyTile(page, 60_000);
 
-    await rightClickOnGameTile(
-      page,
-      enemyTile!.tileX,
-      enemyTile!.tileY,
-    );
-    const attackButton = page
-      .getByRole("button", { name: /attack/i })
-      .first();
+    await rightClickOnGameTile(page, enemyTile!.tileX, enemyTile!.tileY);
+    const attackButton = page.getByRole("button", { name: /attack/i }).first();
     await expect(attackButton).toBeEnabled({ timeout: 10_000 });
     await attackButton.click();
 
@@ -308,7 +291,7 @@ test.describe("Full gameplay (singleplayer)", () => {
             isAlive(): boolean;
             numTilesOwned(): number;
             troops(): number;
-            gold(): bigint;
+            credits(): bigint;
           } | null;
         };
       };
@@ -317,7 +300,7 @@ test.describe("Full gameplay (singleplayer)", () => {
         alive: mp.isAlive(),
         tiles: mp.numTilesOwned(),
         troops: mp.troops(),
-        gold: Number(mp.gold()),
+        gold: Number(mp.credits()),
       };
     });
     expect(finalState.alive).toBe(true);

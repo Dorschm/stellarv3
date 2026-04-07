@@ -43,7 +43,7 @@ export class NukeExecution implements Execution {
     }
     this.pathFinder = UniversalPathFinding.Parabola(mg, {
       increment: this.speed,
-      distanceBasedHeight: this.nukeType !== UnitType.MIRVWarhead,
+      distanceBasedHeight: this.nukeType !== UnitType.ClusterWarheadSubmunition,
       directionUp: this.rocketDirectionUp,
     });
   }
@@ -78,7 +78,7 @@ export class NukeExecution implements Execution {
     if (this.nuke === null) {
       throw new Error("Not initialized");
     }
-    if (this.nuke.type() === UnitType.MIRVWarhead) {
+    if (this.nuke.type() === UnitType.ClusterWarheadSubmunition) {
       // MIRV warheads shouldn't break alliances
       return;
     }
@@ -138,14 +138,14 @@ export class NukeExecution implements Execution {
         targetTile: this.dst,
         trajectory: this.getTrajectory(this.dst),
       });
-      if (this.nuke.type() !== UnitType.MIRVWarhead) {
+      if (this.nuke.type() !== UnitType.ClusterWarheadSubmunition) {
         this.maybeBreakAlliances();
       }
       if (this.mg.hasOwner(this.dst)) {
         const target = this.mg.owner(this.dst);
         if (!target.isPlayer()) {
           // Ignore terra nullius
-        } else if (this.nukeType === UnitType.AtomBomb) {
+        } else if (this.nukeType === UnitType.AntimatterTorpedo) {
           this.mg.displayIncomingUnit(
             this.nuke.id(),
             // TODO TranslateText
@@ -153,12 +153,12 @@ export class NukeExecution implements Execution {
             MessageType.NUKE_INBOUND,
             target.id(),
           );
-        } else if (this.nukeType === UnitType.HydrogenBomb) {
+        } else if (this.nukeType === UnitType.NovaBomb) {
           this.mg.displayIncomingUnit(
             this.nuke.id(),
             // TODO TranslateText
             `${this.player.displayName()} - hydrogen bomb inbound`,
-            MessageType.HYDROGEN_BOMB_INBOUND,
+            MessageType.NOVA_BOMB_INBOUND,
             target.id(),
           );
         }
@@ -169,7 +169,7 @@ export class NukeExecution implements Execution {
 
       // after sending a nuke set the missilesilo on cooldown
       const silo = this.player
-        .units(UnitType.MissileSilo)
+        .units(UnitType.OrbitalStrikePlatform)
         .find((silo) => silo.tile() === spawn);
       if (silo) {
         silo.launch();
@@ -266,7 +266,7 @@ export class NukeExecution implements Execution {
         tilesPerPlayers.set(owner, (tilesPerPlayers.get(owner) ?? 0) + 1);
       }
 
-      if (mg.isLand(tile)) {
+      if (mg.isSector(tile)) {
         mg.setFallout(tile, true);
       }
     }
@@ -274,7 +274,7 @@ export class NukeExecution implements Execution {
     // Then compute the explosion effect on each player
     for (const [player, numImpactedTiles] of tilesPerPlayers) {
       const tilesBeforeNuke = player.numTilesOwned() + numImpactedTiles;
-      const transportShips = player.units(UnitType.TransportShip);
+      const transportShips = player.units(UnitType.AssaultShuttle);
       const outgoingAttacks = player.outgoingAttacks();
       const maxTroops = config.maxTroops(player);
       // nukeDeathFactor could compute the complete fallout in a single call instead
@@ -318,11 +318,11 @@ export class NukeExecution implements Execution {
     for (const unit of mg.units()) {
       const type = unit.type();
       if (
-        type === UnitType.AtomBomb ||
-        type === UnitType.HydrogenBomb ||
-        type === UnitType.MIRVWarhead ||
-        type === UnitType.MIRV ||
-        type === UnitType.SAMMissile
+        type === UnitType.AntimatterTorpedo ||
+        type === UnitType.NovaBomb ||
+        type === UnitType.ClusterWarheadSubmunition ||
+        type === UnitType.ClusterWarhead ||
+        type === UnitType.PointDefenseMissile
       ) {
         continue;
       }

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { assetUrl } from "../../core/AssetUrls";
 import { MessageType, PlayerType, UnitType } from "../../core/game/Game";
 import {
@@ -7,12 +7,15 @@ import {
   UnitIncomingUpdate,
 } from "../../core/game/GameUpdates";
 import { PlayerView, UnitView } from "../../core/game/GameView";
+import { useHUDStore } from "../bridge/HUDStore";
 import {
   CancelAttackIntentEvent,
-  CancelBoatIntentEvent,
+  CancelShuttleIntentEvent,
   SendAttackIntentEvent,
 } from "../Transport";
 import { renderTroops, translateText } from "../Utils";
+import { GoToPlayerEvent, GoToPositionEvent, GoToUnitEvent } from "./events";
+import { useGameTick } from "./useGameTick";
 // TODO(T7): SpriteLoader was removed with the old Canvas renderer.
 // getColoredSprite needs a 3D-pipeline replacement in a future ticket.
 function getColoredSprite(
@@ -21,13 +24,6 @@ function getColoredSprite(
 ): HTMLCanvasElement | null {
   return null;
 }
-import { useGameTick } from "./useGameTick";
-import { useHUDStore } from "../bridge/HUDStore";
-import {
-  GoToPlayerEvent,
-  GoToPositionEvent,
-  GoToUnitEvent,
-} from "./events";
 
 const soldierIcon = assetUrl("images/SoldierIcon.svg");
 const swordIcon = assetUrl("images/SwordIcon.svg");
@@ -37,9 +33,9 @@ export function AttacksDisplay(): React.JSX.Element {
   const [isVisible, setIsVisible] = useState(false);
   const [incomingAttacks, setIncomingAttacks] = useState<AttackUpdate[]>([]);
   const [outgoingAttacks, setOutgoingAttacks] = useState<AttackUpdate[]>([]);
-  const [outgoingLandAttacks, setOutgoingLandAttacks] = useState<AttackUpdate[]>(
-    [],
-  );
+  const [outgoingLandAttacks, setOutgoingLandAttacks] = useState<
+    AttackUpdate[]
+  >([]);
   const [outgoingBoats, setOutgoingBoats] = useState<UnitView[]>([]);
   const [incomingBoats, setIncomingBoats] = useState<UnitView[]>([]);
   const incomingBoatIDsRef = useRef(new Set<number>());
@@ -64,13 +60,14 @@ export function AttacksDisplay(): React.JSX.Element {
     // Track incoming boat unit IDs from UnitIncoming events
     const updates = gameView.updatesSinceLastTick();
     if (updates) {
-      const unitUpdates =
-        updates[GameUpdateType.UnitIncoming] as UnitIncomingUpdate[];
+      const unitUpdates = updates[
+        GameUpdateType.UnitIncoming
+      ] as UnitIncomingUpdate[];
       if (unitUpdates) {
         for (const event of unitUpdates) {
           if (
             event.playerID === myPlayer.smallID() &&
-            event.messageType === MessageType.NAVAL_INVASION_INBOUND
+            event.messageType === MessageType.ORBITAL_ASSAULT_INBOUND
           ) {
             incomingBoatIDsRef.current.add(event.unitID);
           }
@@ -82,7 +79,7 @@ export function AttacksDisplay(): React.JSX.Element {
     const resolvedIncomingBoats: UnitView[] = [];
     for (const unitID of incomingBoatIDsRef.current) {
       const unit = gameView.unit(unitID);
-      if (unit && unit.isActive() && unit.type() === UnitType.TransportShip) {
+      if (unit && unit.isActive() && unit.type() === UnitType.AssaultShuttle) {
         resolvedIncomingBoats.push(unit);
       } else {
         incomingBoatIDsRef.current.delete(unitID);
@@ -102,7 +99,7 @@ export function AttacksDisplay(): React.JSX.Element {
 
     const boats = myPlayer
       .units()
-      .filter((u) => u.type() === UnitType.TransportShip);
+      .filter((u) => u.type() === UnitType.AssaultShuttle);
     setOutgoingBoats(boats);
   }, [tick, gameView, isVisible]);
 
@@ -142,9 +139,7 @@ export function AttacksDisplay(): React.JSX.Element {
   };
 
   const handleRetaliate = (attack: AttackUpdate) => {
-    const attacker = gameView.playerBySmallID(
-      attack.attackerID,
-    ) as PlayerView;
+    const attacker = gameView.playerBySmallID(attack.attackerID) as PlayerView;
     if (!attacker) return;
 
     const myPlayer = gameView.myPlayer();
@@ -162,7 +157,7 @@ export function AttacksDisplay(): React.JSX.Element {
   };
 
   const emitBoatCancelIntent = (id: number) => {
-    eventBus.emit(new CancelBoatIntentEvent(id));
+    eventBus.emit(new CancelShuttleIntentEvent(id));
   };
 
   const getBoatTargetName = (boat: UnitView): string => {

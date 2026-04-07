@@ -1,19 +1,13 @@
 import { translateText } from "../client/Utils";
-import { EventBus } from "../core/EventBus";
-import {
-  ClientID,
-  GameID,
-  GameRecord,
-  GameStartInfo,
-  LobbyInfoEvent,
-  PlayerCosmeticRefs,
-  PlayerRecord,
-  ServerMessage,
-} from "../core/Schemas";
-import { createPartialGameRecord, findClosestBy, replacer } from "../core/Util";
 import { ServerConfig } from "../core/configuration/Config";
 import { getGameLogicConfig } from "../core/configuration/ConfigLoader";
-import { BuildableUnit, BuildMenus, Structures, UnitType } from "../core/game/Game";
+import { EventBus } from "../core/EventBus";
+import {
+  BuildableUnit,
+  BuildMenus,
+  Structures,
+  UnitType,
+} from "../core/game/Game";
 import { TileRef } from "../core/game/GameMap";
 import { GameMapLoader } from "../core/game/GameMapLoader";
 import {
@@ -26,37 +20,48 @@ import {
 import { GameView, PlayerView } from "../core/game/GameView";
 import { loadTerrainMap, TerrainMapData } from "../core/game/TerrainMapLoader";
 import { UserSettings } from "../core/game/UserSettings";
+import {
+  ClientID,
+  GameID,
+  GameRecord,
+  GameStartInfo,
+  LobbyInfoEvent,
+  PlayerCosmeticRefs,
+  PlayerRecord,
+  ServerMessage,
+} from "../core/Schemas";
+import { createPartialGameRecord, findClosestBy, replacer } from "../core/Util";
 import { WorkerClient } from "../core/worker/WorkerClient";
 import { getPersistentID } from "./Auth";
 import { GameBridge } from "./bridge/GameBridge";
 import { useHUDStore } from "./bridge/HUDStore";
+import { SpaceInputHandler } from "./bridge/SpaceInputHandler";
+import { GoToPlayerEvent } from "./CameraEvents";
+import { ShowPlayerPanelEvent } from "./hud/events";
 import {
   AutoUpgradeEvent,
-  DoBoatAttackEvent,
   DoGroundAttackEvent,
+  DoShuttleAttackEvent,
   GhostStructureChangedEvent,
   MouseUpEvent,
   SceneTickEvent,
+  TickMetricsEvent,
   TileHoverClearEvent,
   TileHoverEvent,
-  TickMetricsEvent,
 } from "./InputHandler";
-import { SpaceInputHandler } from "./bridge/SpaceInputHandler";
 import { endGame, startGame, startTime } from "./LocalPersistantStats";
+import { mountReactRoot, unmountReactRoot } from "./scene/ReactRoot";
+import SoundManager from "./sound/SoundManager";
 import { terrainMapFileLoader } from "./TerrainMapFileLoader";
 import {
   BuildUnitIntentEvent,
   SendAttackIntentEvent,
-  SendBoatAttackIntentEvent,
   SendHashEvent,
+  SendShuttleAttackIntentEvent,
   SendSpawnIntentEvent,
   SendUpgradeStructureIntentEvent,
   Transport,
 } from "./Transport";
-import { GoToPlayerEvent } from "./CameraEvents";
-import { ShowPlayerPanelEvent } from "./hud/events";
-import { mountReactRoot, unmountReactRoot } from "./scene/ReactRoot";
-import SoundManager from "./sound/SoundManager";
 
 export interface LobbyConfig {
   serverConfig: ServerConfig;
@@ -371,7 +376,7 @@ export class ClientGameRunner {
     this.eventBus.on(TileHoverClearEvent, this.onTileHoverClear.bind(this));
     this.eventBus.on(AutoUpgradeEvent, this.autoUpgradeEvent.bind(this));
     this.eventBus.on(
-      DoBoatAttackEvent,
+      DoShuttleAttackEvent,
       this.doBoatAttackUnderCursor.bind(this),
     );
     this.eventBus.on(
@@ -636,8 +641,8 @@ export class ClientGameRunner {
           );
         } else if (buildableUnit.canBuild) {
           const rocketDirectionUp =
-            ghostStructure === UnitType.AtomBomb ||
-            ghostStructure === UnitType.HydrogenBomb
+            ghostStructure === UnitType.AntimatterTorpedo ||
+            ghostStructure === UnitType.NovaBomb
               ? useHUDStore.getState().rocketDirectionUp
               : undefined;
           this.eventBus.emit(
@@ -654,7 +659,7 @@ export class ClientGameRunner {
     }
 
     if (
-      this.gameView.isLand(tile) &&
+      this.gameView.isSector(tile) &&
       !this.gameView.hasOwner(tile) &&
       this.gameView.inSpawnPhase() &&
       !this.gameView.config().isRandomSpawn()
@@ -684,7 +689,7 @@ export class ClientGameRunner {
         );
         return;
       }
-      if (this.canAutoBoat(actions.buildableUnits, tile)) {
+      if (this.canAutoShuttle(actions.buildableUnits, tile)) {
         this.sendBoatAttackIntent(tile);
         return;
       }
@@ -784,9 +789,9 @@ export class ClientGameRunner {
     }
 
     this.myPlayer
-      .buildables(tile, [UnitType.TransportShip])
+      .buildables(tile, [UnitType.AssaultShuttle])
       .then((buildables) => {
-        if (this.canBoatAttack(buildables) !== false) {
+        if (this.canShuttleAttack(buildables) !== false) {
           this.sendBoatAttackIntent(tile);
         } else {
           console.warn(
@@ -838,8 +843,8 @@ export class ClientGameRunner {
     return null;
   }
 
-  private canBoatAttack(buildables: BuildableUnit[]): false | TileRef {
-    const bu = buildables.find((bu) => bu.type === UnitType.TransportShip);
+  private canShuttleAttack(buildables: BuildableUnit[]): false | TileRef {
+    const bu = buildables.find((bu) => bu.type === UnitType.AssaultShuttle);
     return bu?.canBuild ?? false;
   }
 
@@ -847,17 +852,17 @@ export class ClientGameRunner {
     if (!this.myPlayer) return;
 
     this.eventBus.emit(
-      new SendBoatAttackIntentEvent(
+      new SendShuttleAttackIntentEvent(
         tile,
         this.myPlayer.troops() * this.bridge.attackRatio,
       ),
     );
   }
 
-  private canAutoBoat(buildables: BuildableUnit[], tile: TileRef): boolean {
-    if (!this.gameView.isLand(tile)) return false;
+  private canAutoShuttle(buildables: BuildableUnit[], tile: TileRef): boolean {
+    if (!this.gameView.isSector(tile)) return false;
 
-    const canBuild = this.canBoatAttack(buildables);
+    const canBuild = this.canShuttleAttack(buildables);
     if (canBuild === false) return false;
 
     const distanceSquared = this.gameView.euclideanDistSquared(tile, canBuild);

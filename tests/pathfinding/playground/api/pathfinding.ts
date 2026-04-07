@@ -192,10 +192,10 @@ export async function computePath(
   const toRef = game.ref(to[0], to[1]);
 
   // Validate that both points are water tiles
-  if (!game.isWater(fromRef)) {
+  if (!game.isDeepSpace(fromRef)) {
     throw new Error(`Start point (${from[0]}, ${from[1]}) is not water`);
   }
-  if (!game.isWater(toRef)) {
+  if (!game.isDeepSpace(toRef)) {
     throw new Error(`End point (${to[0]}, ${to[1]}) is not water`);
   }
 

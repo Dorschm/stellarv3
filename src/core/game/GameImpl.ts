@@ -4,7 +4,7 @@ import {
   AbstractGraph,
   AbstractGraphBuilder,
 } from "../pathfinding/algorithms/AbstractGraph";
-import { AStarWaterHierarchical } from "../pathfinding/algorithms/AStar.WaterHierarchical";
+import { AStarDeepSpaceHierarchical } from "../pathfinding/algorithms/AStar.DeepSpaceHierarchical";
 import { PathFinder } from "../pathfinding/types";
 import { AllPlayersStats, ClientID, Winner } from "../Schemas";
 import { ATTACK_INDEX_SENT } from "../StatsSchemas";
@@ -43,10 +43,10 @@ import {
 } from "./Game";
 import { GameMap, TileRef } from "./GameMap";
 import { GameUpdate, GameUpdateType } from "./GameUpdates";
+import { HyperspaceLaneNetwork } from "./HyperspaceLaneNetwork";
+import { createHyperspaceLaneNetwork } from "./HyperspaceLaneNetworkImpl";
 import { MotionPlanRecord, packMotionPlans } from "./MotionPlans";
 import { PlayerImpl } from "./PlayerImpl";
-import { RailNetwork } from "./RailNetwork";
-import { createRailNetwork } from "./RailNetworkImpl";
 import { Stats } from "./Stats";
 import { StatsImpl } from "./StatsImpl";
 import { assignTeams } from "./TeamAssignment";
@@ -102,15 +102,16 @@ export class GameImpl implements Game {
 
   private playerTeams: Team[] = [];
   private botTeam: Team = ColoredTeams.Bot;
-  private _railNetwork: RailNetwork = createRailNetwork(this);
+  private _hyperspaceLaneNetwork: HyperspaceLaneNetwork =
+    createHyperspaceLaneNetwork(this);
 
   // Used to assign unique IDs to each new alliance
   private nextAllianceID: number = 0;
 
   private _isPaused: boolean = false;
   private _winner: Player | Team | null = null;
-  private _miniWaterGraph: AbstractGraph | null = null;
-  private _miniWaterHPA: AStarWaterHierarchical | null = null;
+  private _miniDeepSpaceGraph: AbstractGraph | null = null;
+  private _miniDeepSpaceHPA: AStarDeepSpaceHierarchical | null = null;
   private _teamGameSpawnAreas: TeamGameSpawnAreas | undefined;
 
   constructor(
@@ -137,11 +138,11 @@ export class GameImpl implements Game {
 
     if (!_config.disableNavMesh()) {
       const graphBuilder = new AbstractGraphBuilder(this.miniGameMap);
-      this._miniWaterGraph = graphBuilder.build();
+      this._miniDeepSpaceGraph = graphBuilder.build();
 
-      this._miniWaterHPA = new AStarWaterHierarchical(
+      this._miniDeepSpaceHPA = new AStarDeepSpaceHierarchical(
         this.miniGameMap,
-        this._miniWaterGraph,
+        this._miniDeepSpaceGraph,
         { cachePaths: true },
       );
     }
@@ -644,7 +645,7 @@ export class GameImpl implements Game {
   }
 
   conquer(owner: PlayerImpl, tile: TileRef): void {
-    if (!this.isLand(tile)) {
+    if (!this.isSector(tile)) {
       throw Error(`cannot conquer water`);
     }
     const previousOwner = this.owner(tile) as TerraNullius | PlayerImpl;
@@ -665,7 +666,7 @@ export class GameImpl implements Game {
     if (!this.hasOwner(tile)) {
       throw new Error(`Cannot relinquish tile because it is unowned`);
     }
-    if (this.isWater(tile)) {
+    if (this.isDeepSpace(tile)) {
       throw new Error("Cannot relinquish water");
     }
 
@@ -868,7 +869,7 @@ export class GameImpl implements Game {
     message: string,
     type: MessageType,
     playerID: PlayerID | null,
-    goldAmount?: bigint,
+    creditAmount?: bigint,
     params?: Record<string, string | number>,
   ): void {
     let id: number | null = null;
@@ -880,7 +881,7 @@ export class GameImpl implements Game {
       messageType: type,
       message: message,
       playerID: id,
-      goldAmount: goldAmount,
+      creditAmount: creditAmount,
       params: params,
     });
   }
@@ -931,8 +932,8 @@ export class GameImpl implements Game {
   removeUnit(u: Unit) {
     this.unitGrid.removeUnit(u);
     this.planDrivenUnitIds.delete(u.id());
-    if (u.hasTrainStation()) {
-      this._railNetwork.removeStation(u);
+    if (u.hasTradeHub()) {
+      this._hyperspaceLaneNetwork.removeStation(u);
     }
   }
   updateUnitTile(u: Unit) {
@@ -1019,8 +1020,8 @@ export class GameImpl implements Game {
   isValidCoord(x: number, y: number): boolean {
     return this._map.isValidCoord(x, y);
   }
-  isLand(ref: TileRef): boolean {
-    return this._map.isLand(ref);
+  isSector(ref: TileRef): boolean {
+    return this._map.isSector(ref);
   }
   isOceanShore(ref: TileRef): boolean {
     return this._map.isOceanShore(ref);
@@ -1028,8 +1029,8 @@ export class GameImpl implements Game {
   isOcean(ref: TileRef): boolean {
     return this._map.isOcean(ref);
   }
-  isShoreline(ref: TileRef): boolean {
-    return this._map.isShoreline(ref);
+  isSectorBoundary(ref: TileRef): boolean {
+    return this._map.isSectorBoundary(ref);
   }
   magnitude(ref: TileRef): number {
     return this._map.magnitude(ref);
@@ -1061,14 +1062,14 @@ export class GameImpl implements Game {
     if (y > 0) callback(this._map.ref(x, y - 1));
     if (y + 1 < this._height) callback(this._map.ref(x, y + 1));
   }
-  isWater(ref: TileRef): boolean {
-    return this._map.isWater(ref);
+  isDeepSpace(ref: TileRef): boolean {
+    return this._map.isDeepSpace(ref);
   }
   isLake(ref: TileRef): boolean {
     return this._map.isLake(ref);
   }
-  isShore(ref: TileRef): boolean {
-    return this._map.isShore(ref);
+  isSectorEdge(ref: TileRef): boolean {
+    return this._map.isSectorEdge(ref);
   }
   cost(ref: TileRef): number {
     return this._map.cost(ref);
@@ -1110,47 +1111,47 @@ export class GameImpl implements Game {
   stats(): Stats {
     return this._stats;
   }
-  railNetwork(): RailNetwork {
-    return this._railNetwork;
+  hyperspaceLaneNetwork(): HyperspaceLaneNetwork {
+    return this._hyperspaceLaneNetwork;
   }
-  miniWaterHPA(): PathFinder<number> | null {
-    return this._miniWaterHPA;
+  miniDeepSpaceHPA(): PathFinder<number> | null {
+    return this._miniDeepSpaceHPA;
   }
-  miniWaterGraph(): AbstractGraph | null {
-    return this._miniWaterGraph;
+  miniDeepSpaceGraph(): AbstractGraph | null {
+    return this._miniDeepSpaceGraph;
   }
-  getWaterComponent(tile: TileRef): number | null {
+  getDeepSpaceComponent(tile: TileRef): number | null {
     // Permissive fallback for tests with disableNavMesh
-    if (!this._miniWaterGraph) return 0;
+    if (!this._miniDeepSpaceGraph) return 0;
 
     const miniX = Math.floor(this._map.x(tile) / 2);
     const miniY = Math.floor(this._map.y(tile) / 2);
     const miniTile = this.miniGameMap.ref(miniX, miniY);
 
-    if (this.miniGameMap.isWater(miniTile)) {
-      return this._miniWaterGraph.getComponentId(miniTile);
+    if (this.miniGameMap.isDeepSpace(miniTile)) {
+      return this._miniDeepSpaceGraph.getComponentId(miniTile);
     }
 
     // Shore tile: find water neighbor (expand search for minimap resolution loss)
     for (const n of this.miniGameMap.neighbors(miniTile)) {
-      if (this.miniGameMap.isWater(n)) {
-        return this._miniWaterGraph.getComponentId(n);
+      if (this.miniGameMap.isDeepSpace(n)) {
+        return this._miniDeepSpaceGraph.getComponentId(n);
       }
     }
 
     // Extended search: check 2-hop neighbors for narrow straits
     for (const n of this.miniGameMap.neighbors(miniTile)) {
       for (const n2 of this.miniGameMap.neighbors(n)) {
-        if (this.miniGameMap.isWater(n2)) {
-          return this._miniWaterGraph.getComponentId(n2);
+        if (this.miniGameMap.isDeepSpace(n2)) {
+          return this._miniDeepSpaceGraph.getComponentId(n2);
         }
       }
     }
     return null;
   }
-  hasWaterComponent(tile: TileRef, component: number): boolean {
+  hasDeepSpaceComponent(tile: TileRef, component: number): boolean {
     // Permissive fallback for tests with disableNavMesh
-    if (!this._miniWaterGraph) return true;
+    if (!this._miniDeepSpaceGraph) return true;
 
     const miniX = Math.floor(this._map.x(tile) / 2);
     const miniY = Math.floor(this._map.y(tile) / 2);
@@ -1158,8 +1159,8 @@ export class GameImpl implements Game {
 
     // Check miniTile itself (shore in full map may be water in minimap)
     if (
-      this.miniGameMap.isWater(miniTile) &&
-      this._miniWaterGraph.getComponentId(miniTile) === component
+      this.miniGameMap.isDeepSpace(miniTile) &&
+      this._miniDeepSpaceGraph.getComponentId(miniTile) === component
     ) {
       return true;
     }
@@ -1167,8 +1168,8 @@ export class GameImpl implements Game {
     // Check neighbors
     for (const n of this.miniGameMap.neighbors(miniTile)) {
       if (
-        this.miniGameMap.isWater(n) &&
-        this._miniWaterGraph.getComponentId(n) === component
+        this.miniGameMap.isDeepSpace(n) &&
+        this._miniDeepSpaceGraph.getComponentId(n) === component
       ) {
         return true;
       }
@@ -1178,8 +1179,8 @@ export class GameImpl implements Game {
     for (const n of this.miniGameMap.neighbors(miniTile)) {
       for (const n2 of this.miniGameMap.neighbors(n)) {
         if (
-          this.miniGameMap.isWater(n2) &&
-          this._miniWaterGraph.getComponentId(n2) === component
+          this.miniGameMap.isDeepSpace(n2) &&
+          this._miniDeepSpaceGraph.getComponentId(n2) === component
         ) {
           return true;
         }
@@ -1193,8 +1194,8 @@ export class GameImpl implements Game {
         .units()
         .filter(
           (u) =>
-            u.type() === UnitType.Warship ||
-            u.type() === UnitType.TransportShip,
+            u.type() === UnitType.Battlecruiser ||
+            u.type() === UnitType.AssaultShuttle,
         );
 
       for (const ship of ships) {
@@ -1208,11 +1209,11 @@ export class GameImpl implements Game {
     const attacksSent = stats?.attacks?.[ATTACK_INDEX_SENT] ?? 0n;
     const skipGoldTransfer =
       attacksSent === 0n && conquered.type() === PlayerType.Human;
-    const gold = skipGoldTransfer ? 0n : conquered.gold();
+    const gold = skipGoldTransfer ? 0n : conquered.credits();
 
     if (skipGoldTransfer) {
       this.displayMessage(
-        "events_display.conquered_no_gold",
+        "events_display.conquered_no_credits",
         MessageType.CONQUERED_PLAYER,
         conqueror.id(),
         undefined,
@@ -1222,7 +1223,7 @@ export class GameImpl implements Game {
       );
     } else {
       this.displayMessage(
-        "events_display.received_gold_from_conquest",
+        "events_display.received_credits_from_conquest",
         MessageType.CONQUERED_PLAYER,
         conqueror.id(),
         gold,
@@ -1231,18 +1232,18 @@ export class GameImpl implements Game {
           name: conquered.displayName(),
         },
       );
-      conqueror.addGold(gold);
-      conquered.removeGold(gold);
+      conqueror.addCredits(gold);
+      conquered.removeCredits(gold);
 
       // Record stats
-      this.stats().goldWar(conqueror, conquered, gold);
+      this.stats().creditsWar(conqueror, conquered, gold);
     }
 
     this.addUpdate({
       type: GameUpdateType.ConquestEvent,
       conquerorId: conqueror.id(),
       conqueredId: conquered.id(),
-      gold,
+      credits: gold,
     });
   }
 }

@@ -3,7 +3,7 @@
 import { GameMap, TileRef } from "../../game/GameMap";
 import { DebugSpan } from "../../utilities/DebugSpan";
 
-export const LAND_MARKER = 0xff; // Must fit in Uint8Array
+export const SECTOR_MARKER = 0xff; // Must fit in Uint8Array
 
 /**
  * Connected component labeling for grid-based maps.
@@ -39,7 +39,7 @@ export class ConnectedComponents {
       const value = ids[start];
 
       // Skip if already visited (land=0xFF or water component >0)
-      if (value === LAND_MARKER || value > 0) {
+      if (value === SECTOR_MARKER || value > 0) {
         continue;
       }
 
@@ -65,9 +65,9 @@ export class ConnectedComponents {
     const ids = new Uint8Array(this.numTiles);
 
     if (this.accessTerrainDirectly) {
-      this.premarkLandTilesDirect(ids);
+      this.premarkSectorTilesDirect(ids);
     } else {
-      this.premarkLandTiles(ids);
+      this.premarkSectorTiles(ids);
     }
 
     return ids;
@@ -77,9 +77,9 @@ export class ConnectedComponents {
    * Pre-mark all land tiles in the ids array.
    * Land tiles are marked with 0xFF, water tiles remain 0.
    */
-  private premarkLandTiles(ids: Uint8Array): void {
+  private premarkSectorTiles(ids: Uint8Array): void {
     for (let i = 0; i < this.numTiles; i++) {
-      ids[i] = this.map.isWater(i) ? 0 : LAND_MARKER;
+      ids[i] = this.map.isDeepSpace(i) ? 0 : SECTOR_MARKER;
     }
   }
 
@@ -88,10 +88,10 @@ export class ConnectedComponents {
    * Land tiles are marked with 0xFF, water tiles remain 0.
    *
    * This implementation accesses the terrain data **directly** without GameMap abstraction.
-   * In tests it is 30% to 50% faster than using isWater() method calls.
+   * In tests it is 30% to 50% faster than using isDeepSpace() method calls.
    * As of 2026-01-05 it reduces avg. time for GWM from 15ms to 10ms.
    */
-  private premarkLandTilesDirect(ids: Uint8Array): void {
+  private premarkSectorTilesDirect(ids: Uint8Array): void {
     const terrain = (this.map as any).terrain as Uint8Array;
 
     // Write 4 bytes at once using Uint32Array view for better performance

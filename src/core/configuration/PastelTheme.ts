@@ -15,7 +15,7 @@ export class PastelTheme implements Theme {
   private nationColorAllocator = new ColorAllocator(nationColors, nationColors);
 
   private background = colord("rgb(60,60,60)");
-  private shore = colord("rgb(204,203,158)");
+  private sectorEdge = colord("rgb(204,203,158)");
   private falloutColors = [
     colord("rgb(120,255,71)"), // Original color
     colord("rgb(130,255,85)"), // Slightly lighter
@@ -23,8 +23,8 @@ export class PastelTheme implements Theme {
     colord("rgb(125,255,75)"), // Warmer tint
     colord("rgb(115,250,68)"), // Cooler tint
   ];
-  private water = colord("rgb(70,132,180)");
-  private shorelineWater = colord("rgb(100,143,255)");
+  private deepSpace = colord("rgb(70,132,180)");
+  private sectorBoundaryDeepSpace = colord("rgb(100,143,255)");
 
   /** Alternate View colors for self, green */
   private _selfColor = colord("rgb(0,255,0)");
@@ -140,23 +140,23 @@ export class PastelTheme implements Theme {
 
   // | Terrain Type      | Magnitude | Base Color Logic                                | Visual Description                                                   |
   // | :---------------- | :-------- | :---------------------------------------------- | :------------------------------------------------------------------- |
-  // | **Shore (Land)**  | N/A       | Fixed: `rgb(204, 203, 158)`                   | Sandy beige. Overrides other land types if adjacent to water.        |
+  // | **Sector Edge**   | N/A       | Fixed: `rgb(204, 203, 158)`                   | Sandy beige. Overrides other land types if adjacent to deep space.   |
   // | **Plains**        | 0 - 9     | `rgb(190, 220, 138)` - `rgb(190, 202, 138)` | Light green. Gets slightly darker/less green as magnitude increases. |
   // | **Highland**      | 10 - 19   | `rgb(220, 203, 158)` - `rgb(238, 221, 176)` | Tan/Beige. Gets lighter as magnitude increases.                      |
   // | **Mountain**      | 20 - 30   | `rgb(240, 240, 240)` - `rgb(245, 245, 245)` | Grayscale (White/Grey). Represents snow caps or rocky peaks.         |
-  // | **Water (Shore)** | 0         | Fixed: `rgb(100, 143, 255)`                   | Light blue near land.                                                |
-  // | **Water (Deep)**  | 1 - 10+   | `rgb(70, 132, 180)` - `rgb(61, 123, 171)`   | Darker blue, adjusted slightly by distance to land.                  |
+  // | **Deep Space (Sector Edge)** | 0 | Fixed: `rgb(100, 143, 255)`              | Light blue near sectors.                                             |
+  // | **Deep Space**    | 1 - 10+   | `rgb(70, 132, 180)` - `rgb(61, 123, 171)`   | Darker blue, adjusted slightly by distance to sectors.               |
   terrainColor(gm: GameMap, tile: TileRef): Colord {
     const mag = gm.magnitude(tile);
-    if (gm.isShore(tile)) {
-      return this.shore;
+    if (gm.isSectorEdge(tile)) {
+      return this.sectorEdge;
     }
     switch (gm.terrainType(tile)) {
-      case TerrainType.Ocean:
-      case TerrainType.Lake: {
-        const w = this.water.rgba;
-        if (gm.isShoreline(tile) && gm.isWater(tile)) {
-          return this.shorelineWater;
+      case TerrainType.DeepSpace:
+      case TerrainType.DebrisField: {
+        const w = this.deepSpace.rgba;
+        if (gm.isSectorBoundary(tile) && gm.isDeepSpace(tile)) {
+          return this.sectorBoundaryDeepSpace;
         }
         return colord({
           r: Math.max(w.r - 10 + (11 - Math.min(mag, 10)), 0),

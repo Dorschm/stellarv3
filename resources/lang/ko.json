@@ -256,13 +256,13 @@
     "hydros": "수소",
     "mirv": "다탄두 미사일",
     "bombs": "폭탄",
-    "total_gold": "합계",
-    "all_gold": "모든 금",
+    "total_credits": "합계",
+    "all_credits": "모든 금",
     "trade": "무역",
-    "train_trade": "기차",
+    "frigate_trade": "기차",
     "naval_trade": "무역선",
-    "conquest_gold": "정복한 플레이어 금",
-    "stolen_gold": "전함으로 약탈함",
+    "conquest_credits": "정복한 플레이어 금",
+    "stolen_credits": "전함으로 약탈함",
     "num_of_conquests_humans": "죽인 플레이어",
     "num_of_conquests_bots": "죽인 봇",
     "duration": "지속 시간",
@@ -457,22 +457,22 @@
     "random_spawn": "랜덤 스폰",
     "compact_map": "초소형 맵",
     "crowded": "혼잡함",
-    "starting_gold": "500만 초지 자금"
+    "starting_credits": "500만 초지 자금"
   },
   "select_lang": {
     "title": "언어 선택"
   },
   "unit_type": {
-    "city": "도시",
-    "defense_post": "방어 진지",
-    "port": "항구",
-    "warship": "군함",
-    "missile_silo": "미사일 발사대",
-    "sam_launcher": "지대공 미사일 발사대",
-    "atom_bomb": "원자 폭탄",
-    "hydrogen_bomb": "수소 폭탄",
-    "mirv": "다탄두 미사일",
-    "factory": "공장"
+    "colony": "도시",
+    "defense_station": "방어 진지",
+    "spaceport": "항구",
+    "battlecruiser": "군함",
+    "orbital_strike_platform": "미사일 발사대",
+    "point_defense_array": "지대공 미사일 발사대",
+    "antimatter_torpedo": "원자 폭탄",
+    "nova_bomb": "수소 폭탄",
+    "cluster_warhead": "다탄두 미사일",
+    "foundry": "공장"
   },
   "user_setting": {
     "title": "설정",
@@ -544,8 +544,8 @@
     "attack_ratio_down": "공격 비율 낮추기",
     "attack_ratio_down_desc": "공격 비율을 10% 감소",
     "attack_keybinds": "공격 단축키",
-    "boat_attack": "상륙 공격",
-    "boat_attack_desc": "커서 아래 타일에 상륙 공격을 보내보세요.",
+    "shuttle_attack": "상륙 공격",
+    "shuttle_attack_desc": "커서 아래 타일에 상륙 공격을 보내보세요.",
     "ground_attack": "지상 공격",
     "ground_attack_desc": "커서 아래 타일에 지상 공격을 보냅니다.",
     "swap_direction": "로켓 방향 전환",
@@ -598,7 +598,7 @@
     "help": {
       "troops": "병력 좀 줘!",
       "troops_frontlines": "전선으로 병력을 보내!",
-      "gold": "금 좀 줘!",
+      "credits": "금 좀 줘!",
       "no_attack": "나 치지 마!",
       "sorry_attack": "미안, 치려던게 아니였어;",
       "alliance": "동맹할래?",
@@ -607,17 +607,17 @@
     },
     "attack": {
       "attack": "[P1]을(를) 공격해!",
-      "mirv": "[P1]에게 다탄두 미사일을 발사 해야해!",
+      "cluster_warhead": "[P1]에게 다탄두 미사일을 발사 해야해!",
       "focus": "[P1]에게 집중 공격하자!",
       "finish": "[P1]을(를) 끝장내버리자!",
-      "build_warships": "군함을 건조해!"
+      "build_battlecruisers": "군함을 건조해!"
     },
     "defend": {
       "defend": "[P1]을(를) 막아!",
       "defend_from": "[P1]로부터 방어해!",
       "dont_attack": "[P1]을(를) 치지 마!",
       "ally": "[P1]은(는) 내 동맹이야!",
-      "build_posts": "방어 초소를 건설해!"
+      "build_defense_stations": "방어 초소를 건설해!"
     },
     "greet": {
       "hello": "안녕!",
@@ -649,7 +649,7 @@
     "warnings": {
       "strong": "[P1]은(는) 강해.",
       "weak": "[P1]은(는) 약해.",
-      "mirv_soon": "[P1]은(는) 곧 다탄두 미사일을 쏠 수 있어!",
+      "cluster_warhead_soon": "[P1]은(는) 곧 다탄두 미사일을 쏠 수 있어!",
       "number1_warning": "우리가 힘을 합치지 않으면 1등 플레이어가 곧 이길 거야!",
       "stalemate": "평화를 맺자. 이건 교착 상태야, 우리 둘 다 질 거야.",
       "has_allies": "[P1]은(는) 동맹이 많아.",
@@ -658,8 +658,8 @@
       "betrayed_me": "[P1]이(가) 날 배신했어!",
       "getting_big": "[P1]이(가) 너무 빨리 크고 있어!",
       "danger_base": "[P1]이(가) 방어되지 않고 있어!",
-      "saving_for_mirv": "[P1]이(가) 다탄두 미사일 발사를 위해 자금을 모으고 있어.",
-      "mirv_ready": "[P1]은(는) 다탄두 미사일 발사를 위한 금이 충분히 있어!",
+      "saving_for_cluster_warhead": "[P1]이(가) 다탄두 미사일 발사를 위해 자금을 모으고 있어.",
+      "cluster_warhead_ready": "[P1]은(는) 다탄두 미사일 발사를 위한 금이 충분히 있어!",
       "snowballing": "[P1]이(가) 너무 빨리 커지고 있어!",
       "cheating": "[P1] 핵쓰는거 아니냐?",
       "stop_trading": ""
@@ -667,16 +667,16 @@
   },
   "build_menu": {
     "desc": {
-      "atom_bomb": "소형 폭발을 일으킴",
-      "hydrogen_bomb": "대형 폭발을 일으킴",
-      "mirv": "선택된 플레이어만을 대상으로 초대형 폭발을 일으킴",
-      "missile_silo": "핵 발사를 위해 사용됩니다",
-      "sam_launcher": "들어오는 핵미사일을 방어합니다",
-      "warship": "무역선을 포획하고, 함선을 파괴합니다",
-      "port": "무역선을 보내 금을 생산합니다",
-      "defense_post": "주변 경계의 방어력을 강화합니다",
-      "city": "최대 인구 수를 증가시킵니다",
-      "factory": "철도를 만들고 기차를 생성합니다"
+      "antimatter_torpedo": "소형 폭발을 일으킴",
+      "nova_bomb": "대형 폭발을 일으킴",
+      "cluster_warhead": "선택된 플레이어만을 대상으로 초대형 폭발을 일으킴",
+      "orbital_strike_platform": "핵 발사를 위해 사용됩니다",
+      "point_defense_array": "들어오는 핵미사일을 방어합니다",
+      "battlecruiser": "무역선을 포획하고, 함선을 파괴합니다",
+      "spaceport": "무역선을 보내 금을 생산합니다",
+      "defense_station": "주변 경계의 방어력을 강화합니다",
+      "colony": "최대 인구 수를 증가시킵니다",
+      "foundry": "철도를 만들고 기차를 생성합니다"
     },
     "not_enough_money": "돈이 부족합니다"
   },
@@ -704,12 +704,12 @@
     "player": "플레이어",
     "team": "팀",
     "owned": "소유함",
-    "gold": "금",
+    "credits": "금",
     "maxtroops": "최대 병력",
     "launchers": "발사대",
-    "sams": "지대공 미사일",
-    "warships": "군함",
-    "cities": "도시",
+    "point_defense": "지대공 미사일",
+    "battlecruisers": "군함",
+    "colonies": "도시",
     "show_control": "조작 표시",
     "show_units": "유닛 표시"
   },
@@ -740,20 +740,20 @@
     "unit_voluntarily_deleted": "유닛이 해산되었습니다",
     "betrayal_debuff_ends": "배신 디버프가 끝나기까지 {time}초 남았습니다",
     "attack_cancelled_retreat": "공격 취소됨, 퇴각 중 %s명의 병사 사망",
-    "received_gold_from_captured_ship": "{name}에게서 나포한 함선으로부터 {gold} 금을 받았습니다",
-    "received_gold_from_trade": "{name}님과의 거래로 {gold} 금을 받았습니다",
-    "received_gold_from_conquest": "{name}을 정복하여 {gold} 금을 획득했습니다",
-    "conquered_no_gold": "{name} 정복 (플레이하지 않음, 금 미지급)",
+    "received_credits_from_captured_ship": "{name}에게서 나포한 함선으로부터 {gold} 금을 받았습니다",
+    "received_credits_from_trade": "{name}님과의 거래로 {gold} 금을 받았습니다",
+    "received_credits_from_conquest": "{name}을 정복하여 {gold} 금을 획득했습니다",
+    "conquered_no_credits": "{name} 정복 (플레이하지 않음, 금 미지급)",
     "missile_intercepted": "{unit} 요격됨",
-    "mirv_warheads_intercepted": "{count, plural, one {{count}개의 다탄두 미사일의 탄두가 요격됨} other {{count}개의 다탄두 미사일의 탄두가 요격됨}}",
+    "cluster_warheads_intercepted": "{count, plural, one {{count}개의 다탄두 미사일의 탄두가 요격됨} other {{count}개의 다탄두 미사일의 탄두가 요격됨}}",
     "sent_troops_to_player": "{troops}명의 병력을 {name}에게 보냈습니다",
     "received_troops_from_player": "{name}님으로부터 {troops}명의 병력을 받았습니다",
-    "sent_gold_to_player": "{gold} 금을 {name}님께 보냈습니다",
-    "received_gold_from_player": "{name}님께 금 {gold}개를 받았습니다",
+    "sent_credits_to_player": "{gold} 금을 {name}님께 보냈습니다",
+    "received_credits_from_player": "{name}님께 금 {gold}개를 받았습니다",
     "unit_captured_by_enemy": "당신의 {unit}이(가) {name}에게 점령당했습니다",
     "captured_enemy_unit": "{name}에게서 {unit}을(를) 포획했습니다",
     "unit_destroyed": "당신의 {unit}이(가) 파괴되었습니다",
-    "no_boats_available": "배를 사용할 수 없습니다. 최대 {max}대"
+    "no_shuttles_available": "배를 사용할 수 없습니다. 최대 {max}대"
   },
   "player_type": {
     "player": "플레이어",
@@ -768,7 +768,7 @@
     "default": "기본"
   },
   "player_panel": {
-    "gold": "금",
+    "credits": "금",
     "troops": "병력",
     "betrayals": "배신",
     "traitor": "배신자",
@@ -786,7 +786,7 @@
     "break_alliance": "동맹 파기",
     "send_alliance": "동맹 제안",
     "send_troops": "병력 보내기",
-    "send_gold": "금 보내기",
+    "send_credits": "금 보내기",
     "emotes": "이모지",
     "moderation": "관리",
     "kick": "플레이어 추방",
@@ -807,7 +807,7 @@
     "aria_slider": "병력 슬라이더",
     "capacity_note": "수신자는 지금 {amount}개만 받을 수 있습니다."
   },
-  "send_gold_modal": {
+  "send_credits_modal": {
     "title_with_name": "{name}에게 금 보내기",
     "available_tooltip": "현재 보유 중인 금",
     "aria_slider": "수량 슬라이더",
@@ -905,25 +905,25 @@
     "received": "받음",
     "cancelled": "취소됨",
     "count": "횟수",
-    "gold": "금",
+    "credits": "금",
     "workers": "일꾼",
     "war": "전쟁",
     "trade": "무역",
     "steal": "약탈",
     "unit": {
-      "city": "도시",
-      "port": "항구",
-      "defp": "방어 진지",
-      "saml": "지대공 미사일 발사대",
-      "silo": "미사일 격납고",
-      "wshp": "군함",
-      "fact": "공장",
-      "trade": "무역선",
-      "trans": "운송선",
-      "abomb": "원자폭탄",
-      "hbomb": "수소폭탄",
-      "mirv": "다탄두 미사일",
-      "mirvw": "다탄두 탄두"
+      "colony": "도시",
+      "spaceport": "항구",
+      "defs": "방어 진지",
+      "pda": "지대공 미사일 발사대",
+      "osp": "미사일 격납고",
+      "bcrs": "군함",
+      "fndy": "공장",
+      "tfreight": "무역선",
+      "ashuttle": "운송선",
+      "ator": "원자폭탄",
+      "nbomb": "수소폭탄",
+      "cwhead": "다탄두 미사일",
+      "cwsub": "다탄두 탄두"
     }
   },
   "game_list": {

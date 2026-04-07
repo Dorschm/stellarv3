@@ -58,7 +58,7 @@ async function generateScenarioForMap(
     const shorelinePorts: Array<[number, number]> = [];
 
     map.forEachTile((tile) => {
-      if (map.isOcean(tile) && map.isShoreline(tile)) {
+      if (map.isOcean(tile) && map.isSectorBoundary(tile)) {
         shorelinePorts.push([map.x(tile), map.y(tile)]);
       }
     });

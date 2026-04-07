@@ -2,8 +2,8 @@ import { z } from "zod";
 import { EventBus, GameEvent } from "../core/EventBus";
 import {
   AllPlayers,
+  Credits,
   GameType,
-  Gold,
   PlayerID,
   Tick,
   UnitType,
@@ -74,7 +74,7 @@ export class SendAttackIntentEvent implements GameEvent {
   ) {}
 }
 
-export class SendBoatAttackIntentEvent implements GameEvent {
+export class SendShuttleAttackIntentEvent implements GameEvent {
   constructor(
     public readonly dst: TileRef,
     public readonly troops: number,
@@ -103,7 +103,7 @@ export class SendEmojiIntentEvent implements GameEvent {
 export class SendDonateGoldIntentEvent implements GameEvent {
   constructor(
     public readonly recipient: PlayerView,
-    public readonly gold: Gold | null,
+    public readonly credits: Credits | null,
   ) {}
 }
 
@@ -141,7 +141,7 @@ export class CancelAttackIntentEvent implements GameEvent {
   constructor(public readonly attackID: string) {}
 }
 
-export class CancelBoatIntentEvent implements GameEvent {
+export class CancelShuttleIntentEvent implements GameEvent {
   constructor(public readonly unitID: number) {}
 }
 
@@ -215,7 +215,7 @@ export class Transport {
     this.eventBus.on(SendUpgradeStructureIntentEvent, (e) =>
       this.onSendUpgradeStructureIntent(e),
     );
-    this.eventBus.on(SendBoatAttackIntentEvent, (e) =>
+    this.eventBus.on(SendShuttleAttackIntentEvent, (e) =>
       this.onSendBoatAttackIntent(e),
     );
     this.eventBus.on(SendTargetPlayerIntentEvent, (e) =>
@@ -243,8 +243,8 @@ export class Transport {
     this.eventBus.on(CancelAttackIntentEvent, (e) =>
       this.onCancelAttackIntentEvent(e),
     );
-    this.eventBus.on(CancelBoatIntentEvent, (e) =>
-      this.onCancelBoatIntentEvent(e),
+    this.eventBus.on(CancelShuttleIntentEvent, (e) =>
+      this.onCancelShuttleIntentEvent(e),
     );
 
     this.eventBus.on(MoveWarshipIntentEvent, (e) => {
@@ -511,9 +511,9 @@ export class Transport {
     });
   }
 
-  private onSendBoatAttackIntent(event: SendBoatAttackIntentEvent) {
+  private onSendBoatAttackIntent(event: SendShuttleAttackIntentEvent) {
     this.sendIntent({
-      type: "boat",
+      type: "shuttle",
       troops: event.troops,
       dst: event.dst,
     });
@@ -545,9 +545,9 @@ export class Transport {
 
   private onSendDonateGoldIntent(event: SendDonateGoldIntentEvent) {
     this.sendIntent({
-      type: "donate_gold",
+      type: "donate_credits",
       recipient: event.recipient.id(),
-      gold: event.gold ? Number(event.gold) : null,
+      credits: event.credits ? Number(event.credits) : null,
     });
   }
 
@@ -638,16 +638,16 @@ export class Transport {
     });
   }
 
-  private onCancelBoatIntentEvent(event: CancelBoatIntentEvent) {
+  private onCancelShuttleIntentEvent(event: CancelShuttleIntentEvent) {
     this.sendIntent({
-      type: "cancel_boat",
+      type: "cancel_shuttle",
       unitID: event.unitID,
     });
   }
 
   private onMoveWarshipEvent(event: MoveWarshipIntentEvent) {
     this.sendIntent({
-      type: "move_warship",
+      type: "move_battlecruiser",
       unitId: event.unitId,
       tile: event.tile,
     });

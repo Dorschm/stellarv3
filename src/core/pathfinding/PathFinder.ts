@@ -1,8 +1,8 @@
 import { Game } from "../game/Game";
 import { GameMap, TileRef } from "../game/GameMap";
-import { TrainStation } from "../game/TrainStation";
-import { AStarRail } from "./algorithms/AStar.Rail";
-import { AStarWater } from "./algorithms/AStar.Water";
+import { TradeHub } from "../game/TradeHub";
+import { AStarDeepSpace } from "./algorithms/AStar.DeepSpace";
+import { AStarHyperspaceLane } from "./algorithms/AStar.HyperspaceLane";
 import { AirPathFinder } from "./PathFinder.Air";
 import {
   ParabolaOptions,
@@ -13,8 +13,8 @@ import { PathFinderBuilder } from "./PathFinderBuilder";
 import { StepperConfig } from "./PathFinderStepper";
 import { ComponentCheckTransformer } from "./transformers/ComponentCheckTransformer";
 import { MiniMapTransformer } from "./transformers/MiniMapTransformer";
-import { ShoreCoercingTransformer } from "./transformers/ShoreCoercingTransformer";
-import { SmoothingWaterTransformer } from "./transformers/SmoothingWaterTransformer";
+import { SectorBoundaryCoercingTransformer } from "./transformers/SectorBoundaryCoercingTransformer";
+import { SmoothingDeepSpaceTransformer } from "./transformers/SmoothingDeepSpaceTransformer";
 import { PathStatus, SteppingPathFinder } from "./types";
 
 /**
@@ -34,8 +34,8 @@ export class UniversalPathFinding {
  */
 export class PathFinding {
   static Water(game: Game): SteppingPathFinder<TileRef> {
-    const pf = game.miniWaterHPA();
-    const graph = game.miniWaterGraph();
+    const pf = game.miniDeepSpaceHPA();
+    const graph = game.miniDeepSpaceGraph();
 
     if (!pf || !graph || graph.nodeCount < 100) {
       return PathFinding.WaterSimple(game);
@@ -46,32 +46,32 @@ export class PathFinding {
 
     return PathFinderBuilder.create(pf)
       .wrap((pf) => new ComponentCheckTransformer(pf, componentCheckFn))
-      .wrap((pf) => new SmoothingWaterTransformer(pf, miniMap))
-      .wrap((pf) => new ShoreCoercingTransformer(pf, miniMap))
+      .wrap((pf) => new SmoothingDeepSpaceTransformer(pf, miniMap))
+      .wrap((pf) => new SectorBoundaryCoercingTransformer(pf, miniMap))
       .wrap((pf) => new MiniMapTransformer(pf, game.map(), miniMap))
       .buildWithStepper(tileStepperConfig(game));
   }
 
   static WaterSimple(game: Game): SteppingPathFinder<TileRef> {
     const miniMap = game.miniMap();
-    const pf = new AStarWater(miniMap);
+    const pf = new AStarDeepSpace(miniMap);
 
     return PathFinderBuilder.create(pf)
-      .wrap((pf) => new ShoreCoercingTransformer(pf, miniMap))
+      .wrap((pf) => new SectorBoundaryCoercingTransformer(pf, miniMap))
       .wrap((pf) => new MiniMapTransformer(pf, game.map(), miniMap))
       .buildWithStepper(tileStepperConfig(game));
   }
 
   static Rail(game: Game): SteppingPathFinder<TileRef> {
     const miniMap = game.miniMap();
-    const pf = new AStarRail(miniMap);
+    const pf = new AStarHyperspaceLane(miniMap);
 
     return PathFinderBuilder.create(pf)
       .wrap((pf) => new MiniMapTransformer(pf, game.map(), miniMap))
       .buildWithStepper(tileStepperConfig(game));
   }
 
-  static Stations(game: Game): SteppingPathFinder<TrainStation> {
+  static Stations(game: Game): SteppingPathFinder<TradeHub> {
     const pf = new StationPathFinder(game);
 
     return PathFinderBuilder.create(pf).buildWithStepper({

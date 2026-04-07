@@ -1,14 +1,14 @@
 // @vitest-environment node
-import { describe, expect, test, beforeEach, afterEach } from "vitest";
-import { EventBus } from "../../../src/core/EventBus";
-import { UnitType } from "../../../src/core/game/Game";
+import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import {
   ContextMenuEvent,
   DragEvent,
   GhostStructureChangedEvent,
 } from "../../../src/client/InputHandler";
-import { useHUDStore } from "../../../src/client/bridge/HUDStore";
 import { GameBridge } from "../../../src/client/bridge/GameBridge";
+import { useHUDStore } from "../../../src/client/bridge/HUDStore";
+import { EventBus } from "../../../src/core/EventBus";
+import { UnitType } from "../../../src/core/game/Game";
 
 // ---------------------------------------------------------------------------
 // Minimal mock of GameView — only the constructor shape matters here.
@@ -58,8 +58,8 @@ describe("SpaceMapPlane: right-click cancels ghost build", () => {
 
   test("right-click emits GhostStructureChangedEvent(null) when ghost is active", () => {
     // Arm build mode
-    eventBus.emit(new GhostStructureChangedEvent(UnitType.City));
-    expect(useHUDStore.getState().ghostStructure).toBe(UnitType.City);
+    eventBus.emit(new GhostStructureChangedEvent(UnitType.Colony));
+    expect(useHUDStore.getState().ghostStructure).toBe(UnitType.Colony);
 
     const ghostEvents: GhostStructureChangedEvent[] = [];
     const contextEvents: ContextMenuEvent[] = [];
@@ -131,8 +131,7 @@ function buildWindowDragHandler(
     if (dx !== 0 || dy !== 0) {
       d.lastMoveX = e.clientX;
       d.lastMoveY = e.clientY;
-      const totalDist =
-        Math.abs(e.clientX - d.x) + Math.abs(e.clientY - d.y);
+      const totalDist = Math.abs(e.clientX - d.x) + Math.abs(e.clientY - d.y);
       if (totalDist >= 10) d.dragging = true;
       eventBus.emit(new DragEvent(dx, dy));
     }

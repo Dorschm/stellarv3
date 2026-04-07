@@ -1,28 +1,27 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { assetUrl } from "../../core/AssetUrls";
 import {
   BuildableUnit,
   BuildMenus,
+  Credits,
   PlayerBuildableUnitType,
   UnitType,
-  Gold,
 } from "../../core/game/Game";
 import { TileRef } from "../../core/game/GameMap";
-import { translateText } from "../Utils";
-import { renderNumber } from "../Utils";
-import {
-  BuildUnitIntentEvent,
-  SendUpgradeStructureIntentEvent,
-} from "../Transport";
+import { useHUDStore } from "../bridge/HUDStore";
+import { useEventBus } from "../bridge/useEventBus";
 import {
   CloseViewEvent,
   MouseDownEvent,
   ShowBuildMenuEvent,
   ShowEmojiMenuEvent,
 } from "../InputHandler";
+import {
+  BuildUnitIntentEvent,
+  SendUpgradeStructureIntentEvent,
+} from "../Transport";
+import { renderNumber, translateText } from "../Utils";
 import { useGameTick } from "./useGameTick";
-import { useEventBus } from "../bridge/useEventBus";
-import { useHUDStore } from "../bridge/HUDStore";
 
 const warshipIcon = assetUrl("images/BattleshipIconWhite.svg");
 const cityIcon = assetUrl("images/CityIconWhite.svg");
@@ -47,70 +46,70 @@ export interface BuildItemDisplay {
 export const buildTable: BuildItemDisplay[][] = [
   [
     {
-      unitType: UnitType.AtomBomb,
+      unitType: UnitType.AntimatterTorpedo,
       icon: atomBombIcon,
       description: "build_menu.desc.atom_bomb",
       key: "unit_type.atom_bomb",
       countable: false,
     },
     {
-      unitType: UnitType.MIRV,
+      unitType: UnitType.ClusterWarhead,
       icon: mirvIcon,
       description: "build_menu.desc.mirv",
       key: "unit_type.mirv",
       countable: false,
     },
     {
-      unitType: UnitType.HydrogenBomb,
+      unitType: UnitType.NovaBomb,
       icon: hydrogenBombIcon,
       description: "build_menu.desc.hydrogen_bomb",
       key: "unit_type.hydrogen_bomb",
       countable: false,
     },
     {
-      unitType: UnitType.Warship,
+      unitType: UnitType.Battlecruiser,
       icon: warshipIcon,
       description: "build_menu.desc.warship",
       key: "unit_type.warship",
       countable: true,
     },
     {
-      unitType: UnitType.Port,
+      unitType: UnitType.Spaceport,
       icon: portIcon,
       description: "build_menu.desc.port",
       key: "unit_type.port",
       countable: true,
     },
     {
-      unitType: UnitType.MissileSilo,
+      unitType: UnitType.OrbitalStrikePlatform,
       icon: missileSiloIcon,
       description: "build_menu.desc.missile_silo",
       key: "unit_type.missile_silo",
       countable: true,
     },
     {
-      unitType: UnitType.SAMLauncher,
+      unitType: UnitType.PointDefenseArray,
       icon: samlauncherIcon,
       description: "build_menu.desc.sam_launcher",
       key: "unit_type.sam_launcher",
       countable: true,
     },
     {
-      unitType: UnitType.DefensePost,
+      unitType: UnitType.DefenseStation,
       icon: shieldIcon,
       description: "build_menu.desc.defense_post",
       key: "unit_type.defense_post",
       countable: true,
     },
     {
-      unitType: UnitType.City,
+      unitType: UnitType.Colony,
       icon: cityIcon,
       description: "build_menu.desc.city",
       key: "unit_type.city",
       countable: true,
     },
     {
-      unitType: UnitType.Factory,
+      unitType: UnitType.Foundry,
       icon: factoryIcon,
       description: "build_menu.desc.factory",
       key: "unit_type.factory",
@@ -125,9 +124,12 @@ export function BuildMenu(): React.JSX.Element {
   const { gameView, eventBus, tick } = useGameTick(50); // Throttle to 50ms
 
   const [hidden, setHidden] = useState(true);
-  const [playerBuildables, setPlayerBuildables] = useState<BuildableUnit[] | null>(null);
+  const [playerBuildables, setPlayerBuildables] = useState<
+    BuildableUnit[] | null
+  >(null);
   const [clickedTile, setClickedTile] = useState<TileRef | null>(null);
-  const [filteredBuildTable, setFilteredBuildTable] = useState<BuildItemDisplay[][]>(buildTable);
+  const [filteredBuildTable, setFilteredBuildTable] =
+    useState<BuildItemDisplay[][]>(buildTable);
 
   // Listen for build menu toggle events
   useEventBus(eventBus, ShowBuildMenuEvent, (e) => {
@@ -197,15 +199,7 @@ export function BuildMenu(): React.JSX.Element {
     }
   }, [tick, hidden, refresh]);
 
-  const canBuildOrUpgrade = (item: BuildItemDisplay): boolean => {
-    if (gameView?.myPlayer() === null || playerBuildables === null) {
-      return false;
-    }
-    const unit = playerBuildables.find((u) => u.type === item.unitType);
-    return unit ? unit.canBuild !== false || unit.canUpgrade !== false : false;
-  };
-
-  const cost = (item: BuildItemDisplay): Gold => {
+  const cost = (item: BuildItemDisplay): Credits => {
     for (const bu of playerBuildables ?? []) {
       if (bu.type === item.unitType) {
         return bu.cost;
@@ -222,7 +216,10 @@ export function BuildMenu(): React.JSX.Element {
     return player.totalUnitLevels(item.unitType).toString();
   };
 
-  const sendBuildOrUpgrade = (buildableUnit: BuildableUnit, tile: TileRef): void => {
+  const sendBuildOrUpgrade = (
+    buildableUnit: BuildableUnit,
+    tile: TileRef,
+  ): void => {
     if (buildableUnit.canUpgrade !== false) {
       eventBus.emit(
         new SendUpgradeStructureIntentEvent(
@@ -232,8 +229,8 @@ export function BuildMenu(): React.JSX.Element {
       );
     } else if (buildableUnit.canBuild) {
       const rocketDirectionUp =
-        buildableUnit.type === UnitType.AtomBomb ||
-        buildableUnit.type === UnitType.HydrogenBomb
+        buildableUnit.type === UnitType.AntimatterTorpedo ||
+        buildableUnit.type === UnitType.NovaBomb
           ? useHUDStore.getState().rocketDirectionUp
           : undefined;
       eventBus.emit(
@@ -357,14 +354,11 @@ export function BuildMenu(): React.JSX.Element {
                   cursor: enabled ? "pointer" : "not-allowed",
                 }}
                 onClick={() =>
-                  enabled &&
-                  sendBuildOrUpgrade(buildableUnit, clickedTile!)
+                  enabled && sendBuildOrUpgrade(buildableUnit, clickedTile!)
                 }
                 disabled={!enabled}
                 title={
-                  !enabled
-                    ? translateText("build_menu.not_enough_money")
-                    : ""
+                  !enabled ? translateText("build_menu.not_enough_money") : ""
                 }
               >
                 <img
@@ -380,7 +374,12 @@ export function BuildMenu(): React.JSX.Element {
                 <span style={{ fontSize: "0.6rem" }}>
                   {item.description && translateText(item.description)}
                 </span>
-                <span style={{ ...styles.buildCost, color: enabled ? "white" : "#ff4444" }}>
+                <span
+                  style={{
+                    ...styles.buildCost,
+                    color: enabled ? "white" : "#ff4444",
+                  }}
+                >
                   {renderNumber(
                     gameView && gameView.myPlayer() ? cost(item) : 0,
                   )}

@@ -69,7 +69,7 @@ export async function computeSpatialQuery(
   const targetRef = game.ref(target[0], target[1]) as TileRef;
 
   // Validate target is water or shore
-  if (!game.isWater(targetRef) && !game.isShore(targetRef)) {
+  if (!game.isDeepSpace(targetRef) && !game.isSectorEdge(targetRef)) {
     throw new Error(
       `Target (${target[0]}, ${target[1]}) must be water or shore`,
     );
@@ -95,13 +95,13 @@ export async function computeSpatialQuery(
   };
 
   // Get target water component for filtering
-  const targetComponent = game.getWaterComponent(targetRef);
+  const targetComponent = game.getDeepSpaceComponent(targetRef);
 
   // Pre-compute all valid shore tiles for visualization
   const allShores: TileRef[] = [];
   for (const tile of ownedRefs) {
-    if (game.isShore(tile) && game.isLand(tile)) {
-      const tComponent = game.getWaterComponent(tile);
+    if (game.isSectorEdge(tile) && game.isSector(tile)) {
+      const tComponent = game.getDeepSpaceComponent(tile);
       if (tComponent === targetComponent) {
         allShores.push(tile);
       }
@@ -113,7 +113,7 @@ export async function computeSpatialQuery(
 
   // Run spatial query
   const spatialQuery = new SpatialQuery(game);
-  const selectedShore = spatialQuery.closestShoreByWater(
+  const selectedShore = spatialQuery.closestSectorEdgeByWater(
     mockPlayer as any,
     targetRef,
   );

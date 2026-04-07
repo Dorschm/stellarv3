@@ -1,10 +1,10 @@
 import { simpleHash, toInt, withinInt } from "../Util";
 import {
   AllUnitParams,
+  FrigateType,
   MessageType,
   Player,
   Tick,
-  TrainType,
   TrajectoryTile,
   Unit,
   UnitInfo,
@@ -26,18 +26,18 @@ export class UnitImpl implements Unit {
   private _reachedTarget = false;
   private _wasDestroyedByEnemy: boolean = false;
   private _destroyer: Player | undefined = undefined;
-  private _lastSetSafeFromPirates: number; // Only for trade ships
+  private _lastSetSafeFromRaiders: number; // Only for trade ships
   private _underConstruction: boolean = false;
   private _lastOwner: PlayerImpl | null = null;
   private _troops: number;
   // Number of missiles in cooldown, if empty all missiles are ready.
   private _missileTimerQueue: number[] = [];
-  private _hasTrainStation: boolean = false;
+  private _hasTradeHub: boolean = false;
   private _patrolTile: TileRef | undefined;
   private _level: number = 1;
   private _targetable: boolean = true;
   private _loaded: boolean | undefined;
-  private _trainType: TrainType | undefined;
+  private _frigateType: FrigateType | undefined;
   // Nuke only
   private _trajectoryIndex: number = 0;
   private _trajectory: TrajectoryTile[];
@@ -57,9 +57,9 @@ export class UnitImpl implements Unit {
       "targetTile" in params ? (params.targetTile ?? undefined) : undefined;
     this._trajectory = "trajectory" in params ? (params.trajectory ?? []) : [];
     this._troops = "troops" in params ? (params.troops ?? 0) : 0;
-    this._lastSetSafeFromPirates =
-      "lastSetSafeFromPirates" in params
-        ? (params.lastSetSafeFromPirates ?? 0)
+    this._lastSetSafeFromRaiders =
+      "lastSetSafeFromRaiders" in params
+        ? (params.lastSetSafeFromRaiders ?? 0)
         : 0;
     this._patrolTile =
       "patrolTile" in params ? (params.patrolTile ?? undefined) : undefined;
@@ -67,16 +67,17 @@ export class UnitImpl implements Unit {
       "targetUnit" in params ? (params.targetUnit ?? undefined) : undefined;
     this._loaded =
       "loaded" in params ? (params.loaded ?? undefined) : undefined;
-    this._trainType = "trainType" in params ? params.trainType : undefined;
+    this._frigateType =
+      "frigateType" in params ? params.frigateType : undefined;
 
     switch (this._type) {
-      case UnitType.Warship:
-      case UnitType.Port:
-      case UnitType.MissileSilo:
-      case UnitType.DefensePost:
-      case UnitType.SAMLauncher:
-      case UnitType.City:
-      case UnitType.Factory:
+      case UnitType.Battlecruiser:
+      case UnitType.Spaceport:
+      case UnitType.OrbitalStrikePlatform:
+      case UnitType.DefenseStation:
+      case UnitType.PointDefenseArray:
+      case UnitType.Colony:
+      case UnitType.Foundry:
         this.mg.stats().unitBuild(_owner, this._type);
     }
   }
@@ -139,8 +140,8 @@ export class UnitImpl implements Unit {
       targetTile: this.targetTile() ?? undefined,
       missileTimerQueue: this._missileTimerQueue,
       level: this.level(),
-      hasTrainStation: this._hasTrainStation,
-      trainType: this._trainType,
+      hasTradeHub: this._hasTradeHub,
+      frigateType: this._frigateType,
       loaded: this._loaded,
     };
   }
@@ -188,13 +189,13 @@ export class UnitImpl implements Unit {
   setOwner(newOwner: PlayerImpl): void {
     this.clearPendingDeletion();
     switch (this._type) {
-      case UnitType.Warship:
-      case UnitType.Port:
-      case UnitType.MissileSilo:
-      case UnitType.DefensePost:
-      case UnitType.SAMLauncher:
-      case UnitType.City:
-      case UnitType.Factory:
+      case UnitType.Battlecruiser:
+      case UnitType.Spaceport:
+      case UnitType.OrbitalStrikePlatform:
+      case UnitType.DefenseStation:
+      case UnitType.PointDefenseArray:
+      case UnitType.Colony:
+      case UnitType.Foundry:
         this.mg.stats().unitCapture(newOwner, this._type);
         this.mg.stats().unitLose(this._owner, this._type);
         break;
@@ -275,21 +276,21 @@ export class UnitImpl implements Unit {
 
     if (destroyer !== undefined) {
       switch (this._type) {
-        case UnitType.TransportShip:
+        case UnitType.AssaultShuttle:
           this.mg
             .stats()
-            .boatDestroyTroops(destroyer, this._owner, this._troops);
+            .shuttleDestroyTroops(destroyer, this._owner, this._troops);
           break;
-        case UnitType.TradeShip:
-          this.mg.stats().boatDestroyTrade(destroyer, this._owner);
+        case UnitType.TradeFreighter:
+          this.mg.stats().freighterDestroyTrade(destroyer, this._owner);
           break;
-        case UnitType.City:
-        case UnitType.DefensePost:
-        case UnitType.MissileSilo:
-        case UnitType.Port:
-        case UnitType.SAMLauncher:
-        case UnitType.Warship:
-        case UnitType.Factory:
+        case UnitType.Colony:
+        case UnitType.DefenseStation:
+        case UnitType.OrbitalStrikePlatform:
+        case UnitType.Spaceport:
+        case UnitType.PointDefenseArray:
+        case UnitType.Battlecruiser:
+        case UnitType.Foundry:
           this.mg.stats().unitDestroy(destroyer, this._type);
           this.mg.stats().unitLose(this.owner(), this._type);
           break;
@@ -298,11 +299,14 @@ export class UnitImpl implements Unit {
   }
 
   private displayMessageOnDeleted(): void {
-    if (this._type === UnitType.MIRVWarhead) {
+    if (this._type === UnitType.ClusterWarheadSubmunition) {
       return;
     }
 
-    if (this._type === UnitType.Train && this._trainType !== TrainType.Engine) {
+    if (
+      this._type === UnitType.Frigate &&
+      this._frigateType !== FrigateType.Engine
+    ) {
       return;
     }
 
@@ -331,8 +335,8 @@ export class UnitImpl implements Unit {
     return this._retreating;
   }
 
-  orderBoatRetreat() {
-    if (this.type() !== UnitType.TransportShip) {
+  orderShuttleRetreat() {
+    if (this.type() !== UnitType.AssaultShuttle) {
       throw new Error(`Cannot retreat ${this.type()}`);
     }
     if (!this._retreating) {
@@ -411,11 +415,11 @@ export class UnitImpl implements Unit {
     return this._targetUnit;
   }
 
-  setTargetedBySAM(targeted: boolean): void {
+  setTargetedByPointDefense(targeted: boolean): void {
     this._targetedBySAM = targeted;
   }
 
-  targetedBySAM(): boolean {
+  targetedByPointDefense(): boolean {
     return this._targetedBySAM;
   }
 
@@ -427,14 +431,14 @@ export class UnitImpl implements Unit {
     return this._reachedTarget;
   }
 
-  setSafeFromPirates(): void {
-    this._lastSetSafeFromPirates = this.mg.ticks();
+  setSafeFromRaiders(): void {
+    this._lastSetSafeFromRaiders = this.mg.ticks();
   }
 
-  isSafeFromPirates(): boolean {
+  isSafeFromRaiders(): boolean {
     return (
-      this.mg.ticks() - this._lastSetSafeFromPirates <
-      this.mg.config().safeFromPiratesCooldownMax()
+      this.mg.ticks() - this._lastSetSafeFromRaiders <
+      this.mg.config().safeFromRaidersCooldownMax()
     );
   }
 
@@ -442,18 +446,22 @@ export class UnitImpl implements Unit {
     return this._level;
   }
 
-  setTrainStation(trainStation: boolean): void {
-    this._hasTrainStation = trainStation;
+  setTradeHub(trainStation: boolean): void {
+    this._hasTradeHub = trainStation;
     this.mg.addUpdate(this.toUpdate());
   }
 
-  hasTrainStation(): boolean {
-    return this._hasTrainStation;
+  hasTradeHub(): boolean {
+    return this._hasTradeHub;
   }
 
   increaseLevel(): void {
     this._level++;
-    if ([UnitType.MissileSilo, UnitType.SAMLauncher].includes(this.type())) {
+    if (
+      [UnitType.OrbitalStrikePlatform, UnitType.PointDefenseArray].includes(
+        this.type(),
+      )
+    ) {
       this._missileTimerQueue.push(this.mg.ticks());
     }
     this.mg.addUpdate(this.toUpdate());
@@ -461,7 +469,11 @@ export class UnitImpl implements Unit {
 
   decreaseLevel(destroyer?: Player): void {
     this._level--;
-    if ([UnitType.MissileSilo, UnitType.SAMLauncher].includes(this.type())) {
+    if (
+      [UnitType.OrbitalStrikePlatform, UnitType.PointDefenseArray].includes(
+        this.type(),
+      )
+    ) {
       this._missileTimerQueue.pop();
     }
     if (this._level <= 0) {
@@ -471,8 +483,8 @@ export class UnitImpl implements Unit {
     this.mg.addUpdate(this.toUpdate());
   }
 
-  trainType(): TrainType | undefined {
-    return this._trainType;
+  frigateType(): FrigateType | undefined {
+    return this._frigateType;
   }
 
   isLoaded(): boolean | undefined {

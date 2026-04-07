@@ -6,25 +6,25 @@ import { AllianceExtensionExecution } from "./alliance/AllianceExtensionExecutio
 import { AllianceRejectExecution } from "./alliance/AllianceRejectExecution";
 import { AllianceRequestExecution } from "./alliance/AllianceRequestExecution";
 import { BreakAllianceExecution } from "./alliance/BreakAllianceExecution";
+import { AssaultShuttleExecution } from "./AssaultShuttleExecution";
 import { AttackExecution } from "./AttackExecution";
-import { BoatRetreatExecution } from "./BoatRetreatExecution";
 import { ConstructionExecution } from "./ConstructionExecution";
 import { DeleteUnitExecution } from "./DeleteUnitExecution";
-import { DonateGoldExecution } from "./DonateGoldExecution";
+import { DonateCreditsExecution } from "./DonateCreditsExecution";
 import { DonateTroopsExecution } from "./DonateTroopExecution";
 import { EmbargoAllExecution } from "./EmbargoAllExecution";
 import { EmbargoExecution } from "./EmbargoExecution";
 import { EmojiExecution } from "./EmojiExecution";
 import { MarkDisconnectedExecution } from "./MarkDisconnectedExecution";
-import { MoveWarshipExecution } from "./MoveWarshipExecution";
+import { MoveBattlecruiserExecution } from "./MoveBattlecruiserExecution";
 import { NationExecution } from "./NationExecution";
 import { NoOpExecution } from "./NoOpExecution";
 import { PauseExecution } from "./PauseExecution";
 import { QuickChatExecution } from "./QuickChatExecution";
 import { RetreatExecution } from "./RetreatExecution";
+import { ShuttleRetreatExecution } from "./ShuttleRetreatExecution";
 import { SpawnExecution } from "./SpawnExecution";
 import { TargetPlayerExecution } from "./TargetPlayerExecution";
-import { TransportShipExecution } from "./TransportShipExecution";
 import { TribeSpawner } from "./TribeSpawner";
 import { UpgradeStructureExecution } from "./UpgradeStructureExecution";
 import { PlayerSpawner } from "./utils/PlayerSpawner";
@@ -65,14 +65,18 @@ export class Executor {
       }
       case "cancel_attack":
         return new RetreatExecution(player, intent.attackID);
-      case "cancel_boat":
-        return new BoatRetreatExecution(player, intent.unitID);
-      case "move_warship":
-        return new MoveWarshipExecution(player, intent.unitId, intent.tile);
+      case "cancel_shuttle":
+        return new ShuttleRetreatExecution(player, intent.unitID);
+      case "move_battlecruiser":
+        return new MoveBattlecruiserExecution(
+          player,
+          intent.unitId,
+          intent.tile,
+        );
       case "spawn":
         return new SpawnExecution(this.gameID, player.info(), intent.tile);
-      case "boat":
-        return new TransportShipExecution(player, intent.dst, intent.troops);
+      case "shuttle":
+        return new AssaultShuttleExecution(player, intent.dst, intent.troops);
       case "allianceRequest":
         return new AllianceRequestExecution(player, intent.recipient);
       case "allianceReject":
@@ -89,8 +93,12 @@ export class Executor {
           intent.recipient,
           intent.troops,
         );
-      case "donate_gold":
-        return new DonateGoldExecution(player, intent.recipient, intent.gold);
+      case "donate_credits":
+        return new DonateCreditsExecution(
+          player,
+          intent.recipient,
+          intent.credits,
+        );
       case "embargo":
         return new EmbargoExecution(player, intent.targetID, intent.action);
       case "embargo_all":

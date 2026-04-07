@@ -249,16 +249,16 @@
     "title": "Vybrať jazyk"
   },
   "unit_type": {
-    "city": "Mesto",
-    "defense_post": "Obranný bod",
-    "port": "Prístav",
-    "warship": "Bojová loď",
-    "missile_silo": "Raketové silo",
-    "sam_launcher": "Systém zem-vzduch",
-    "atom_bomb": "Atómová bomba",
-    "hydrogen_bomb": "Vodíková bomba",
-    "mirv": "MIRV",
-    "factory": "Továreň"
+    "colony": "Mesto",
+    "defense_station": "Obranný bod",
+    "spaceport": "Prístav",
+    "battlecruiser": "Bojová loď",
+    "orbital_strike_platform": "Raketové silo",
+    "point_defense_array": "Systém zem-vzduch",
+    "antimatter_torpedo": "Atómová bomba",
+    "nova_bomb": "Vodíková bomba",
+    "cluster_warhead": "MIRV",
+    "foundry": "Továreň"
   },
   "user_setting": {
     "title": "Užívateľské nastavenia",
@@ -313,8 +313,8 @@
     "attack_ratio_down": "Znížiť pomer útoku",
     "attack_ratio_down_desc": "Znížiť pomer útoku o 10%",
     "attack_keybinds": "Klávesové skratky útoku",
-    "boat_attack": "Útok loďou",
-    "boat_attack_desc": "Pošli útok loďou na pixel pod tvojou myškou.",
+    "shuttle_attack": "Útok loďou",
+    "shuttle_attack_desc": "Pošli útok loďou na pixel pod tvojou myškou.",
     "ground_attack": "Pozemný útok",
     "ground_attack_desc": "Pošli pozemný útok na pixel pod tvojou myškou.",
     "zoom_controls": "Tlačidlá priblíženia",
@@ -363,7 +363,7 @@
     },
     "help": {
       "troops": "Prosím, pošli mi vojská!",
-      "gold": "Prosím, pošli mi zlato!",
+      "credits": "Prosím, pošli mi zlato!",
       "no_attack": "Prosím, neútoč na mňa!",
       "sorry_attack": "Prepáč, nechcel som zaútočiť.",
       "alliance": "Spojenectvo?",
@@ -372,7 +372,7 @@
     },
     "attack": {
       "attack": "Zaútoč na [P1]!",
-      "mirv": "Vystrel MIRV na [P1]!",
+      "cluster_warhead": "Vystrel MIRV na [P1]!",
       "focus": "Sústreď streľbu na [P1]!",
       "finish": "Dokončime [P1]!"
     },
@@ -404,7 +404,7 @@
     "warnings": {
       "strong": "[P1] je silný/á.",
       "weak": "[P1] je slabý/a.",
-      "mirv_soon": "[P1] môže čoskoro vystreliť MIRV!",
+      "cluster_warhead_soon": "[P1] môže čoskoro vystreliť MIRV!",
       "number1_warning": "Hráč č. 1 môže čoskoro vyhrať, ak sa nespojíme!",
       "stalemate": "Uzatvorme mier. Toto je pat, obaja prehráme.",
       "has_allies": "[P1] má veľa spojencov.",
@@ -412,22 +412,22 @@
       "betrayed": "[P1] zradil/a svojho spojenca!",
       "getting_big": "[P1] rastie prirýchlo!",
       "danger_base": "[P1] je nechránený/á!",
-      "saving_for_mirv": "[P1] šetrí na vystrelenie MIRV.",
-      "mirv_ready": "[P1] má dosť zlata na vystrelenie MIRV!"
+      "saving_for_cluster_warhead": "[P1] šetrí na vystrelenie MIRV.",
+      "cluster_warhead_ready": "[P1] má dosť zlata na vystrelenie MIRV!"
     }
   },
   "build_menu": {
     "desc": {
-      "atom_bomb": "Malý výbuch",
-      "hydrogen_bomb": "Veľký výbuch",
-      "mirv": "Veľký výbuch, útočí len na cieleného hráča",
-      "missile_silo": "Používa sa na streľbu rakíet",
-      "sam_launcher": "Bráni proti vystreleným raketám",
-      "warship": "Ovláda obchodné lode, ničí lode a člny",
-      "port": "Posiela obchodné lode na tvorbu zlata",
-      "defense_post": "Zvyšuje obranu okolitých hraníc",
-      "city": "Zvyšuje maximálnu populáciu",
-      "factory": "Tvorí železnice a vlaky"
+      "antimatter_torpedo": "Malý výbuch",
+      "nova_bomb": "Veľký výbuch",
+      "cluster_warhead": "Veľký výbuch, útočí len na cieleného hráča",
+      "orbital_strike_platform": "Používa sa na streľbu rakíet",
+      "point_defense_array": "Bráni proti vystreleným raketám",
+      "battlecruiser": "Ovláda obchodné lode, ničí lode a člny",
+      "spaceport": "Posiela obchodné lode na tvorbu zlata",
+      "defense_station": "Zvyšuje obranu okolitých hraníc",
+      "colony": "Zvyšuje maximálnu populáciu",
+      "foundry": "Tvorí železnice a vlaky"
     },
     "not_enough_money": "Nedostatok zlata"
   },
@@ -448,7 +448,7 @@
     "player": "Hráč",
     "team": "Tím",
     "owned": "Vlastnené",
-    "gold": "Zlato",
+    "credits": "Zlato",
     "troops": "Vojská"
   },
   "player_info_overlay": {
@@ -515,7 +515,7 @@
     "attack_ratio": "Pomer útoku"
   },
   "player_panel": {
-    "gold": "Zlato",
+    "credits": "Zlato",
     "troops": "Vojská",
     "betrayals": "Počet zrád",
     "traitor": "Zradca",

@@ -102,7 +102,7 @@ export function findMinimumBy<T>(
 /**
  * Finds closest by fast. Example usage:
  * findClosestBy(
- *       this.units(UnitType.MissileSilo),
+ *       this.units(UnitType.OrbitalStrikePlatform),
  *       (silo) => mg.manhattanDist(silo.tile(), tile),
  *       (silo) => !silo.isInCooldown() && !silo.isUnderConstruction(),
  *     )

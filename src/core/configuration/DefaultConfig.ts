@@ -1,11 +1,11 @@
 import { JWK } from "jose";
 import { z } from "zod";
 import {
+  Credits,
   Difficulty,
   Game,
   GameMode,
   GameType,
-  Gold,
   Player,
   PlayerInfo,
   PlayerType,
@@ -136,8 +136,8 @@ export abstract class DefaultServerConfig implements ServerConfig {
   }
 }
 
-/** SAM launcher construction duration in ticks (non-instant-build). */
-export const SAM_CONSTRUCTION_TICKS = 30 * 10;
+/** Point defense array construction duration in ticks (non-instant-build). */
+export const POINT_DEFENSE_CONSTRUCTION_TICKS = 30 * 10;
 
 export class DefaultConfig implements Config {
   private pastelTheme: PastelTheme = new PastelTheme();
@@ -194,7 +194,7 @@ export class DefaultConfig implements Config {
     return this._userSettings;
   }
 
-  cityTroopIncrease(): number {
+  colonyTroopIncrease(): number {
     return 250_000;
   }
 
@@ -203,22 +203,22 @@ export class DefaultConfig implements Config {
     // So defense modifier is between [5, 2.5]
     return 5 - falloutRatio * 2;
   }
-  SAMCooldown(): number {
+  pointDefenseCooldown(): number {
     return 120;
   }
-  SiloCooldown(): number {
+  orbitalStrikeCooldown(): number {
     return 75;
   }
 
-  defensePostRange(): number {
+  defenseStationRange(): number {
     return 30;
   }
 
-  defensePostDefenseBonus(): number {
+  defenseStationDefenseBonus(): number {
     return 5;
   }
 
-  defensePostSpeedBonus(): number {
+  defenseStationSpeedBonus(): number {
     return 3;
   }
 
@@ -249,11 +249,11 @@ export class DefaultConfig implements Config {
   isRandomSpawn(): boolean {
     return this._gameConfig.randomSpawn;
   }
-  infiniteGold(): boolean {
-    return this._gameConfig.infiniteGold;
+  infiniteCredits(): boolean {
+    return this._gameConfig.infiniteCredits;
   }
-  donateGold(): boolean {
-    return this._gameConfig.donateGold;
+  donateCredits(): boolean {
+    return this._gameConfig.donateCredits;
   }
   infiniteTroops(): boolean {
     return this._gameConfig.infiniteTroops;
@@ -261,76 +261,76 @@ export class DefaultConfig implements Config {
   donateTroops(): boolean {
     return this._gameConfig.donateTroops;
   }
-  goldMultiplier(): number {
-    return this._gameConfig.goldMultiplier ?? 1;
+  creditMultiplier(): number {
+    return this._gameConfig.creditMultiplier ?? 1;
   }
-  startingGold(playerInfo: PlayerInfo): Gold {
+  startingCredits(playerInfo: PlayerInfo): Credits {
     if (playerInfo.playerType === PlayerType.Bot) {
       return 0n;
     }
-    return BigInt(this._gameConfig.startingGold ?? 0);
+    return BigInt(this._gameConfig.startingCredits ?? 0);
   }
 
-  trainSpawnRate(numPlayerFactories: number): number {
-    // hyperbolic decay, midpoint at 10 factories
-    // expected number of trains = numPlayerFactories  / trainSpawnRate(numPlayerFactories)
-    return (numPlayerFactories + 10) * 15;
+  frigateSpawnRate(numPlayerFoundries: number): number {
+    // hyperbolic decay, midpoint at 10 foundries
+    // expected number of frigates = numPlayerFoundries  / frigateSpawnRate(numPlayerFoundries)
+    return (numPlayerFoundries + 10) * 15;
   }
-  trainGold(
+  frigateCredits(
     rel: "self" | "team" | "ally" | "other",
     citiesVisited: number,
-  ): Gold {
+  ): Credits {
     // No penalty for the first 10 cities.
     citiesVisited = Math.max(0, citiesVisited - 9);
-    let baseGold: number;
+    let baseCredits: number;
     switch (rel) {
       case "ally":
-        baseGold = 35_000;
+        baseCredits = 35_000;
         break;
       case "team":
       case "other":
-        baseGold = 25_000;
+        baseCredits = 25_000;
         break;
       case "self":
-        baseGold = 10_000;
+        baseCredits = 10_000;
         break;
     }
     const distPenalty = citiesVisited * 5_000;
-    const gold = Math.max(5000, baseGold - distPenalty);
-    return toInt(gold * this.goldMultiplier());
+    const credits = Math.max(5000, baseCredits - distPenalty);
+    return toInt(credits * this.creditMultiplier());
   }
 
-  trainStationMinRange(): number {
+  tradeHubMinRange(): number {
     return 15;
   }
-  trainStationMaxRange(): number {
+  tradeHubMaxRange(): number {
     return 100;
   }
-  railroadMaxSize(): number {
+  hyperspaceLaneMaxSize(): number {
     return 120;
   }
 
-  tradeShipGold(dist: number): Gold {
+  tradeFreighterCredits(dist: number): Credits {
     // Sigmoid: concave start, sharp S-curve middle, linear end - heavily punishes trades under range debuff.
-    const debuff = this.tradeShipShortRangeDebuff();
-    const baseGold =
+    const debuff = this.tradeFreighterShortRangeDebuff();
+    const baseCredits =
       75_000 / (1 + Math.exp(-0.03 * (dist - debuff))) + 50 * dist;
-    const multiplier = this.goldMultiplier();
-    return BigInt(Math.floor(baseGold * multiplier));
+    const multiplier = this.creditMultiplier();
+    return BigInt(Math.floor(baseCredits * multiplier));
   }
 
-  // Probability of trade ship spawn = 1 / tradeShipSpawnRate
-  tradeShipSpawnRate(
-    tradeShipSpawnRejections: number,
-    numTradeShips: number,
+  // Probability of trade freighter spawn = 1 / tradeFreighterSpawnRate
+  tradeFreighterSpawnRate(
+    tradeFreighterSpawnRejections: number,
+    numTradeFreighters: number,
   ): number {
     const decayRate = Math.LN2 / 50;
 
-    // Approaches 0 as numTradeShips increase
-    const baseSpawnRate = 1 - sigmoid(numTradeShips, decayRate, 200);
+    // Approaches 0 as numTradeFreighters increase
+    const baseSpawnRate = 1 - sigmoid(numTradeFreighters, decayRate, 200);
 
     // Pity timer: increases spawn chance after consecutive rejections
-    const rejectionModifier = 1 / (tradeShipSpawnRejections + 1);
+    const rejectionModifier = 1 / (tradeFreighterSpawnRejections + 1);
 
     return Math.floor((100 * rejectionModifier) / baseSpawnRate);
   }
@@ -343,126 +343,132 @@ export class DefaultConfig implements Config {
 
     let info: UnitInfo;
     switch (type) {
-      case UnitType.TransportShip:
+      case UnitType.AssaultShuttle:
         info = {
           cost: () => 0n,
         };
         break;
-      case UnitType.Warship:
+      case UnitType.Battlecruiser:
         info = {
           cost: this.costWrapper(
             (numUnits: number) => Math.min(1_000_000, (numUnits + 1) * 250_000),
-            UnitType.Warship,
+            UnitType.Battlecruiser,
           ),
           maxHealth: 1000,
         };
         break;
-      case UnitType.Shell:
+      case UnitType.PlasmaBolt:
         info = {
           cost: () => 0n,
           damage: 250,
         };
         break;
-      case UnitType.SAMMissile:
+      case UnitType.PointDefenseMissile:
         info = {
           cost: () => 0n,
         };
         break;
-      case UnitType.Port:
+      case UnitType.Spaceport:
         info = {
           cost: this.costWrapper(
             (numUnits: number) =>
               Math.min(1_000_000, Math.pow(2, numUnits) * 125_000),
-            UnitType.Port,
-            UnitType.Factory,
+            UnitType.Spaceport,
+            UnitType.Foundry,
           ),
           constructionDuration: this.instantBuild() ? 0 : 2 * 10,
           upgradable: true,
         };
         break;
-      case UnitType.AtomBomb:
+      case UnitType.AntimatterTorpedo:
         info = {
-          cost: this.costWrapper(() => 750_000, UnitType.AtomBomb),
+          cost: this.costWrapper(() => 750_000, UnitType.AntimatterTorpedo),
         };
         break;
-      case UnitType.HydrogenBomb:
+      case UnitType.NovaBomb:
         info = {
-          cost: this.costWrapper(() => 5_000_000, UnitType.HydrogenBomb),
+          cost: this.costWrapper(() => 5_000_000, UnitType.NovaBomb),
         };
         break;
-      case UnitType.MIRV:
+      case UnitType.ClusterWarhead:
         info = {
           cost: (game: Game, player: Player) => {
-            if (player.type() === PlayerType.Human && this.infiniteGold()) {
+            if (player.type() === PlayerType.Human && this.infiniteCredits()) {
               return 0n;
             }
-            return 25_000_000n + game.stats().numMirvsLaunched() * 15_000_000n;
+            return (
+              25_000_000n +
+              game.stats().numClusterWarheadsLaunched() * 15_000_000n
+            );
           },
         };
         break;
-      case UnitType.MIRVWarhead:
+      case UnitType.ClusterWarheadSubmunition:
         info = {
           cost: () => 0n,
         };
         break;
-      case UnitType.TradeShip:
+      case UnitType.TradeFreighter:
         info = {
           cost: () => 0n,
         };
         break;
-      case UnitType.MissileSilo:
+      case UnitType.OrbitalStrikePlatform:
         info = {
-          cost: this.costWrapper(() => 1_000_000, UnitType.MissileSilo),
+          cost: this.costWrapper(
+            () => 1_000_000,
+            UnitType.OrbitalStrikePlatform,
+          ),
           constructionDuration: this.instantBuild() ? 0 : 10 * 10,
           upgradable: true,
         };
         break;
-      case UnitType.DefensePost:
+      case UnitType.DefenseStation:
         info = {
           cost: this.costWrapper(
             (numUnits: number) => Math.min(250_000, (numUnits + 1) * 50_000),
-            UnitType.DefensePost,
+            UnitType.DefenseStation,
           ),
           constructionDuration: this.instantBuild() ? 0 : 5 * 10,
         };
         break;
-      case UnitType.SAMLauncher:
+      case UnitType.PointDefenseArray:
         info = {
           cost: this.costWrapper(
             (numUnits: number) =>
               Math.min(3_000_000, (numUnits + 1) * 1_500_000),
-            UnitType.SAMLauncher,
+            UnitType.PointDefenseArray,
           ),
           constructionDuration: this.instantBuild()
             ? 0
-            : SAM_CONSTRUCTION_TICKS,
+            : POINT_DEFENSE_CONSTRUCTION_TICKS,
           upgradable: true,
         };
         break;
-      case UnitType.City:
+      case UnitType.Colony:
         info = {
           cost: this.costWrapper(
             (numUnits: number) =>
               Math.min(1_000_000, Math.pow(2, numUnits) * 125_000),
-            UnitType.City,
+            UnitType.Colony,
           ),
           constructionDuration: this.instantBuild() ? 0 : 2 * 10,
           upgradable: true,
         };
         break;
-      case UnitType.Factory:
+      case UnitType.Foundry:
         info = {
           cost: this.costWrapper(
             (numUnits: number) =>
               Math.min(1_000_000, Math.pow(2, numUnits) * 125_000),
-            UnitType.Factory,
-            UnitType.Port,
+            UnitType.Foundry,
+            UnitType.Spaceport,
           ),
           constructionDuration: this.instantBuild() ? 0 : 2 * 10,
           upgradable: true,
         };
         break;
-      case UnitType.Train:
+      case UnitType.Frigate:
         info = {
           cost: () => 0n,
         };
@@ -480,7 +486,7 @@ export class DefaultConfig implements Config {
     ...types: UnitType[]
   ): (g: Game, p: Player) => bigint {
     return (game: Game, player: Player) => {
-      if (player.type() === PlayerType.Human && this.infiniteGold()) {
+      if (player.type() === PlayerType.Human && this.infiniteCredits()) {
         return 0n;
       }
       const numUnits = types.reduce(
@@ -543,8 +549,8 @@ export class DefaultConfig implements Config {
     }
     return 80;
   }
-  boatMaxNumber(): number {
-    if (this.isUnitDisabled(UnitType.TransportShip)) {
+  shuttleMaxNumber(): number {
+    if (this.isUnitDisabled(UnitType.AssaultShuttle)) {
       return 0;
     }
     return 3;
@@ -600,12 +606,12 @@ export class DefaultConfig implements Config {
     if (defender.isPlayer()) {
       for (const dp of gm.nearbyUnits(
         tileToConquer,
-        gm.config().defensePostRange(),
-        UnitType.DefensePost,
+        gm.config().defenseStationRange(),
+        UnitType.DefenseStation,
       )) {
         if (dp.unit.owner() === defender) {
-          mag *= this.defensePostDefenseBonus();
-          speed *= this.defensePostSpeedBonus();
+          mag *= this.defenseStationDefenseBonus();
+          speed *= this.defenseStationSpeedBonus();
           break;
         }
       }
@@ -712,24 +718,27 @@ export class DefaultConfig implements Config {
     }
   }
 
-  boatAttackAmount(attacker: Player, defender: Player | TerraNullius): number {
+  shuttleAttackAmount(
+    attacker: Player,
+    defender: Player | TerraNullius,
+  ): number {
     return Math.floor(attacker.troops() / 5);
   }
 
-  warshipShellLifetime(): number {
+  battlecruiserPlasmaBoltLifetime(): number {
     return 20; // in ticks (one tick is 100ms)
   }
 
-  radiusPortSpawn() {
+  radiusSpaceportSpawn() {
     return 20;
   }
 
-  tradeShipShortRangeDebuff(): number {
+  tradeFreighterShortRangeDebuff(): number {
     return 300;
   }
 
-  proximityBonusPortsNb(totalPorts: number) {
-    return within(totalPorts / 3, 4, totalPorts);
+  proximityBonusSpaceportsNb(totalSpaceports: number) {
+    return within(totalSpaceports / 3, 4, totalSpaceports);
   }
 
   attackAmount(attacker: Player, defender: Player | TerraNullius) {
@@ -767,10 +776,10 @@ export class DefaultConfig implements Config {
         ? 1_000_000_000
         : 2 * (Math.pow(player.numTilesOwned(), 0.6) * 1000 + 50000) +
           player
-            .units(UnitType.City)
+            .units(UnitType.Colony)
             .map((city) => city.level())
             .reduce((a, b) => a + b, 0) *
-            this.cityTroopIncrease();
+            this.colonyTroopIncrease();
 
     if (player.type() === PlayerType.Bot) {
       return maxTroops / 3;
@@ -828,8 +837,8 @@ export class DefaultConfig implements Config {
     return Math.min(player.troops() + toAdd, max) - player.troops();
   }
 
-  goldAdditionRate(player: Player): Gold {
-    const multiplier = this.goldMultiplier();
+  creditAdditionRate(player: Player): Credits {
+    const multiplier = this.creditMultiplier();
     let baseRate: bigint;
     if (player.type() === PlayerType.Bot) {
       baseRate = 50n;
@@ -841,11 +850,11 @@ export class DefaultConfig implements Config {
 
   nukeMagnitudes(unitType: UnitType): NukeMagnitude {
     switch (unitType) {
-      case UnitType.MIRVWarhead:
+      case UnitType.ClusterWarheadSubmunition:
         return { inner: 12, outer: 18 };
-      case UnitType.AtomBomb:
+      case UnitType.AntimatterTorpedo:
         return { inner: 12, outer: 30 };
-      case UnitType.HydrogenBomb:
+      case UnitType.NovaBomb:
         return { inner: 80, outer: 100 };
     }
     throw new Error(`Unknown nuke type: ${unitType}`);
@@ -863,31 +872,31 @@ export class DefaultConfig implements Config {
     return 150;
   }
 
-  defaultSamRange(): number {
+  defaultPointDefenseRange(): number {
     return 70;
   }
 
-  samRange(level: number): number {
-    // rational growth function (level 1 = 70, level 5 just above hydro range, asymptotically approaches 150)
-    return this.maxSamRange() - 480 / (level + 5);
+  pointDefenseRange(level: number): number {
+    // rational growth function (level 1 = 70, level 5 just above nova bomb range, asymptotically approaches 150)
+    return this.maxPointDefenseRange() - 480 / (level + 5);
   }
 
-  maxSamRange(): number {
+  maxPointDefenseRange(): number {
     return 150;
   }
 
-  defaultSamMissileSpeed(): number {
+  defaultPointDefenseMissileSpeed(): number {
     return 12;
   }
 
-  // Humans can be soldiers, soldiers attacking, soldiers in boat etc.
+  // Humans can be soldiers, soldiers attacking, soldiers in shuttle etc.
   nukeDeathFactor(
     nukeType: NukeType,
     humans: number,
     tilesOwned: number,
     maxTroops: number,
   ): number {
-    if (nukeType !== UnitType.MIRVWarhead) {
+    if (nukeType !== UnitType.ClusterWarheadSubmunition) {
       return (5 * humans) / Math.max(1, tilesOwned);
     }
     const targetTroops = 0.03 * maxTroops;
@@ -903,31 +912,31 @@ export class DefaultConfig implements Config {
     return 15;
   }
 
-  shellLifetime(): number {
+  plasmaBoltLifetime(): number {
     return 50;
   }
 
-  warshipPatrolRange(): number {
+  battlecruiserPatrolRange(): number {
     return 100;
   }
 
-  warshipTargettingRange(): number {
+  battlecruiserTargettingRange(): number {
     return 130;
   }
 
-  warshipShellAttackRate(): number {
+  battlecruiserPlasmaBoltAttackRate(): number {
     return 20;
   }
 
-  defensePostShellAttackRate(): number {
+  defenseStationPlasmaBoltAttackRate(): number {
     return 100;
   }
 
-  safeFromPiratesCooldownMax(): number {
+  safeFromRaidersCooldownMax(): number {
     return 20;
   }
 
-  defensePostTargettingRange(): number {
+  defenseStationTargettingRange(): number {
     return 75;
   }
 

@@ -30,20 +30,20 @@ export type Intent =
   | SpawnIntent
   | AttackIntent
   | CancelAttackIntent
-  | BoatAttackIntent
-  | CancelBoatIntent
+  | ShuttleAttackIntent
+  | CancelShuttleIntent
   | AllianceRequestIntent
   | AllianceRejectIntent
   | AllianceExtensionIntent
   | BreakAllianceIntent
   | TargetPlayerIntent
   | EmojiIntent
-  | DonateGoldIntent
+  | DonateCreditsIntent
   | DonateTroopsIntent
   | BuildUnitIntent
   | EmbargoIntent
   | QuickChatIntent
-  | MoveWarshipIntent
+  | MoveBattlecruiserIntent
   | MarkDisconnectedIntent
   | EmbargoAllIntent
   | UpgradeStructureIntent
@@ -55,22 +55,24 @@ export type Intent =
 export type AttackIntent = z.infer<typeof AttackIntentSchema>;
 export type CancelAttackIntent = z.infer<typeof CancelAttackIntentSchema>;
 export type SpawnIntent = z.infer<typeof SpawnIntentSchema>;
-export type BoatAttackIntent = z.infer<typeof BoatAttackIntentSchema>;
+export type ShuttleAttackIntent = z.infer<typeof ShuttleAttackIntentSchema>;
 export type EmbargoAllIntent = z.infer<typeof EmbargoAllIntentSchema>;
-export type CancelBoatIntent = z.infer<typeof CancelBoatIntentSchema>;
+export type CancelShuttleIntent = z.infer<typeof CancelShuttleIntentSchema>;
 export type AllianceRequestIntent = z.infer<typeof AllianceRequestIntentSchema>;
 export type AllianceRejectIntent = z.infer<typeof AllianceRejectIntentSchema>;
 export type BreakAllianceIntent = z.infer<typeof BreakAllianceIntentSchema>;
 export type TargetPlayerIntent = z.infer<typeof TargetPlayerIntentSchema>;
 export type EmojiIntent = z.infer<typeof EmojiIntentSchema>;
-export type DonateGoldIntent = z.infer<typeof DonateGoldIntentSchema>;
+export type DonateCreditsIntent = z.infer<typeof DonateCreditsIntentSchema>;
 export type DonateTroopsIntent = z.infer<typeof DonateTroopIntentSchema>;
 export type EmbargoIntent = z.infer<typeof EmbargoIntentSchema>;
 export type BuildUnitIntent = z.infer<typeof BuildUnitIntentSchema>;
 export type UpgradeStructureIntent = z.infer<
   typeof UpgradeStructureIntentSchema
 >;
-export type MoveWarshipIntent = z.infer<typeof MoveWarshipIntentSchema>;
+export type MoveBattlecruiserIntent = z.infer<
+  typeof MoveBattlecruiserIntentSchema
+>;
 export type QuickChatIntent = z.infer<typeof QuickChatIntentSchema>;
 export type MarkDisconnectedIntent = z.infer<
   typeof MarkDisconnectedIntentSchema
@@ -215,7 +217,7 @@ export type TeamCountConfig = z.infer<typeof TeamCountConfigSchema>;
 export const GameConfigSchema = z.object({
   gameMap: z.enum(GameMapType),
   difficulty: z.enum(Difficulty),
-  donateGold: z.boolean(), // Configures donations to humans only
+  donateCredits: z.boolean(), // Configures donations to humans only
   donateTroops: z.boolean(), // Configures donations to humans only
   gameType: z.enum(GameType),
   gameMode: z.enum(GameMode),
@@ -227,12 +229,12 @@ export const GameConfigSchema = z.object({
       isRandomSpawn: z.boolean().optional(),
       isCrowded: z.boolean().optional(),
       isHardNations: z.boolean().optional(),
-      startingGold: z.number().int().min(0).optional(),
-      goldMultiplier: z.number().min(0.1).max(1000).optional(),
+      startingCredits: z.number().int().min(0).optional(),
+      creditMultiplier: z.number().min(0.1).max(1000).optional(),
       isAlliancesDisabled: z.boolean().optional(),
-      isPortsDisabled: z.boolean().optional(),
+      isSpaceportsDisabled: z.boolean().optional(),
       isNukesDisabled: z.boolean().optional(),
-      isSAMsDisabled: z.boolean().optional(),
+      isPointDefenseDisabled: z.boolean().optional(),
       isPeaceTime: z.boolean().optional(),
     })
     .optional(),
@@ -243,7 +245,7 @@ export const GameConfigSchema = z.object({
     .max(400)
     .or(z.enum(["default", "disabled"])),
   bots: z.number().int().min(0).max(400),
-  infiniteGold: z.boolean(),
+  infiniteCredits: z.boolean(),
   infiniteTroops: z.boolean(),
   instantBuild: z.boolean(),
   disableNavMesh: z.boolean().optional(),
@@ -254,8 +256,8 @@ export const GameConfigSchema = z.object({
   spawnImmunityDuration: z.number().int().min(0).optional(), // In ticks
   disabledUnits: z.enum(UnitType).array().optional(),
   playerTeams: TeamCountConfigSchema.optional(),
-  goldMultiplier: z.number().min(0.1).max(1000).optional(),
-  startingGold: z.number().int().min(0).max(1000000000).optional(),
+  creditMultiplier: z.number().min(0.1).max(1000).optional(),
+  startingCredits: z.number().int().min(0).max(1000000000).optional(),
 });
 
 export const TeamSchema = z.string();
@@ -320,8 +322,8 @@ export const SpawnIntentSchema = z.object({
   tile: z.number(),
 });
 
-export const BoatAttackIntentSchema = z.object({
-  type: z.literal("boat"),
+export const ShuttleAttackIntentSchema = z.object({
+  type: z.literal("shuttle"),
   troops: z.number().nonnegative(),
   dst: z.number(),
 });
@@ -363,10 +365,10 @@ export const EmbargoAllIntentSchema = z.object({
   action: z.union([z.literal("start"), z.literal("stop")]),
 });
 
-export const DonateGoldIntentSchema = z.object({
-  type: z.literal("donate_gold"),
+export const DonateCreditsIntentSchema = z.object({
+  type: z.literal("donate_credits"),
   recipient: ID,
-  gold: z.number().nonnegative().nullable(),
+  credits: z.number().nonnegative().nullable(),
 });
 
 export const DonateTroopIntentSchema = z.object({
@@ -393,13 +395,13 @@ export const CancelAttackIntentSchema = z.object({
   attackID: z.string(),
 });
 
-export const CancelBoatIntentSchema = z.object({
-  type: z.literal("cancel_boat"),
+export const CancelShuttleIntentSchema = z.object({
+  type: z.literal("cancel_shuttle"),
   unitID: z.number(),
 });
 
-export const MoveWarshipIntentSchema = z.object({
-  type: z.literal("move_warship"),
+export const MoveBattlecruiserIntentSchema = z.object({
+  type: z.literal("move_battlecruiser"),
   unitId: z.number(),
   tile: z.number(),
 });
@@ -442,20 +444,20 @@ const IntentSchema = z.discriminatedUnion("type", [
   CancelAttackIntentSchema,
   SpawnIntentSchema,
   MarkDisconnectedIntentSchema,
-  BoatAttackIntentSchema,
-  CancelBoatIntentSchema,
+  ShuttleAttackIntentSchema,
+  CancelShuttleIntentSchema,
   AllianceRequestIntentSchema,
   AllianceRejectIntentSchema,
   BreakAllianceIntentSchema,
   TargetPlayerIntentSchema,
   EmojiIntentSchema,
-  DonateGoldIntentSchema,
+  DonateCreditsIntentSchema,
   DonateTroopIntentSchema,
   BuildUnitIntentSchema,
   UpgradeStructureIntentSchema,
   EmbargoIntentSchema,
   EmbargoAllIntentSchema,
-  MoveWarshipIntentSchema,
+  MoveBattlecruiserIntentSchema,
   QuickChatIntentSchema,
   AllianceExtensionIntentSchema,
   DeleteUnitIntentSchema,

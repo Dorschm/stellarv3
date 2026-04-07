@@ -14,10 +14,10 @@ export interface GameMap {
 
   isValidCoord(x: number, y: number): boolean;
   // Terrain getters (immutable)
-  isLand(ref: TileRef): boolean;
+  isSector(ref: TileRef): boolean;
   isOceanShore(ref: TileRef): boolean;
   isOcean(ref: TileRef): boolean;
-  isShoreline(ref: TileRef): boolean;
+  isSectorBoundary(ref: TileRef): boolean;
   magnitude(ref: TileRef): number;
   // State getters and setters (mutable)
   ownerID(ref: TileRef): number;
@@ -29,9 +29,9 @@ export interface GameMap {
   isOnEdgeOfMap(ref: TileRef): boolean;
   isBorder(ref: TileRef): boolean;
   neighbors(ref: TileRef): TileRef[];
-  isWater(ref: TileRef): boolean;
+  isDeepSpace(ref: TileRef): boolean;
   isLake(ref: TileRef): boolean;
-  isShore(ref: TileRef): boolean;
+  isSectorEdge(ref: TileRef): boolean;
   cost(ref: TileRef): number;
   terrainType(ref: TileRef): TerrainType;
   forEachTile(fn: (tile: TileRef) => void): void;
@@ -162,13 +162,13 @@ export class GameMapImpl implements GameMap {
   }
 
   // Terrain getters (immutable)
-  isLand(ref: TileRef): boolean {
+  isSector(ref: TileRef): boolean {
     return Boolean(this.terrain[ref] & (1 << GameMapImpl.IS_LAND_BIT));
   }
 
   isOceanShore(ref: TileRef): boolean {
     return (
-      this.isLand(ref) && this.neighbors(ref).some((tr) => this.isOcean(tr))
+      this.isSector(ref) && this.neighbors(ref).some((tr) => this.isOcean(tr))
     );
   }
 
@@ -176,7 +176,7 @@ export class GameMapImpl implements GameMap {
     return Boolean(this.terrain[ref] & (1 << GameMapImpl.OCEAN_BIT));
   }
 
-  isShoreline(ref: TileRef): boolean {
+  isSectorBoundary(ref: TileRef): boolean {
     return Boolean(this.terrain[ref] & (1 << GameMapImpl.SHORELINE_BIT));
   }
 
@@ -249,16 +249,16 @@ export class GameMapImpl implements GameMap {
   }
 
   // Helper methods
-  isWater(ref: TileRef): boolean {
-    return !this.isLand(ref);
+  isDeepSpace(ref: TileRef): boolean {
+    return !this.isSector(ref);
   }
 
   isLake(ref: TileRef): boolean {
-    return !this.isLand(ref) && !this.isOcean(ref);
+    return !this.isSector(ref) && !this.isOcean(ref);
   }
 
-  isShore(ref: TileRef): boolean {
-    return this.isLand(ref) && this.isShoreline(ref);
+  isSectorEdge(ref: TileRef): boolean {
+    return this.isSector(ref) && this.isSectorBoundary(ref);
   }
 
   cost(ref: TileRef): number {
@@ -268,13 +268,13 @@ export class GameMapImpl implements GameMap {
   // if updating these magnitude values, also update
   // `../../../map-generator/map_generator.go` `getThumbnailColor`
   terrainType(ref: TileRef): TerrainType {
-    if (this.isLand(ref)) {
+    if (this.isSector(ref)) {
       const magnitude = this.magnitude(ref);
       if (magnitude < 10) return TerrainType.Plains;
       if (magnitude < 20) return TerrainType.Highland;
       return TerrainType.Mountain;
     }
-    return this.isOcean(ref) ? TerrainType.Ocean : TerrainType.Lake;
+    return this.isOcean(ref) ? TerrainType.DeepSpace : TerrainType.DebrisField;
   }
 
   neighbors(ref: TileRef): TileRef[] {

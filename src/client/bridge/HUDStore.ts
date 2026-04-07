@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import {
-  Gold,
+  Credits,
   MessageType,
   PlayerID,
   PlayerType,
@@ -24,7 +24,7 @@ export interface PlayerSnapshot {
   displayName: string;
   isAlive: boolean;
   troops: number;
-  gold: Gold;
+  gold: Credits;
   numTilesOwned: number;
   allies: number[];
   isMe: boolean;
@@ -49,7 +49,7 @@ export interface MessageSnapshot {
   id: number;
   message: string;
   messageType: MessageType;
-  goldAmount?: bigint;
+  creditAmount?: bigint;
   playerID: number | null;
   tick: Tick;
   params?: Record<string, string | number>;

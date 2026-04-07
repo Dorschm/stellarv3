@@ -19,7 +19,7 @@ let allianceBehavior: NationAllianceBehavior;
 describe("AllianceBehavior.handleAllianceRequests", () => {
   beforeEach(async () => {
     game = await setup("big_plains", {
-      infiniteGold: true,
+      infiniteCredits: true,
       instantBuild: true,
     });
 
@@ -71,7 +71,7 @@ describe("AllianceBehavior.handleAllianceRequests", () => {
     requestor.updateRelation(player, relationDelta);
 
     game.map().forEachTile((tile) => {
-      if (game.map().isLand(tile)) {
+      if (game.map().isSector(tile)) {
         if (numTilesPlayer > 0) {
           player.conquer(tile);
           numTilesPlayer--;

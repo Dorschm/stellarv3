@@ -208,15 +208,15 @@
     "title": "Vyber Jazyk"
   },
   "unit_type": {
-    "city": "Město",
-    "defense_post": "Obranné stanoviště",
-    "port": "Přístav",
-    "warship": "Bitevní loď",
-    "missile_silo": "Raketové silo",
-    "sam_launcher": "Odpalovač SAM",
-    "atom_bomb": "Atomová bomba",
-    "hydrogen_bomb": "Vodíková bomba",
-    "mirv": "MIRV"
+    "colony": "Město",
+    "defense_station": "Obranné stanoviště",
+    "spaceport": "Přístav",
+    "battlecruiser": "Bitevní loď",
+    "orbital_strike_platform": "Raketové silo",
+    "point_defense_array": "Odpalovač SAM",
+    "antimatter_torpedo": "Atomová bomba",
+    "nova_bomb": "Vodíková bomba",
+    "cluster_warhead": "MIRV"
   },
   "user_setting": {
     "title": "Uživatelská nastavení",
@@ -282,7 +282,7 @@
     },
     "help": {
       "troops": "Prosím, dej mi jednotky!",
-      "gold": "Prosím, dej mi zlato!",
+      "credits": "Prosím, dej mi zlato!",
       "no_attack": "Prosím, neútoč na mě!",
       "sorry_attack": "Omlouváme se, nechtěl*a jsem zaútočit.",
       "alliance": "Aliance?",
@@ -291,7 +291,7 @@
     },
     "attack": {
       "attack": "Zaútoč na [P1]!",
-      "mirv": "Odpal MIRV na [P1]!",
+      "cluster_warhead": "Odpal MIRV na [P1]!",
       "focus": "Soustřeď palbu na [P1]!",
       "finish": "Dokončeme hráče [P1]!"
     },
@@ -323,7 +323,7 @@
     "warnings": {
       "strong": "[P1] je silný*á.",
       "weak": "[P1] je slabý*á.",
-      "mirv_soon": "[P1] může brzy odpálit MIRV!",
+      "cluster_warhead_soon": "[P1] může brzy odpálit MIRV!",
       "number1_warning": "Hráč #1 vyhraje brzy, pokud se nespojíme proti nim!",
       "stalemate": "Pojďme dosáhnout míru. Tohle je patová situace, oba prohrajeme.",
       "has_allies": "[P1] má mnoho spojenců.",
@@ -331,21 +331,21 @@
       "betrayed": "[P1] zradil*a svého spojence!",
       "getting_big": "[P1] roste příliš rychle!",
       "danger_base": "[P1] není chráněný*á!",
-      "saving_for_mirv": "[P1] šetří na odpálení MIRV.",
-      "mirv_ready": "[P1] má dostatek zlata pro odpálení MIRV!"
+      "saving_for_cluster_warhead": "[P1] šetří na odpálení MIRV.",
+      "cluster_warhead_ready": "[P1] má dostatek zlata pro odpálení MIRV!"
     }
   },
   "build_menu": {
     "desc": {
-      "atom_bomb": "Malá exploze",
-      "hydrogen_bomb": "Velká exploze",
-      "mirv": "Obrovská exploze, cílí pouze na vybraného hráče",
-      "missile_silo": "Používá se k odpálení atomovek",
-      "sam_launcher": "Brání proti příchozím atomovkám",
-      "warship": "Zachytává obchodní lodě, ničí lodě a čluny",
-      "port": "Odešle obchodní lodě pro generování zlata",
-      "defense_post": "Zvýšit ochranu blízkých hranic",
-      "city": "Zvýšit maximální počet obyvatel"
+      "antimatter_torpedo": "Malá exploze",
+      "nova_bomb": "Velká exploze",
+      "cluster_warhead": "Obrovská exploze, cílí pouze na vybraného hráče",
+      "orbital_strike_platform": "Používá se k odpálení atomovek",
+      "point_defense_array": "Brání proti příchozím atomovkám",
+      "battlecruiser": "Zachytává obchodní lodě, ničí lodě a čluny",
+      "spaceport": "Odešle obchodní lodě pro generování zlata",
+      "defense_station": "Zvýšit ochranu blízkých hranic",
+      "colony": "Zvýšit maximální počet obyvatel"
     },
     "not_enough_money": "Nedostatek peněz"
   },
@@ -364,7 +364,7 @@
     "rank": "Pořadí",
     "player": "Hráč",
     "owned": "Vlastněno",
-    "gold": "Zlato",
+    "credits": "Zlato",
     "troops": "Jednotky"
   },
   "player_info_overlay": {
@@ -399,7 +399,7 @@
     "attack_ratio": "Poměr útoku"
   },
   "player_panel": {
-    "gold": "Zlato",
+    "credits": "Zlato",
     "troops": "Jednotky",
     "traitor": "Zrádce",
     "alliance_time_remaining": "Zbývající Čas",

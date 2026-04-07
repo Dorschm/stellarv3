@@ -8,18 +8,21 @@ async function checkRange(
   rangeCheck: number,
   range: number,
 ) {
-  const game = await setup(mapName, { infiniteGold: true, instantBuild: true });
+  const game = await setup(mapName, {
+    infiniteCredits: true,
+    instantBuild: true,
+  });
   const grid = new UnitGrid(game.map());
   const player = game.addPlayer(
     new PlayerInfo("test_player", PlayerType.Human, null, "test_id"),
   );
   const unitTile = game.map().ref(unitPosX, 0);
-  grid.addUnit(player.buildUnit(UnitType.DefensePost, unitTile, {}));
+  grid.addUnit(player.buildUnit(UnitType.DefenseStation, unitTile, {}));
   const tileToCheck = game.map().ref(rangeCheck, 0);
   return grid.hasUnitNearby(
     tileToCheck,
     range,
-    UnitType.DefensePost,
+    UnitType.DefenseStation,
     "test_id",
   );
 }
@@ -31,7 +34,10 @@ async function nearbyUnits(
   range: number,
   unitTypes: readonly UnitType[],
 ) {
-  const game = await setup(mapName, { infiniteGold: true, instantBuild: true });
+  const game = await setup(mapName, {
+    infiniteCredits: true,
+    instantBuild: true,
+  });
   const grid = new UnitGrid(game.map());
   const player = game.addPlayer(
     new PlayerInfo("test_player", PlayerType.Human, null, "test_id"),
@@ -70,13 +76,13 @@ describe("Unit Grid range tests", () => {
   });
 
   const unitsInRangeCases = [
-    ["plains", 0, 10, 0, [UnitType.Warship], 1], // Same spot
-    ["plains", 0, 10, 0, [UnitType.City, UnitType.Port], 2], // 2 in range
+    ["plains", 0, 10, 0, [UnitType.Battlecruiser], 1], // Same spot
+    ["plains", 0, 10, 0, [UnitType.Colony, UnitType.Spaceport], 2], // 2 in range
     ["plains", 0, 10, 0, [], 0], // no unit
-    ["plains", 0, 10, 10, [UnitType.City], 1], // Exactly on the range
-    ["plains", 0, 10, 11, [UnitType.DefensePost], 0], // 1px outside
-    ["big_plains", 0, 198, 42, [UnitType.TradeShip], 1], // Inside huge range
-    ["big_plains", 0, 198, 199, [UnitType.TransportShip], 0], // 1px outside
+    ["plains", 0, 10, 10, [UnitType.Colony], 1], // Exactly on the range
+    ["plains", 0, 10, 11, [UnitType.DefenseStation], 0], // 1px outside
+    ["big_plains", 0, 198, 42, [UnitType.TradeFreighter], 1], // Inside huge range
+    ["big_plains", 0, 198, 199, [UnitType.AssaultShuttle], 0], // 1px outside
   ] as const;
 
   describe("Retrieve all units in range", () => {
@@ -96,7 +102,7 @@ describe("Unit Grid range tests", () => {
 
     test("Wrong unit type in range", async () => {
       const game = await setup("plains", {
-        infiniteGold: true,
+        infiniteCredits: true,
         instantBuild: true,
       });
       const grid = new UnitGrid(game.map());
@@ -104,23 +110,23 @@ describe("Unit Grid range tests", () => {
         new PlayerInfo("test_player", PlayerType.Human, null, "test_id"),
       );
       const unitTile = game.map().ref(0, 0);
-      grid.addUnit(player.buildUnit(UnitType.City, unitTile, {}));
+      grid.addUnit(player.buildUnit(UnitType.Colony, unitTile, {}));
       const tileToCheck = game.map().ref(0, 0);
-      expect(grid.nearbyUnits(tileToCheck, 10, [UnitType.Port])).toHaveLength(
-        0,
-      );
+      expect(
+        grid.nearbyUnits(tileToCheck, 10, [UnitType.Spaceport]),
+      ).toHaveLength(0);
     });
 
     test("One inside, one outside of range", async () => {
       const game = await setup("plains", {
-        infiniteGold: true,
+        infiniteCredits: true,
         instantBuild: true,
       });
       const grid = new UnitGrid(game.map());
       const player = game.addPlayer(
         new PlayerInfo("test_player", PlayerType.Human, null, "test_id"),
       );
-      const unitType = UnitType.City;
+      const unitType = UnitType.Colony;
       const unitTile = game.map().ref(0, 0);
       grid.addUnit(player.buildUnit(unitType, unitTile, {}));
       const outsideTile = game.map().ref(99, 0);

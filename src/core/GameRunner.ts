@@ -1,7 +1,7 @@
 import { placeName } from "../client/NameBoxCalculator";
 import { getGameLogicConfig } from "./configuration/ConfigLoader";
 import { Executor } from "./execution/ExecutionManager";
-import { RecomputeRailClusterExecution } from "./execution/RecomputeRailClusterExecution";
+import { RecomputeHyperlaneSectorExecution } from "./execution/RecomputeHyperlaneSectorExecution";
 import { WinCheckExecution } from "./execution/WinCheckExecution";
 import {
   AllPlayers,
@@ -105,9 +105,11 @@ export class GameRunner {
       this.game.addExecution(...this.execManager.nationExecutions());
     }
     this.game.addExecution(new WinCheckExecution());
-    if (!this.game.config().isUnitDisabled(UnitType.Factory)) {
+    if (!this.game.config().isUnitDisabled(UnitType.Foundry)) {
       this.game.addExecution(
-        new RecomputeRailClusterExecution(this.game.railNetwork()),
+        new RecomputeHyperlaneSectorExecution(
+          this.game.hyperspaceLaneNetwork(),
+        ),
       );
     }
   }
@@ -226,7 +228,7 @@ export class GameRunner {
         canTarget: player.canTarget(other),
         canSendAllianceRequest: player.canSendAllianceRequest(other),
         canBreakAlliance: player.isAlliedWith(other),
-        canDonateGold: player.canDonateGold(other),
+        canDonateCredits: player.canDonateCredits(other),
         canDonateTroops: player.canDonateTroops(other),
         canEmbargo: !player.hasEmbargoAgainst(other),
         allianceInfo: player.allianceInfo(other) ?? undefined,
@@ -272,7 +274,7 @@ export class GameRunner {
     }));
   }
 
-  public bestTransportShipSpawn(
+  public bestShuttleSpawn(
     playerID: PlayerID,
     targetTile: TileRef,
   ): TileRef | false {
@@ -280,6 +282,6 @@ export class GameRunner {
     if (!player.isPlayer()) {
       throw new Error(`player with id ${playerID} not found`);
     }
-    return player.bestTransportShipSpawn(targetTile);
+    return player.bestShuttleSpawn(targetTile);
   }
 }

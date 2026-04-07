@@ -266,16 +266,16 @@
     "title": "Izberite jezik"
   },
   "unit_type": {
-    "city": "Mesto",
-    "defense_post": "Trdnjava",
-    "port": "Luka",
-    "warship": "Bojna ladja",
-    "missile_silo": "Raketni silos",
-    "sam_launcher": "SAM sistem",
-    "atom_bomb": "Atomska bomba",
-    "hydrogen_bomb": "Vodikova bomba",
-    "mirv": "MIRV",
-    "factory": "Tovarna"
+    "colony": "Mesto",
+    "defense_station": "Trdnjava",
+    "spaceport": "Luka",
+    "battlecruiser": "Bojna ladja",
+    "orbital_strike_platform": "Raketni silos",
+    "point_defense_array": "SAM sistem",
+    "antimatter_torpedo": "Atomska bomba",
+    "nova_bomb": "Vodikova bomba",
+    "cluster_warhead": "MIRV",
+    "foundry": "Tovarna"
   },
   "user_setting": {
     "title": "Uporabniške nastavitve",
@@ -332,8 +332,8 @@
     "attack_ratio_down": "Pomanjšaj napadalno razmerje",
     "attack_ratio_down_desc": "Pomanjšaj napadalno razmerje za 10%",
     "attack_keybinds": "Tipka za napad",
-    "boat_attack": "Napad s čolnom",
-    "boat_attack_desc": "Pošlji napadalni čoln na mesto pod kazalnikom.",
+    "shuttle_attack": "Napad s čolnom",
+    "shuttle_attack_desc": "Pošlji napadalni čoln na mesto pod kazalnikom.",
     "ground_attack": "Talni napad",
     "ground_attack_desc": "Pošlji talni napad na mesto pod kazalnikom.",
     "zoom_controls": "Kontrola povečave",
@@ -383,7 +383,7 @@
     "help": {
       "troops": "Prosim pošlji mi enote!",
       "troops_frontlines": "Pošlji enote na bojišče!",
-      "gold": "Prosim pošlji mi zlato!",
+      "credits": "Prosim pošlji mi zlato!",
       "no_attack": "Prosim ne napadi mi!",
       "sorry_attack": "Oprosti, nisem mislil napasti.",
       "alliance": "Zavezništvo?",
@@ -392,17 +392,17 @@
     },
     "attack": {
       "attack": "Napadi [P1]!",
-      "mirv": "Pošlji MIRV na [P1]!",
+      "cluster_warhead": "Pošlji MIRV na [P1]!",
       "focus": "Fokusiraj napad na [P1]!",
       "finish": "Končajva [P1]!",
-      "build_warships": "Zgradi bojne ladje!"
+      "build_battlecruisers": "Zgradi bojne ladje!"
     },
     "defend": {
       "defend": "Obrani [P1]!",
       "defend_from": "Obvaruj pred [P1]!",
       "dont_attack": "Ne napadaj [P1]!",
       "ally": "[P1] je moj zaveznik!",
-      "build_posts": "Zgradi bunkerje!"
+      "build_defense_stations": "Zgradi bunkerje!"
     },
     "greet": {
       "hello": "Zdravo!",
@@ -434,7 +434,7 @@
     "warnings": {
       "strong": "[P1] je močan.",
       "weak": "[P1] je slab.",
-      "mirv_soon": "[P1] lahko kmalu uporabi MIRV!",
+      "cluster_warhead_soon": "[P1] lahko kmalu uporabi MIRV!",
       "number1_warning": "Igralec št. 1 bo kmalu zmagal, če se ne združimo!",
       "stalemate": "Sklenimo mir. To je pat pozicija, oba bova izgubila.",
       "has_allies": "[P1] ima veliko zaveznikov.",
@@ -443,8 +443,8 @@
       "betrayed_me": "[P1] me je izdal!",
       "getting_big": "[P1] raste prehitro!",
       "danger_base": "[P1] ni zaščiten!",
-      "saving_for_mirv": "[P1] varčuje za izstrelitev MIRV-a.",
-      "mirv_ready": "[P1] ima dovolj zlata za izstrelitev MIRV-a!",
+      "saving_for_cluster_warhead": "[P1] varčuje za izstrelitev MIRV-a.",
+      "cluster_warhead_ready": "[P1] ima dovolj zlata za izstrelitev MIRV-a!",
       "snowballing": "[P1] napreduje prehitro!",
       "cheating": "[P1] goljufa!",
       "stop_trading": "Prenehaj trgovati z [P1]!"
@@ -452,16 +452,16 @@
   },
   "build_menu": {
     "desc": {
-      "atom_bomb": "Manjša eksplozija",
-      "hydrogen_bomb": "Velika eksplozija",
-      "mirv": "Ogromna eksplozija, cilja samo na izbranega igralca",
-      "missile_silo": "Uporablja se za izstrelitev jedrskih orožij",
-      "sam_launcher": "Brani se pred prihajajočimi bombam",
-      "warship": "Zajame trgovske ladje, uničuje ladje in čolne",
-      "port": "Pošilja trgovske ladje za pridobivanje zlata",
-      "defense_post": "Poveča obrambo bližnjih meja",
-      "city": "Poveča največjo populacijo",
-      "factory": "Ustvarja železnice in ustvarja vlake"
+      "antimatter_torpedo": "Manjša eksplozija",
+      "nova_bomb": "Velika eksplozija",
+      "cluster_warhead": "Ogromna eksplozija, cilja samo na izbranega igralca",
+      "orbital_strike_platform": "Uporablja se za izstrelitev jedrskih orožij",
+      "point_defense_array": "Brani se pred prihajajočimi bombam",
+      "battlecruiser": "Zajame trgovske ladje, uničuje ladje in čolne",
+      "spaceport": "Pošilja trgovske ladje za pridobivanje zlata",
+      "defense_station": "Poveča obrambo bližnjih meja",
+      "colony": "Poveča največjo populacijo",
+      "foundry": "Ustvarja železnice in ustvarja vlake"
     },
     "not_enough_money": "Ni dovolj denarja"
   },
@@ -484,12 +484,12 @@
     "player": "Igralec",
     "team": "Ekipa",
     "owned": "V lasti",
-    "gold": "Zlato",
+    "credits": "Zlato",
     "troops": "Enote",
     "launchers": "Silosi",
-    "sams": "SAM-s",
-    "warships": "Bojne ladje",
-    "cities": "Mesta",
+    "point_defense": "SAM-s",
+    "battlecruisers": "Bojne ladje",
+    "colonies": "Mesta",
     "show_control": "Pokaži kontrole",
     "show_units": "Pokaži enote"
   },
@@ -558,7 +558,7 @@
     "attack_ratio": "Napadalno razmerje"
   },
   "player_panel": {
-    "gold": "Zlato",
+    "credits": "Zlato",
     "troops": "Enote",
     "betrayals": "Število izdaj",
     "traitor": "Izdajalec",
@@ -675,25 +675,25 @@
     "received": "Prejeto",
     "cancelled": "Prekinjeno",
     "count": "Število",
-    "gold": "Zlato",
+    "credits": "Zlato",
     "workers": "Delavci",
     "war": "Vojna",
     "trade": "Trgovanje",
     "steal": "Kraja",
     "unit": {
-      "city": "Mesto",
-      "port": "Luka",
-      "defp": "Obrambni stolp",
-      "saml": "SAM Izstreljevalec",
-      "silo": "Izstreljevalec raket",
-      "wshp": "Bojna ladja",
-      "fact": "Tovarna",
-      "trade": "Trgovska ladja",
-      "trans": "Transportna ladja",
-      "abomb": "Atomska bomba",
-      "hbomb": "Vodikova bomba",
-      "mirv": "MIRV",
-      "mirvw": "MIRV bojna glava"
+      "colony": "Mesto",
+      "spaceport": "Luka",
+      "defs": "Obrambni stolp",
+      "pda": "SAM Izstreljevalec",
+      "osp": "Izstreljevalec raket",
+      "bcrs": "Bojna ladja",
+      "fndy": "Tovarna",
+      "tfreight": "Trgovska ladja",
+      "ashuttle": "Transportna ladja",
+      "ator": "Atomska bomba",
+      "nbomb": "Vodikova bomba",
+      "cwhead": "MIRV",
+      "cwsub": "MIRV bojna glava"
     }
   },
   "game_list": {

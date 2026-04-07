@@ -263,16 +263,16 @@
     "title": "Valitse kieli"
   },
   "unit_type": {
-    "city": "Kaupunki",
-    "defense_post": "Puolustustorni",
-    "port": "Satama",
-    "warship": "Sota-alus",
-    "missile_silo": "Ohjussiilo",
-    "sam_launcher": "Ilmatorjuntaohjusjärjestelmä",
-    "atom_bomb": "Atomipommi",
-    "hydrogen_bomb": "Vetypommi",
-    "mirv": "MIRV",
-    "factory": "Tehdas"
+    "colony": "Kaupunki",
+    "defense_station": "Puolustustorni",
+    "spaceport": "Satama",
+    "battlecruiser": "Sota-alus",
+    "orbital_strike_platform": "Ohjussiilo",
+    "point_defense_array": "Ilmatorjuntaohjusjärjestelmä",
+    "antimatter_torpedo": "Atomipommi",
+    "nova_bomb": "Vetypommi",
+    "cluster_warhead": "MIRV",
+    "foundry": "Tehdas"
   },
   "user_setting": {
     "title": "Käyttäjäasetukset",
@@ -327,8 +327,8 @@
     "attack_ratio_down": "Vähennä hyökkäyksen osuutta",
     "attack_ratio_down_desc": "Vähennä hyökkäyksen osuutta 10%",
     "attack_keybinds": "Hyökkäyksen näppäinasetukset",
-    "boat_attack": "Venehyökkäys",
-    "boat_attack_desc": "Lähetä venehyökkäys hiiresi alla olevaan pikseliin.",
+    "shuttle_attack": "Venehyökkäys",
+    "shuttle_attack_desc": "Lähetä venehyökkäys hiiresi alla olevaan pikseliin.",
     "ground_attack": "Maahyökkäys",
     "ground_attack_desc": "Aloita maahyökkäys hiiresi alla olevaan ruutuun.",
     "zoom_controls": "Zoomausohjaimet",
@@ -378,7 +378,7 @@
     "help": {
       "troops": "Lahjoita minulle joukkoja!",
       "troops_frontlines": "Lähetä joukkoja etulinjoille!",
-      "gold": "Lahjoita minulle kultaa!",
+      "credits": "Lahjoita minulle kultaa!",
       "no_attack": "Älä hyökkää minuun!",
       "sorry_attack": "Anteeksi, en tarkoittanut hyökätä.",
       "alliance": "Liittoudutaanko?",
@@ -387,17 +387,17 @@
     },
     "attack": {
       "attack": "Hyökkää pelaajaan [P1]!",
-      "mirv": "Laukaise MIRV pelaajaan [P1]!",
+      "cluster_warhead": "Laukaise MIRV pelaajaan [P1]!",
       "focus": "Keskitä tuli pelaajaan [P1]!",
       "finish": "Tapetaan [P1]!",
-      "build_warships": "Rakenna sotalaivoja!"
+      "build_battlecruisers": "Rakenna sotalaivoja!"
     },
     "defend": {
       "defend": "Puolusta pelaajaa [P1]!",
       "defend_from": "Puolustaudu pelaajalta [P1]!",
       "dont_attack": "Älä hyökkää pelaajaan [P1]!",
       "ally": "[P1] on minun liittolaiseni!",
-      "build_posts": "Rakenna puolustustorneja!"
+      "build_defense_stations": "Rakenna puolustustorneja!"
     },
     "greet": {
       "hello": "Terve!",
@@ -429,7 +429,7 @@
     "warnings": {
       "strong": "[P1] on voimakas.",
       "weak": "[P1] on heikko.",
-      "mirv_soon": "[P1] voi laukaista MIRVin pian!",
+      "cluster_warhead_soon": "[P1] voi laukaista MIRVin pian!",
       "number1_warning": "#1 pelaaja voittaa pian, ellemme liittoudu!",
       "stalemate": "Tehdään rauha. Tämä on pattitilanne, me tulemme molemmat häviämään.",
       "has_allies": "Pelaajalla [P1] on monia liittolaisia.",
@@ -438,8 +438,8 @@
       "betrayed_me": "[P1] petti minut!",
       "getting_big": "[P1] kasvaa liian nopeasti!",
       "danger_base": "[P1] on suojaamatta!",
-      "saving_for_mirv": "[P1] säästää MIRVin laukaisemiseen kultaa.",
-      "mirv_ready": "Pelaajalla [P1] on tarpeeksi kultaa MIRVin laukaisemiseen!",
+      "saving_for_cluster_warhead": "[P1] säästää MIRVin laukaisemiseen kultaa.",
+      "cluster_warhead_ready": "Pelaajalla [P1] on tarpeeksi kultaa MIRVin laukaisemiseen!",
       "snowballing": "[P1] kasvaa liian nopeasti!",
       "cheating": "[P1] huijaa!",
       "stop_trading": "Lopeta kaupankäynti pelaaja [P1] kanssa!"
@@ -447,16 +447,16 @@
   },
   "build_menu": {
     "desc": {
-      "atom_bomb": "Pieni räjähdys",
-      "hydrogen_bomb": "Suuri räjähdys",
-      "mirv": "Valtava räjähdys, kohdistuu vain valittuun pelaajaan",
-      "missile_silo": "Käytetään ohjusten laukaisemiseen",
-      "sam_launcher": "Puolustaa saapuvia ohjuksia vastaan",
-      "warship": "Kaappaa kauppa-aluksia, tuhoaa laivoja ja veneitä",
-      "port": "Lähettää kauppa-aluksia tuottaakseen kultaa",
-      "defense_post": "Parantaa läheisten rajojen puolustusta",
-      "city": "Lisää enimmäisväkilukuasi",
-      "factory": "Luo rautateitä ja lähettää junia"
+      "antimatter_torpedo": "Pieni räjähdys",
+      "nova_bomb": "Suuri räjähdys",
+      "cluster_warhead": "Valtava räjähdys, kohdistuu vain valittuun pelaajaan",
+      "orbital_strike_platform": "Käytetään ohjusten laukaisemiseen",
+      "point_defense_array": "Puolustaa saapuvia ohjuksia vastaan",
+      "battlecruiser": "Kaappaa kauppa-aluksia, tuhoaa laivoja ja veneitä",
+      "spaceport": "Lähettää kauppa-aluksia tuottaakseen kultaa",
+      "defense_station": "Parantaa läheisten rajojen puolustusta",
+      "colony": "Lisää enimmäisväkilukuasi",
+      "foundry": "Luo rautateitä ja lähettää junia"
     },
     "not_enough_money": "Ei tarpeeksi rahaa"
   },
@@ -479,12 +479,12 @@
     "player": "Pelaaja",
     "team": "Tiimi",
     "owned": "Maata",
-    "gold": "Kultaa",
+    "credits": "Kultaa",
     "troops": "Joukkoja",
     "launchers": "Ohjussiilot",
-    "sams": "Ilmatorjunta",
-    "warships": "Sotalaivat",
-    "cities": "Kaupungit",
+    "point_defense": "Ilmatorjunta",
+    "battlecruisers": "Sotalaivat",
+    "colonies": "Kaupungit",
     "show_control": "Näytä kontrolli",
     "show_units": "Näytä yksiköt"
   },
@@ -552,7 +552,7 @@
     "attack_ratio": "Hyökkäyksen osuus"
   },
   "player_panel": {
-    "gold": "Kultaa",
+    "credits": "Kultaa",
     "troops": "Joukkoja",
     "betrayals": "Petosten määrä",
     "traitor": "Petturi",

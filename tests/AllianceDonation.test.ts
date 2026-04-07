@@ -1,5 +1,5 @@
 import { AllianceRequestExecution } from "../src/core/execution/alliance/AllianceRequestExecution";
-import { DonateGoldExecution } from "../src/core/execution/DonateGoldExecution";
+import { DonateCreditsExecution } from "../src/core/execution/DonateCreditsExecution";
 import { Game, Player, PlayerType } from "../src/core/game/Game";
 import { playerInfo, setup } from "./util/Setup";
 
@@ -12,10 +12,10 @@ describe("Alliance Donation", () => {
     game = await setup(
       "plains",
       {
-        infiniteGold: false,
+        infiniteCredits: false,
         instantBuild: true,
         infiniteTroops: false,
-        donateGold: true,
+        donateCredits: true,
         donateTroops: true,
       },
       [
@@ -26,12 +26,12 @@ describe("Alliance Donation", () => {
 
     player1 = game.player("player1");
     player1.conquer(game.ref(0, 0));
-    player1.addGold(1000n);
+    player1.addCredits(1000n);
     player1.addTroops(1000);
 
     player2 = game.player("player2");
     player2.conquer(game.ref(0, 1));
-    player2.addGold(100n);
+    player2.addCredits(100n);
     player2.addTroops(100);
 
     while (game.inSpawnPhase()) {
@@ -51,11 +51,11 @@ describe("Alliance Donation", () => {
     expect(player1.isFriendly(player2)).toBeTruthy();
     expect(player2.isFriendly(player1)).toBeTruthy();
 
-    expect(player1.canDonateGold(player2)).toBeTruthy();
-    const goldBefore = player2.gold();
-    const success = player1.donateGold(player2, 100n);
+    expect(player1.canDonateCredits(player2)).toBeTruthy();
+    const goldBefore = player2.credits();
+    const success = player1.donateCredits(player2, 100n);
     expect(success).toBeTruthy();
-    expect(player2.gold()).toBe(goldBefore + 100n);
+    expect(player2.credits()).toBe(goldBefore + 100n);
   });
 
   test("Can donate troops after alliance formed by reply", () => {
@@ -87,11 +87,11 @@ describe("Alliance Donation", () => {
     expect(player1.isFriendly(player2)).toBeTruthy();
     expect(player2.isFriendly(player1)).toBeTruthy();
 
-    expect(player1.canDonateGold(player2)).toBeTruthy();
-    const goldBefore = player2.gold();
-    const success = player1.donateGold(player2, 100n);
+    expect(player1.canDonateCredits(player2)).toBeTruthy();
+    const goldBefore = player2.credits();
+    const success = player1.donateCredits(player2, 100n);
     expect(success).toBeTruthy();
-    expect(player2.gold()).toBe(goldBefore + 100n);
+    expect(player2.credits()).toBe(goldBefore + 100n);
   });
 
   test("Can donate troops after alliance formed by mutual request", () => {
@@ -115,9 +115,9 @@ describe("Alliance Donation", () => {
     game.addExecution(new AllianceRequestExecution(player1, player2.id()));
     game.executeNextTick();
 
-    const goldBefore = player2.gold();
+    const goldBefore = player2.credits();
     game.addExecution(new AllianceRequestExecution(player2, player1.id()));
-    game.addExecution(new DonateGoldExecution(player1, player2.id(), 100));
+    game.addExecution(new DonateCreditsExecution(player1, player2.id(), 100));
 
     game.executeNextTick();
 
@@ -127,6 +127,6 @@ describe("Alliance Donation", () => {
     game.executeNextTick();
 
     // Donation should have succeeded
-    expect(player2.gold()).toBe(goldBefore + 100n);
+    expect(player2.credits()).toBe(goldBefore + 100n);
   });
 });

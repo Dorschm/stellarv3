@@ -38,7 +38,7 @@ describe("Spawn execution", () => {
       game.allPlayers().forEach((player) => {
         const spawnTile = player.spawnTile()!;
         expect(spawnTile).toEqual(expect.any(Number));
-        expect(game.isLand(spawnTile)).toBe(true);
+        expect(game.isSector(spawnTile)).toBe(true);
         expect(game.isBorder(spawnTile)).toBe(false);
       });
 

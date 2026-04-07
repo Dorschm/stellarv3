@@ -256,13 +256,13 @@
     "hydros": "Vesinikud",
     "mirv": "MIRV",
     "bombs": "Pommid",
-    "total_gold": "Kogusumma",
-    "all_gold": "Kogu kuld",
+    "total_credits": "Kogusumma",
+    "all_credits": "Kogu kuld",
     "trade": "Kaubandus",
-    "train_trade": "Rong",
+    "frigate_trade": "Rong",
     "naval_trade": "Kaubalaev",
-    "conquest_gold": "Vallutatud mängija kuld",
-    "stolen_gold": "Varastatud sõjalaevadega",
+    "conquest_credits": "Vallutatud mängija kuld",
+    "stolen_credits": "Varastatud sõjalaevadega",
     "num_of_conquests_humans": "Mängija tapmised",
     "num_of_conquests_bots": "Botide tapmised",
     "duration": "Kestvus",
@@ -457,22 +457,22 @@
     "random_spawn": "Juhuslik Tekkekoht",
     "compact_map": "Kompaktne kaart",
     "crowded": "Rahvarohke",
-    "starting_gold": "5Mil. Alguskuld"
+    "starting_credits": "5Mil. Alguskuld"
   },
   "select_lang": {
     "title": "Vali keel"
   },
   "unit_type": {
-    "city": "Linn",
-    "defense_post": "Kaitsepunker",
-    "port": "Sadam",
-    "warship": "Sõjalaev",
-    "missile_silo": "Raketi Silo",
-    "sam_launcher": "Õhutõrjeraketi raketiheitja",
-    "atom_bomb": "Tuumapomm",
-    "hydrogen_bomb": "Vesinikupomm",
-    "mirv": "MIRV",
-    "factory": "Tehas"
+    "colony": "Linn",
+    "defense_station": "Kaitsepunker",
+    "spaceport": "Sadam",
+    "battlecruiser": "Sõjalaev",
+    "orbital_strike_platform": "Raketi Silo",
+    "point_defense_array": "Õhutõrjeraketi raketiheitja",
+    "antimatter_torpedo": "Tuumapomm",
+    "nova_bomb": "Vesinikupomm",
+    "cluster_warhead": "MIRV",
+    "foundry": "Tehas"
   },
   "user_setting": {
     "title": "Seaded",
@@ -544,8 +544,8 @@
     "attack_ratio_down": "Alanda Ründesuhet",
     "attack_ratio_down_desc": "Alanda Ründesuhet 10% võrra",
     "attack_keybinds": "Ründe Kiirklahv",
-    "boat_attack": "Laeva Rünne",
-    "boat_attack_desc": "Saada laevarünnak oma cursori alla olevasse ruutu.",
+    "shuttle_attack": "Laeva Rünne",
+    "shuttle_attack_desc": "Saada laevarünnak oma cursori alla olevasse ruutu.",
     "ground_attack": "Maarünne",
     "ground_attack_desc": "Saada maarünne oma cursori alla olevasse ruutu.",
     "swap_direction": "Pööra Raketi Trajektoori",
@@ -598,7 +598,7 @@
     "help": {
       "troops": "Palun anna mulle vägesid!",
       "troops_frontlines": "Saada vägesid eesliinidele!",
-      "gold": "Palun anna mulle kulda!",
+      "credits": "Palun anna mulle kulda!",
       "no_attack": "Palun ära ründa mind!",
       "sorry_attack": "Vabandan, ma ei tahtnud sind rünnata.",
       "alliance": "Soovid teha liitu?",
@@ -607,17 +607,17 @@
     },
     "attack": {
       "attack": "Ründa [P1]!",
-      "mirv": "Saada MIRV [P1]'le!",
+      "cluster_warhead": "Saada MIRV [P1]'le!",
       "focus": "Fokuseeri tuld [P1] peale!",
       "finish": "Tapame lõplikult [P1]!",
-      "build_warships": "Ehita sõjalaevu!"
+      "build_battlecruisers": "Ehita sõjalaevu!"
     },
     "defend": {
       "defend": "Kaitse [P1]!",
       "defend_from": "Kaitse [P1] eest!",
       "dont_attack": "Ära ründa [P1]!",
       "ally": "[P1] on mu liitlane!",
-      "build_posts": "Ehita kaitsepunkreid!"
+      "build_defense_stations": "Ehita kaitsepunkreid!"
     },
     "greet": {
       "hello": "Tere!",
@@ -649,7 +649,7 @@
     "warnings": {
       "strong": "[P1] on tugev.",
       "weak": "[P1] on nõrk.",
-      "mirv_soon": "[P1] saab lasta MIRV'i varsti!",
+      "cluster_warhead_soon": "[P1] saab lasta MIRV'i varsti!",
       "number1_warning": "Esimene koht edetabelis saab võidu varsti, kui just me ei tee koostööd!",
       "stalemate": "Teeme rahu. See on viik, me mõlemad muidu kaotame.",
       "has_allies": "[P1]'l on palju liitlasi.",
@@ -658,8 +658,8 @@
       "betrayed_me": "[P1] reetis mind!",
       "getting_big": "[P1] kasvab liiga kiiresti!",
       "danger_base": "[P1] on kaitseta!",
-      "saving_for_mirv": "[P1] kogub MIRV'i jaoks raha, et seda lasta.",
-      "mirv_ready": "[P1]'l on piisavalt kulda, et lasta MIRV!",
+      "saving_for_cluster_warhead": "[P1] kogub MIRV'i jaoks raha, et seda lasta.",
+      "cluster_warhead_ready": "[P1]'l on piisavalt kulda, et lasta MIRV!",
       "snowballing": "[P1] snowballib liiga kiiresti!",
       "cheating": "[P1] Petab!",
       "stop_trading": "Lõpeta kaubandus [P1]'ga!"
@@ -667,16 +667,16 @@
   },
   "build_menu": {
     "desc": {
-      "atom_bomb": "Väike plahvatus",
-      "hydrogen_bomb": "Suur plahvatus",
-      "mirv": "Hiiglaslik plahvatus, suunatud ainult ühe mängija poole",
-      "missile_silo": "Kasutatakse, et lasta tuumapomme",
-      "sam_launcher": "Kaitseb tulevate tuumapommide eest",
-      "warship": "Püüab kinni kaubalaevu, hävitab teisi sõjalaevu ja transportlaevu",
-      "port": "Saada kaubalaevu, et genereerida kulda",
-      "defense_post": "Tugevdab lähedalasuvaid piire teiste riikidega",
-      "city": "Suurendab maksimaalset populatsiooni",
-      "factory": "Teeb raudteid ja ronge"
+      "antimatter_torpedo": "Väike plahvatus",
+      "nova_bomb": "Suur plahvatus",
+      "cluster_warhead": "Hiiglaslik plahvatus, suunatud ainult ühe mängija poole",
+      "orbital_strike_platform": "Kasutatakse, et lasta tuumapomme",
+      "point_defense_array": "Kaitseb tulevate tuumapommide eest",
+      "battlecruiser": "Püüab kinni kaubalaevu, hävitab teisi sõjalaevu ja transportlaevu",
+      "spaceport": "Saada kaubalaevu, et genereerida kulda",
+      "defense_station": "Tugevdab lähedalasuvaid piire teiste riikidega",
+      "colony": "Suurendab maksimaalset populatsiooni",
+      "foundry": "Teeb raudteid ja ronge"
     },
     "not_enough_money": "Pole piisavalt raha"
   },
@@ -704,12 +704,12 @@
     "player": "Mängija",
     "team": "Tiim",
     "owned": "Omastatud",
-    "gold": "Kuld",
+    "credits": "Kuld",
     "maxtroops": "Maks. väed",
     "launchers": "Käivitajad",
-    "sams": "Õhutõrjeraketi raketiheitjad",
-    "warships": "Sõjalaevad",
-    "cities": "Linnad",
+    "point_defense": "Õhutõrjeraketi raketiheitjad",
+    "battlecruisers": "Sõjalaevad",
+    "colonies": "Linnad",
     "show_control": "Näita kontrolli",
     "show_units": "Näita vägesid"
   },
@@ -740,20 +740,20 @@
     "unit_voluntarily_deleted": "Üksus kustutati vabatahtlikult",
     "betrayal_debuff_ends": "{time} sekundit veel, kuni reeturi nõrgestus lõpeb",
     "attack_cancelled_retreat": "Rünnak tühistatud, {troops} sõdurit tapetud taganemise ajal",
-    "received_gold_from_captured_ship": "Teenisid {gold} kulda kaubalaevast, mis üle võtsid {name}'lt",
-    "received_gold_from_trade": "Teenisid {gold} kulda kaubandusest koos {name}'ga",
-    "received_gold_from_conquest": "Vallutasid {name} ja said {gold} kulda",
-    "conquered_no_gold": "Vallutasid {name} (ei mänginud, kulla auhinda pole)",
+    "received_credits_from_captured_ship": "Teenisid {gold} kulda kaubalaevast, mis üle võtsid {name}'lt",
+    "received_credits_from_trade": "Teenisid {gold} kulda kaubandusest koos {name}'ga",
+    "received_credits_from_conquest": "Vallutasid {name} ja said {gold} kulda",
+    "conquered_no_credits": "Vallutasid {name} (ei mänginud, kulla auhinda pole)",
     "missile_intercepted": "Rakett tõkestatud {unit}",
-    "mirv_warheads_intercepted": "{count, plural,one {{count} MIRV'i tuumapea tõkestatud}other {{count} MIRV'i tuumapead tõkestatud}}",
+    "cluster_warheads_intercepted": "{count, plural,one {{count} MIRV'i tuumapea tõkestatud}other {{count} MIRV'i tuumapead tõkestatud}}",
     "sent_troops_to_player": "Saatsid {troops} sõdurit {name}'le",
     "received_troops_from_player": "Said {troops} sõdurit {name}'lt",
-    "sent_gold_to_player": "Saatsid {gold} kulda {name}'le",
-    "received_gold_from_player": "Said {gold} kulda {name}'lt",
+    "sent_credits_to_player": "Saatsid {gold} kulda {name}'le",
+    "received_credits_from_player": "Said {gold} kulda {name}'lt",
     "unit_captured_by_enemy": "Sinu {unit} püüti kinni {name} poolt",
     "captured_enemy_unit": "Püüdsid kinni {unit} {name} poolt",
     "unit_destroyed": "Sinu {unit} hävitati",
-    "no_boats_available": "Laevu pole rohkem saadaval, maks. {max}"
+    "no_shuttles_available": "Laevu pole rohkem saadaval, maks. {max}"
   },
   "player_type": {
     "player": "Mängija",
@@ -768,7 +768,7 @@
     "default": "Tavaline"
   },
   "player_panel": {
-    "gold": "Kuld",
+    "credits": "Kuld",
     "troops": "Väed",
     "betrayals": "Reetmised",
     "traitor": "Reetur",
@@ -786,7 +786,7 @@
     "break_alliance": "Lõpeta liit",
     "send_alliance": "Saada Liidupäring",
     "send_troops": "Saada vägesid",
-    "send_gold": "Saada kulda",
+    "send_credits": "Saada kulda",
     "emotes": "Emoijd",
     "moderation": "Modereerimine",
     "kick": "Mängija välja viskamine",
@@ -807,7 +807,7 @@
     "aria_slider": "Vägede liugur",
     "capacity_note": "Vastuvõttja sab ainult vastu võtta praegu {amount}."
   },
-  "send_gold_modal": {
+  "send_credits_modal": {
     "title_with_name": "Saada kulda {name}'le",
     "available_tooltip": "Hetkel sinul kõik saadaval olev kuld",
     "aria_slider": "Koguse liugur",
@@ -905,25 +905,25 @@
     "received": "Saadud",
     "cancelled": "Tühistatud",
     "count": "Kogus",
-    "gold": "Kuld",
+    "credits": "Kuld",
     "workers": "Töötajad",
     "war": "Sõda",
     "trade": "Kauple",
     "steal": "Varasta",
     "unit": {
-      "city": "Linn",
-      "port": "Sadam",
-      "defp": "Kaitsepunker",
-      "saml": "Õhutõrjeraketi raketiheitja",
-      "silo": "Raketi Silo",
-      "wshp": "Sõjalaev",
-      "fact": "Tehas",
-      "trade": "Kaubalaev",
-      "trans": "Transportlaev",
-      "abomb": "Tuumapomm",
-      "hbomb": "Vesinikupomm",
-      "mirv": "MIRV",
-      "mirvw": "MIRV'i tuumapea"
+      "colony": "Linn",
+      "spaceport": "Sadam",
+      "defs": "Kaitsepunker",
+      "pda": "Õhutõrjeraketi raketiheitja",
+      "osp": "Raketi Silo",
+      "bcrs": "Sõjalaev",
+      "fndy": "Tehas",
+      "tfreight": "Kaubalaev",
+      "ashuttle": "Transportlaev",
+      "ator": "Tuumapomm",
+      "nbomb": "Vesinikupomm",
+      "cwhead": "MIRV",
+      "cwsub": "MIRV'i tuumapea"
     }
   },
   "game_list": {

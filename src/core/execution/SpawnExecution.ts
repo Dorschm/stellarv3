@@ -106,7 +106,7 @@ export class SpawnExecution implements Execution {
       const center = this.randTile(spawnArea);
 
       if (
-        !this.mg.isLand(center) ||
+        !this.mg.isSector(center) ||
         this.mg.hasOwner(center) ||
         this.mg.isBorder(center)
       ) {

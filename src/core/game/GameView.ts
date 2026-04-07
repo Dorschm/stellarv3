@@ -9,9 +9,10 @@ import { WorkerClient } from "../worker/WorkerClient";
 import {
   BuildableUnit,
   Cell,
+  Credits,
   EmojiMessage,
+  FrigateType,
   GameUpdates,
-  Gold,
   NameViewData,
   PlayerActions,
   PlayerBorderTiles,
@@ -23,7 +24,6 @@ import {
   TerrainType,
   TerraNullius,
   Tick,
-  TrainType,
   UnitInfo,
   UnitType,
 } from "./Game";
@@ -116,7 +116,7 @@ export class UnitView {
     return this.data.troops;
   }
   retreating(): boolean {
-    if (this.type() !== UnitType.TransportShip) {
+    if (this.type() !== UnitType.AssaultShuttle) {
       throw Error("Must be a transport ship");
     }
     return this.data.retreating;
@@ -169,9 +169,9 @@ export class UnitView {
     let readiness = missilesReady / maxMissiles;
 
     const cooldownDuration =
-      this.data.unitType === UnitType.SAMLauncher
-        ? this.gameView.config().SAMCooldown()
-        : this.gameView.config().SiloCooldown();
+      this.data.unitType === UnitType.PointDefenseArray
+        ? this.gameView.config().pointDefenseCooldown()
+        : this.gameView.config().orbitalStrikeCooldown();
 
     for (const cooldown of this.data.missileTimerQueue) {
       const cooldownProgress = this.gameView.ticks() - cooldown;
@@ -185,11 +185,11 @@ export class UnitView {
   level(): number {
     return this.data.level;
   }
-  hasTrainStation(): boolean {
-    return this.data.hasTrainStation;
+  hasTradeHub(): boolean {
+    return this.data.hasTradeHub;
   }
-  trainType(): TrainType | undefined {
-    return this.data.trainType;
+  frigateType(): FrigateType | undefined {
+    return this.data.frigateType;
   }
   isLoaded(): boolean | undefined {
     return this.data.loaded;
@@ -515,8 +515,8 @@ export class PlayerView {
       (id) => this.game.playerBySmallID(id) as PlayerView,
     );
   }
-  gold(): Gold {
-    return this.data.gold;
+  credits(): Credits {
+    return this.data.credits;
   }
 
   troops(): number {
@@ -570,7 +570,7 @@ export class PlayerView {
     return this.game.worker.playerProfile(this.smallID());
   }
 
-  bestTransportShipSpawn(targetTile: TileRef): Promise<TileRef | false> {
+  bestShuttleSpawn(targetTile: TileRef): Promise<TileRef | false> {
     return this.game.worker.transportShipSpawn(this.id(), targetTile);
   }
 
@@ -966,7 +966,7 @@ export class GameView implements GameMap {
 
       // Preserve the final-step redraw (plan remains for the tick where motion ends),
       // then clear once the train has settled and no longer moves.
-      // Note: trains are currently deleted at the end of TrainExecution, and the ensuing
+      // Note: trains are currently deleted at the end of FrigateExecution, and the ensuing
       // `Unit` update (isActive=false) also clears any associated motion plan records.
       // This expiry is defensive to avoid keeping stale plans around if that behavior changes.
       if (!didMove && plan.cursor >= lastIndex) {
@@ -1231,8 +1231,8 @@ export class GameView implements GameMap {
   isValidCoord(x: number, y: number): boolean {
     return this._map.isValidCoord(x, y);
   }
-  isLand(ref: TileRef): boolean {
-    return this._map.isLand(ref);
+  isSector(ref: TileRef): boolean {
+    return this._map.isSector(ref);
   }
   isOceanShore(ref: TileRef): boolean {
     return this._map.isOceanShore(ref);
@@ -1240,8 +1240,8 @@ export class GameView implements GameMap {
   isOcean(ref: TileRef): boolean {
     return this._map.isOcean(ref);
   }
-  isShoreline(ref: TileRef): boolean {
-    return this._map.isShoreline(ref);
+  isSectorBoundary(ref: TileRef): boolean {
+    return this._map.isSectorBoundary(ref);
   }
   magnitude(ref: TileRef): number {
     return this._map.magnitude(ref);
@@ -1267,14 +1267,14 @@ export class GameView implements GameMap {
   neighbors(ref: TileRef): TileRef[] {
     return this._map.neighbors(ref);
   }
-  isWater(ref: TileRef): boolean {
-    return this._map.isWater(ref);
+  isDeepSpace(ref: TileRef): boolean {
+    return this._map.isDeepSpace(ref);
   }
   isLake(ref: TileRef): boolean {
     return this._map.isLake(ref);
   }
-  isShore(ref: TileRef): boolean {
-    return this._map.isShore(ref);
+  isSectorEdge(ref: TileRef): boolean {
+    return this._map.isSectorEdge(ref);
   }
   cost(ref: TileRef): number {
     return this._map.cost(ref);

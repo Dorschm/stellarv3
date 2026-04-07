@@ -266,16 +266,16 @@
     "title": "Elekti lingvon"
   },
   "unit_type": {
-    "city": "Urbo",
-    "defense_post": "Defenda Posteno",
-    "port": "Haveno",
-    "warship": "Militŝipo",
-    "missile_silo": "Misila Silo",
-    "sam_launcher": "SAM-lanĉilo",
-    "atom_bomb": "Atombombo",
-    "hydrogen_bomb": "Hidrogenbombo",
-    "mirv": "MIRV",
-    "factory": "Fabriko"
+    "colony": "Urbo",
+    "defense_station": "Defenda Posteno",
+    "spaceport": "Haveno",
+    "battlecruiser": "Militŝipo",
+    "orbital_strike_platform": "Misila Silo",
+    "point_defense_array": "SAM-lanĉilo",
+    "antimatter_torpedo": "Atombombo",
+    "nova_bomb": "Hidrogenbombo",
+    "cluster_warhead": "MIRV",
+    "foundry": "Fabriko"
   },
   "user_setting": {
     "title": "Uzantparametroj",
@@ -332,8 +332,8 @@
     "attack_ratio_down": "Malpliigi atakkvocienton",
     "attack_ratio_down_desc": "Malpliigi atakkvocienton je 10%",
     "attack_keybinds": "Atakaj Fulmoklavoj",
-    "boat_attack": "Boata Atako",
-    "boat_attack_desc": "Sendi boatan atakon al la kahelo sub via kursoro.",
+    "shuttle_attack": "Boata Atako",
+    "shuttle_attack_desc": "Sendi boatan atakon al la kahelo sub via kursoro.",
     "ground_attack": "Grundatako",
     "ground_attack_desc": "Sendi grundatakon al la kahelo sub via kursoro.",
     "zoom_controls": "Zomaj kontroloj",
@@ -383,7 +383,7 @@
     "help": {
       "troops": "Bonvolu doni al mi soldatojn!",
       "troops_frontlines": "Sendi trupojn al la landlimoj!",
-      "gold": "Bonvolu doni al mi oron!",
+      "credits": "Bonvolu doni al mi oron!",
       "no_attack": "Bonvolu ne ataki min!",
       "sorry_attack": "Pardonu, mi ne intencis ataki.",
       "alliance": "Alianco?",
@@ -392,17 +392,17 @@
     },
     "attack": {
       "attack": "Ataku [P1]!",
-      "mirv": "Lanĉu MIRV-on ĉe [P1]!",
+      "cluster_warhead": "Lanĉu MIRV-on ĉe [P1]!",
       "focus": "Fokusu fajron sur [P1]!",
       "finish": "Ni finigu [P1]!",
-      "build_warships": "Konstruu militŝipojn!"
+      "build_battlecruisers": "Konstruu militŝipojn!"
     },
     "defend": {
       "defend": "Defendu [P1]!",
       "defend_from": "Defendu de [P1]!",
       "dont_attack": "Ne ataku [P1]!",
       "ally": "[P1] estas mia aliancano!",
-      "build_posts": "Konstruu defendajn postenojn!"
+      "build_defense_stations": "Konstruu defendajn postenojn!"
     },
     "greet": {
       "hello": "Saluton!",
@@ -434,7 +434,7 @@
     "warnings": {
       "strong": "[P1] estas forta.",
       "weak": "[P1] estas malforta.",
-      "mirv_soon": "[P1] povas lanĉi MIRV-on baldaŭ!",
+      "cluster_warhead_soon": "[P1] povas lanĉi MIRV-on baldaŭ!",
       "number1_warning": "La #1 ludanto baldaŭ venkos krom se ni kunigos teamon!",
       "stalemate": "Ni faru pacon. Ĉi tio estas malpluirado, ni ambaŭ malvenkos.",
       "has_allies": "[P1] havas multe da aliancanoj.",
@@ -443,8 +443,8 @@
       "betrayed_me": "[P1] perfidis min!",
       "getting_big": "[P1] kreskas tro rapide!",
       "danger_base": "[P1] estas senprotekta!",
-      "saving_for_mirv": "[P1] ŝparas por lanĉi MIRV-on.",
-      "mirv_ready": "[P1] havas sufiĉe da oro por lanĉi MIRV-on!",
+      "saving_for_cluster_warhead": "[P1] ŝparas por lanĉi MIRV-on.",
+      "cluster_warhead_ready": "[P1] havas sufiĉe da oro por lanĉi MIRV-on!",
       "snowballing": "[P1] kreskas tro rapide!",
       "cheating": "[P1] fraŭdas!",
       "stop_trading": "Ĉesu komerci kun [P1]!"
@@ -452,16 +452,16 @@
   },
   "build_menu": {
     "desc": {
-      "atom_bomb": "Eksplodeto",
-      "hydrogen_bomb": "Granda eksplodo",
-      "mirv": "Eksplodego, nur celas selektitaj ludantoj",
-      "missile_silo": "Uzita por lanĉi atombombojn",
-      "sam_launcher": "Defendas kontraŭ alvenantaj atombomboj",
-      "warship": "Kaptas komercŝipojn, detruas ŝipojn kaj boatojn",
-      "port": "Sendas komercŝipojn por produkti oron",
-      "defense_post": "Pligrandigas defendojn de proksimumaj landlimoj",
-      "city": "Pligrandigas maksiman loĝantaron",
-      "factory": "Kreas fervojojn kaj generas trajnojn"
+      "antimatter_torpedo": "Eksplodeto",
+      "nova_bomb": "Granda eksplodo",
+      "cluster_warhead": "Eksplodego, nur celas selektitaj ludantoj",
+      "orbital_strike_platform": "Uzita por lanĉi atombombojn",
+      "point_defense_array": "Defendas kontraŭ alvenantaj atombomboj",
+      "battlecruiser": "Kaptas komercŝipojn, detruas ŝipojn kaj boatojn",
+      "spaceport": "Sendas komercŝipojn por produkti oron",
+      "defense_station": "Pligrandigas defendojn de proksimumaj landlimoj",
+      "colony": "Pligrandigas maksiman loĝantaron",
+      "foundry": "Kreas fervojojn kaj generas trajnojn"
     },
     "not_enough_money": "Ne sufiĉe da mono"
   },
@@ -484,12 +484,12 @@
     "player": "Ludanto",
     "team": "Teamo",
     "owned": "Posedata",
-    "gold": "Oro",
+    "credits": "Oro",
     "troops": "Trupoj",
     "launchers": "Lanĉiloj",
-    "sams": "SAM-oj",
-    "warships": "Militŝipoj",
-    "cities": "Urboj",
+    "point_defense": "SAM-oj",
+    "battlecruisers": "Militŝipoj",
+    "colonies": "Urboj",
     "show_control": "Montri regulilon",
     "show_units": "Montri trupojn"
   },
@@ -558,7 +558,7 @@
     "attack_ratio": "Atakkvociento"
   },
   "player_panel": {
-    "gold": "Oro",
+    "credits": "Oro",
     "troops": "Trupoj",
     "betrayals": "Nombro da perfidoj",
     "traitor": "Perfidulo",
@@ -675,25 +675,25 @@
     "received": "Ricevita",
     "cancelled": "Nuligita",
     "count": "Nombro",
-    "gold": "Oro",
+    "credits": "Oro",
     "workers": "Laboristoj",
     "war": "Milito",
     "trade": "Komerci",
     "steal": "Ŝteli",
     "unit": {
-      "city": "Urbo",
-      "port": "Haveno",
-      "defp": "Defenda Posteno",
-      "saml": "SAM-lanĉilo",
-      "silo": "Misila Silo",
-      "wshp": "Militŝipo",
-      "fact": "Fabriko",
-      "trade": "Komerca ŝipo",
-      "trans": "Transporta ŝipo",
-      "abomb": "Atombombo",
-      "hbomb": "Hidrogenbombo",
-      "mirv": "MIRV",
-      "mirvw": "MIRV-kapo"
+      "colony": "Urbo",
+      "spaceport": "Haveno",
+      "defs": "Defenda Posteno",
+      "pda": "SAM-lanĉilo",
+      "osp": "Misila Silo",
+      "bcrs": "Militŝipo",
+      "fndy": "Fabriko",
+      "tfreight": "Komerca ŝipo",
+      "ashuttle": "Transporta ŝipo",
+      "ator": "Atombombo",
+      "nbomb": "Hidrogenbombo",
+      "cwhead": "MIRV",
+      "cwsub": "MIRV-kapo"
     }
   },
   "game_list": {

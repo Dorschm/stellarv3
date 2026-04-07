@@ -7,9 +7,9 @@ import {
   GameMode,
   GameType,
 } from "../../../core/game/Game";
+import { genAnonUsername } from "../../AnonUsername";
 import { getPlayerCosmetics } from "../../Cosmetics";
 import { crazyGamesSDK } from "../../CrazyGamesSDK";
-import { genAnonUsername } from "../../AnonUsername";
 import { ModalContainer, ModalPage } from "../components/ModalPage";
 import { useClient } from "../contexts/ClientContext";
 import { useNavigation } from "../contexts/NavigationContext";
@@ -70,8 +70,8 @@ export function SinglePlayerModal() {
             playerTeams: 2,
             difficulty: selectedDifficulty,
             bots: 400,
-            infiniteGold: false,
-            donateGold: false,
+            infiniteCredits: false,
+            donateCredits: false,
             donateTroops: false,
             infiniteTroops: false,
             instantBuild: false,

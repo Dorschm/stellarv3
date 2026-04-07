@@ -322,7 +322,7 @@ export class AttackExecution implements Execution {
 
     for (const neighbor of this.mg.neighbors(tile)) {
       if (
-        this.mg.isWater(neighbor) ||
+        this.mg.isDeepSpace(neighbor) ||
         this.mg.owner(neighbor) !== this.target
       ) {
         continue;

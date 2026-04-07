@@ -1,5 +1,9 @@
 import { EventBus, GameEvent } from "../core/EventBus";
-import { GameUpdates, PlayerBuildableUnitType, UnitType } from "../core/game/Game";
+import {
+  GameUpdates,
+  PlayerBuildableUnitType,
+  UnitType,
+} from "../core/game/Game";
 import { UnitView } from "../core/game/GameView";
 import { UserSettings } from "../core/game/UserSettings";
 import { ShowSettingsModalEvent } from "./hud/events";
@@ -15,8 +19,8 @@ import { ReplaySpeedMultiplier } from "./utilities/ReplaySpeedMultiplier";
 export interface UIState {
   attackRatio: number;
   ghostStructure: PlayerBuildableUnitType | null;
-  overlappingRailroads: number[];
-  ghostRailPaths: import("../core/game/GameMap").TileRef[][];
+  overlappingHyperspaceLanes: number[];
+  ghostHyperspaceLanePaths: import("../core/game/GameMap").TileRef[][];
   rocketDirectionUp: boolean;
 }
 
@@ -133,7 +137,7 @@ export class ShowEmojiMenuEvent implements GameEvent {
   ) {}
 }
 
-export class DoBoatAttackEvent implements GameEvent {}
+export class DoShuttleAttackEvent implements GameEvent {}
 
 export class DoGroundAttackEvent implements GameEvent {}
 
@@ -285,7 +289,7 @@ export class InputHandler {
       zoomIn: "KeyE",
       attackRatioDown: "KeyT",
       attackRatioUp: "KeyY",
-      boatAttack: "KeyB",
+      shuttleAttack: "KeyB",
       groundAttack: "KeyG",
       swapDirection: "KeyU",
       modifierKey: isMac ? "MetaLeft" : "ControlLeft",
@@ -309,9 +313,7 @@ export class InputHandler {
     // Pointer events are only registered when a legacy 2D canvas is present.
     // In the R3F path, SpaceMapPlane handles pointer→tile conversion directly.
     if (this.canvas) {
-      this.canvas.addEventListener("pointerdown", (e) =>
-        this.onPointerDown(e),
-      );
+      this.canvas.addEventListener("pointerdown", (e) => this.onPointerDown(e));
       this.canvas.addEventListener(
         "wheel",
         (e) => {
@@ -321,9 +323,7 @@ export class InputHandler {
         },
         { passive: false },
       );
-      this.canvas.addEventListener("contextmenu", (e) =>
-        this.onContextMenu(e),
-      );
+      this.canvas.addEventListener("contextmenu", (e) => this.onContextMenu(e));
     }
     window.addEventListener("pointerup", (e) => this.onPointerUp(e));
     window.addEventListener("pointermove", this.onPointerMove.bind(this));
@@ -527,7 +527,7 @@ export class InputHandler {
 
       if (e.code === this.keybinds.boatAttack) {
         e.preventDefault();
-        this.eventBus.emit(new DoBoatAttackEvent());
+        this.eventBus.emit(new DoShuttleAttackEvent());
       }
 
       if (e.code === this.keybinds.groundAttack) {
@@ -791,16 +791,16 @@ export class InputHandler {
       key: string;
       type: PlayerBuildableUnitType;
     }> = [
-      { key: "buildCity", type: UnitType.City },
-      { key: "buildFactory", type: UnitType.Factory },
-      { key: "buildPort", type: UnitType.Port },
-      { key: "buildDefensePost", type: UnitType.DefensePost },
-      { key: "buildMissileSilo", type: UnitType.MissileSilo },
-      { key: "buildSamLauncher", type: UnitType.SAMLauncher },
-      { key: "buildAtomBomb", type: UnitType.AtomBomb },
-      { key: "buildHydrogenBomb", type: UnitType.HydrogenBomb },
-      { key: "buildWarship", type: UnitType.Warship },
-      { key: "buildMIRV", type: UnitType.MIRV },
+      { key: "buildCity", type: UnitType.Colony },
+      { key: "buildFactory", type: UnitType.Foundry },
+      { key: "buildPort", type: UnitType.Spaceport },
+      { key: "buildDefensePost", type: UnitType.DefenseStation },
+      { key: "buildMissileSilo", type: UnitType.OrbitalStrikePlatform },
+      { key: "buildSamLauncher", type: UnitType.PointDefenseArray },
+      { key: "buildAtomBomb", type: UnitType.AntimatterTorpedo },
+      { key: "buildHydrogenBomb", type: UnitType.NovaBomb },
+      { key: "buildWarship", type: UnitType.Battlecruiser },
+      { key: "buildMIRV", type: UnitType.ClusterWarhead },
     ];
     for (const { key, type } of buildKeybinds) {
       if (this.buildKeybindMatches(code, this.keybinds[key])) return type;

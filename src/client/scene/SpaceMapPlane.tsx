@@ -1,4 +1,11 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ThreeEvent, useFrame } from "@react-three/fiber";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   DataTexture,
   NearestFilter,
@@ -7,24 +14,23 @@ import {
   SRGBColorSpace,
   UnsignedByteType,
 } from "three";
-import { ThreeEvent, useFrame } from "@react-three/fiber";
-import { useGameView } from "../bridge/GameViewContext";
-import { TileRef } from "../../core/game/GameMap";
 import { TerrainType } from "../../core/game/Game";
+import { TileRef } from "../../core/game/GameMap";
 import { UserSettings } from "../../core/game/UserSettings";
 import {
-  MouseUpEvent,
-  ContextMenuEvent,
-  MouseDownEvent,
   AutoUpgradeEvent,
+  ContextMenuEvent,
   DragEvent,
-  TileHoverEvent,
-  TileHoverClearEvent,
+  GhostStructureChangedEvent,
+  MouseDownEvent,
+  MouseUpEvent,
+  SceneTickEvent,
   ShowBuildMenuEvent,
   ShowEmojiMenuEvent,
-  SceneTickEvent,
-  GhostStructureChangedEvent,
+  TileHoverClearEvent,
+  TileHoverEvent,
 } from "../InputHandler";
+import { useGameView } from "../bridge/GameViewContext";
 import { useHUDStore } from "../bridge/HUDStore";
 import {
   isAltKeyPressed,
@@ -58,8 +64,8 @@ function spaceTerrainColor(
   }
 
   switch (terrainType) {
-    case TerrainType.Ocean:
-    case TerrainType.Lake: {
+    case TerrainType.DeepSpace:
+    case TerrainType.DebrisField: {
       if (isShoreline && isWater) {
         // Shoreline water near habitable zones – faint glow
         return { r: 6, g: 5, b: 18 };
@@ -198,9 +204,9 @@ export function SpaceMapPlane(): React.JSX.Element | null {
       const color = spaceTerrainColor(
         game.terrainType(tile),
         game.magnitude(tile),
-        game.isShore(tile),
-        game.isShoreline(tile),
-        game.isWater(tile),
+        game.isSectorEdge(tile),
+        game.isSectorBoundary(tile),
+        game.isDeepSpace(tile),
       );
       terrain[idx] = color.r;
       terrain[idx + 1] = color.g;
@@ -238,8 +244,18 @@ export function SpaceMapPlane(): React.JSX.Element | null {
     compositeBuffers(terrain, territory, composite);
 
     // Create DataTexture backed directly by the composite buffer
-    const data = new Uint8Array(composite.buffer, composite.byteOffset, composite.byteLength);
-    const tex = new DataTexture(data, texWidth, texHeight, RGBAFormat, UnsignedByteType);
+    const data = new Uint8Array(
+      composite.buffer,
+      composite.byteOffset,
+      composite.byteLength,
+    );
+    const tex = new DataTexture(
+      data,
+      texWidth,
+      texHeight,
+      RGBAFormat,
+      UnsignedByteType,
+    );
     tex.flipY = true;
     tex.minFilter = NearestFilter;
     tex.magFilter = NearestFilter;
@@ -259,7 +275,6 @@ export function SpaceMapPlane(): React.JSX.Element | null {
       tex.dispose();
       setTextureReady(false);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [game, texWidth, texHeight]);
 
   // ── Accumulate dirty tiles from every game tick ─────────────────────────
@@ -389,8 +404,7 @@ export function SpaceMapPlane(): React.JSX.Element | null {
       // Click-vs-drag threshold (same 10px as InputHandler). `dragging` is
       // latched during pointermove once the threshold is crossed, so we
       // honor it even if the pointer ends up back near the down position.
-      const dist =
-        Math.abs(e.clientX - down.x) + Math.abs(e.clientY - down.y);
+      const dist = Math.abs(e.clientX - down.x) + Math.abs(e.clientY - down.y);
       const button = down.button;
       const wasDragging = down.dragging;
 
@@ -423,13 +437,7 @@ export function SpaceMapPlane(): React.JSX.Element | null {
         // Honour leftClickOpensMenu user setting
         if (userSettings.leftClickOpensMenu() && !native.shiftKey) {
           eventBus.emit(
-            new ContextMenuEvent(
-              tileX,
-              tileY,
-              true,
-              e.clientX,
-              e.clientY,
-            ),
+            new ContextMenuEvent(tileX, tileY, true, e.clientX, e.clientY),
           );
         } else {
           eventBus.emit(new MouseUpEvent(tileX, tileY, true));

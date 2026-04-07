@@ -1,8 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { GameView, PlayerView } from "../../core/game/GameView";
-import { formatPercentage, renderNumber, renderTroops, translateText } from "../Utils";
-import { useGameTick } from "./useGameTick";
+import { PlayerView } from "../../core/game/GameView";
+import {
+  formatPercentage,
+  renderNumber,
+  renderTroops,
+  translateText,
+} from "../Utils";
 import { GoToPlayerEvent } from "./events";
+import { useGameTick } from "./useGameTick";
 
 interface Entry {
   name: string;
@@ -22,7 +27,9 @@ interface LeaderboardProps {
 function Leaderboard({ visible }: LeaderboardProps): React.JSX.Element {
   const { gameView, eventBus, tick } = useGameTick(1000);
   const [players, setPlayers] = useState<Entry[]>([]);
-  const [sortKey, setSortKey] = useState<"tiles" | "gold" | "maxtroops">("tiles");
+  const [sortKey, setSortKey] = useState<"tiles" | "gold" | "maxtroops">(
+    "tiles",
+  );
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [showTopFive, setShowTopFive] = useState(true);
 
@@ -45,7 +52,7 @@ function Leaderboard({ visible }: LeaderboardProps): React.JSX.Element {
     switch (sortKey) {
       case "gold":
         sorted = sorted.sort((a, b) =>
-          compare(Number(a.gold()), Number(b.gold())),
+          compare(Number(a.credits()), Number(b.credits())),
         );
         break;
       case "maxtroops":
@@ -68,8 +75,10 @@ function Leaderboard({ visible }: LeaderboardProps): React.JSX.Element {
       return {
         name: player.displayName(),
         position: index + 1,
-        score: formatPercentage(player.numTilesOwned() / numTilesWithoutFallout),
-        gold: renderNumber(player.gold()),
+        score: formatPercentage(
+          player.numTilesOwned() / numTilesWithoutFallout,
+        ),
+        gold: renderNumber(player.credits()),
         maxTroops: renderTroops(maxTroopsVal),
         isMyPlayer: player === myPlayer,
         isOnSameTeam:
@@ -101,7 +110,7 @@ function Leaderboard({ visible }: LeaderboardProps): React.JSX.Element {
           score: formatPercentage(
             myPlayer.numTilesOwned() / gameView.numLandTiles(),
           ),
-          gold: renderNumber(myPlayer.gold()),
+          gold: renderNumber(myPlayer.credits()),
           maxTroops: renderTroops(myPlayerMaxTroops),
           isMyPlayer: true,
           isOnSameTeam: true,
@@ -155,33 +164,21 @@ function Leaderboard({ visible }: LeaderboardProps): React.JSX.Element {
             onClick={() => handleSetSort("tiles")}
           >
             {translateText("leaderboard.owned")}
-            {sortKey === "tiles"
-              ? sortOrder === "asc"
-                ? "⬆️"
-                : "⬇️"
-              : ""}
+            {sortKey === "tiles" ? (sortOrder === "asc" ? "⬆️" : "⬇️") : ""}
           </div>
           <div
             className="py-1 md:py-2 text-center border-b border-slate-500 cursor-pointer whitespace-nowrap truncate"
             onClick={() => handleSetSort("gold")}
           >
             {translateText("leaderboard.gold")}
-            {sortKey === "gold"
-              ? sortOrder === "asc"
-                ? "⬆️"
-                : "⬇️"
-              : ""}
+            {sortKey === "gold" ? (sortOrder === "asc" ? "⬆️" : "⬇️") : ""}
           </div>
           <div
             className="py-1 md:py-2 text-center border-b border-slate-500 cursor-pointer whitespace-nowrap truncate"
             onClick={() => handleSetSort("maxtroops")}
           >
             {translateText("leaderboard.maxtroops")}
-            {sortKey === "maxtroops"
-              ? sortOrder === "asc"
-                ? "⬆️"
-                : "⬇️"
-              : ""}
+            {sortKey === "maxtroops" ? (sortOrder === "asc" ? "⬆️" : "⬇️") : ""}
           </div>
         </div>
 

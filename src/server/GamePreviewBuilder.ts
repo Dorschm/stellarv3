@@ -251,7 +251,7 @@ export async function buildPreview(
       if (gc?.gameMapSize && gc.gameMapSize !== "Normal") {
         gameOptions.push(`${gc.gameMapSize} Map`);
       }
-      if (gc?.infiniteGold) gameOptions.push("Infinite Gold");
+      if (gc?.infiniteCredits) gameOptions.push("Infinite Gold");
       if (gc?.infiniteTroops) gameOptions.push("Infinite Troops");
       if (gc?.instantBuild) gameOptions.push("Instant Build");
       if (gc?.randomSpawn) gameOptions.push("Random Spawn");

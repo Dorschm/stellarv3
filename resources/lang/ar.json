@@ -194,15 +194,15 @@
     "title": "اختر اللغة"
   },
   "unit_type": {
-    "city": "مدينة",
-    "defense_post": "نقطة دفاع",
-    "port": "ميناء",
-    "warship": "سفينة حربية",
-    "missile_silo": "منصة صواريخ",
-    "sam_launcher": "قاذف صواريخ مضادة",
-    "atom_bomb": "قنبلة نووية",
-    "hydrogen_bomb": "قنبلة هيدروجينية",
-    "mirv": "MIRV"
+    "colony": "مدينة",
+    "defense_station": "نقطة دفاع",
+    "spaceport": "ميناء",
+    "battlecruiser": "سفينة حربية",
+    "orbital_strike_platform": "منصة صواريخ",
+    "point_defense_array": "قاذف صواريخ مضادة",
+    "antimatter_torpedo": "قنبلة نووية",
+    "nova_bomb": "قنبلة هيدروجينية",
+    "cluster_warhead": "MIRV"
   },
   "user_setting": {
     "title": "إعدادات المستخدم",
@@ -266,7 +266,7 @@
     },
     "help": {
       "troops": "أرجو إرسال قوات!",
-      "gold": "أرجو إرسال ذهب!",
+      "credits": "أرجو إرسال ذهب!",
       "no_attack": "رجاءً لا تهاجمني!",
       "sorry_attack": "عذراً، لم أقصد الهجوم.",
       "alliance": "تحالف؟",
@@ -275,7 +275,7 @@
     },
     "attack": {
       "attack": "هاجم [P1]!",
-      "mirv": "اطلق MIRV على [P1]!",
+      "cluster_warhead": "اطلق MIRV على [P1]!",
       "focus": "ركز النار على [P1]!",
       "finish": "دعونا ننهي [P1]!"
     },
@@ -307,7 +307,7 @@
     "warnings": {
       "strong": "[P1] قوي.",
       "weak": "[P1] ضعيف.",
-      "mirv_soon": "[P1] يمكنه إطلاق MIRV قريبا!",
+      "cluster_warhead_soon": "[P1] يمكنه إطلاق MIRV قريبا!",
       "number1_warning": "اللاعب 1# سيفوز قريبا إلا إذا تحالفنا!",
       "stalemate": "دعنا نعقد سلامًا. هذا طريق مسدود، وسنخسر كلانا.",
       "has_allies": "لدى [P1] العديد من الحلفاء",
@@ -315,8 +315,8 @@
       "betrayed": "[P1] خان حليفه!",
       "getting_big": "[P1] ينمو بسرعة كبيرة!",
       "danger_base": "[P1] غير محمي!",
-      "saving_for_mirv": "[P1] يدخر لإطلاق MIRV!",
-      "mirv_ready": "[P1] يمتلك الذهب الكافي لإطلاق MIRV!"
+      "saving_for_cluster_warhead": "[P1] يدخر لإطلاق MIRV!",
+      "cluster_warhead_ready": "[P1] يمتلك الذهب الكافي لإطلاق MIRV!"
     }
   }
 }

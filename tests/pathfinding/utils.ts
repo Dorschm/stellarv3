@@ -17,8 +17,8 @@ import {
   MapManifest,
 } from "../../src/core/game/TerrainMapLoader";
 import { UserSettings } from "../../src/core/game/UserSettings";
-import { AStarWater } from "../../src/core/pathfinding/algorithms/AStar.Water";
-import { AStarWaterHierarchical } from "../../src/core/pathfinding/algorithms/AStar.WaterHierarchical";
+import { AStarDeepSpace } from "../../src/core/pathfinding/algorithms/AStar.DeepSpace";
+import { AStarDeepSpaceHierarchical } from "../../src/core/pathfinding/algorithms/AStar.DeepSpaceHierarchical";
 import { PathFinding } from "../../src/core/pathfinding/PathFinder";
 import { PathFinderBuilder } from "../../src/core/pathfinding/PathFinderBuilder";
 import { StepperConfig } from "../../src/core/pathfinding/PathFinderStepper";
@@ -71,23 +71,23 @@ export function getAdapter(
 ): SteppingPathFinder<TileRef> {
   switch (name) {
     case "a.baseline": {
-      return PathFinderBuilder.create(new AStarWater(game.miniMap()))
+      return PathFinderBuilder.create(new AStarDeepSpace(game.miniMap()))
         .wrap((pf) => new MiniMapTransformer(pf, game, game.miniMap()))
         .buildWithStepper(tileStepperConfig(game));
     }
     case "a.generic": {
-      // Same as baseline - uses AStarWater on minimap
-      return PathFinderBuilder.create(new AStarWater(game.miniMap()))
+      // Same as baseline - uses AStarDeepSpace on minimap
+      return PathFinderBuilder.create(new AStarDeepSpace(game.miniMap()))
         .wrap((pf) => new MiniMapTransformer(pf, game, game.miniMap()))
         .buildWithStepper(tileStepperConfig(game));
     }
     case "a.full": {
       return PathFinderBuilder.create(
-        new AStarWater(game.map()),
+        new AStarDeepSpace(game.map()),
       ).buildWithStepper(tileStepperConfig(game));
     }
     case "hpa": {
-      // Recreate AStarWaterHierarchical without cache, this approach was chosen
+      // Recreate AStarDeepSpaceHierarchical without cache, this approach was chosen
       // over adding cache toggles to the existing game instance
       // to avoid adding side effect from benchmark to the game
 
@@ -101,9 +101,9 @@ export function getAdapter(
         originalGame._stats,
       );
 
-      (clonedGame as any)._miniWaterHPA = new AStarWaterHierarchical(
+      (clonedGame as any)._miniDeepSpaceHPA = new AStarDeepSpaceHierarchical(
         clonedGame.miniMap(),
-        (clonedGame as any)._miniWaterGraph!,
+        (clonedGame as any)._miniDeepSpaceGraph!,
         { cachePaths: false },
       );
 
@@ -264,10 +264,10 @@ export async function setupFromPath(
       gameType: GameType.Singleplayer,
       difficulty: Difficulty.Medium,
       nations: "default",
-      donateGold: false,
+      donateCredits: false,
       donateTroops: false,
       bots: 0,
-      infiniteGold: false,
+      infiniteCredits: false,
       infiniteTroops: false,
       instantBuild: false,
       randomSpawn: false,

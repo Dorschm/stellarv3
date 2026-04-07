@@ -194,15 +194,15 @@
     "title": "o wile e toki"
   },
   "unit_type": {
-    "city": "ma tomo",
-    "defense_post": "tomo awen",
-    "port": "tomo pi tomo tawa telo",
-    "warship": "tomo tawa telo utala",
-    "missile_silo": "tomo pi ilo pi pakala wawa",
-    "sam_launcher": "ilo tawa pi ilo sewi pi pakala wawa",
-    "atom_bomb": "ilo pi pakala wawa pi kipisi ijo",
-    "hydrogen_bomb": "ilo pi pakala wawa pi wan ijo",
-    "mirv": "ilo pi pakala wawa mute"
+    "colony": "ma tomo",
+    "defense_station": "tomo awen",
+    "spaceport": "tomo pi tomo tawa telo",
+    "battlecruiser": "tomo tawa telo utala",
+    "orbital_strike_platform": "tomo pi ilo pi pakala wawa",
+    "point_defense_array": "ilo tawa pi ilo sewi pi pakala wawa",
+    "antimatter_torpedo": "ilo pi pakala wawa pi kipisi ijo",
+    "nova_bomb": "ilo pi pakala wawa pi wan ijo",
+    "cluster_warhead": "ilo pi pakala wawa mute"
   },
   "user_setting": {
     "title": "ken pi jan musi",
@@ -266,7 +266,7 @@
     },
     "help": {
       "troops": "o pana e kulupu utala tawa mi a!",
-      "gold": "o pana e mani tawa mi a!",
+      "credits": "o pana e mani tawa mi a!",
       "no_attack": "o utala ala e mi a!",
       "sorry_attack": "mi pakala li wile ala utala.",
       "alliance": "sina wile ala wile pona?",
@@ -275,7 +275,7 @@
     },
     "attack": {
       "attack": "o utala e [P1] a!",
-      "mirv": "o pana e ilo pi pakala wawa mute tawa [P1] a!",
+      "cluster_warhead": "o pana e ilo pi pakala wawa mute tawa [P1] a!",
       "focus": "o utala e [P1] taso a!",
       "finish": "o moli e [P1] a!"
     },
@@ -307,7 +307,7 @@
     "warnings": {
       "strong": "[P1] li wawa.",
       "weak": "[P1] li wawa ala.",
-      "mirv_soon": "tenpo kama lili la [P1] li ken pana e ilo pi pakala wawa mute a!",
+      "cluster_warhead_soon": "tenpo kama lili la [P1] li ken pana e ilo pi pakala wawa mute a!",
       "number1_warning": "mi wan ala la tenpo kama lili la jan musi nanpa wan li sewi a!",
       "stalemate": "mi tu o pona. utala ni li sama, mi tu li anpa.",
       "has_allies": "[P1] li jo e jan pona mute.",
@@ -315,8 +315,8 @@
       "betrayed": "[P1] li utala e jan pona ona a!",
       "getting_big": "[P1] li suli wawa a!",
       "danger_base": "[P1] li awen ala a!",
-      "saving_for_mirv": "[P1] li awen tawa ilo pi pakala wawa mute.",
-      "mirv_ready": "[P1] li jo e mani tawa ilo pi pakala wawa mute a!"
+      "saving_for_cluster_warhead": "[P1] li awen tawa ilo pi pakala wawa mute.",
+      "cluster_warhead_ready": "[P1] li jo e mani tawa ilo pi pakala wawa mute a!"
     }
   }
 }

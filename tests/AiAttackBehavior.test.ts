@@ -12,7 +12,7 @@ describe("Ai Attack Behavior", () => {
   // Helper function for basic test setup
   async function setupTestEnvironment() {
     const testGame = await setup("big_plains", {
-      infiniteGold: true,
+      infiniteCredits: true,
       instantBuild: true,
       infiniteTroops: true,
     });
@@ -39,7 +39,7 @@ describe("Ai Attack Behavior", () => {
     // Assign territories
     let landTileCount = 0;
     testGame.map().forEachTile((tile) => {
-      if (!testGame.map().isLand(tile)) return;
+      if (!testGame.map().isSector(tile)) return;
       (landTileCount++ % 2 === 0 ? testBot : testHuman).conquer(tile);
     });
 
@@ -73,7 +73,7 @@ describe("Ai Attack Behavior", () => {
     let assigned = 0;
     game.map().forEachTile((tile) => {
       if (assigned >= totalTiles) return;
-      if (!game.map().isLand(tile)) return;
+      if (!game.map().isSector(tile)) return;
       const player = players[assigned % players.length];
       player.conquer(tile);
       assigned++;

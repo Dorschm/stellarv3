@@ -1,22 +1,24 @@
 import React, { useEffect, useState } from "react";
 import { assetUrl } from "../../core/AssetUrls";
-import {
-  PlayerType,
-  Relation,
-  UnitType,
-} from "../../core/game/Game";
+import { PlayerType, Relation, UnitType } from "../../core/game/Game";
 import { TileRef } from "../../core/game/GameMap";
 import { PlayerView, UnitView } from "../../core/game/GameView";
-import { AllianceView } from "../../core/game/GameUpdates";
-import { getTranslatedPlayerTeamLabel, renderDuration, renderNumber, renderTroops, translateText } from "../Utils";
-import { getFirstPlacePlayer, getPlayerIcons } from "../graphics/PlayerIcons";
-import { ContextMenuEvent, TileHoverEvent, TouchEvent } from "../InputHandler";
-import { ImmunityBarVisibleEvent, SpawnBarVisibleEvent, CloseRadialMenuEvent } from "./events";
-import { useGameTick } from "./useGameTick";
-import { useEventBus } from "../bridge/useEventBus";
 import { useGameView } from "../bridge/GameViewContext";
+import { useEventBus } from "../bridge/useEventBus";
+import { ContextMenuEvent, TileHoverEvent, TouchEvent } from "../InputHandler";
+import {
+  getTranslatedPlayerTeamLabel,
+  renderNumber,
+  renderTroops,
+  translateText,
+} from "../Utils";
+import {
+  CloseRadialMenuEvent,
+  ImmunityBarVisibleEvent,
+  SpawnBarVisibleEvent,
+} from "./events";
+import { useGameTick } from "./useGameTick";
 
-const allianceIcon = assetUrl("images/AllianceIcon.svg");
 const warshipIcon = assetUrl("images/BattleshipIconWhite.svg");
 const cityIcon = assetUrl("images/CityIconWhite.svg");
 const factoryIcon = assetUrl("images/FactoryIconWhite.svg");
@@ -29,7 +31,7 @@ const soldierIcon = assetUrl("images/SoldierIcon.svg");
 function euclideanDistWorld(
   coord: { x: number; y: number },
   tileRef: TileRef,
-  gameView: any
+  gameView: any,
 ): number {
   const x = gameView.x(tileRef);
   const y = gameView.y(tileRef);
@@ -48,7 +50,7 @@ function distSortUnitWorld(coord: { x: number; y: number }, gameView: any) {
 
 export function PlayerInfoOverlay(): React.JSX.Element {
   const { eventBus } = useGameView();
-  const { gameView, tick } = useGameTick();
+  const { gameView } = useGameTick();
   const [player, setPlayer] = useState<PlayerView | null>(null);
   const [playerProfile, setPlayerProfile] = useState<any | null>(null);
   const [unit, setUnit] = useState<UnitView | null>(null);
@@ -119,13 +121,14 @@ export function PlayerInfoOverlay(): React.JSX.Element {
         setPlayerProfile(p);
       });
       setIsInfoVisible(true);
-    } else if (!gameView.isLand(tile)) {
+    } else if (!gameView.isSector(tile)) {
       const units = gameView
-        .units(UnitType.Warship, UnitType.TradeShip, UnitType.TransportShip)
-        .filter(
-          (u) =>
-            euclideanDistWorld(coord, u.tile(), gameView) < 50
+        .units(
+          UnitType.Battlecruiser,
+          UnitType.TradeFreighter,
+          UnitType.AssaultShuttle,
         )
+        .filter((u) => euclideanDistWorld(coord, u.tile(), gameView) < 50)
         .sort(distSortUnitWorld(coord, gameView));
 
       if (units.length > 0) {
@@ -138,7 +141,7 @@ export function PlayerInfoOverlay(): React.JSX.Element {
   const getPlayerNameColor = (
     playerInfo: PlayerView,
     myPlayer: PlayerView | null | undefined,
-    isFriendly: boolean
+    isFriendly: boolean,
   ): string => {
     if (isFriendly) return "text-green-500";
     if (
@@ -168,7 +171,11 @@ export function PlayerInfoOverlay(): React.JSX.Element {
     }
   };
 
-  const displayUnitCount = (playerInfo: PlayerView, type: UnitType, icon: string) => {
+  const displayUnitCount = (
+    playerInfo: PlayerView,
+    type: UnitType,
+    icon: string,
+  ) => {
     return !gameView.config().isUnitDisabled(type)
       ? `<div class="flex items-center justify-center gap-0.5 lg:gap-1 p-0.5 lg:p-1 border rounded-md border-gray-500 text-[10px] lg:text-xs w-9 lg:w-12 h-6 lg:h-7" translate="no">
           <img src="${icon}" class="w-3 h-3 lg:w-4 lg:h-4 object-contain shrink-0" />
@@ -177,19 +184,9 @@ export function PlayerInfoOverlay(): React.JSX.Element {
       : "";
   };
 
-  const allianceExpirationText = (alliance: AllianceView) => {
-    const remainingTicks = alliance.expiresAt - gameView.ticks();
-    let remainingSeconds = 0;
-    if (remainingTicks > 0) {
-      remainingSeconds = Math.max(0, Math.floor(remainingTicks / 10)); // 10 ticks per second
-    }
-    return renderDuration(remainingSeconds);
-  };
-
   const renderPlayerInfo = (playerInfo: PlayerView) => {
     const myPlayer = gameView.myPlayer();
     const isFriendly = myPlayer?.isFriendly(playerInfo);
-    const isAllied = myPlayer?.isAlliedWith(playerInfo);
     const maxTroops = gameView.config().maxTroops(playerInfo);
     const attackingTroops = playerInfo
       .outgoingAttacks()
@@ -213,24 +210,33 @@ export function PlayerInfoOverlay(): React.JSX.Element {
 
     return (
       <div className="flex items-start gap-1 lg:gap-2 p-1 lg:p-1.5">
-        {/* Left: Gold & Troop bar */}
+        {/* Left: Credits & Troop bar */}
         <div className="flex flex-col gap-1 shrink-0 w-28 md:w-36">
           <div className="flex items-center gap-1">
-            <div className="flex flex-1 items-center justify-center px-1 py-0.5 border rounded-md border-yellow-400 font-bold text-yellow-400 text-sm lg:gap-1" translate="no">
+            <div
+              className="flex flex-1 items-center justify-center px-1 py-0.5 border rounded-md border-yellow-400 font-bold text-yellow-400 text-sm lg:gap-1"
+              translate="no"
+            >
               <img src={goldCoinIcon} width="13" height="13" alt="" />
-              <span className="px-0.5">{renderNumber(Number(playerInfo.gold()))}</span>
+              <span className="px-0.5">
+                {renderNumber(Number(playerInfo.credits()))}
+              </span>
             </div>
-            <div className={`flex flex-1 flex-col items-center justify-center text-xs font-bold ${
-              attackingTroops > 0 ? "text-sky-400" : "text-white/40"
-            } drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]`} translate="no">
+            <div
+              className={`flex flex-1 flex-col items-center justify-center text-xs font-bold ${
+                attackingTroops > 0 ? "text-sky-400" : "text-white/40"
+              } drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]`}
+              translate="no"
+            >
               <span className="flex items-center gap-px leading-none text-xs">
                 <img
                   src={soldierIcon}
                   className="w-2.5 h-2.5"
                   style={{
-                    filter: attackingTroops > 0
-                      ? "brightness(0) saturate(100%) invert(62%) sepia(80%) saturate(500%) hue-rotate(175deg) brightness(100%)"
-                      : "brightness(0) invert(1)",
+                    filter:
+                      attackingTroops > 0
+                        ? "brightness(0) saturate(100%) invert(62%) sepia(80%) saturate(500%) hue-rotate(175deg) brightness(100%)"
+                        : "brightness(0) invert(1)",
                     opacity: attackingTroops > 0 ? 1 : 0.4,
                   }}
                   alt=""
@@ -249,7 +255,9 @@ export function PlayerInfoOverlay(): React.JSX.Element {
 
         {/* Right: Player identity */}
         <div className="flex flex-col justify-between self-stretch">
-          <div className={`flex items-center gap-2 font-bold text-sm lg:text-lg ${getPlayerNameColor(playerInfo, myPlayer, isFriendly ?? false)}`}>
+          <div
+            className={`flex items-center gap-2 font-bold text-sm lg:text-lg ${getPlayerNameColor(playerInfo, myPlayer, isFriendly ?? false)}`}
+          >
             {playerInfo.cosmetics.flag ? (
               <img
                 className="h-6 object-contain"
@@ -260,37 +268,109 @@ export function PlayerInfoOverlay(): React.JSX.Element {
             <span>{playerInfo.displayName()}</span>
             {playerTeam !== "" && playerInfo.type() !== PlayerType.Bot ? (
               <div className="flex flex-col leading-tight">
-                <span className="text-gray-400 text-xs font-normal">{playerType}</span>
+                <span className="text-gray-400 text-xs font-normal">
+                  {playerType}
+                </span>
                 <span className="text-xs font-normal text-gray-400">
-                  [<span style={{
-                    color: gameView.config().theme().teamColor(playerInfo.team()!).toHex(),
-                  }}>
+                  [
+                  <span
+                    style={{
+                      color: gameView
+                        .config()
+                        .theme()
+                        .teamColor(playerInfo.team()!)
+                        .toHex(),
+                    }}
+                  >
                     {playerTeam}
-                  </span>]
+                  </span>
+                  ]
                 </span>
               </div>
             ) : (
-              <span className="text-gray-400 text-xs font-normal">{playerType}</span>
+              <span className="text-gray-400 text-xs font-normal">
+                {playerType}
+              </span>
             )}
           </div>
           <div className="flex gap-0.5 lg:gap-1 items-center mt-0.5">
-            {displayUnitCount(playerInfo, UnitType.City, cityIcon) && (
-              <div dangerouslySetInnerHTML={{__html: displayUnitCount(playerInfo, UnitType.City, cityIcon)}} />
+            {displayUnitCount(playerInfo, UnitType.Colony, cityIcon) && (
+              <div
+                dangerouslySetInnerHTML={{
+                  __html: displayUnitCount(
+                    playerInfo,
+                    UnitType.Colony,
+                    cityIcon,
+                  ),
+                }}
+              />
             )}
-            {displayUnitCount(playerInfo, UnitType.Factory, factoryIcon) && (
-              <div dangerouslySetInnerHTML={{__html: displayUnitCount(playerInfo, UnitType.Factory, factoryIcon)}} />
+            {displayUnitCount(playerInfo, UnitType.Foundry, factoryIcon) && (
+              <div
+                dangerouslySetInnerHTML={{
+                  __html: displayUnitCount(
+                    playerInfo,
+                    UnitType.Foundry,
+                    factoryIcon,
+                  ),
+                }}
+              />
             )}
-            {displayUnitCount(playerInfo, UnitType.Port, portIcon) && (
-              <div dangerouslySetInnerHTML={{__html: displayUnitCount(playerInfo, UnitType.Port, portIcon)}} />
+            {displayUnitCount(playerInfo, UnitType.Spaceport, portIcon) && (
+              <div
+                dangerouslySetInnerHTML={{
+                  __html: displayUnitCount(
+                    playerInfo,
+                    UnitType.Spaceport,
+                    portIcon,
+                  ),
+                }}
+              />
             )}
-            {displayUnitCount(playerInfo, UnitType.MissileSilo, missileSiloIcon) && (
-              <div dangerouslySetInnerHTML={{__html: displayUnitCount(playerInfo, UnitType.MissileSilo, missileSiloIcon)}} />
+            {displayUnitCount(
+              playerInfo,
+              UnitType.OrbitalStrikePlatform,
+              missileSiloIcon,
+            ) && (
+              <div
+                dangerouslySetInnerHTML={{
+                  __html: displayUnitCount(
+                    playerInfo,
+                    UnitType.OrbitalStrikePlatform,
+                    missileSiloIcon,
+                  ),
+                }}
+              />
             )}
-            {displayUnitCount(playerInfo, UnitType.SAMLauncher, samLauncherIcon) && (
-              <div dangerouslySetInnerHTML={{__html: displayUnitCount(playerInfo, UnitType.SAMLauncher, samLauncherIcon)}} />
+            {displayUnitCount(
+              playerInfo,
+              UnitType.PointDefenseArray,
+              samLauncherIcon,
+            ) && (
+              <div
+                dangerouslySetInnerHTML={{
+                  __html: displayUnitCount(
+                    playerInfo,
+                    UnitType.PointDefenseArray,
+                    samLauncherIcon,
+                  ),
+                }}
+              />
             )}
-            {displayUnitCount(playerInfo, UnitType.Warship, warshipIcon) && (
-              <div dangerouslySetInnerHTML={{__html: displayUnitCount(playerInfo, UnitType.Warship, warshipIcon)}} />
+            {displayUnitCount(
+              playerInfo,
+              UnitType.Battlecruiser,
+              warshipIcon,
+            ) && (
+              <div
+                dangerouslySetInnerHTML={{
+                  __html: displayUnitCount(
+                    playerInfo,
+                    UnitType.Battlecruiser,
+                    warshipIcon,
+                  ),
+                }}
+              />
             )}
           </div>
         </div>
@@ -301,7 +381,7 @@ export function PlayerInfoOverlay(): React.JSX.Element {
   const renderTroopBar = (
     totalTroops: number,
     attackingTroops: number,
-    maxTroops: number
+    maxTroops: number,
   ) => {
     const base = Math.max(maxTroops, 1);
     const greenPercentRaw = (totalTroops / base) * 100;
@@ -310,7 +390,7 @@ export function PlayerInfoOverlay(): React.JSX.Element {
     const greenPercent = Math.max(0, Math.min(100, greenPercentRaw));
     const orangePercent = Math.max(
       0,
-      Math.min(100 - greenPercent, orangePercentRaw)
+      Math.min(100 - greenPercent, orangePercentRaw),
     );
 
     return (
@@ -329,7 +409,10 @@ export function PlayerInfoOverlay(): React.JSX.Element {
             />
           )}
         </div>
-        <div className="absolute inset-0 flex items-center justify-between px-1.5 text-sm font-bold leading-none pointer-events-none" translate="no">
+        <div
+          className="absolute inset-0 flex items-center justify-between px-1.5 text-sm font-bold leading-none pointer-events-none"
+          translate="no"
+        >
           <span className="text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">
             {renderTroops(totalTroops)}
           </span>
@@ -356,7 +439,9 @@ export function PlayerInfoOverlay(): React.JSX.Element {
 
     return (
       <div className="p-2">
-        <div className={`font-bold mb-1 ${isAlly ? "text-green-500" : "text-white"}`}>
+        <div
+          className={`font-bold mb-1 ${isAlly ? "text-green-500" : "text-white"}`}
+        >
           {unitInfo.owner().displayName()}
         </div>
         <div className="mt-1">
@@ -364,8 +449,10 @@ export function PlayerInfoOverlay(): React.JSX.Element {
           {unitInfo.hasHealth() && (
             <div className="text-sm">Health: {unitInfo.health()}</div>
           )}
-          {unitInfo.type() === UnitType.TransportShip && (
-            <div className="text-sm">Troops: {renderTroops(unitInfo.troops())}</div>
+          {unitInfo.type() === UnitType.AssaultShuttle && (
+            <div className="text-sm">
+              Troops: {renderTroops(unitInfo.troops())}
+            </div>
           )}
         </div>
       </div>

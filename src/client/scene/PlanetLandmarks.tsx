@@ -1,14 +1,9 @@
-import React, { useRef, useMemo } from "react";
-import {
-  Color,
-  Mesh,
-  MeshStandardMaterial,
-  SphereGeometry,
-} from "three";
-import { useFrame } from "@react-three/fiber";
 import { Billboard, Text } from "@react-three/drei";
-import { useGameView } from "../bridge/GameViewContext";
+import { useFrame } from "@react-three/fiber";
+import React, { useMemo, useRef } from "react";
+import { Color, Mesh, MeshStandardMaterial, SphereGeometry } from "three";
 import { Nation } from "../../core/game/TerrainMapLoader";
+import { useGameView } from "../bridge/GameViewContext";
 import { tileToWorld } from "./UnitRenderer";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -47,7 +42,7 @@ const LABEL_COLOR = "#aabbcc";
 function computeNationRadius(
   game: {
     ref(x: number, y: number): number;
-    isLand(tile: number): boolean;
+    isSector(tile: number): boolean;
     width(): number;
     height(): number;
     isValidCoord(x: number, y: number): boolean;
@@ -78,7 +73,7 @@ function computeNationRadius(
         count++;
         break;
       }
-      if (!game.isLand(game.ref(x, y))) {
+      if (!game.isSector(game.ref(x, y))) {
         totalDist += d;
         count++;
         break;

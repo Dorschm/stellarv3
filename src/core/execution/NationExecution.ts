@@ -13,11 +13,11 @@ import { PseudoRandom } from "../PseudoRandom";
 import { GameID } from "../Schemas";
 import { assertNever, simpleHash } from "../Util";
 import { NationAllianceBehavior } from "./nation/NationAllianceBehavior";
+import { NationBattlecruiserBehavior } from "./nation/NationBattlecruiserBehavior";
+import { NationClusterWarheadBehavior } from "./nation/NationClusterWarheadBehavior";
 import { NationEmojiBehavior } from "./nation/NationEmojiBehavior";
-import { NationMIRVBehavior } from "./nation/NationMIRVBehavior";
 import { NationNukeBehavior } from "./nation/NationNukeBehavior";
 import { NationStructureBehavior } from "./nation/NationStructureBehavior";
-import { NationWarshipBehavior } from "./nation/NationWarshipBehavior";
 import { SpawnExecution } from "./SpawnExecution";
 import { AiAttackBehavior } from "./utils/AiAttackBehavior";
 
@@ -26,10 +26,10 @@ export class NationExecution implements Execution {
   private random: PseudoRandom;
   private behaviorsInitialized = false;
   private emojiBehavior!: NationEmojiBehavior;
-  private mirvBehavior!: NationMIRVBehavior;
+  private mirvBehavior!: NationClusterWarheadBehavior;
   private attackBehavior!: AiAttackBehavior;
   private allianceBehavior!: NationAllianceBehavior;
-  private warshipBehavior!: NationWarshipBehavior;
+  private warshipBehavior!: NationBattlecruiserBehavior;
   private nukeBehavior!: NationNukeBehavior;
   private structureBehavior!: NationStructureBehavior;
   private mg: Game;
@@ -184,7 +184,7 @@ export class NationExecution implements Execution {
     this.warshipBehavior.maybeSpawnWarship();
     this.handleEmbargoesToHostileNations();
     this.attackBehavior.maybeAttack();
-    this.warshipBehavior.counterWarshipInfestation();
+    this.warshipBehavior.counterBattlecruiserInfestation();
     this.nukeBehavior.maybeSendNuke();
   }
 
@@ -196,7 +196,7 @@ export class NationExecution implements Execution {
       this.mg,
       this.player,
     );
-    this.mirvBehavior = new NationMIRVBehavior(
+    this.mirvBehavior = new NationClusterWarheadBehavior(
       this.random,
       this.mg,
       this.player,
@@ -208,7 +208,7 @@ export class NationExecution implements Execution {
       this.player,
       this.emojiBehavior,
     );
-    this.warshipBehavior = new NationWarshipBehavior(
+    this.warshipBehavior = new NationBattlecruiserBehavior(
       this.random,
       this.mg,
       this.player,
@@ -253,7 +253,7 @@ export class NationExecution implements Execution {
         continue;
       }
       const tile = this.mg.ref(x, y);
-      if (this.mg.isLand(tile) && !this.mg.hasOwner(tile)) {
+      if (this.mg.isSector(tile) && !this.mg.hasOwner(tile)) {
         if (
           this.mg.terrainType(tile) === TerrainType.Mountain &&
           this.random.chance(2)

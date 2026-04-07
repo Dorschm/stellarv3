@@ -274,7 +274,7 @@ ctx.addEventListener("message", async (e: MessageEvent<MainThreadMessage>) => {
       }
 
       try {
-        const spawnTile = (await gameRunner).bestTransportShipSpawn(
+        const spawnTile = (await gameRunner).bestShuttleSpawn(
           message.playerID,
           message.targetTile,
         );

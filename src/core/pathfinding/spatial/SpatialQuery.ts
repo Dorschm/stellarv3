@@ -2,19 +2,19 @@ import { Game, Player, TerraNullius } from "../../game/Game";
 import { TileRef } from "../../game/GameMap";
 import { DebugSpan } from "../../utilities/DebugSpan";
 import { PathFinding } from "../PathFinder";
-import { AStarWaterBounded } from "../algorithms/AStar.WaterBounded";
+import { AStarDeepSpaceBounded } from "../algorithms/AStar.DeepSpaceBounded";
 
 type Owner = Player | TerraNullius;
 
 const REFINE_MAX_SEARCH_AREA = 100 * 100;
 
 export class SpatialQuery {
-  private boundedAStar: AStarWaterBounded | null = null;
+  private boundedAStar: AStarDeepSpaceBounded | null = null;
 
   constructor(private game: Game) {}
 
-  private getBoundedAStar(): AStarWaterBounded {
-    this.boundedAStar ??= new AStarWaterBounded(
+  private getBoundedAStar(): AStarDeepSpaceBounded {
+    this.boundedAStar ??= new AStarDeepSpaceBounded(
       this.game.map(),
       REFINE_MAX_SEARCH_AREA,
     );
@@ -57,7 +57,7 @@ export class SpatialQuery {
    * Find closest shore tile by land BFS.
    * Works for both players and terra nullius.
    */
-  closestShore(
+  closestSectorEdge(
     owner: Owner,
     tile: TileRef,
     maxDist: number = 50,
@@ -66,7 +66,7 @@ export class SpatialQuery {
     const ownerId = owner.smallID();
 
     const isValidTile = (t: TileRef) => {
-      if (!gm.isShore(t) || !gm.isLand(t)) return false;
+      if (!gm.isSectorEdge(t) || !gm.isSector(t)) return false;
       const tOwner = gm.ownerID(t);
       return tOwner === ownerId;
     };
@@ -78,22 +78,22 @@ export class SpatialQuery {
    * Find closest shore tile by water pathfinding.
    * Returns null for terra nullius (no borderTiles).
    */
-  closestShoreByWater(owner: Owner, target: TileRef): TileRef | null {
-    return DebugSpan.wrap("SpatialQuery.closestShoreByWater", () => {
+  closestSectorEdgeByWater(owner: Owner, target: TileRef): TileRef | null {
+    return DebugSpan.wrap("SpatialQuery.closestSectorEdgeByWater", () => {
       if (!owner.isPlayer()) return null;
 
       const gm = this.game;
       const player = owner as Player;
 
       // Target must be water or shore (land adjacent to water)
-      if (!gm.isWater(target) && !gm.isShore(target)) return null;
+      if (!gm.isDeepSpace(target) && !gm.isSectorEdge(target)) return null;
 
-      const targetComponent = gm.getWaterComponent(target);
+      const targetComponent = gm.getDeepSpaceComponent(target);
       if (targetComponent === null) return null;
 
       const isValidTile = (t: TileRef) => {
-        if (!gm.isShore(t) || !gm.isLand(t)) return false;
-        const tComponent = gm.getWaterComponent(t);
+        if (!gm.isSectorEdge(t) || !gm.isSector(t)) return false;
+        const tComponent = gm.getDeepSpaceComponent(t);
         return tComponent === targetComponent;
       };
 

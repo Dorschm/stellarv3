@@ -1,18 +1,18 @@
 // @vitest-environment node
-import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import { Group, Matrix4 } from "three";
-import { TrainType, UnitType } from "../../../src/core/game/Game";
-import type { UnitView } from "../../../src/core/game/GameView";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   ALL_RENDER_KEYS,
   createBaseTransform,
   INTERP_DURATION_MS,
   RenderKey,
-  UnitRendererEngine,
-  UnitRendererGameView,
   renderKeyFor,
   tileToWorld,
+  UnitRendererEngine,
+  UnitRendererGameView,
 } from "../../../src/client/scene/UnitRenderer";
+import { FrigateType, UnitType } from "../../../src/core/game/Game";
+import type { UnitView } from "../../../src/core/game/GameView";
 
 // ─── Deterministic mocks ────────────────────────────────────────────────────
 //
@@ -26,7 +26,7 @@ interface FakeUnitViewOptions {
   type: UnitType;
   tile: number;
   lastTile?: number;
-  trainType?: TrainType;
+  frigateType?: FrigateType;
   isLoaded?: boolean;
   territoryColor?: string;
 }
@@ -40,7 +40,7 @@ function fakeUnit(opts: FakeUnitViewOptions): UnitView {
     type: () => opts.type,
     tile: () => opts.tile,
     lastTile: () => last,
-    trainType: () => opts.trainType,
+    frigateType: () => opts.frigateType,
     isLoaded: () => opts.isLoaded,
     owner: () => ({
       territoryColor: () => ({
@@ -64,7 +64,7 @@ function fakeGame(
     x: (tile: number) => tile % width,
     y: (tile: number) => Math.floor(tile / width),
     units: () => units,
-    isLand: () => true,
+    isSector: () => true,
     nations: () => [],
   };
 }
@@ -76,15 +76,15 @@ const tileOf = (x: number, y: number, width = 100) => y * width + x;
 describe("renderKeyFor", () => {
   it("maps every ticketed mobile unit type to its own render key", () => {
     const cases: Array<[UnitType, UnitType]> = [
-      [UnitType.TransportShip, UnitType.TransportShip],
-      [UnitType.Warship, UnitType.Warship],
-      [UnitType.TradeShip, UnitType.TradeShip],
-      [UnitType.Shell, UnitType.Shell],
-      [UnitType.SAMMissile, UnitType.SAMMissile],
-      [UnitType.AtomBomb, UnitType.AtomBomb],
-      [UnitType.HydrogenBomb, UnitType.HydrogenBomb],
-      [UnitType.MIRV, UnitType.MIRV],
-      [UnitType.MIRVWarhead, UnitType.MIRVWarhead],
+      [UnitType.AssaultShuttle, UnitType.AssaultShuttle],
+      [UnitType.Battlecruiser, UnitType.Battlecruiser],
+      [UnitType.TradeFreighter, UnitType.TradeFreighter],
+      [UnitType.PlasmaBolt, UnitType.PlasmaBolt],
+      [UnitType.PointDefenseMissile, UnitType.PointDefenseMissile],
+      [UnitType.AntimatterTorpedo, UnitType.AntimatterTorpedo],
+      [UnitType.NovaBomb, UnitType.NovaBomb],
+      [UnitType.ClusterWarhead, UnitType.ClusterWarhead],
+      [UnitType.ClusterWarheadSubmunition, UnitType.ClusterWarheadSubmunition],
     ];
     for (const [type, expected] of cases) {
       const u = fakeUnit({ id: 1, type, tile: 0 });
@@ -94,12 +94,12 @@ describe("renderKeyFor", () => {
 
   it("maps every ticketed structure type to its own render key", () => {
     const structures = [
-      UnitType.City,
-      UnitType.Port,
-      UnitType.Factory,
-      UnitType.MissileSilo,
-      UnitType.DefensePost,
-      UnitType.SAMLauncher,
+      UnitType.Colony,
+      UnitType.Spaceport,
+      UnitType.Foundry,
+      UnitType.OrbitalStrikePlatform,
+      UnitType.DefenseStation,
+      UnitType.PointDefenseArray,
     ];
     for (const type of structures) {
       const u = fakeUnit({ id: 1, type, tile: 0 });
@@ -110,28 +110,28 @@ describe("renderKeyFor", () => {
   it("splits Train units into Engine/Carriage/LoadedCarriage subtypes", () => {
     const engine = fakeUnit({
       id: 1,
-      type: UnitType.Train,
+      type: UnitType.Frigate,
       tile: 0,
-      trainType: TrainType.Engine,
+      frigateType: FrigateType.Engine,
     });
     const tailEngine = fakeUnit({
       id: 2,
-      type: UnitType.Train,
+      type: UnitType.Frigate,
       tile: 0,
-      trainType: TrainType.TailEngine,
+      frigateType: FrigateType.TailEngine,
     });
     const emptyCar = fakeUnit({
       id: 3,
-      type: UnitType.Train,
+      type: UnitType.Frigate,
       tile: 0,
-      trainType: TrainType.Carriage,
+      frigateType: FrigateType.Carriage,
       isLoaded: false,
     });
     const loadedCar = fakeUnit({
       id: 4,
-      type: UnitType.Train,
+      type: UnitType.Frigate,
       tile: 0,
-      trainType: TrainType.Carriage,
+      frigateType: FrigateType.Carriage,
       isLoaded: true,
     });
 
@@ -146,24 +146,24 @@ describe("renderKeyFor", () => {
     // tests above also gaining coverage. This guards against silent drift
     // when new unit types are added to the ticket's shape table.
     const expected: RenderKey[] = [
-      UnitType.TransportShip,
-      UnitType.Warship,
-      UnitType.TradeShip,
+      UnitType.AssaultShuttle,
+      UnitType.Battlecruiser,
+      UnitType.TradeFreighter,
       "TrainEngine",
       "TrainCarriage",
       "TrainLoadedCarriage",
-      UnitType.Shell,
-      UnitType.SAMMissile,
-      UnitType.AtomBomb,
-      UnitType.HydrogenBomb,
-      UnitType.MIRV,
-      UnitType.MIRVWarhead,
-      UnitType.City,
-      UnitType.Port,
-      UnitType.Factory,
-      UnitType.MissileSilo,
-      UnitType.DefensePost,
-      UnitType.SAMLauncher,
+      UnitType.PlasmaBolt,
+      UnitType.PointDefenseMissile,
+      UnitType.AntimatterTorpedo,
+      UnitType.NovaBomb,
+      UnitType.ClusterWarhead,
+      UnitType.ClusterWarheadSubmunition,
+      UnitType.Colony,
+      UnitType.Spaceport,
+      UnitType.Foundry,
+      UnitType.OrbitalStrikePlatform,
+      UnitType.DefenseStation,
+      UnitType.PointDefenseArray,
     ];
     expect(new Set(ALL_RENDER_KEYS)).toEqual(new Set(expected));
     expect(ALL_RENDER_KEYS.length).toBe(expected.length);
@@ -176,9 +176,9 @@ describe("createBaseTransform", () => {
     // to +Z so transports/trade ships/SAM missiles read as upright in the
     // Z-up scene instead of lying across the map plane.
     for (const type of [
-      UnitType.TransportShip,
-      UnitType.TradeShip,
-      UnitType.SAMMissile,
+      UnitType.AssaultShuttle,
+      UnitType.TradeFreighter,
+      UnitType.PointDefenseMissile,
     ]) {
       const t = createBaseTransform(type);
       expect(t.rotation).toEqual([Math.PI / 2, 0, 0]);
@@ -187,22 +187,20 @@ describe("createBaseTransform", () => {
 
   it("stands the City hemisphere and MissileSilo disk upright along +Z", () => {
     // The dome primitive and the flat silo disk share the same Y→Z fix.
-    expect(createBaseTransform(UnitType.City).rotation).toEqual([
+    expect(createBaseTransform(UnitType.Colony).rotation).toEqual([
       Math.PI / 2,
       0,
       0,
     ]);
-    expect(createBaseTransform(UnitType.MissileSilo).rotation).toEqual([
-      Math.PI / 2,
-      0,
-      0,
-    ]);
+    expect(
+      createBaseTransform(UnitType.OrbitalStrikePlatform).rotation,
+    ).toEqual([Math.PI / 2, 0, 0]);
   });
 
   it("inverts the SAMLauncher cone so its tip points into the map plane", () => {
     // -π/2 around X maps +Y → -Z, giving the funnel/launcher look with the
     // wide base on top.
-    expect(createBaseTransform(UnitType.SAMLauncher).rotation).toEqual([
+    expect(createBaseTransform(UnitType.PointDefenseArray).rotation).toEqual([
       -Math.PI / 2,
       0,
       0,
@@ -213,7 +211,7 @@ describe("createBaseTransform", () => {
     // TorusGeometry sweeps around +Z by default, so in a Z-up world it is
     // already flat on the map. Any non-identity rotation would tip it onto
     // its side — guard against regressions.
-    const t = createBaseTransform(UnitType.Port);
+    const t = createBaseTransform(UnitType.Spaceport);
     expect(t.rotation).toEqual([0, 0, 0]);
     expect(t.scale).toEqual([2, 2, 2]); // structure scale multiplier
     expect(t.offset).toEqual([0, 0, 0]);
@@ -221,14 +219,14 @@ describe("createBaseTransform", () => {
 
   it("returns identity transforms for proxies without an axial orientation", () => {
     for (const type of [
-      UnitType.Warship,
-      UnitType.Factory,
-      UnitType.DefensePost,
-      UnitType.Shell,
-      UnitType.AtomBomb,
-      UnitType.HydrogenBomb,
-      UnitType.MIRV,
-      UnitType.MIRVWarhead,
+      UnitType.Battlecruiser,
+      UnitType.Foundry,
+      UnitType.DefenseStation,
+      UnitType.PlasmaBolt,
+      UnitType.AntimatterTorpedo,
+      UnitType.NovaBomb,
+      UnitType.ClusterWarhead,
+      UnitType.ClusterWarheadSubmunition,
     ]) {
       expect(createBaseTransform(type).rotation).toEqual([0, 0, 0]);
     }
@@ -260,46 +258,46 @@ describe("UnitRendererEngine instance-count lifecycle", () => {
 
   it("writes one instance per spawned unit and zeroes empty pools", () => {
     const units: UnitView[] = [
-      fakeUnit({ id: 1, type: UnitType.Warship, tile: tileOf(10, 10) }),
-      fakeUnit({ id: 2, type: UnitType.Warship, tile: tileOf(20, 20) }),
-      fakeUnit({ id: 3, type: UnitType.City, tile: tileOf(30, 30) }),
+      fakeUnit({ id: 1, type: UnitType.Battlecruiser, tile: tileOf(10, 10) }),
+      fakeUnit({ id: 2, type: UnitType.Battlecruiser, tile: tileOf(20, 20) }),
+      fakeUnit({ id: 3, type: UnitType.Colony, tile: tileOf(30, 30) }),
     ];
     engine.update(fakeGame(units), 1000);
 
-    expect(engine.pools.get(UnitType.Warship)!.mesh.count).toBe(2);
-    expect(engine.pools.get(UnitType.City)!.mesh.count).toBe(1);
+    expect(engine.pools.get(UnitType.Battlecruiser)!.mesh.count).toBe(2);
+    expect(engine.pools.get(UnitType.Colony)!.mesh.count).toBe(1);
     // Every other pool should report zero instances — a regression that
     // leaves stale counts would show up here.
     for (const key of ALL_RENDER_KEYS) {
-      if (key === UnitType.Warship || key === UnitType.City) continue;
+      if (key === UnitType.Battlecruiser || key === UnitType.Colony) continue;
       expect(engine.pools.get(key)!.mesh.count).toBe(0);
     }
   });
 
   it("decrements mesh.count when units despawn between frames", () => {
     const t = tileOf(5, 5);
-    const warship1 = fakeUnit({ id: 1, type: UnitType.Warship, tile: t });
-    const warship2 = fakeUnit({ id: 2, type: UnitType.Warship, tile: t });
+    const warship1 = fakeUnit({ id: 1, type: UnitType.Battlecruiser, tile: t });
+    const warship2 = fakeUnit({ id: 2, type: UnitType.Battlecruiser, tile: t });
     engine.update(fakeGame([warship1, warship2]), 1000);
-    expect(engine.pools.get(UnitType.Warship)!.mesh.count).toBe(2);
+    expect(engine.pools.get(UnitType.Battlecruiser)!.mesh.count).toBe(2);
 
     // Despawn warship2
     engine.update(fakeGame([warship1]), 1000);
-    expect(engine.pools.get(UnitType.Warship)!.mesh.count).toBe(1);
+    expect(engine.pools.get(UnitType.Battlecruiser)!.mesh.count).toBe(1);
 
     // Despawn the rest
     engine.update(fakeGame([]), 1000);
-    expect(engine.pools.get(UnitType.Warship)!.mesh.count).toBe(0);
+    expect(engine.pools.get(UnitType.Battlecruiser)!.mesh.count).toBe(0);
   });
 
   it("grows the pool past its initial capacity instead of dropping units", () => {
     // Start with 4-slot pool, push 6 warships → engine should double capacity.
     const many: UnitView[] = Array.from({ length: 6 }, (_, i) =>
-      fakeUnit({ id: i + 1, type: UnitType.Warship, tile: tileOf(i, 0) }),
+      fakeUnit({ id: i + 1, type: UnitType.Battlecruiser, tile: tileOf(i, 0) }),
     );
     engine.update(fakeGame(many), 1000);
 
-    const pool = engine.pools.get(UnitType.Warship)!;
+    const pool = engine.pools.get(UnitType.Battlecruiser)!;
     expect(pool.capacity).toBeGreaterThanOrEqual(6);
     expect(pool.mesh.count).toBe(6);
   });
@@ -309,14 +307,14 @@ describe("UnitRendererEngine instance-count lifecycle", () => {
     const t1 = tileOf(6, 5);
     const ship = fakeUnit({
       id: 42,
-      type: UnitType.TransportShip,
+      type: UnitType.AssaultShuttle,
       tile: t0,
     });
     engine.update(fakeGame([ship]), 0);
     // Move the ship so the engine opens an interp entry.
     const moved = fakeUnit({
       id: 42,
-      type: UnitType.TransportShip,
+      type: UnitType.AssaultShuttle,
       tile: t1,
       lastTile: t0,
     });
@@ -354,7 +352,7 @@ describe("UnitRendererEngine mobile-unit interpolation", () => {
     // Frame 1: seed lastKnownTile for the ship at prevTile (no movement yet).
     const seed = fakeUnit({
       id: 7,
-      type: UnitType.TransportShip,
+      type: UnitType.AssaultShuttle,
       tile: prevTile,
     });
     engine.update(fakeGame([seed], { width, height: width }), 0);
@@ -364,7 +362,7 @@ describe("UnitRendererEngine mobile-unit interpolation", () => {
     // Frame 2: ship moved to curTile → interp opens with start=1000.
     const moved = fakeUnit({
       id: 7,
-      type: UnitType.TransportShip,
+      type: UnitType.AssaultShuttle,
       tile: curTile,
       lastTile: prevTile,
     });
@@ -411,13 +409,13 @@ describe("UnitRendererEngine mobile-unit interpolation", () => {
     // should never push an entry into interpMap.
     const a = fakeUnit({
       id: 99,
-      type: UnitType.MissileSilo,
+      type: UnitType.OrbitalStrikePlatform,
       tile: tileOf(10, 10),
     });
     engine.update(fakeGame([a]), 0);
     const b = fakeUnit({
       id: 99,
-      type: UnitType.MissileSilo,
+      type: UnitType.OrbitalStrikePlatform,
       tile: tileOf(11, 10),
       lastTile: tileOf(10, 10),
     });
@@ -454,10 +452,10 @@ describe("tile-to-world centering", () => {
     const tileY = 20;
     const tile = tileOf(tileX, tileY, width);
 
-    const city = fakeUnit({ id: 1, type: UnitType.City, tile });
+    const city = fakeUnit({ id: 1, type: UnitType.Colony, tile });
     engine.update(fakeGame([city], { width, height }), 0);
 
-    const mesh = engine.pools.get(UnitType.City)!.mesh;
+    const mesh = engine.pools.get(UnitType.Colony)!.mesh;
     const mat = new Matrix4();
     mesh.getMatrixAt(0, mat);
     // Matrix4 column-major: elements[12]=tx, elements[13]=ty
@@ -476,12 +474,12 @@ describe("structure grounding", () => {
     const tile = tileOf(50, 50, width);
 
     const structureKeys: UnitType[] = [
-      UnitType.City,
-      UnitType.Port,
-      UnitType.Factory,
-      UnitType.MissileSilo,
-      UnitType.DefensePost,
-      UnitType.SAMLauncher,
+      UnitType.Colony,
+      UnitType.Spaceport,
+      UnitType.Foundry,
+      UnitType.OrbitalStrikePlatform,
+      UnitType.DefenseStation,
+      UnitType.PointDefenseArray,
     ];
 
     for (const key of structureKeys) {
@@ -514,12 +512,12 @@ describe("structure grounding", () => {
     // Collect all structure grounding offsets — they should not all be equal
     const offsets = new Set<number>();
     const structureKeys: UnitType[] = [
-      UnitType.City,
-      UnitType.Port,
-      UnitType.Factory,
-      UnitType.MissileSilo,
-      UnitType.DefensePost,
-      UnitType.SAMLauncher,
+      UnitType.Colony,
+      UnitType.Spaceport,
+      UnitType.Foundry,
+      UnitType.OrbitalStrikePlatform,
+      UnitType.DefenseStation,
+      UnitType.PointDefenseArray,
     ];
     for (const key of structureKeys) {
       const entry = engine.registry.get(key)!;

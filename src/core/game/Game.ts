@@ -10,8 +10,8 @@ import {
   PlayerUpdate,
   UnitUpdate,
 } from "./GameUpdates";
+import { HyperspaceLaneNetwork } from "./HyperspaceLaneNetwork";
 import { MotionPlanRecord } from "./MotionPlans";
-import { RailNetwork } from "./RailNetwork";
 import { Stats } from "./Stats";
 import { UnitPredicate } from "./UnitGrid";
 
@@ -24,7 +24,7 @@ function isEnumValue<T extends Record<string, string | number>>(
 
 export type PlayerID = string;
 export type Tick = number;
-export type Gold = bigint;
+export type Credits = bigint;
 
 export const AllPlayers = "AllPlayers" as const;
 
@@ -126,17 +126,17 @@ export interface PublicGameModifiers {
   isRandomSpawn?: boolean;
   isCrowded?: boolean;
   isHardNations?: boolean;
-  startingGold?: number;
-  goldMultiplier?: number;
+  startingCredits?: number;
+  creditMultiplier?: number;
   isAlliancesDisabled?: boolean;
-  isPortsDisabled?: boolean;
+  isSpaceportsDisabled?: boolean;
   isNukesDisabled?: boolean;
-  isSAMsDisabled?: boolean;
+  isPointDefenseDisabled?: boolean;
   isPeaceTime?: boolean;
 }
 
 export interface UnitInfo {
-  cost: (game: Game, player: Player) => Gold;
+  cost: (game: Game, player: Player) => Credits;
   maxHealth?: number;
   damage?: number;
   constructionDuration?: number;
@@ -153,51 +153,51 @@ function unitTypeGroup<T extends readonly UnitType[]>(types: T) {
 }
 
 export enum UnitType {
-  TransportShip = "Transport",
-  Warship = "Warship",
-  Shell = "Shell",
-  SAMMissile = "SAMMissile",
-  Port = "Port",
-  AtomBomb = "Atom Bomb",
-  HydrogenBomb = "Hydrogen Bomb",
-  TradeShip = "Trade Ship",
-  MissileSilo = "Missile Silo",
-  DefensePost = "Defense Post",
-  SAMLauncher = "SAM Launcher",
-  City = "City",
-  MIRV = "MIRV",
-  MIRVWarhead = "MIRV Warhead",
-  Train = "Train",
-  Factory = "Factory",
+  AssaultShuttle = "Assault Shuttle",
+  Battlecruiser = "Battlecruiser",
+  PlasmaBolt = "Plasma Bolt",
+  PointDefenseMissile = "PointDefenseMissile",
+  Spaceport = "Spaceport",
+  AntimatterTorpedo = "Antimatter Torpedo",
+  NovaBomb = "Nova Bomb",
+  TradeFreighter = "Trade Freighter",
+  OrbitalStrikePlatform = "Orbital Strike Platform",
+  DefenseStation = "Defense Station",
+  PointDefenseArray = "Point Defense Array",
+  Colony = "Colony",
+  ClusterWarhead = "Cluster Warhead",
+  ClusterWarheadSubmunition = "Cluster Warhead Submunition",
+  Frigate = "Frigate",
+  Foundry = "Foundry",
 }
 
-export enum TrainType {
+export enum FrigateType {
   Engine = "Engine",
   TailEngine = "TailEngine",
   Carriage = "Carriage",
 }
 
 export const Nukes = unitTypeGroup([
-  UnitType.AtomBomb,
-  UnitType.HydrogenBomb,
-  UnitType.MIRVWarhead,
-  UnitType.MIRV,
+  UnitType.AntimatterTorpedo,
+  UnitType.NovaBomb,
+  UnitType.ClusterWarheadSubmunition,
+  UnitType.ClusterWarhead,
 ] as const);
 
 export const BuildableAttacks = unitTypeGroup([
-  UnitType.AtomBomb,
-  UnitType.HydrogenBomb,
-  UnitType.MIRV,
-  UnitType.Warship,
+  UnitType.AntimatterTorpedo,
+  UnitType.NovaBomb,
+  UnitType.ClusterWarhead,
+  UnitType.Battlecruiser,
 ] as const);
 
 export const Structures = unitTypeGroup([
-  UnitType.City,
-  UnitType.DefensePost,
-  UnitType.SAMLauncher,
-  UnitType.MissileSilo,
-  UnitType.Port,
-  UnitType.Factory,
+  UnitType.Colony,
+  UnitType.DefenseStation,
+  UnitType.PointDefenseArray,
+  UnitType.OrbitalStrikePlatform,
+  UnitType.Spaceport,
+  UnitType.Foundry,
 ] as const);
 
 export const BuildMenus = unitTypeGroup([
@@ -207,7 +207,7 @@ export const BuildMenus = unitTypeGroup([
 
 export const PlayerBuildable = unitTypeGroup([
   ...BuildMenus.types,
-  UnitType.TransportShip,
+  UnitType.AssaultShuttle,
 ] as const);
 
 export type PlayerBuildableUnitType = (typeof PlayerBuildable.types)[number];
@@ -221,57 +221,57 @@ export type TrajectoryTile = {
   targetable: boolean;
 };
 export interface UnitParamsMap {
-  [UnitType.TransportShip]: {
+  [UnitType.AssaultShuttle]: {
     troops?: number;
     targetTile?: TileRef;
   };
 
-  [UnitType.Warship]: {
+  [UnitType.Battlecruiser]: {
     patrolTile: TileRef;
   };
 
-  [UnitType.Shell]: Record<string, never>;
+  [UnitType.PlasmaBolt]: Record<string, never>;
 
-  [UnitType.SAMMissile]: Record<string, never>;
+  [UnitType.PointDefenseMissile]: Record<string, never>;
 
-  [UnitType.Port]: Record<string, never>;
+  [UnitType.Spaceport]: Record<string, never>;
 
-  [UnitType.AtomBomb]: {
+  [UnitType.AntimatterTorpedo]: {
     targetTile?: number;
     trajectory: TrajectoryTile[];
   };
 
-  [UnitType.HydrogenBomb]: {
+  [UnitType.NovaBomb]: {
     targetTile?: number;
     trajectory: TrajectoryTile[];
   };
 
-  [UnitType.TradeShip]: {
+  [UnitType.TradeFreighter]: {
     targetUnit: Unit;
-    lastSetSafeFromPirates?: number;
+    lastSetSafeFromRaiders?: number;
   };
 
-  [UnitType.Train]: {
-    trainType: TrainType;
+  [UnitType.Frigate]: {
+    frigateType: FrigateType;
     targetUnit?: Unit;
     loaded?: boolean;
   };
 
-  [UnitType.Factory]: Record<string, never>;
+  [UnitType.Foundry]: Record<string, never>;
 
-  [UnitType.MissileSilo]: Record<string, never>;
+  [UnitType.OrbitalStrikePlatform]: Record<string, never>;
 
-  [UnitType.DefensePost]: Record<string, never>;
+  [UnitType.DefenseStation]: Record<string, never>;
 
-  [UnitType.SAMLauncher]: Record<string, never>;
+  [UnitType.PointDefenseArray]: Record<string, never>;
 
-  [UnitType.City]: Record<string, never>;
+  [UnitType.Colony]: Record<string, never>;
 
-  [UnitType.MIRV]: {
+  [UnitType.ClusterWarhead]: {
     targetTile?: number;
   };
 
-  [UnitType.MIRVWarhead]: {
+  [UnitType.ClusterWarheadSubmunition]: {
     targetTile?: number;
   };
 }
@@ -323,8 +323,8 @@ export enum TerrainType {
   Plains,
   Highland,
   Mountain,
-  Lake,
-  Ocean,
+  DebrisField,
+  DeepSpace,
 }
 
 export enum PlayerType {
@@ -352,7 +352,7 @@ export interface Attack {
   setTroops(troops: number): void;
   isActive(): boolean;
   delete(): void;
-  // The tile the attack originated from, mostly used for boat attacks.
+  // The tile the attack originated from, mostly used for shuttle attacks.
   sourceTile(): TileRef | null;
   addBorderTile(tile: TileRef): void;
   removeBorderTile(tile: TileRef): void;
@@ -437,13 +437,13 @@ export interface Unit {
   touch(): void;
   hash(): number;
   toUpdate(): UnitUpdate;
-  hasTrainStation(): boolean;
-  setTrainStation(trainStation: boolean): void;
+  hasTradeHub(): boolean;
+  setTradeHub(tradeHub: boolean): void;
   wasDestroyedByEnemy(): boolean;
   destroyer(): Player | undefined;
 
-  // Train
-  trainType(): TrainType | undefined;
+  // Frigate
+  frigateType(): FrigateType | undefined;
   isLoaded(): boolean | undefined;
   setLoaded(loaded: boolean): void;
 
@@ -455,8 +455,8 @@ export interface Unit {
   trajectory(): TrajectoryTile[];
   setTargetUnit(unit: Unit | undefined): void;
   targetUnit(): Unit | undefined;
-  setTargetedBySAM(targeted: boolean): void;
-  targetedBySAM(): boolean;
+  setTargetedByPointDefense(targeted: boolean): void;
+  targetedByPointDefense(): boolean;
   setReachedTarget(): void;
   reachedTarget(): boolean;
   isTargetable(): boolean;
@@ -465,7 +465,7 @@ export interface Unit {
   // Health
   hasHealth(): boolean;
   retreating(): boolean;
-  orderBoatRetreat(): void;
+  orderShuttleRetreat(): void;
   health(): number;
   modifyHealth(delta: number, attacker?: Player): void;
 
@@ -475,15 +475,15 @@ export interface Unit {
 
   // --- UNIT SPECIFIC ---
 
-  // SAMs & Missile Silos
+  // Point Defense & Orbital Strike Platforms
   launch(): void;
   reloadMissile(): void;
   isInCooldown(): boolean;
   missileTimerQueue(): number[];
 
-  // Trade Ships
-  setSafeFromPirates(): void; // Only for trade ships
-  isSafeFromPirates(): boolean; // Only for trade ships
+  // Trade Freighters
+  setSafeFromRaiders(): void; // Only for trade freighters
+  isSafeFromRaiders(): boolean; // Only for trade freighters
 
   // Construction phase on structures
   isUnderConstruction(): boolean;
@@ -494,7 +494,7 @@ export interface Unit {
   increaseLevel(): void;
   decreaseLevel(destroyer?: Player): void;
 
-  // Warships
+  // Battlecruisers
   setPatrolTile(tile: TileRef): void;
   patrolTile(): TileRef | undefined;
 }
@@ -547,9 +547,9 @@ export interface Player {
   relinquish(tile: TileRef): void;
 
   // Resources & Troops
-  gold(): Gold;
-  addGold(toAdd: Gold, tile?: TileRef): void;
-  removeGold(toRemove: Gold): Gold;
+  credits(): Credits;
+  addCredits(toAdd: Credits, tile?: TileRef): void;
+  removeCredits(toRemove: Credits): Credits;
   troops(): number;
   setTroops(troops: number): void;
   addTroops(troops: number): void;
@@ -621,10 +621,10 @@ export interface Player {
   sendEmoji(recipient: Player | typeof AllPlayers, emoji: string): void;
 
   // Donation
-  canDonateGold(recipient: Player): boolean;
+  canDonateCredits(recipient: Player): boolean;
   canDonateTroops(recipient: Player): boolean;
   donateTroops(recipient: Player, troops: number): boolean;
-  donateGold(recipient: Player, gold: Gold): boolean;
+  donateCredits(recipient: Player, credits: Credits): boolean;
   canDeleteUnit(): boolean;
   recordDeleteUnit(): void;
   canEmbargoAll(): boolean;
@@ -659,7 +659,7 @@ export interface Player {
   toUpdate(): PlayerUpdate;
   playerProfile(): PlayerProfile;
   // WARNING: this operation is expensive.
-  bestTransportShipSpawn(tile: TileRef): TileRef | false;
+  bestShuttleSpawn(tile: TileRef): TileRef | false;
 }
 
 export interface Game extends GameMap {
@@ -747,7 +747,7 @@ export interface Game extends GameMap {
     message: string,
     type: MessageType,
     playerID: PlayerID | null,
-    goldAmount?: bigint,
+    creditAmount?: bigint,
     params?: Record<string, string | number>,
   ): void;
   displayIncomingUnit(
@@ -773,12 +773,12 @@ export interface Game extends GameMap {
   stats(): Stats;
 
   addUpdate(update: GameUpdate): void;
-  railNetwork(): RailNetwork;
+  hyperspaceLaneNetwork(): HyperspaceLaneNetwork;
   conquerPlayer(conqueror: Player, conquered: Player): void;
-  miniWaterHPA(): PathFinder<number> | null;
-  miniWaterGraph(): AbstractGraph | null;
-  getWaterComponent(tile: TileRef): number | null;
-  hasWaterComponent(tile: TileRef, component: number): boolean;
+  miniDeepSpaceHPA(): PathFinder<number> | null;
+  miniDeepSpaceGraph(): AbstractGraph | null;
+  getDeepSpaceComponent(tile: TileRef): number | null;
+  hasDeepSpaceComponent(tile: TileRef, component: number): boolean;
 }
 
 export interface PlayerActions {
@@ -794,9 +794,9 @@ export interface BuildableUnit {
   // unit id of the existing unit that can be upgraded, or false if it cannot be upgraded.
   canUpgrade: number | false;
   type: PlayerBuildableUnitType;
-  cost: Gold;
-  overlappingRailroads: number[];
-  ghostRailPaths: TileRef[][];
+  cost: Credits;
+  overlappingHyperspaceLanes: number[];
+  ghostHyperspaceLanePaths: TileRef[][];
 }
 
 export interface PlayerProfile {
@@ -822,7 +822,7 @@ export interface PlayerInteraction {
   canSendAllianceRequest: boolean;
   canBreakAlliance: boolean;
   canTarget: boolean;
-  canDonateGold: boolean;
+  canDonateCredits: boolean;
   canDonateTroops: boolean;
   canEmbargo: boolean;
   allianceInfo?: AllianceInfo;
@@ -840,12 +840,12 @@ export enum MessageType {
   ATTACK_CANCELLED,
   ATTACK_REQUEST,
   CONQUERED_PLAYER,
-  MIRV_INBOUND,
+  CLUSTER_WARHEAD_INBOUND,
   NUKE_INBOUND,
-  HYDROGEN_BOMB_INBOUND,
-  NAVAL_INVASION_INBOUND,
-  SAM_MISS,
-  SAM_HIT,
+  NOVA_BOMB_INBOUND,
+  ORBITAL_ASSAULT_INBOUND,
+  POINT_DEFENSE_MISS,
+  POINT_DEFENSE_HIT,
   CAPTURED_ENEMY_UNIT,
   UNIT_CAPTURED_BY_ENEMY,
   UNIT_DESTROYED,
@@ -854,9 +854,9 @@ export enum MessageType {
   ALLIANCE_REQUEST,
   ALLIANCE_BROKEN,
   ALLIANCE_EXPIRED,
-  SENT_GOLD_TO_PLAYER,
-  RECEIVED_GOLD_FROM_PLAYER,
-  RECEIVED_GOLD_FROM_TRADE,
+  SENT_CREDITS_TO_PLAYER,
+  RECEIVED_CREDITS_FROM_PLAYER,
+  RECEIVED_CREDITS_FROM_TRADE,
   SENT_TROOPS_TO_PLAYER,
   RECEIVED_TROOPS_FROM_PLAYER,
   CHAT,
@@ -878,12 +878,12 @@ export const MESSAGE_TYPE_CATEGORIES: Record<MessageType, MessageCategory> = {
   [MessageType.ATTACK_CANCELLED]: MessageCategory.ATTACK,
   [MessageType.ATTACK_REQUEST]: MessageCategory.ATTACK,
   [MessageType.CONQUERED_PLAYER]: MessageCategory.ATTACK,
-  [MessageType.MIRV_INBOUND]: MessageCategory.NUKE,
+  [MessageType.CLUSTER_WARHEAD_INBOUND]: MessageCategory.NUKE,
   [MessageType.NUKE_INBOUND]: MessageCategory.NUKE,
-  [MessageType.HYDROGEN_BOMB_INBOUND]: MessageCategory.NUKE,
-  [MessageType.NAVAL_INVASION_INBOUND]: MessageCategory.ATTACK,
-  [MessageType.SAM_MISS]: MessageCategory.ATTACK,
-  [MessageType.SAM_HIT]: MessageCategory.ATTACK,
+  [MessageType.NOVA_BOMB_INBOUND]: MessageCategory.NUKE,
+  [MessageType.ORBITAL_ASSAULT_INBOUND]: MessageCategory.ATTACK,
+  [MessageType.POINT_DEFENSE_MISS]: MessageCategory.ATTACK,
+  [MessageType.POINT_DEFENSE_HIT]: MessageCategory.ATTACK,
   [MessageType.CAPTURED_ENEMY_UNIT]: MessageCategory.ATTACK,
   [MessageType.UNIT_CAPTURED_BY_ENEMY]: MessageCategory.ATTACK,
   [MessageType.UNIT_DESTROYED]: MessageCategory.ATTACK,
@@ -893,9 +893,9 @@ export const MESSAGE_TYPE_CATEGORIES: Record<MessageType, MessageCategory> = {
   [MessageType.ALLIANCE_BROKEN]: MessageCategory.ALLIANCE,
   [MessageType.ALLIANCE_EXPIRED]: MessageCategory.ALLIANCE,
   [MessageType.RENEW_ALLIANCE]: MessageCategory.ALLIANCE,
-  [MessageType.SENT_GOLD_TO_PLAYER]: MessageCategory.TRADE,
-  [MessageType.RECEIVED_GOLD_FROM_PLAYER]: MessageCategory.TRADE,
-  [MessageType.RECEIVED_GOLD_FROM_TRADE]: MessageCategory.TRADE,
+  [MessageType.SENT_CREDITS_TO_PLAYER]: MessageCategory.TRADE,
+  [MessageType.RECEIVED_CREDITS_FROM_PLAYER]: MessageCategory.TRADE,
+  [MessageType.RECEIVED_CREDITS_FROM_TRADE]: MessageCategory.TRADE,
   [MessageType.SENT_TROOPS_TO_PLAYER]: MessageCategory.TRADE,
   [MessageType.RECEIVED_TROOPS_FROM_PLAYER]: MessageCategory.TRADE,
   [MessageType.CHAT]: MessageCategory.CHAT,

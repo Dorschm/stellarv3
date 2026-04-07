@@ -43,7 +43,8 @@ export async function waitForInGame(page: Page): Promise<void> {
       };
       return (
         typeof w.__gameView?.ticks === "function" &&
-        w.__threeCamera?.matrixWorldInverse != null
+        w.__threeCamera?.matrixWorldInverse !== null &&
+        w.__threeCamera?.matrixWorldInverse !== undefined
       );
     },
     null,
@@ -137,9 +138,7 @@ export async function spawnLocalPlayer(
     // Manual spawn: find a valid tile and emit a left-click on it.
     const spawnTile = await findSpawnTile(page, preferredQuadrant);
     if (!spawnTile) {
-      throw new Error(
-        "spawnLocalPlayer: could not find a valid spawn tile",
-      );
+      throw new Error("spawnLocalPlayer: could not find a valid spawn tile");
     }
 
     // Emit the click event directly on the EventBus.
@@ -322,12 +321,20 @@ async function tileToScreen(
       if (!canvas) return null;
       const rect = canvas.getBoundingClientRect();
 
-      const gv = (window as unknown as { __gameView?: { width(): number; height(): number } }).__gameView;
-      const cam = (window as unknown as { __threeCamera?: {
-        updateMatrixWorld(force?: boolean): void;
-        matrixWorldInverse: { elements: number[] };
-        projectionMatrix: { elements: number[] };
-      } }).__threeCamera;
+      const gv = (
+        window as unknown as {
+          __gameView?: { width(): number; height(): number };
+        }
+      ).__gameView;
+      const cam = (
+        window as unknown as {
+          __threeCamera?: {
+            updateMatrixWorld(force?: boolean): void;
+            matrixWorldInverse: { elements: number[] };
+            projectionMatrix: { elements: number[] };
+          };
+        }
+      ).__threeCamera;
       if (!gv || !cam) return null;
 
       const mapW = gv.width();
@@ -368,7 +375,8 @@ async function tileToScreen(
     },
     { tx: tileX, ty: tileY },
   );
-  if (!coords) throw new Error(`tileToScreen: projection failed for (${tileX}, ${tileY})`);
+  if (!coords)
+    throw new Error(`tileToScreen: projection failed for (${tileX}, ${tileY})`);
   return coords;
 }
 
@@ -441,32 +449,36 @@ export async function findSpawnTile(
   preferredQuadrant: "top-left" | "bottom-right" = "top-left",
 ): Promise<{ tileX: number; tileY: number } | null> {
   return page.evaluate((quadrant) => {
-    const gv = (window as unknown as {
-      __gameView?: {
-        width(): number;
-        height(): number;
-        ref(x: number, y: number): unknown;
-        isLand(ref: unknown): boolean;
-        hasOwner(ref: unknown): boolean;
-      };
-    }).__gameView;
+    const gv = (
+      window as unknown as {
+        __gameView?: {
+          width(): number;
+          height(): number;
+          ref(x: number, y: number): unknown;
+          isSector(ref: unknown): boolean;
+          hasOwner(ref: unknown): boolean;
+        };
+      }
+    ).__gameView;
     if (!gv) return null;
     const w = gv.width();
     const h = gv.height();
 
     // Bias the scan direction so two players get different spawn locations.
-    const xStart = quadrant === "top-left" ? Math.floor(w * 0.2) : Math.floor(w * 0.8);
-    const yStart = quadrant === "top-left" ? Math.floor(h * 0.2) : Math.floor(h * 0.8);
+    const xStart =
+      quadrant === "top-left" ? Math.floor(w * 0.2) : Math.floor(w * 0.8);
+    const yStart =
+      quadrant === "top-left" ? Math.floor(h * 0.2) : Math.floor(h * 0.8);
     const xDir = quadrant === "top-left" ? 1 : -1;
     const yDir = quadrant === "top-left" ? 1 : -1;
 
     for (const step of [8, 4, 1]) {
       for (let dy = 0; dy < h; dy += step) {
-        const y = ((yStart + dy * yDir) % h + h) % h;
+        const y = (((yStart + dy * yDir) % h) + h) % h;
         for (let dx = 0; dx < w; dx += step) {
-          const x = ((xStart + dx * xDir) % w + w) % w;
+          const x = (((xStart + dx * xDir) % w) + w) % w;
           const r = gv.ref(x, y);
-          if (gv.isLand(r) && !gv.hasOwner(r)) {
+          if (gv.isSector(r) && !gv.hasOwner(r)) {
             return { tileX: x, tileY: y };
           }
         }
@@ -483,15 +495,17 @@ export async function findOwnedTile(
   page: Page,
 ): Promise<{ tileX: number; tileY: number } | null> {
   return page.evaluate(() => {
-    const gv = (window as unknown as {
-      __gameView?: {
-        width(): number;
-        height(): number;
-        ref(x: number, y: number): unknown;
-        owner(ref: unknown): { smallID(): number };
-        myPlayer(): { smallID(): number } | null;
-      };
-    }).__gameView;
+    const gv = (
+      window as unknown as {
+        __gameView?: {
+          width(): number;
+          height(): number;
+          ref(x: number, y: number): unknown;
+          owner(ref: unknown): { smallID(): number };
+          myPlayer(): { smallID(): number } | null;
+        };
+      }
+    ).__gameView;
     if (!gv) return null;
     const mp = gv.myPlayer();
     if (!mp) return null;
@@ -520,16 +534,18 @@ export async function findInteriorOwnedTile(
   page: Page,
 ): Promise<{ tileX: number; tileY: number } | null> {
   return page.evaluate(() => {
-    const gv = (window as unknown as {
-      __gameView?: {
-        width(): number;
-        height(): number;
-        ref(x: number, y: number): unknown;
-        owner(ref: unknown): { smallID(): number };
-        isLand(ref: unknown): boolean;
-        myPlayer(): { smallID(): number } | null;
-      };
-    }).__gameView;
+    const gv = (
+      window as unknown as {
+        __gameView?: {
+          width(): number;
+          height(): number;
+          ref(x: number, y: number): unknown;
+          owner(ref: unknown): { smallID(): number };
+          isSector(ref: unknown): boolean;
+          myPlayer(): { smallID(): number } | null;
+        };
+      }
+    ).__gameView;
     if (!gv) return null;
     const mp = gv.myPlayer();
     if (!mp) return null;
@@ -541,7 +557,7 @@ export async function findInteriorOwnedTile(
       if (x < 0 || x >= w || y < 0 || y >= h) return false;
       const r = gv.ref(x, y);
       const o = gv.owner(r);
-      return o != null && o.smallID() === myID;
+      return o !== null && o !== undefined && o.smallID() === myID;
     };
 
     // Scan with progressively finer steps.
@@ -550,7 +566,7 @@ export async function findInteriorOwnedTile(
         for (let x = 1; x < w - 1; x += step) {
           if (
             owns(x, y) &&
-            gv.isLand(gv.ref(x, y)) &&
+            gv.isSector(gv.ref(x, y)) &&
             owns(x - 1, y) &&
             owns(x + 1, y) &&
             owns(x, y - 1) &&
@@ -575,17 +591,19 @@ export async function findBorderUnownedTile(
   page: Page,
 ): Promise<{ tileX: number; tileY: number } | null> {
   return page.evaluate(() => {
-    const gv = (window as unknown as {
-      __gameView?: {
-        width(): number;
-        height(): number;
-        ref(x: number, y: number): unknown;
-        owner(ref: unknown): { smallID(): number };
-        isLand(ref: unknown): boolean;
-        hasOwner(ref: unknown): boolean;
-        myPlayer(): { smallID(): number } | null;
-      };
-    }).__gameView;
+    const gv = (
+      window as unknown as {
+        __gameView?: {
+          width(): number;
+          height(): number;
+          ref(x: number, y: number): unknown;
+          owner(ref: unknown): { smallID(): number };
+          isSector(ref: unknown): boolean;
+          hasOwner(ref: unknown): boolean;
+          myPlayer(): { smallID(): number } | null;
+        };
+      }
+    ).__gameView;
     if (!gv) return null;
     const mp = gv.myPlayer();
     if (!mp) return null;
@@ -612,7 +630,7 @@ export async function findBorderUnownedTile(
           for (const [nx, ny] of neighbours) {
             if (nx < 0 || nx >= w || ny < 0 || ny >= h) continue;
             const nr = gv.ref(nx, ny);
-            if (gv.isLand(nr) && !gv.hasOwner(nr)) {
+            if (gv.isSector(nr) && !gv.hasOwner(nr)) {
               return { tileX: nx, tileY: ny };
             }
           }
@@ -635,19 +653,21 @@ export async function findEnemyTile(
   page: Page,
 ): Promise<{ tileX: number; tileY: number; ownerId: string | null } | null> {
   return page.evaluate(() => {
-    const gv = (window as unknown as {
-      __gameView?: {
-        width(): number;
-        height(): number;
-        ref(x: number, y: number): unknown;
-        owner(ref: unknown): {
-          smallID(): number;
-          id(): string | null;
-          isPlayer(): boolean;
+    const gv = (
+      window as unknown as {
+        __gameView?: {
+          width(): number;
+          height(): number;
+          ref(x: number, y: number): unknown;
+          owner(ref: unknown): {
+            smallID(): number;
+            id(): string | null;
+            isPlayer(): boolean;
+          };
+          myPlayer(): { smallID(): number } | null;
         };
-        myPlayer(): { smallID(): number } | null;
-      };
-    }).__gameView;
+      }
+    ).__gameView;
     if (!gv) return null;
     const mp = gv.myPlayer();
     if (!mp) return null;
@@ -715,9 +735,11 @@ export async function waitForImmunityEnd(
 ): Promise<void> {
   await page.waitForFunction(
     () => {
-      const gv = (window as unknown as {
-        __gameView?: { isSpawnImmunityActive?: () => boolean };
-      }).__gameView;
+      const gv = (
+        window as unknown as {
+          __gameView?: { isSpawnImmunityActive?: () => boolean };
+        }
+      ).__gameView;
       return gv?.isSpawnImmunityActive?.() === false;
     },
     null,
@@ -734,13 +756,15 @@ export async function waitForTicksAbove(
   threshold: number,
   timeoutMs = 30_000,
 ): Promise<number> {
-  return page.waitForFunction(
-    (t) => {
-      const w = window as unknown as { __gameView?: { ticks(): number } };
-      const ticks = w.__gameView?.ticks?.();
-      return typeof ticks === "number" && ticks > t ? ticks : false;
-    },
-    threshold,
-    { timeout: timeoutMs },
-  ).then((handle) => handle.jsonValue() as Promise<number>);
+  return page
+    .waitForFunction(
+      (t) => {
+        const w = window as unknown as { __gameView?: { ticks(): number } };
+        const ticks = w.__gameView?.ticks?.();
+        return typeof ticks === "number" && ticks > t ? ticks : false;
+      },
+      threshold,
+      { timeout: timeoutMs },
+    )
+    .then((handle) => handle.jsonValue() as Promise<number>);
 }

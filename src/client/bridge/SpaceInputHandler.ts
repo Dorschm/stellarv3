@@ -1,14 +1,15 @@
 import { EventBus } from "../../core/EventBus";
 import { PlayerBuildableUnitType, UnitType } from "../../core/game/Game";
 import { UserSettings } from "../../core/game/UserSettings";
+import { ShowSettingsModalEvent } from "../hud/events";
 import {
   AlternateViewEvent,
   AttackRatioEvent,
   CenterCameraEvent,
   CloseViewEvent,
   ConfirmGhostStructureEvent,
-  DoBoatAttackEvent,
   DoGroundAttackEvent,
+  DoShuttleAttackEvent,
   DragEvent,
   GameSpeedDownIntentEvent,
   GameSpeedUpIntentEvent,
@@ -21,7 +22,6 @@ import {
   TogglePerformanceOverlayEvent,
   ZoomEvent,
 } from "../InputHandler";
-import { ShowSettingsModalEvent } from "../hud/events";
 import { Platform } from "../Platform";
 import { useHUDStore } from "./HUDStore";
 
@@ -79,7 +79,7 @@ export function loadKeybinds(): Record<string, string> {
     zoomIn: "KeyE",
     attackRatioDown: "KeyT",
     attackRatioUp: "KeyY",
-    boatAttack: "KeyB",
+    shuttleAttack: "KeyB",
     groundAttack: "KeyG",
     swapDirection: "KeyU",
     modifierKey: isMac ? "MetaLeft" : "ControlLeft",
@@ -191,10 +191,7 @@ export class SpaceInputHandler {
 
   private startMovementLoop(): void {
     this.moveInterval = setInterval(() => {
-      if (
-        this.activeKeys.has("ShiftLeft") ||
-        this.activeKeys.has("ShiftRight")
-      )
+      if (this.activeKeys.has("ShiftLeft") || this.activeKeys.has("ShiftRight"))
         return;
 
       let deltaX = 0;
@@ -380,7 +377,7 @@ export class SpaceInputHandler {
 
     if (e.code === this.keybinds.boatAttack) {
       e.preventDefault();
-      this.eventBus.emit(new DoBoatAttackEvent());
+      this.eventBus.emit(new DoShuttleAttackEvent());
     }
 
     if (e.code === this.keybinds.groundAttack) {
@@ -467,16 +464,16 @@ export class SpaceInputHandler {
       key: string;
       type: PlayerBuildableUnitType;
     }> = [
-      { key: "buildCity", type: UnitType.City },
-      { key: "buildFactory", type: UnitType.Factory },
-      { key: "buildPort", type: UnitType.Port },
-      { key: "buildDefensePost", type: UnitType.DefensePost },
-      { key: "buildMissileSilo", type: UnitType.MissileSilo },
-      { key: "buildSamLauncher", type: UnitType.SAMLauncher },
-      { key: "buildAtomBomb", type: UnitType.AtomBomb },
-      { key: "buildHydrogenBomb", type: UnitType.HydrogenBomb },
-      { key: "buildWarship", type: UnitType.Warship },
-      { key: "buildMIRV", type: UnitType.MIRV },
+      { key: "buildCity", type: UnitType.Colony },
+      { key: "buildFactory", type: UnitType.Foundry },
+      { key: "buildPort", type: UnitType.Spaceport },
+      { key: "buildDefensePost", type: UnitType.DefenseStation },
+      { key: "buildMissileSilo", type: UnitType.OrbitalStrikePlatform },
+      { key: "buildSamLauncher", type: UnitType.PointDefenseArray },
+      { key: "buildAtomBomb", type: UnitType.AntimatterTorpedo },
+      { key: "buildHydrogenBomb", type: UnitType.NovaBomb },
+      { key: "buildWarship", type: UnitType.Battlecruiser },
+      { key: "buildMIRV", type: UnitType.ClusterWarhead },
     ];
     for (const { key, type } of buildKeybinds) {
       if (code === this.keybinds[key]) return type;

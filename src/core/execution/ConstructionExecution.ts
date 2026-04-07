@@ -1,14 +1,14 @@
 import { Execution, Game, Player, Tick, Unit, UnitType } from "../game/Game";
 import { TileRef } from "../game/GameMap";
-import { CityExecution } from "./CityExecution";
-import { DefensePostExecution } from "./DefensePostExecution";
-import { FactoryExecution } from "./FactoryExecution";
-import { MirvExecution } from "./MIRVExecution";
-import { MissileSiloExecution } from "./MissileSiloExecution";
+import { BattlecruiserExecution } from "./BattlecruiserExecution";
+import { MirvExecution } from "./ClusterWarheadExecution";
+import { ColonyExecution } from "./ColonyExecution";
+import { DefenseStationExecution } from "./DefenseStationExecution";
+import { FoundryExecution } from "./FoundryExecution";
 import { NukeExecution } from "./NukeExecution";
-import { PortExecution } from "./PortExecution";
-import { SAMLauncherExecution } from "./SAMLauncherExecution";
-import { WarshipExecution } from "./WarshipExecution";
+import { OrbitalStrikePlatformExecution } from "./OrbitalStrikePlatformExecution";
+import { PointDefenseArrayExecution } from "./PointDefenseArrayExecution";
+import { SpaceportExecution } from "./SpaceportExecution";
 
 export class ConstructionExecution implements Execution {
   private structure: Unit | null = null;
@@ -102,8 +102,8 @@ export class ConstructionExecution implements Execution {
     }
     const player = this.player;
     switch (this.constructionType) {
-      case UnitType.AtomBomb:
-      case UnitType.HydrogenBomb:
+      case UnitType.AntimatterTorpedo:
+      case UnitType.NovaBomb:
         this.mg.addExecution(
           new NukeExecution(
             this.constructionType,
@@ -116,33 +116,35 @@ export class ConstructionExecution implements Execution {
           ),
         );
         break;
-      case UnitType.MIRV:
+      case UnitType.ClusterWarhead:
         this.mg.addExecution(new MirvExecution(player, this.tile));
         break;
-      case UnitType.Warship:
+      case UnitType.Battlecruiser:
         this.mg.addExecution(
-          new WarshipExecution({ owner: player, patrolTile: this.tile }),
+          new BattlecruiserExecution({ owner: player, patrolTile: this.tile }),
         );
         break;
-      case UnitType.Port:
-        this.mg.addExecution(new PortExecution(this.structure!));
+      case UnitType.Spaceport:
+        this.mg.addExecution(new SpaceportExecution(this.structure!));
         break;
-      case UnitType.MissileSilo:
-        this.mg.addExecution(new MissileSiloExecution(this.structure!));
-        break;
-      case UnitType.DefensePost:
-        this.mg.addExecution(new DefensePostExecution(this.structure!));
-        break;
-      case UnitType.SAMLauncher:
+      case UnitType.OrbitalStrikePlatform:
         this.mg.addExecution(
-          new SAMLauncherExecution(player, null, this.structure!),
+          new OrbitalStrikePlatformExecution(this.structure!),
         );
         break;
-      case UnitType.City:
-        this.mg.addExecution(new CityExecution(this.structure!));
+      case UnitType.DefenseStation:
+        this.mg.addExecution(new DefenseStationExecution(this.structure!));
         break;
-      case UnitType.Factory:
-        this.mg.addExecution(new FactoryExecution(this.structure!));
+      case UnitType.PointDefenseArray:
+        this.mg.addExecution(
+          new PointDefenseArrayExecution(player, null, this.structure!),
+        );
+        break;
+      case UnitType.Colony:
+        this.mg.addExecution(new ColonyExecution(this.structure!));
+        break;
+      case UnitType.Foundry:
+        this.mg.addExecution(new FoundryExecution(this.structure!));
         break;
       default:
         console.warn(
@@ -154,12 +156,12 @@ export class ConstructionExecution implements Execution {
 
   private isStructure(type: UnitType): boolean {
     switch (type) {
-      case UnitType.Port:
-      case UnitType.MissileSilo:
-      case UnitType.DefensePost:
-      case UnitType.SAMLauncher:
-      case UnitType.City:
-      case UnitType.Factory:
+      case UnitType.Spaceport:
+      case UnitType.OrbitalStrikePlatform:
+      case UnitType.DefenseStation:
+      case UnitType.PointDefenseArray:
+      case UnitType.Colony:
+      case UnitType.Foundry:
         return true;
       default:
         return false;

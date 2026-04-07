@@ -45,7 +45,7 @@ export class DeleteUnitExecution implements Execution {
       return;
     }
 
-    if (!mg.isLand(unit.tile())) {
+    if (!mg.isSector(unit.tile())) {
       console.warn(`SECURITY: unit ${this.unitId} is not on land`);
       this.active = false;
       return;

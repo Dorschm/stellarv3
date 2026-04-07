@@ -1,4 +1,4 @@
-import { SAM_CONSTRUCTION_TICKS } from "../core/configuration/DefaultConfig";
+import { POINT_DEFENSE_CONSTRUCTION_TICKS } from "../core/configuration/DefaultConfig";
 import {
   Difficulty,
   Duos,
@@ -54,11 +54,11 @@ type ModifierKey =
   | "startingGold1M"
   | "startingGold5M"
   | "startingGold25M"
-  | "goldMultiplier"
+  | "creditMultiplier"
   | "isAlliancesDisabled"
-  | "isPortsDisabled"
+  | "isSpaceportsDisabled"
   | "isNukesDisabled"
-  | "isSAMsDisabled"
+  | "isPointDefenseDisabled"
   | "isPeaceTime";
 
 // Each entry represents one "ticket" in the pool. More tickets = higher chance of selection.
@@ -70,11 +70,11 @@ const SPECIAL_MODIFIER_POOL: ModifierKey[] = [
   ...Array<ModifierKey>(3).fill("startingGold1M"),
   ...Array<ModifierKey>(5).fill("startingGold5M"),
   ...Array<ModifierKey>(1).fill("startingGold25M"),
-  ...Array<ModifierKey>(4).fill("goldMultiplier"),
+  ...Array<ModifierKey>(4).fill("creditMultiplier"),
   ...Array<ModifierKey>(1).fill("isAlliancesDisabled"),
-  ...Array<ModifierKey>(1).fill("isPortsDisabled"),
+  ...Array<ModifierKey>(1).fill("isSpaceportsDisabled"),
   ...Array<ModifierKey>(1).fill("isNukesDisabled"),
-  ...Array<ModifierKey>(1).fill("isSAMsDisabled"),
+  ...Array<ModifierKey>(1).fill("isPointDefenseDisabled"),
   ...Array<ModifierKey>(1).fill("isPeaceTime"),
 ];
 
@@ -84,7 +84,7 @@ const MUTUALLY_EXCLUSIVE_MODIFIERS: [ModifierKey, ModifierKey][] = [
   ["startingGold5M", "startingGold1M"],
   ["startingGold25M", "startingGold1M"],
   ["isHardNations", "startingGold25M"],
-  ["isNukesDisabled", "isSAMsDisabled"],
+  ["isNukesDisabled", "isPointDefenseDisabled"],
 ];
 
 export class MapPlaylist {
@@ -116,7 +116,7 @@ export class MapPlaylist {
     }
 
     return {
-      donateGold: mode === GameMode.Team,
+      donateCredits: mode === GameMode.Team,
       donateTroops: mode === GameMode.Team,
       gameMap: map,
       maxPlayers: await this.lobbyMaxPlayers(map, mode, playerTeams, isCompact),
@@ -127,7 +127,7 @@ export class MapPlaylist {
       },
       difficulty:
         playerTeams === HumansVsNations ? Difficulty.Hard : Difficulty.Medium,
-      infiniteGold: false,
+      infiniteCredits: false,
       infiniteTroops: false,
       maxTimerValue: undefined,
       instantBuild: false,
@@ -181,15 +181,15 @@ export class MapPlaylist {
     const poolResult = this.getRandomSpecialGameModifiers(excludedModifiers);
     let {
       isCrowded,
-      startingGold,
+      startingCredits,
       isCompact,
       isRandomSpawn,
-      goldMultiplier,
+      creditMultiplier,
       isAlliancesDisabled,
       isHardNations,
-      isPortsDisabled,
+      isSpaceportsDisabled,
       isNukesDisabled,
-      isSAMsDisabled,
+      isPointDefenseDisabled,
       isPeaceTime,
     } = poolResult;
 
@@ -208,12 +208,12 @@ export class MapPlaylist {
           !isRandomSpawn &&
           !isCompact &&
           !isHardNations &&
-          startingGold === undefined &&
-          goldMultiplier === undefined &&
+          startingCredits === undefined &&
+          creditMultiplier === undefined &&
           !isAlliancesDisabled &&
-          !isPortsDisabled &&
+          !isSpaceportsDisabled &&
           !isNukesDisabled &&
-          !isSAMsDisabled &&
+          !isPointDefenseDisabled &&
           !isPeaceTime
         ) {
           excludedModifiers.push("isCrowded");
@@ -224,12 +224,12 @@ export class MapPlaylist {
           ({
             isRandomSpawn,
             isCompact,
-            startingGold,
-            goldMultiplier,
+            startingCredits,
+            creditMultiplier,
             isAlliancesDisabled,
-            isPortsDisabled,
+            isSpaceportsDisabled,
             isNukesDisabled,
-            isSAMsDisabled,
+            isPointDefenseDisabled,
             isPeaceTime,
           } = fallback);
           ({ isHardNations } = fallback);
@@ -246,26 +246,26 @@ export class MapPlaylist {
     const nations: GameConfig["nations"] =
       (mode === GameMode.Team && playerTeams !== HumansVsNations) ||
       // Nations don't have PVP immunity, so 25M starting gold wouldn't work well with them
-      (startingGold !== undefined && startingGold >= 25_000_000)
+      (startingCredits !== undefined && startingCredits >= 25_000_000)
         ? "disabled"
         : "default";
 
     // Build disabledUnits from modifiers
     const disabledUnits: UnitType[] = [];
-    if (isPortsDisabled) {
-      disabledUnits.push(UnitType.Port);
+    if (isSpaceportsDisabled) {
+      disabledUnits.push(UnitType.Spaceport);
     }
     if (isNukesDisabled) {
       disabledUnits.push(
-        UnitType.MissileSilo,
-        UnitType.AtomBomb,
-        UnitType.HydrogenBomb,
-        UnitType.MIRV,
-        UnitType.SAMLauncher,
+        UnitType.OrbitalStrikePlatform,
+        UnitType.AntimatterTorpedo,
+        UnitType.NovaBomb,
+        UnitType.ClusterWarhead,
+        UnitType.PointDefenseArray,
       );
     }
-    if (isSAMsDisabled) {
-      disabledUnits.push(UnitType.SAMLauncher);
+    if (isPointDefenseDisabled) {
+      disabledUnits.push(UnitType.PointDefenseArray);
     }
 
     // 3min peace = 180s = 1800 ticks
@@ -273,7 +273,7 @@ export class MapPlaylist {
     const peaceTimeDuration = isPeaceTime ? 240 * 10 : undefined;
 
     return {
-      donateGold: mode === GameMode.Team,
+      donateCredits: mode === GameMode.Team,
       donateTroops: mode === GameMode.Team,
       gameMap: map,
       maxPlayers,
@@ -284,22 +284,22 @@ export class MapPlaylist {
         isRandomSpawn,
         isCrowded,
         isHardNations,
-        startingGold,
-        goldMultiplier,
+        startingCredits,
+        creditMultiplier,
         isAlliancesDisabled,
-        isPortsDisabled,
+        isSpaceportsDisabled,
         isNukesDisabled,
-        isSAMsDisabled,
+        isPointDefenseDisabled,
         isPeaceTime,
       },
-      startingGold,
-      goldMultiplier,
+      startingCredits,
+      creditMultiplier,
       disableAlliances: isAlliancesDisabled ? true : undefined,
       difficulty:
         isHardNations || playerTeams === HumansVsNations
           ? Difficulty.Hard
           : Difficulty.Medium,
-      infiniteGold: false,
+      infiniteCredits: false,
       infiniteTroops: false,
       maxTimerValue: undefined,
       instantBuild: false,
@@ -310,7 +310,7 @@ export class MapPlaylist {
       bots: isCompact ? 100 : 400,
       spawnImmunityDuration:
         peaceTimeDuration ??
-        this.getSpawnImmunityDuration(playerTeams, startingGold),
+        this.getSpawnImmunityDuration(playerTeams, startingCredits),
       disabledUnits,
     } satisfies GameConfig;
   }
@@ -325,7 +325,7 @@ export class MapPlaylist {
     ];
     const isCompact = Math.random() < 0.5;
     return {
-      donateGold: false,
+      donateCredits: false,
       donateTroops: false,
       gameMap: maps[Math.floor(Math.random() * maps.length)],
       maxPlayers: 2,
@@ -333,7 +333,7 @@ export class MapPlaylist {
       gameMapSize: isCompact ? GameMapSize.Compact : GameMapSize.Normal,
       difficulty: Difficulty.Medium, // Doesn't matter, nations are disabled
       rankedType: RankedType.OneVOne,
-      infiniteGold: false,
+      infiniteCredits: false,
       infiniteTroops: false,
       maxTimerValue: isCompact ? 10 : 15,
       instantBuild: false,
@@ -379,7 +379,9 @@ export class MapPlaylist {
 
       let success = true;
       while (source.length > 0) {
-        if (!this.addNextMapNonConsecutive(playlist, source, nonConsecutiveNum)) {
+        if (
+          !this.addNextMapNonConsecutive(playlist, source, nonConsecutiveNum)
+        ) {
           success = false;
           break;
         }
@@ -485,18 +487,19 @@ export class MapPlaylist {
       isCompact: selected.has("isCompact") || undefined,
       isCrowded: selected.has("isCrowded") || undefined,
       isHardNations: selected.has("isHardNations") || undefined,
-      startingGold: selected.has("startingGold25M")
+      startingCredits: selected.has("startingGold25M")
         ? 25_000_000
         : selected.has("startingGold5M")
           ? 5_000_000
           : selected.has("startingGold1M")
             ? 1_000_000
             : undefined,
-      goldMultiplier: selected.has("goldMultiplier") ? 2 : undefined,
+      creditMultiplier: selected.has("creditMultiplier") ? 2 : undefined,
       isAlliancesDisabled: selected.has("isAlliancesDisabled") || undefined,
-      isPortsDisabled: selected.has("isPortsDisabled") || undefined,
+      isSpaceportsDisabled: selected.has("isSpaceportsDisabled") || undefined,
       isNukesDisabled: selected.has("isNukesDisabled") || undefined,
-      isSAMsDisabled: selected.has("isSAMsDisabled") || undefined,
+      isPointDefenseDisabled:
+        selected.has("isPointDefenseDisabled") || undefined,
       isPeaceTime: selected.has("isPeaceTime") || undefined,
     };
   }
@@ -572,7 +575,7 @@ export class MapPlaylist {
     if (playerTeams === HumansVsNations) return 5 * 10;
     if (startingGold !== undefined && startingGold >= 25_000_000)
       return 150 * 10;
-    if (startingGold) return SAM_CONSTRUCTION_TICKS + 15 * 10;
+    if (startingGold) return POINT_DEFENSE_CONSTRUCTION_TICKS + 15 * 10;
     return 5 * 10;
   }
 

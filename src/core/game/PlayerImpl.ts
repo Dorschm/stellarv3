@@ -9,6 +9,10 @@ import {
   toInt,
   within,
 } from "../Util";
+import {
+  bestSectorEdgeDeploymentSource,
+  canBuildAssaultShuttle,
+} from "./AssaultShuttleUtils";
 import { AttackImpl } from "./AttackImpl";
 import {
   Alliance,
@@ -19,10 +23,10 @@ import {
   BuildableUnit,
   Cell,
   ColoredTeams,
+  Credits,
   Embargo,
   EmojiMessage,
   GameMode,
-  Gold,
   MessageType,
   MutableAlliance,
   Player,
@@ -49,10 +53,6 @@ import {
   GameUpdateType,
   PlayerUpdate,
 } from "./GameUpdates";
-import {
-  bestShoreDeploymentSource,
-  canBuildTransportShip,
-} from "./TransportShipUtils";
 import { UnitImpl } from "./UnitImpl";
 
 interface Target {
@@ -71,7 +71,7 @@ export class PlayerImpl implements Player {
   public _lastTileChange: number = 0;
   public _pseudo_random: PseudoRandom;
 
-  private _gold: bigint;
+  private _credits: bigint;
   private _troops: bigint;
 
   markedTraitorTick = -1;
@@ -113,7 +113,7 @@ export class PlayerImpl implements Player {
     private readonly _team: Team | null,
   ) {
     this._troops = toInt(startTroops);
-    this._gold = mg.config().startingGold(playerInfo);
+    this._credits = mg.config().startingCredits(playerInfo);
     this._pseudo_random = new PseudoRandom(simpleHash(this.playerInfo.id));
   }
 
@@ -136,7 +136,7 @@ export class PlayerImpl implements Player {
       isAlive: this.isAlive(),
       isDisconnected: this.isDisconnected(),
       tilesOwned: this.numTilesOwned(),
-      gold: this._gold,
+      credits: this._credits,
       troops: this.troops(),
       allies: this.alliances().map((a) => a.other(this).smallID()),
       embargoes: new Set([...this.embargoes.keys()].map((p) => p.toString())),
@@ -335,7 +335,7 @@ export class PlayerImpl implements Player {
     const ns: Set<Player | TerraNullius> = new Set();
     for (const border of this.borderTiles()) {
       for (const neighbor of this.mg.map().neighbors(border)) {
-        if (this.mg.map().isLand(neighbor)) {
+        if (this.mg.map().isSector(neighbor)) {
           const owner = this.mg.map().ownerID(neighbor);
           if (owner !== this.smallID()) {
             ns.add(
@@ -685,7 +685,7 @@ export class PlayerImpl implements Player {
     return true;
   }
 
-  canDonateGold(recipient: Player): boolean {
+  canDonateCredits(recipient: Player): boolean {
     if (
       !this.isAlive() ||
       !recipient.isAlive() ||
@@ -695,7 +695,7 @@ export class PlayerImpl implements Player {
     }
     if (
       recipient.type() === PlayerType.Human &&
-      this.mg.config().donateGold() === false
+      this.mg.config().donateCredits() === false
     ) {
       return false;
     }
@@ -763,26 +763,26 @@ export class PlayerImpl implements Player {
     return true;
   }
 
-  donateGold(recipient: Player, gold: Gold): boolean {
-    if (gold <= 0n) return false;
-    const removed = this.removeGold(gold);
+  donateCredits(recipient: Player, credits: Credits): boolean {
+    if (credits <= 0n) return false;
+    const removed = this.removeCredits(credits);
     if (removed === 0n) return false;
-    recipient.addGold(removed);
+    recipient.addCredits(removed);
 
     this.sentDonations.push(new Donation(recipient, this.mg.ticks()));
     this.mg.displayMessage(
-      "events_display.sent_gold_to_player",
-      MessageType.SENT_GOLD_TO_PLAYER,
+      "events_display.sent_credits_to_player",
+      MessageType.SENT_CREDITS_TO_PLAYER,
       this.id(),
       undefined,
-      { gold: renderNumber(gold), name: recipient.displayName() },
+      { gold: renderNumber(credits), name: recipient.displayName() },
     );
     this.mg.displayMessage(
-      "events_display.received_gold_from_player",
-      MessageType.RECEIVED_GOLD_FROM_PLAYER,
+      "events_display.received_credits_from_player",
+      MessageType.RECEIVED_CREDITS_FROM_PLAYER,
       recipient.id(),
-      gold,
-      { gold: renderNumber(gold), name: this.displayName() },
+      credits,
+      { gold: renderNumber(credits), name: this.displayName() },
     );
     return true;
   }
@@ -899,29 +899,29 @@ export class PlayerImpl implements Player {
     return this.isOnSameTeam(other) || this.isAlliedWith(other);
   }
 
-  gold(): Gold {
-    return this._gold;
+  credits(): Credits {
+    return this._credits;
   }
 
-  addGold(toAdd: Gold, tile?: TileRef): void {
-    this._gold += toAdd;
+  addCredits(toAdd: Credits, tile?: TileRef): void {
+    this._credits += toAdd;
     if (tile) {
       this.mg.addUpdate({
         type: GameUpdateType.BonusEvent,
         player: this.id(),
         tile,
-        gold: Number(toAdd),
+        credits: Number(toAdd),
         troops: 0,
       });
     }
   }
 
-  removeGold(toRemove: Gold): Gold {
+  removeCredits(toRemove: Credits): Credits {
     if (toRemove <= 0n) {
       return 0n;
     }
-    const actualRemoved = minInt(this._gold, toRemove);
-    this._gold -= actualRemoved;
+    const actualRemoved = minInt(this._credits, toRemove);
+    this._credits -= actualRemoved;
     return actualRemoved;
   }
 
@@ -974,7 +974,7 @@ export class PlayerImpl implements Player {
     );
     this._units.push(b);
     this.recordUnitConstructed(type);
-    this.removeGold(cost);
+    this.removeCredits(cost);
     this.removeTroops("troops" in params ? (params.troops ?? 0) : 0);
     this.mg.addUpdate(b.toUpdate());
     this.mg.addUnit(b);
@@ -1010,16 +1010,16 @@ export class PlayerImpl implements Player {
 
   private canBuildUnitType(
     unitType: UnitType,
-    knownCost: Gold | null = null,
+    knownCost: Credits | null = null,
   ): boolean {
     if (this.mg.config().isUnitDisabled(unitType)) {
       return false;
     }
     const cost = knownCost ?? this.mg.unitInfo(unitType).cost(this.mg, this);
-    if (this._gold < cost) {
+    if (this._credits < cost) {
       return false;
     }
-    if (unitType !== UnitType.MIRVWarhead && !this.isAlive()) {
+    if (unitType !== UnitType.ClusterWarheadSubmunition && !this.isAlive()) {
       return false;
     }
     return true;
@@ -1057,7 +1057,7 @@ export class PlayerImpl implements Player {
 
   upgradeUnit(unit: Unit) {
     const cost = this.mg.unitInfo(unit.type()).cost(this.mg, this);
-    this.removeGold(cost);
+    this.removeCredits(cost);
     unit.increaseLevel();
     this.recordUnitConstructed(unit.type());
   }
@@ -1068,7 +1068,7 @@ export class PlayerImpl implements Player {
   ): BuildableUnit[] {
     const mg = this.mg;
     const config = mg.config();
-    const rail = mg.railNetwork();
+    const rail = mg.hyperspaceLaneNetwork();
     const inSpawnPhase = mg.inSpawnPhase();
 
     const validTiles =
@@ -1106,11 +1106,11 @@ export class PlayerImpl implements Player {
         canBuild,
         canUpgrade,
         cost,
-        overlappingRailroads: buildNew
-          ? rail.overlappingRailroads(canBuild as TileRef)
+        overlappingHyperspaceLanes: buildNew
+          ? rail.overlappingHyperspaceLanes(canBuild as TileRef)
           : [],
-        ghostRailPaths: buildNew
-          ? rail.computeGhostRailPaths(u, canBuild as TileRef)
+        ghostHyperspaceLanePaths: buildNew
+          ? rail.computeGhostHyperspaceLanePaths(u, canBuild as TileRef)
           : [],
       };
     }
@@ -1136,34 +1136,34 @@ export class PlayerImpl implements Player {
     validTiles: TileRef[] | null,
   ): TileRef | false {
     switch (unitType) {
-      case UnitType.MIRV:
+      case UnitType.ClusterWarhead:
         if (!this.mg.hasOwner(targetTile)) {
           return false;
         }
         return this.nukeSpawn(targetTile, unitType);
-      case UnitType.AtomBomb:
-      case UnitType.HydrogenBomb:
+      case UnitType.AntimatterTorpedo:
+      case UnitType.NovaBomb:
         return this.nukeSpawn(targetTile, unitType);
-      case UnitType.MIRVWarhead:
+      case UnitType.ClusterWarheadSubmunition:
         return targetTile;
-      case UnitType.Port:
+      case UnitType.Spaceport:
         return this.portSpawn(targetTile, validTiles);
-      case UnitType.Warship:
+      case UnitType.Battlecruiser:
         return this.warshipSpawn(targetTile);
-      case UnitType.Shell:
-      case UnitType.SAMMissile:
+      case UnitType.PlasmaBolt:
+      case UnitType.PointDefenseMissile:
         return targetTile;
-      case UnitType.TransportShip:
-        return canBuildTransportShip(this.mg, this, targetTile);
-      case UnitType.TradeShip:
+      case UnitType.AssaultShuttle:
+        return canBuildAssaultShuttle(this.mg, this, targetTile);
+      case UnitType.TradeFreighter:
         return this.tradeShipSpawn(targetTile);
-      case UnitType.Train:
+      case UnitType.Frigate:
         return this.landBasedUnitSpawn(targetTile);
-      case UnitType.MissileSilo:
-      case UnitType.DefensePost:
-      case UnitType.SAMLauncher:
-      case UnitType.City:
-      case UnitType.Factory:
+      case UnitType.OrbitalStrikePlatform:
+      case UnitType.DefenseStation:
+      case UnitType.PointDefenseArray:
+      case UnitType.Colony:
+      case UnitType.Foundry:
         return this.landBasedStructureSpawn(targetTile, validTiles);
       default:
         assertNever(unitType);
@@ -1189,7 +1189,7 @@ export class PlayerImpl implements Player {
     // Disabled after game-over so players can nuke teammates in the aftergame.
     if (
       config.gameConfig().gameMode === GameMode.Team &&
-      nukeType !== UnitType.MIRV &&
+      nukeType !== UnitType.ClusterWarhead &&
       !gameOver
     ) {
       const magnitude = config.nukeMagnitudes(nukeType);
@@ -1206,7 +1206,7 @@ export class PlayerImpl implements Player {
 
     // only get missilesilos that are not on cooldown and not under construction
     const bestSilo = findClosestBy(
-      this.units(UnitType.MissileSilo),
+      this.units(UnitType.OrbitalStrikePlatform),
       (silo) => mg.manhattanDist(silo.tile(), tile),
       (silo) =>
         silo.isActive() && !silo.isInCooldown() && !silo.isUnderConstruction(),
@@ -1219,7 +1219,7 @@ export class PlayerImpl implements Player {
     const spawns = Array.from(
       this.mg.bfs(
         tile,
-        manhattanDistFN(tile, this.mg.config().radiusPortSpawn()),
+        manhattanDistFN(tile, this.mg.config().radiusSpaceportSpawn()),
       ),
     )
       .filter((t) => this.mg.owner(t) === this && this.mg.isOceanShore(t))
@@ -1244,7 +1244,7 @@ export class PlayerImpl implements Player {
     }
 
     const bestPort = findClosestBy(
-      this.units(UnitType.Port),
+      this.units(UnitType.Spaceport),
       (port) => this.mg.manhattanDist(port.tile(), tile),
       (port) => port.isActive() && !port.isUnderConstruction(),
     );
@@ -1253,7 +1253,7 @@ export class PlayerImpl implements Player {
   }
 
   landBasedUnitSpawn(tile: TileRef): TileRef | false {
-    return this.mg.isLand(tile) ? tile : false;
+    return this.mg.isSector(tile) ? tile : false;
   }
 
   landBasedStructureSpawn(
@@ -1308,7 +1308,7 @@ export class PlayerImpl implements Player {
   }
 
   tradeShipSpawn(targetTile: TileRef): TileRef | false {
-    return this.units(UnitType.Port).find((u) => u.tile() === targetTile)
+    return this.units(UnitType.Spaceport).find((u) => u.tile() === targetTile)
       ? targetTile
       : false;
   }
@@ -1411,7 +1411,7 @@ export class PlayerImpl implements Player {
       return false;
     }
 
-    if (!this.mg.isLand(tile)) {
+    if (!this.mg.isSector(tile)) {
       return false;
     }
     if (this.mg.hasOwner(tile)) {
@@ -1420,7 +1420,7 @@ export class PlayerImpl implements Player {
       for (const t of this.mg.bfs(
         tile,
         andFN(
-          (gm, t) => !gm.hasOwner(t) && gm.isLand(t),
+          (gm, t) => !gm.hasOwner(t) && gm.isSector(t),
           manhattanDistFN(tile, 200),
         ),
       )) {
@@ -1434,7 +1434,7 @@ export class PlayerImpl implements Player {
     }
   }
 
-  bestTransportShipSpawn(targetTile: TileRef): TileRef | false {
-    return bestShoreDeploymentSource(this.mg, this, targetTile) ?? false;
+  bestShuttleSpawn(targetTile: TileRef): TileRef | false {
+    return bestSectorEdgeDeploymentSource(this.mg, this, targetTile) ?? false;
   }
 }

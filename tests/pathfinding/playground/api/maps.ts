@@ -165,11 +165,11 @@ export async function getMapMetadata(mapName: string) {
   for (let y = 0; y < game.height(); y++) {
     for (let x = 0; x < game.width(); x++) {
       const tile = game.ref(x, y);
-      mapData.push(game.isWater(tile) ? 1 : 0);
+      mapData.push(game.isDeepSpace(tile) ? 1 : 0);
     }
   }
 
-  const graph = game.miniWaterGraph();
+  const graph = game.miniDeepSpaceGraph();
   const miniMap = game.miniMap();
   const clusterSize = graph?.clusterSize ?? 0;
 

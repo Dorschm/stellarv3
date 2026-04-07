@@ -13,7 +13,7 @@ describe("AllianceExtensionExecution", () => {
     game = await setup(
       "ocean_and_land",
       {
-        infiniteGold: true,
+        infiniteCredits: true,
         instantBuild: true,
         infiniteTroops: true,
       },

@@ -44,8 +44,8 @@ describe("InputHandler AutoUpgrade", () => {
         attackRatio: 20,
         ghostStructure: null,
         rocketDirectionUp: true,
-        overlappingRailroads: [],
-        ghostRailPaths: [],
+        overlappingHyperspaceLanes: [],
+        ghostHyperspaceLanePaths: [],
       },
       mockCanvas,
       eventBus,
@@ -478,8 +478,8 @@ describe("InputHandler AutoUpgrade", () => {
         attackRatio: 20,
         ghostStructure: null,
         rocketDirectionUp: true,
-        overlappingRailroads: [],
-        ghostRailPaths: [],
+        overlappingHyperspaceLanes: [],
+        ghostHyperspaceLanePaths: [],
       } as UIState;
       inputHandler = new InputHandler(uiState, mockCanvas, eventBus);
       inputHandler.initialize();
@@ -487,7 +487,7 @@ describe("InputHandler AutoUpgrade", () => {
 
     test("emits ConfirmGhostStructureEvent on Enter when ghost structure is set", () => {
       const mockEmit = vi.spyOn(eventBus, "emit");
-      uiState.ghostStructure = UnitType.City;
+      uiState.ghostStructure = UnitType.Colony;
 
       window.dispatchEvent(new KeyboardEvent("keydown", { code: "Enter" }));
 
@@ -498,7 +498,7 @@ describe("InputHandler AutoUpgrade", () => {
 
     test("emits ConfirmGhostStructureEvent on NumpadEnter when ghost structure is set", () => {
       const mockEmit = vi.spyOn(eventBus, "emit");
-      uiState.ghostStructure = UnitType.Factory;
+      uiState.ghostStructure = UnitType.Foundry;
 
       window.dispatchEvent(
         new KeyboardEvent("keydown", { code: "NumpadEnter" }),
@@ -530,8 +530,8 @@ describe("InputHandler AutoUpgrade", () => {
         attackRatio: 20,
         ghostStructure: null,
         rocketDirectionUp: true,
-        overlappingRailroads: [],
-        ghostRailPaths: [],
+        overlappingHyperspaceLanes: [],
+        ghostHyperspaceLanePaths: [],
       } as UIState;
       inputHandler = new InputHandler(uiState, mockCanvas, eventBus);
       inputHandler.initialize();
@@ -541,21 +541,25 @@ describe("InputHandler AutoUpgrade", () => {
       window.dispatchEvent(
         new KeyboardEvent("keyup", { code: "Numpad1", key: "1" }),
       );
-      expect(inputHandler["uiState"].ghostStructure).toBe(UnitType.City);
+      expect(inputHandler["uiState"].ghostStructure).toBe(UnitType.Colony);
     });
 
     test("Numpad5 sets ghost structure to MissileSilo when buildMissileSilo is Digit5", () => {
       window.dispatchEvent(
         new KeyboardEvent("keyup", { code: "Numpad5", key: "5" }),
       );
-      expect(inputHandler["uiState"].ghostStructure).toBe(UnitType.MissileSilo);
+      expect(inputHandler["uiState"].ghostStructure).toBe(
+        UnitType.OrbitalStrikePlatform,
+      );
     });
 
     test("Numpad0 sets ghost structure to MIRV when buildMIRV is Digit0", () => {
       window.dispatchEvent(
         new KeyboardEvent("keyup", { code: "Numpad0", key: "0" }),
       );
-      expect(inputHandler["uiState"].ghostStructure).toBe(UnitType.MIRV);
+      expect(inputHandler["uiState"].ghostStructure).toBe(
+        UnitType.ClusterWarhead,
+      );
     });
   });
 
@@ -567,8 +571,8 @@ describe("InputHandler AutoUpgrade", () => {
         attackRatio: 20,
         ghostStructure: null,
         rocketDirectionUp: true,
-        overlappingRailroads: [],
-        ghostRailPaths: [],
+        overlappingHyperspaceLanes: [],
+        ghostHyperspaceLanePaths: [],
       } as UIState;
       inputHandler = new InputHandler(uiState, mockCanvas, eventBus);
       inputHandler.initialize();
@@ -587,8 +591,8 @@ describe("InputHandler AutoUpgrade", () => {
         attackRatio: 20,
         ghostStructure: null,
         rocketDirectionUp: true,
-        overlappingRailroads: [],
-        ghostRailPaths: [],
+        overlappingHyperspaceLanes: [],
+        ghostHyperspaceLanePaths: [],
       } as UIState;
       inputHandler = new InputHandler(uiState, mockCanvas, eventBus);
       inputHandler.initialize();
@@ -597,7 +601,7 @@ describe("InputHandler AutoUpgrade", () => {
         new KeyboardEvent("keyup", { code: "Digit1", key: "1" }),
       );
 
-      expect(inputHandler["uiState"].ghostStructure).toBe(UnitType.City);
+      expect(inputHandler["uiState"].ghostStructure).toBe(UnitType.Colony);
     });
 
     test("exact code match wins: Numpad1 sets Factory when buildCity=Digit1 and buildFactory=Numpad1", () => {
@@ -613,8 +617,8 @@ describe("InputHandler AutoUpgrade", () => {
         attackRatio: 20,
         ghostStructure: null,
         rocketDirectionUp: true,
-        overlappingRailroads: [],
-        ghostRailPaths: [],
+        overlappingHyperspaceLanes: [],
+        ghostHyperspaceLanePaths: [],
       } as UIState;
       inputHandler = new InputHandler(uiState, mockCanvas, eventBus);
       inputHandler.initialize();
@@ -623,7 +627,7 @@ describe("InputHandler AutoUpgrade", () => {
         new KeyboardEvent("keyup", { code: "Numpad1", key: "1" }),
       );
 
-      expect(inputHandler["uiState"].ghostStructure).toBe(UnitType.Factory);
+      expect(inputHandler["uiState"].ghostStructure).toBe(UnitType.Foundry);
     });
 
     test("digit alias used when no exact match: Numpad1 sets City when only buildCity=Digit1", () => {
@@ -636,8 +640,8 @@ describe("InputHandler AutoUpgrade", () => {
         attackRatio: 20,
         ghostStructure: null,
         rocketDirectionUp: true,
-        overlappingRailroads: [],
-        ghostRailPaths: [],
+        overlappingHyperspaceLanes: [],
+        ghostHyperspaceLanePaths: [],
       } as UIState;
       inputHandler = new InputHandler(uiState, mockCanvas, eventBus);
       inputHandler.initialize();
@@ -646,7 +650,7 @@ describe("InputHandler AutoUpgrade", () => {
         new KeyboardEvent("keyup", { code: "Numpad1", key: "1" }),
       );
 
-      expect(inputHandler["uiState"].ghostStructure).toBe(UnitType.City);
+      expect(inputHandler["uiState"].ghostStructure).toBe(UnitType.Colony);
     });
   });
 });

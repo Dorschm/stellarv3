@@ -143,7 +143,7 @@ export function getSpawnTiles(
 ): TileRef[] | null {
   const spawnTiles = Array.from(gm.bfs(tile, euclDistFN(tile, 4, true)));
 
-  const isInvalid = (t: TileRef) => gm.hasOwner(t) || !gm.isLand(t);
+  const isInvalid = (t: TileRef) => gm.hasOwner(t) || !gm.isSector(t);
 
   if (!requireAllValid) {
     return spawnTiles.filter((t) => !isInvalid(t));

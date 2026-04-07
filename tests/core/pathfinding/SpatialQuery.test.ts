@@ -21,7 +21,7 @@ function addPlayer(game: Game, tile: TileRef): Player {
 }
 
 describe("SpatialQuery", () => {
-  describe("closestShore", () => {
+  describe("closestSectorEdge", () => {
     it("finds shore tile owned by player", () => {
       // prettier-ignore
       const game = createGame({
@@ -38,10 +38,10 @@ describe("SpatialQuery", () => {
       const player = addPlayer(game, game.ref(2, 2));
 
       // All land tiles owned by player because of spawn expansion
-      const result = spatial.closestShore(player, game.ref(2, 2));
+      const result = spatial.closestSectorEdge(player, game.ref(2, 2));
 
       expect(result).not.toBeNull();
-      expect(game.isShore(result!)).toBe(true);
+      expect(game.isSectorEdge(result!)).toBe(true);
       expect(game.ownerID(result!)).toBe(player.smallID());
     });
 
@@ -63,7 +63,7 @@ describe("SpatialQuery", () => {
       const player = addPlayer(game, game.ref(3, 3));
 
       // maxDist=1 from center (3,3) - shore is 2 tiles away
-      const result = spatial.closestShore(player, game.ref(3, 3), 1);
+      const result = spatial.closestSectorEdge(player, game.ref(3, 3), 1);
 
       expect(result).toBeNull();
     });
@@ -82,10 +82,10 @@ describe("SpatialQuery", () => {
       const spatial = new SpatialQuery(game);
       const player = addPlayer(game, game.ref(0, 0));
 
-      const result = spatial.closestShore(player, game.ref(0, 2));
+      const result = spatial.closestSectorEdge(player, game.ref(0, 2));
 
       expect(result).not.toBeNull();
-      expect(game.isShore(result!)).toBe(true);
+      expect(game.isSectorEdge(result!)).toBe(true);
       expect(game.ownerID(result!)).toBe(player.smallID());
       expect(game.x(result!)).toBeLessThanOrEqual(2);
     });
@@ -104,10 +104,10 @@ describe("SpatialQuery", () => {
       const spatial = new SpatialQuery(game);
       const player = addPlayer(game, game.ref(0, 0));
 
-      const result = spatial.closestShore(player, game.ref(7, 2));
+      const result = spatial.closestSectorEdge(player, game.ref(7, 2));
 
       expect(result).not.toBeNull();
-      expect(game.isShore(result!)).toBe(true);
+      expect(game.isSectorEdge(result!)).toBe(true);
       expect(game.ownerID(result!)).toBe(player.smallID());
       expect(game.x(result!)).toBeLessThanOrEqual(2);
     });
@@ -127,14 +127,14 @@ describe("SpatialQuery", () => {
       const spatial = new SpatialQuery(game);
       const terraNullius = game.terraNullius();
 
-      const result = spatial.closestShore(terraNullius, game.ref(2, 2));
+      const result = spatial.closestSectorEdge(terraNullius, game.ref(2, 2));
 
       expect(result).not.toBeNull();
-      expect(game.isShore(result!)).toBe(true);
+      expect(game.isSectorEdge(result!)).toBe(true);
     });
   });
 
-  describe("closestShoreByWater", () => {
+  describe("closestSectorEdgeByWater", () => {
     it("returns null for terra nullius", () => {
       // prettier-ignore
       const game = createGame({
@@ -150,7 +150,10 @@ describe("SpatialQuery", () => {
       const spatial = new SpatialQuery(game);
       const terraNullius = game.terraNullius();
 
-      const result = spatial.closestShoreByWater(terraNullius, game.ref(0, 0));
+      const result = spatial.closestSectorEdgeByWater(
+        terraNullius,
+        game.ref(0, 0),
+      );
 
       expect(result).toBeNull();
     });
@@ -170,7 +173,7 @@ describe("SpatialQuery", () => {
       const spatial = new SpatialQuery(game);
       const player = addPlayer(game, game.ref(2, 2));
 
-      const result = spatial.closestShoreByWater(player, game.ref(2, 2));
+      const result = spatial.closestSectorEdgeByWater(player, game.ref(2, 2));
 
       expect(result).toBeNull();
     });
@@ -190,7 +193,7 @@ describe("SpatialQuery", () => {
 
       const spatial = new SpatialQuery(game);
       const player = addPlayer(game, game.ref(3, 2));
-      const result = spatial.closestShoreByWater(player, game.ref(13, 2));
+      const result = spatial.closestSectorEdgeByWater(player, game.ref(13, 2));
 
       expect(result).toBeNull();
     });
@@ -220,10 +223,10 @@ describe("SpatialQuery", () => {
       const player = addPlayer(game, game.ref(4, 4));
 
       const target = game.ref(17, 13);
-      const result = spatial.closestShoreByWater(player, target);
+      const result = spatial.closestSectorEdgeByWater(player, target);
 
       expect(result).not.toBeNull();
-      expect(game.isShore(result!)).toBe(true);
+      expect(game.isSectorEdge(result!)).toBe(true);
       expect(game.ownerID(result!)).toBe(player.smallID());
     });
   });

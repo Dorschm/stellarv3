@@ -1,13 +1,13 @@
 // @vitest-environment node
-import { EventBus } from "../../../src/core/EventBus";
-import { UnitType } from "../../../src/core/game/Game";
 import {
   AttackRatioEvent,
   GhostStructureChangedEvent,
   SwapRocketDirectionEvent,
 } from "../../../src/client/InputHandler";
-import { useHUDStore } from "../../../src/client/bridge/HUDStore";
 import { GameBridge } from "../../../src/client/bridge/GameBridge";
+import { useHUDStore } from "../../../src/client/bridge/HUDStore";
+import { EventBus } from "../../../src/core/EventBus";
+import { UnitType } from "../../../src/core/game/Game";
 
 /**
  * Minimal mock of GameView — GameBridge.tick() is not exercised here, so
@@ -47,11 +47,11 @@ describe("GameBridge EventBus → HUDStore synchronisation", () => {
   test("GhostStructureChangedEvent updates HUDStore.ghostStructure", () => {
     expect(useHUDStore.getState().ghostStructure).toBeNull();
 
-    eventBus.emit(new GhostStructureChangedEvent(UnitType.City));
-    expect(useHUDStore.getState().ghostStructure).toBe(UnitType.City);
+    eventBus.emit(new GhostStructureChangedEvent(UnitType.Colony));
+    expect(useHUDStore.getState().ghostStructure).toBe(UnitType.Colony);
 
-    eventBus.emit(new GhostStructureChangedEvent(UnitType.Factory));
-    expect(useHUDStore.getState().ghostStructure).toBe(UnitType.Factory);
+    eventBus.emit(new GhostStructureChangedEvent(UnitType.Foundry));
+    expect(useHUDStore.getState().ghostStructure).toBe(UnitType.Foundry);
 
     eventBus.emit(new GhostStructureChangedEvent(null));
     expect(useHUDStore.getState().ghostStructure).toBeNull();
@@ -60,11 +60,13 @@ describe("GameBridge EventBus → HUDStore synchronisation", () => {
   test("build hotkey selection is readable before inputEvent reads the store", () => {
     // Simulate the sequence: keyboard hotkey emits event → bridge syncs →
     // ClientGameRunner.inputEvent() reads useHUDStore.getState().ghostStructure.
-    eventBus.emit(new GhostStructureChangedEvent(UnitType.MissileSilo));
+    eventBus.emit(
+      new GhostStructureChangedEvent(UnitType.OrbitalStrikePlatform),
+    );
 
     // This is exactly what ClientGameRunner.inputEvent() does:
     const ghostStructure = useHUDStore.getState().ghostStructure;
-    expect(ghostStructure).toBe(UnitType.MissileSilo);
+    expect(ghostStructure).toBe(UnitType.OrbitalStrikePlatform);
   });
 
   // -------------------------------------------------------------------
@@ -112,7 +114,7 @@ describe("GameBridge EventBus → HUDStore synchronisation", () => {
   test("destroy() stops syncing events to the store", () => {
     bridge.destroy();
 
-    eventBus.emit(new GhostStructureChangedEvent(UnitType.Port));
+    eventBus.emit(new GhostStructureChangedEvent(UnitType.Spaceport));
     expect(useHUDStore.getState().ghostStructure).toBeNull();
   });
 });
@@ -125,7 +127,7 @@ describe("HUDStore reset", () => {
   test("reset restores all slices to initial defaults", () => {
     // Mutate several slices
     const store = useHUDStore.getState();
-    store.setGhostStructure(UnitType.AtomBomb);
+    store.setGhostStructure(UnitType.AntimatterTorpedo);
     store.setAttackRatio(75);
     store.setRocketDirectionUp(false);
     store.setWinner({ winner: 1 } as any);

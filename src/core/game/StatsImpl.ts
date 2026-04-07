@@ -3,20 +3,15 @@ import {
   ATTACK_INDEX_CANCEL,
   ATTACK_INDEX_RECV,
   ATTACK_INDEX_SENT,
-  BOAT_INDEX_ARRIVE,
-  BOAT_INDEX_CAPTURE,
-  BOAT_INDEX_DESTROY,
-  BOAT_INDEX_SENT,
-  BoatUnit,
   BOMB_INDEX_INTERCEPT,
   BOMB_INDEX_LAND,
   BOMB_INDEX_LAUNCH,
-  GOLD_INDEX_STEAL,
-  GOLD_INDEX_TRADE,
-  GOLD_INDEX_TRAIN_OTHER,
-  GOLD_INDEX_TRAIN_SELF,
-  GOLD_INDEX_WAR,
-  GOLD_INDEX_WORK,
+  CREDITS_INDEX_FRIGATE_OTHER,
+  CREDITS_INDEX_FRIGATE_SELF,
+  CREDITS_INDEX_STEAL,
+  CREDITS_INDEX_TRADE,
+  CREDITS_INDEX_WAR,
+  CREDITS_INDEX_WORK,
   NukeType,
   OTHER_INDEX_BUILT,
   OTHER_INDEX_CAPTURE,
@@ -28,6 +23,11 @@ import {
   PLAYER_INDEX_HUMAN,
   PLAYER_INDEX_NATION,
   PlayerStats,
+  SHUTTLE_INDEX_ARRIVE,
+  SHUTTLE_INDEX_CAPTURE,
+  SHUTTLE_INDEX_DESTROY,
+  SHUTTLE_INDEX_SENT,
+  SpaceUnit,
   unitTypeToBombUnit,
   unitTypeToOtherUnit,
 } from "../StatsSchemas";
@@ -53,10 +53,10 @@ const conquest_by_type: Record<PlayerType, number> = {
 export class StatsImpl implements Stats {
   private readonly data: AllPlayersStats = {};
 
-  private _numMirvLaunched: bigint = 0n;
+  private _numClusterWarheadLaunched: bigint = 0n;
 
-  numMirvsLaunched(): bigint {
-    return this._numMirvLaunched;
+  numClusterWarheadsLaunched(): bigint {
+    return this._numClusterWarheadLaunched;
   }
 
   getPlayerStats(player: Player): PlayerStats {
@@ -97,16 +97,16 @@ export class StatsImpl implements Stats {
 
   private _addBoat(
     player: Player,
-    type: BoatUnit,
+    type: SpaceUnit,
     index: number,
     value: BigIntLike,
   ) {
     const p = this._makePlayerStats(player);
     if (p === undefined) return;
-    p.boats ??= { [type]: [0n] };
-    p.boats[type] ??= [0n];
-    while (p.boats[type].length <= index) p.boats[type].push(0n);
-    p.boats[type][index] += _bigint(value);
+    p.shuttles ??= { [type]: [0n] };
+    p.shuttles[type] ??= [0n];
+    while (p.shuttles[type].length <= index) p.shuttles[type].push(0n);
+    p.shuttles[type][index] += _bigint(value);
   }
 
   private _addBomb(
@@ -127,9 +127,9 @@ export class StatsImpl implements Stats {
   private _addGold(player: Player, index: number, value: BigIntLike) {
     const p = this._makePlayerStats(player);
     if (p === undefined) return;
-    p.gold ??= [0n];
-    while (p.gold.length <= index) p.gold.push(0n);
-    p.gold[index] += _bigint(value);
+    p.credits ??= [0n];
+    while (p.credits.length <= index) p.credits.push(0n);
+    p.credits[index] += _bigint(value);
   }
 
   private _addOtherUnit(
@@ -188,43 +188,51 @@ export class StatsImpl implements Stats {
     this._addBetrayal(player, 1);
   }
 
-  boatSendTrade(player: Player, target: Player): void {
-    this._addBoat(player, "trade", BOAT_INDEX_SENT, 1);
+  freighterSendTrade(player: Player, target: Player): void {
+    this._addBoat(player, "tfreight", SHUTTLE_INDEX_SENT, 1);
   }
 
-  boatArriveTrade(player: Player, target: Player, gold: BigIntLike): void {
-    this._addBoat(player, "trade", BOAT_INDEX_ARRIVE, 1);
-    this._addGold(player, GOLD_INDEX_TRADE, gold);
-    this._addGold(target, GOLD_INDEX_TRADE, gold);
+  freighterArriveTrade(player: Player, target: Player, gold: BigIntLike): void {
+    this._addBoat(player, "tfreight", SHUTTLE_INDEX_ARRIVE, 1);
+    this._addGold(player, CREDITS_INDEX_TRADE, gold);
+    this._addGold(target, CREDITS_INDEX_TRADE, gold);
   }
 
-  boatCapturedTrade(player: Player, target: Player, gold: BigIntLike): void {
-    this._addBoat(player, "trade", BOAT_INDEX_CAPTURE, 1);
-    this._addGold(player, GOLD_INDEX_STEAL, gold);
+  freighterCapturedTrade(
+    player: Player,
+    target: Player,
+    gold: BigIntLike,
+  ): void {
+    this._addBoat(player, "tfreight", SHUTTLE_INDEX_CAPTURE, 1);
+    this._addGold(player, CREDITS_INDEX_STEAL, gold);
   }
 
-  boatDestroyTrade(player: Player, target: Player): void {
-    this._addBoat(player, "trade", BOAT_INDEX_DESTROY, 1);
+  freighterDestroyTrade(player: Player, target: Player): void {
+    this._addBoat(player, "tfreight", SHUTTLE_INDEX_DESTROY, 1);
   }
 
-  boatSendTroops(
+  shuttleSendTroops(
     player: Player,
     target: Player | TerraNullius,
     troops: BigIntLike,
   ): void {
-    this._addBoat(player, "trans", BOAT_INDEX_SENT, 1);
+    this._addBoat(player, "ashuttle", SHUTTLE_INDEX_SENT, 1);
   }
 
-  boatArriveTroops(
+  shuttleArriveTroops(
     player: Player,
     target: Player | TerraNullius,
     troops: BigIntLike,
   ): void {
-    this._addBoat(player, "trans", BOAT_INDEX_ARRIVE, 1);
+    this._addBoat(player, "ashuttle", SHUTTLE_INDEX_ARRIVE, 1);
   }
 
-  boatDestroyTroops(player: Player, target: Player, troops: BigIntLike): void {
-    this._addBoat(player, "trans", BOAT_INDEX_DESTROY, 1);
+  shuttleDestroyTroops(
+    player: Player,
+    target: Player,
+    troops: BigIntLike,
+  ): void {
+    this._addBoat(player, "ashuttle", SHUTTLE_INDEX_DESTROY, 1);
   }
 
   bombLaunch(
@@ -232,8 +240,8 @@ export class StatsImpl implements Stats {
     target: Player | TerraNullius,
     type: NukeType,
   ): void {
-    if (type === UnitType.MIRV) {
-      this._numMirvLaunched++;
+    if (type === UnitType.ClusterWarhead) {
+      this._numClusterWarheadLaunched++;
     }
     this._addBomb(player, type, BOMB_INDEX_LAUNCH, 1);
   }
@@ -250,12 +258,12 @@ export class StatsImpl implements Stats {
     this._addBomb(player, type, BOMB_INDEX_INTERCEPT, count);
   }
 
-  goldWork(player: Player, gold: BigIntLike): void {
-    this._addGold(player, GOLD_INDEX_WORK, gold);
+  creditsWork(player: Player, gold: BigIntLike): void {
+    this._addGold(player, CREDITS_INDEX_WORK, gold);
   }
 
-  goldWar(player: Player, captured: Player, gold: BigIntLike): void {
-    this._addGold(player, GOLD_INDEX_WAR, gold);
+  creditsWar(player: Player, captured: Player, gold: BigIntLike): void {
+    this._addGold(player, CREDITS_INDEX_WAR, gold);
     const conquestType = conquest_by_type[captured.type()];
     if (conquestType !== undefined) {
       this._addConquest(player, conquestType);
@@ -286,12 +294,12 @@ export class StatsImpl implements Stats {
     this._addPlayerKilled(player, tick);
   }
 
-  trainSelfTrade(player: Player, gold: BigIntLike): void {
-    this._addGold(player, GOLD_INDEX_TRAIN_SELF, gold);
+  frigateSelfTrade(player: Player, gold: BigIntLike): void {
+    this._addGold(player, CREDITS_INDEX_FRIGATE_SELF, gold);
   }
 
-  trainExternalTrade(player: Player, gold: BigIntLike): void {
-    this._addGold(player, GOLD_INDEX_TRAIN_OTHER, gold);
+  frigateExternalTrade(player: Player, gold: BigIntLike): void {
+    this._addGold(player, CREDITS_INDEX_FRIGATE_OTHER, gold);
   }
 
   lobbyFillTime(fillTimeMs: number): void {}

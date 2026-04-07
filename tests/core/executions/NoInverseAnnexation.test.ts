@@ -18,7 +18,7 @@ describe("PlayerExecution Annexation Bug", () => {
     game = await setup(
       "big_plains",
       {
-        infiniteGold: true,
+        infiniteCredits: true,
         instantBuild: true,
       },
       [

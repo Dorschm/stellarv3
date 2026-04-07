@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import Countries from "resources/countries.json" with { type: "json" };
 import { assetUrl } from "../../core/AssetUrls";
 import {
@@ -8,6 +8,14 @@ import {
   Relation,
 } from "../../core/game/Game";
 import { TileRef } from "../../core/game/GameMap";
+import { useHUDStore } from "../bridge/HUDStore";
+import { useEventBus } from "../bridge/useEventBus";
+import {
+  CloseViewEvent,
+  MouseUpEvent,
+  ShowEmojiMenuEvent,
+  SwapRocketDirectionEvent,
+} from "../InputHandler";
 import {
   SendAllianceRequestIntentEvent,
   SendBreakAllianceIntentEvent,
@@ -16,26 +24,18 @@ import {
   SendTargetPlayerIntentEvent,
 } from "../Transport";
 import {
-  CloseViewEvent,
-  MouseUpEvent,
-  ShowEmojiMenuEvent,
-  SwapRocketDirectionEvent,
-} from "../InputHandler";
-import {
   renderDuration,
   renderNumber,
   renderTroops,
   translateText,
 } from "../Utils";
-import { useGameTick } from "./useGameTick";
-import { useEventBus } from "../bridge/useEventBus";
-import { useHUDStore } from "../bridge/HUDStore";
 import {
   ShowChatModalEvent,
   ShowDonateResourceModalEvent,
   ShowPlayerModerationModalEvent,
   ShowPlayerPanelEvent,
 } from "./events";
+import { useGameTick } from "./useGameTick";
 
 const allianceIcon = assetUrl("images/AllianceIconWhite.svg");
 const chatIcon = assetUrl("images/ChatIconWhite.svg");
@@ -61,12 +61,13 @@ export function PlayerPanel(): React.JSX.Element {
   const [tile, setTile] = useState<TileRef | null>(null);
   const [actions, setActions] = useState<PlayerActions | null>(null);
   const [otherProfile, setOtherProfile] = useState<PlayerProfile | null>(null);
-  const [allianceExpiryText, setAllianceExpiryText] = useState<string | null>(null);
-  const [allianceExpirySeconds, setAllianceExpirySeconds] = useState<number | null>(null);
+  const [allianceExpiryText, setAllianceExpiryText] = useState<string | null>(
+    null,
+  );
   const [suppressNextHide, setSuppressNextHide] = useState(false);
-  const [moderationTarget, setModerationTarget] = useState(null);
-  const [profileForPlayerId, setProfileForPlayerId] = useState<number | null>(null);
-  const [kickedPlayerIDs] = useState(new Set<string>());
+  const [profileForPlayerId, setProfileForPlayerId] = useState<number | null>(
+    null,
+  );
 
   const hidePanel = useCallback(() => {
     setIsVisible(false);
@@ -337,7 +338,7 @@ export function PlayerPanel(): React.JSX.Element {
     ? actions?.canSendEmojiAllPlayers
     : actions?.interaction?.canSendEmoji;
   const canEmbargo = actions?.interaction?.canEmbargo;
-  const canDonateGold = actions?.interaction?.canDonateGold;
+  const canDonateGold = actions?.interaction?.canDonateCredits;
   const canDonateTroops = actions?.interaction?.canDonateTroops;
   const canEmbargoAll = actions?.canEmbargoAll;
   const isLobbyCreator =
@@ -349,9 +350,7 @@ export function PlayerPanel(): React.JSX.Element {
       : undefined;
 
   const chip =
-    other.type() === PlayerType.Human
-      ? null
-      : identityChipProps(other.type());
+    other.type() === PlayerType.Human ? null : identityChipProps(other.type());
 
   const shouldShowRelationPill =
     other.type() === PlayerType.Nation &&
@@ -360,7 +359,7 @@ export function PlayerPanel(): React.JSX.Element {
     otherProfile;
 
   const relationValue = shouldShowRelationPill
-    ? otherProfile?.relations?.[myPlayer.smallID()] ?? Relation.Neutral
+    ? (otherProfile?.relations?.[myPlayer.smallID()] ?? Relation.Neutral)
     : null;
 
   return (
@@ -392,9 +391,7 @@ export function PlayerPanel(): React.JSX.Element {
           <div className="flex items-center gap-2.5 flex-wrap mb-3">
             {country && typeof flagCode === "string" && (
               <img
-                src={assetUrl(
-                  `flags/${encodeURIComponent(flagCode)}.svg`,
-                )}
+                src={assetUrl(`flags/${encodeURIComponent(flagCode)}.svg`)}
                 alt={country?.name ?? "Flag"}
                 className="h-10 w-10 rounded-full object-cover"
                 onError={(e) => {
@@ -430,11 +427,7 @@ export function PlayerPanel(): React.JSX.Element {
                   shadow-[inset_0_0_8px_rgba(239,68,68,0.12)]"
                 title={translateText("player_panel.traitor")}
               >
-                <img
-                  src={traitorIcon}
-                  alt=""
-                  className="w-4 h-4"
-                />
+                <img src={traitorIcon} alt="" className="w-4 h-4" />
                 <span className="tracking-tight">
                   {translateText("player_panel.traitor")}
                 </span>
@@ -444,7 +437,9 @@ export function PlayerPanel(): React.JSX.Element {
 
           {shouldShowRelationPill && relationValue !== null && (
             <div className="mt-1 mb-3">
-              <span className={`text-sm font-semibold ${getRelationClass(relationValue)}`}>
+              <span
+                className={`text-sm font-semibold ${getRelationClass(relationValue)}`}
+              >
                 {getRelationName(relationValue)}
               </span>
             </div>
@@ -454,7 +449,7 @@ export function PlayerPanel(): React.JSX.Element {
             <div className="inline-flex items-center gap-1.5 rounded-lg bg-white/4 px-3 py-1.5 shrink-0 text-white">
               <span>💰</span>
               <span className="tabular-nums font-semibold">
-                {renderNumber(other.gold() || 0)}
+                {renderNumber(other.credits() ?? 0)}
               </span>
               <span className="text-zinc-200 whitespace-nowrap">
                 {translateText("player_panel.gold")}
@@ -464,7 +459,7 @@ export function PlayerPanel(): React.JSX.Element {
             <div className="inline-flex items-center gap-1.5 rounded-lg bg-white/4 px-3 py-1.5 shrink-0 text-white">
               <span>⚔️</span>
               <span className="tabular-nums font-semibold">
-                {renderTroops(Number(other.troops() || 0n))}
+                {renderTroops(Number(other.troops() ?? 0n))}
               </span>
               <span className="text-zinc-200 whitespace-nowrap">
                 {translateText("player_panel.troops")}
@@ -474,7 +469,8 @@ export function PlayerPanel(): React.JSX.Element {
 
           {allianceExpiryText && (
             <div className="mb-3 text-sm text-white">
-              Alliance expires: <span className="font-semibold">{allianceExpiryText}</span>
+              Alliance expires:{" "}
+              <span className="font-semibold">{allianceExpiryText}</span>
             </div>
           )}
 
@@ -550,7 +546,7 @@ export function PlayerPanel(): React.JSX.Element {
               <button
                 onClick={() => handleDonateGoldClick(other)}
                 className="flex items-center gap-2 px-3 py-2 bg-zinc-700 hover:bg-zinc-600 text-white rounded transition-colors"
-                title={translateText("player_panel.send_gold")}
+                title={translateText("player_panel.send_credits")}
               >
                 <img src={donateGoldIcon} alt="" className="w-4 h-4" />
                 {translateText("player_panel.gold")}

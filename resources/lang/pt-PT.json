@@ -249,16 +249,16 @@
     "title": "Selecione a Língua"
   },
   "unit_type": {
-    "city": "Cidade",
-    "defense_post": "Posto de Defesa",
-    "port": "Porto",
-    "warship": "Naves de Guerra",
-    "missile_silo": "Silo de Mísseis",
-    "sam_launcher": "Lançador SAM (Mísseis Terra-Ar)",
-    "atom_bomb": "Bomba Atómica",
-    "hydrogen_bomb": "Bomba de Hidrogénio",
-    "mirv": "MIRV",
-    "factory": "Fábrica"
+    "colony": "Cidade",
+    "defense_station": "Posto de Defesa",
+    "spaceport": "Porto",
+    "battlecruiser": "Naves de Guerra",
+    "orbital_strike_platform": "Silo de Mísseis",
+    "point_defense_array": "Lançador SAM (Mísseis Terra-Ar)",
+    "antimatter_torpedo": "Bomba Atómica",
+    "nova_bomb": "Bomba de Hidrogénio",
+    "cluster_warhead": "MIRV",
+    "foundry": "Fábrica"
   },
   "user_setting": {
     "title": "Configurações de Utilizador",
@@ -313,8 +313,8 @@
     "attack_ratio_down": "Diminuir o Rácio de Ataque",
     "attack_ratio_down_desc": "Diminuir 10% de Rácio de Ataque",
     "attack_keybinds": "Teclas de Atalho para Ataque",
-    "boat_attack": "Ataque com barco",
-    "boat_attack_desc": "Enviar um ataque com barco para o local do cursor.",
+    "shuttle_attack": "Ataque com barco",
+    "shuttle_attack_desc": "Enviar um ataque com barco para o local do cursor.",
     "ground_attack": "Ataque por terra",
     "ground_attack_desc": "Enviar um ataque por terra para o local do cursor.",
     "zoom_controls": "Controlos de ampliação",
@@ -363,7 +363,7 @@
     },
     "help": {
       "troops": "Da-me tropas, por favor!",
-      "gold": "Da-me ouro, por favor!",
+      "credits": "Da-me ouro, por favor!",
       "no_attack": "Por favor, não me ataque!",
       "sorry_attack": "Desculpa, não era minha intenção atacar.",
       "alliance": "Aliança?",
@@ -372,7 +372,7 @@
     },
     "attack": {
       "attack": "Ataque [P1]!",
-      "mirv": "Lance um MIRV contra [P1]!",
+      "cluster_warhead": "Lance um MIRV contra [P1]!",
       "focus": "Foque em [P1]!",
       "finish": "Vamos acabar com [P1]!"
     },
@@ -404,7 +404,7 @@
     "warnings": {
       "strong": "[P1] é forte.",
       "weak": "[P1] é fraco.",
-      "mirv_soon": "[P1] pode lançar um MIRV em breve!",
+      "cluster_warhead_soon": "[P1] pode lançar um MIRV em breve!",
       "number1_warning": "O jogador #1 ganhará em breve se não nos juntarmos!",
       "stalemate": "Vamos fazer a paz. Isto é um impasse, nós dois iremos perder.",
       "has_allies": "[P1] tem muitos aliados.",
@@ -412,22 +412,22 @@
       "betrayed": "[P1] traíu o seu aliado!",
       "getting_big": "[P1] cresceu demasiado rápido!",
       "danger_base": "[P1] está desprotegido!",
-      "saving_for_mirv": "[P1] está a guardar para lançar um MIRV.",
-      "mirv_ready": "[P1] tem ouro suficiente para lançar um MIRV!"
+      "saving_for_cluster_warhead": "[P1] está a guardar para lançar um MIRV.",
+      "cluster_warhead_ready": "[P1] tem ouro suficiente para lançar um MIRV!"
     }
   },
   "build_menu": {
     "desc": {
-      "atom_bomb": "Pequena explosão",
-      "hydrogen_bomb": "Grande explosão",
-      "mirv": "Explosão gigantesca, apenas tem como alvo o jogador selecionado",
-      "missile_silo": "Usado para lançar bombas nucleares",
-      "sam_launcher": "Defende contra bombas nucleares que se aproximam",
-      "warship": "Captura navios de comércio, destrói outros navios e barcos",
-      "port": "Envia navios de comércio para gerar ouro",
-      "defense_post": "Aumenta as defesas de fronteiras próximas",
-      "city": "Aumenta a população máxima",
-      "factory": "Cria ferrovias e comboios"
+      "antimatter_torpedo": "Pequena explosão",
+      "nova_bomb": "Grande explosão",
+      "cluster_warhead": "Explosão gigantesca, apenas tem como alvo o jogador selecionado",
+      "orbital_strike_platform": "Usado para lançar bombas nucleares",
+      "point_defense_array": "Defende contra bombas nucleares que se aproximam",
+      "battlecruiser": "Captura navios de comércio, destrói outros navios e barcos",
+      "spaceport": "Envia navios de comércio para gerar ouro",
+      "defense_station": "Aumenta as defesas de fronteiras próximas",
+      "colony": "Aumenta a população máxima",
+      "foundry": "Cria ferrovias e comboios"
     },
     "not_enough_money": "Dinheiro insuficiente"
   },
@@ -448,7 +448,7 @@
     "player": "Jogador",
     "team": "Equipa",
     "owned": "Adquirido",
-    "gold": "Ouro",
+    "credits": "Ouro",
     "troops": "Tropas"
   },
   "player_info_overlay": {
@@ -515,7 +515,7 @@
     "attack_ratio": "Rácio de Ataque"
   },
   "player_panel": {
-    "gold": "Ouro",
+    "credits": "Ouro",
     "troops": "Tropas",
     "betrayals": "Número de traições",
     "traitor": "Traidor",

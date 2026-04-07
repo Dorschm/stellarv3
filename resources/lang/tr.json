@@ -221,11 +221,11 @@
     "hydros": "Hidrojenler",
     "mirv": "MIRV",
     "bombs": "Bombalar",
-    "total_gold": "Toplam",
-    "all_gold": "Tüm altın",
+    "total_credits": "Toplam",
+    "all_credits": "Tüm altın",
     "trade": "Ticaret",
-    "conquest_gold": "Fethedilen oyuncu altını",
-    "stolen_gold": "Savaş gemileriyle çalınan",
+    "conquest_credits": "Fethedilen oyuncu altını",
+    "stolen_credits": "Savaş gemileriyle çalınan",
     "num_of_conquests": "Fethedilen oyuncu sayısı",
     "duration": "Süre",
     "survival_time": "Hayatta kalma süresi",
@@ -415,16 +415,16 @@
     "title": "Dil seç"
   },
   "unit_type": {
-    "city": "Şehir",
-    "defense_post": "Savunma Karakolu",
-    "port": "Liman",
-    "warship": "Savaş Gemisi",
-    "missile_silo": "Füze Silosu",
-    "sam_launcher": "SAM Fırlatıcı",
-    "atom_bomb": "Atom Bombası",
-    "hydrogen_bomb": "Hidrojen Bombası",
-    "mirv": "MIRV",
-    "factory": "Fabrika"
+    "colony": "Şehir",
+    "defense_station": "Savunma Karakolu",
+    "spaceport": "Liman",
+    "battlecruiser": "Savaş Gemisi",
+    "orbital_strike_platform": "Füze Silosu",
+    "point_defense_array": "SAM Fırlatıcı",
+    "antimatter_torpedo": "Atom Bombası",
+    "nova_bomb": "Hidrojen Bombası",
+    "cluster_warhead": "MIRV",
+    "foundry": "Fabrika"
   },
   "user_setting": {
     "title": "Seçenekler",
@@ -496,8 +496,8 @@
     "attack_ratio_down": "Saldırı Oranını Azalt",
     "attack_ratio_down_desc": "Saldırı oranını %10 azalt",
     "attack_keybinds": "Saldırı Kısayolları",
-    "boat_attack": "Tekne Saldırısı",
-    "boat_attack_desc": "İmlecinizin altındaki kareye tekne saldırısı gönder.",
+    "shuttle_attack": "Tekne Saldırısı",
+    "shuttle_attack_desc": "İmlecinizin altındaki kareye tekne saldırısı gönder.",
     "ground_attack": "Kara Saldırısı",
     "ground_attack_desc": "İmlecinin altındaki kareye kara saldırısı gönderir.",
     "swap_direction": "Roket Yönünü Değiştir",
@@ -550,7 +550,7 @@
     "help": {
       "troops": "Lütfen bana asker ver!",
       "troops_frontlines": "Askerleri cepheye gönderin!",
-      "gold": "Lütfen bana altın ver!",
+      "credits": "Lütfen bana altın ver!",
       "no_attack": "Lütfen bana saldırma!",
       "sorry_attack": "Üzgünüm, saldırmak istememiştim.",
       "alliance": "İttifak?",
@@ -559,17 +559,17 @@
     },
     "attack": {
       "attack": "[P1]'e saldır!",
-      "mirv": "[P1]'e MIRV fırlat!",
+      "cluster_warhead": "[P1]'e MIRV fırlat!",
       "focus": "[P1] kişisine odaklan!",
       "finish": "[P1]'i bitirelim!",
-      "build_warships": "Savaş Gemileri İnşa Et!"
+      "build_battlecruisers": "Savaş Gemileri İnşa Et!"
     },
     "defend": {
       "defend": "[P1]'i savunun!",
       "defend_from": "[P1]'e karşı savun!",
       "dont_attack": "[P1]'e saldırmayın!",
       "ally": "[P1] benim müttefikim!",
-      "build_posts": "Savunma Karakolları Kur!"
+      "build_defense_stations": "Savunma Karakolları Kur!"
     },
     "greet": {
       "hello": "Selam!",
@@ -601,7 +601,7 @@
     "warnings": {
       "strong": "[P1] güçlü.",
       "weak": "[P1] zayıf.",
-      "mirv_soon": "[P1] yakında MIRV fırlatabilir!",
+      "cluster_warhead_soon": "[P1] yakında MIRV fırlatabilir!",
       "number1_warning": "Takım olmazsak 1 numaralı oyuncu yakında kazanacak!",
       "stalemate": "Barış yapalım. Bu bir çıkmaz, ikimiz de kaybedeceğiz.",
       "has_allies": "[P1]'in çok müttefiki var.",
@@ -610,8 +610,8 @@
       "betrayed_me": "[P1] bana ihanet etti!",
       "getting_big": "[P1] çok hızlı büyüyor!",
       "danger_base": "[P1] korumasız!",
-      "saving_for_mirv": "[P1] MIRV fırlatmak için para biriktiriyor.",
-      "mirv_ready": "[P1]'in MIRV fırlatacak kadar altını var!",
+      "saving_for_cluster_warhead": "[P1] MIRV fırlatmak için para biriktiriyor.",
+      "cluster_warhead_ready": "[P1]'in MIRV fırlatacak kadar altını var!",
       "snowballing": "[P1] çok hızlı büyüyor!",
       "cheating": "[P1] hile yapıyor!",
       "stop_trading": "[P1]'le ticareti durdur!"
@@ -619,16 +619,16 @@
   },
   "build_menu": {
     "desc": {
-      "atom_bomb": "Küçük patlama",
-      "hydrogen_bomb": "Büyük patlama",
-      "mirv": "Devasa patlama, sadece seçilen oyuncuyu hedefler",
-      "missile_silo": "Nükleer fırlatmak için kullanılır",
-      "sam_launcher": "Gelen nükleerlere karşı savunur",
-      "warship": "Ticaret gemilerini ele geçirir, gemi ve tekneleri yok eder",
-      "port": "Altın üretmek için ticaret gemileri gönderir",
-      "defense_post": "Yakındaki sınırların savunmasını artırır",
-      "city": "Maksimum nüfusu artırır",
-      "factory": "Demiryolları yapar ve trenler oluşturur"
+      "antimatter_torpedo": "Küçük patlama",
+      "nova_bomb": "Büyük patlama",
+      "cluster_warhead": "Devasa patlama, sadece seçilen oyuncuyu hedefler",
+      "orbital_strike_platform": "Nükleer fırlatmak için kullanılır",
+      "point_defense_array": "Gelen nükleerlere karşı savunur",
+      "battlecruiser": "Ticaret gemilerini ele geçirir, gemi ve tekneleri yok eder",
+      "spaceport": "Altın üretmek için ticaret gemileri gönderir",
+      "defense_station": "Yakındaki sınırların savunmasını artırır",
+      "colony": "Maksimum nüfusu artırır",
+      "foundry": "Demiryolları yapar ve trenler oluşturur"
     },
     "not_enough_money": "Yeterli para yok"
   },
@@ -660,12 +660,12 @@
     "player": "Oyuncu",
     "team": "Takım",
     "owned": "Sahip Olunan",
-    "gold": "Altın",
+    "credits": "Altın",
     "maxtroops": "Maks birlikler",
     "launchers": "Fırlatıcılar",
-    "sams": "SAM'ler",
-    "warships": "Savaş Gemileri",
-    "cities": "Şehirler",
+    "point_defense": "SAM'ler",
+    "battlecruisers": "Savaş Gemileri",
+    "colonies": "Şehirler",
     "show_control": "Kontrolü Göster",
     "show_units": "Birimleri Göster"
   },
@@ -718,18 +718,18 @@
     "unit_voluntarily_deleted": "Birim gönüllü olarak silindi",
     "betrayal_debuff_ends": "İhanet zayıflatmasının bitmesine {time} saniye kaldı",
     "attack_cancelled_retreat": "Saldırı iptal edildi, {troops} asker geri çekilme sırasında öldürüldü",
-    "received_gold_from_captured_ship": "{name}'den ele geçirilen gemiden {gold} altın alındı",
-    "received_gold_from_trade": "{name} ile yapılan ticaretten {gold} altın alındı",
+    "received_credits_from_captured_ship": "{name}'den ele geçirilen gemiden {gold} altın alındı",
+    "received_credits_from_trade": "{name} ile yapılan ticaretten {gold} altın alındı",
     "missile_intercepted": "{unit} füzesi önlendi",
-    "mirv_warheads_intercepted": "{count, plural,one {{count} MIRV başlığı önlendi} other {{count} MIRV başlığı önlendi}}",
+    "cluster_warheads_intercepted": "{count, plural,one {{count} MIRV başlığı önlendi} other {{count} MIRV başlığı önlendi}}",
     "sent_troops_to_player": "{name}'e {troops} birlik gönderildi",
     "received_troops_from_player": "{name}'den {troops} birlik alındı",
-    "sent_gold_to_player": "{name}'e {gold} altın gönderildi",
-    "received_gold_from_player": "{name}'den {gold} altın alındı",
+    "sent_credits_to_player": "{name}'e {gold} altın gönderildi",
+    "received_credits_from_player": "{name}'den {gold} altın alındı",
     "unit_captured_by_enemy": "{unit} {name} tarafından ele geçirildi",
     "captured_enemy_unit": "{name}'den {unit} ele geçirildi",
     "unit_destroyed": "{unit} yok edildi",
-    "no_boats_available": "Bot mevcut değil, maks {max}"
+    "no_shuttles_available": "Bot mevcut değil, maks {max}"
   },
   "unit_info_modal": {
     "structure_info": "Bina Bilgisi",
@@ -758,7 +758,7 @@
     "attack_ratio": "Saldırı Oranı"
   },
   "player_panel": {
-    "gold": "Altın",
+    "credits": "Altın",
     "troops": "Birlik",
     "betrayals": "İhanetler",
     "traitor": "Hain",
@@ -780,7 +780,7 @@
     "alliance": "İttifak",
     "send_alliance": "İttifaklık İsteği Gönder",
     "send_troops": "Birlik Gönder",
-    "send_gold": "Altın Gönder",
+    "send_credits": "Altın Gönder",
     "emotes": "Emojiler",
     "arc_up": "Yukarı yay",
     "arc_down": "Aşağı yay",
@@ -794,7 +794,7 @@
     "aria_slider": "Birlik çubuğu",
     "capacity_note": "Alıcı ancak {amount} kadar alabilir."
   },
-  "send_gold_modal": {
+  "send_credits_modal": {
     "title_with_name": "{name}'e Altın Gönder",
     "available_tooltip": "Mevcut altının",
     "aria_slider": "Miktar çubuğu",
@@ -896,25 +896,25 @@
     "received": "Alındı",
     "cancelled": "İptal Edildi",
     "count": "Miktar",
-    "gold": "Altın",
+    "credits": "Altın",
     "workers": "İşçiler",
     "war": "Savaş",
     "trade": "Ticaret",
     "steal": "Çal",
     "unit": {
-      "city": "Şehir",
-      "port": "Liman",
-      "defp": "Savunma Karakolu",
-      "saml": "SAM Fırlatıcı",
-      "silo": "Füze Silosu",
-      "wshp": "Savaş Gemisi",
-      "fact": "Fabrika",
-      "trade": "Ticaret Gemisi",
-      "trans": "Nakliye Gemisi",
-      "abomb": "Atom Bombası",
-      "hbomb": "Hidrojen Bombası",
-      "mirv": "MIRV",
-      "mirvw": "MIRV Savaş Başlığı"
+      "colony": "Şehir",
+      "spaceport": "Liman",
+      "defs": "Savunma Karakolu",
+      "pda": "SAM Fırlatıcı",
+      "osp": "Füze Silosu",
+      "bcrs": "Savaş Gemisi",
+      "fndy": "Fabrika",
+      "tfreight": "Ticaret Gemisi",
+      "ashuttle": "Nakliye Gemisi",
+      "ator": "Atom Bombası",
+      "nbomb": "Hidrojen Bombası",
+      "cwhead": "MIRV",
+      "cwsub": "MIRV Savaş Başlığı"
     }
   },
   "game_list": {

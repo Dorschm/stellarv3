@@ -165,7 +165,7 @@ app.post("/api/pathfind", async (req: Request, res: Response) => {
 
 /**
  * POST /api/spatial-query
- * Compute spatial query for transport ship (closestShoreByWater)
+ * Compute spatial query for transport ship (closestSectorEdgeByWater)
  *
  * Request body:
  * {

@@ -92,8 +92,8 @@ export class AllianceRequestExecution implements Execution {
 
     for (const launcher of players) {
       for (const unit of launcher.units(
-        UnitType.AtomBomb,
-        UnitType.HydrogenBomb,
+        UnitType.AntimatterTorpedo,
+        UnitType.NovaBomb,
       )) {
         if (!unit.isActive() || unit.reachedTarget()) continue;
 

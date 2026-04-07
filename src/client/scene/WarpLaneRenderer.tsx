@@ -1,3 +1,4 @@
+import { useFrame } from "@react-three/fiber";
 import React, { useCallback, useEffect, useRef } from "react";
 import {
   BufferGeometry,
@@ -11,16 +12,15 @@ import {
   TubeGeometry,
   Vector3,
 } from "three";
-import { useFrame } from "@react-three/fiber";
-import { useGameView } from "../bridge/GameViewContext";
-import {
-  GameUpdateType,
-  RailroadConstructionUpdate,
-  RailroadDestructionUpdate,
-  RailroadSnapUpdate,
-} from "../../core/game/GameUpdates";
 import { GameUpdates } from "../../core/game/Game";
 import { TileRef } from "../../core/game/GameMap";
+import {
+  GameUpdateType,
+  HyperspaceLaneConstructionUpdate,
+  HyperspaceLaneDestructionUpdate,
+  HyperspaceLaneSnapUpdate,
+} from "../../core/game/GameUpdates";
+import { useGameView } from "../bridge/GameViewContext";
 import { SceneTickEvent } from "../InputHandler";
 
 // ─── Constants ──────────────────────────────────────────────────────────────
@@ -66,7 +66,12 @@ interface LaneState {
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 function tileToWorld(
-  game: { x: (t: TileRef) => number; y: (t: TileRef) => number; width: () => number; height: () => number },
+  game: {
+    x: (t: TileRef) => number;
+    y: (t: TileRef) => number;
+    width: () => number;
+    height: () => number;
+  },
   tile: TileRef,
 ): Vector3 {
   const halfW = game.width() / 2;
@@ -86,14 +91,25 @@ function buildLaneCurve(points: Vector3[]): CatmullRomCurve3 | null {
 
 function createLaneMeshes(
   points: Vector3[],
-): { tubeMesh: Mesh; glowLine: Line; material: MeshBasicMaterial; glowMaterial: LineBasicMaterial } | null {
+): {
+  tubeMesh: Mesh;
+  glowLine: Line;
+  material: MeshBasicMaterial;
+  glowMaterial: LineBasicMaterial;
+} | null {
   const curve = buildLaneCurve(points);
   if (!curve) return null;
 
   const segments = Math.max(4, points.length * TUBE_SEGMENTS_PER_TILE);
 
   // Core tube
-  const tubeGeo = new TubeGeometry(curve, segments, LANE_RADIUS, TUBE_RADIAL_SEGMENTS, false);
+  const tubeGeo = new TubeGeometry(
+    curve,
+    segments,
+    LANE_RADIUS,
+    TUBE_RADIAL_SEGMENTS,
+    false,
+  );
   const material = new MeshBasicMaterial({
     color: new Color(0.3, 0.6, 1.0),
     transparent: true,
@@ -243,21 +259,22 @@ export function WarpLaneRenderer(): React.JSX.Element {
   const processTickUpdates = useCallback(
     (updates: GameUpdates) => {
       // Construction
-      const constructions = updates[GameUpdateType.RailroadConstructionEvent];
+      const constructions =
+        updates[GameUpdateType.HyperspaceLaneConstructionEvent];
       if (constructions) {
         for (const update of constructions) {
           if (!update) continue;
-          const cu = update as RailroadConstructionUpdate;
+          const cu = update as HyperspaceLaneConstructionUpdate;
           addLane(cu.id, cu.tiles);
         }
       }
 
       // Snap (split one railroad into two)
-      const snaps = updates[GameUpdateType.RailroadSnapEvent];
+      const snaps = updates[GameUpdateType.HyperspaceLaneSnapEvent];
       if (snaps) {
         for (const update of snaps) {
           if (!update) continue;
-          const su = update as RailroadSnapUpdate;
+          const su = update as HyperspaceLaneSnapUpdate;
           removeLane(su.originalId);
           addLane(su.newId1, su.tiles1);
           addLane(su.newId2, su.tiles2);
@@ -265,11 +282,12 @@ export function WarpLaneRenderer(): React.JSX.Element {
       }
 
       // Destruction
-      const destructions = updates[GameUpdateType.RailroadDestructionEvent];
+      const destructions =
+        updates[GameUpdateType.HyperspaceLaneDestructionEvent];
       if (destructions) {
         for (const update of destructions) {
           if (!update) continue;
-          const du = update as RailroadDestructionUpdate;
+          const du = update as HyperspaceLaneDestructionUpdate;
           removeLane(du.id);
         }
       }
@@ -315,7 +333,9 @@ export function WarpLaneRenderer(): React.JSX.Element {
       }
 
       // Emissive pulsing effect
-      const pulse = BASE_EMISSIVE + PULSE_AMPLITUDE * Math.sin(t * PULSE_SPEED * Math.PI * 2);
+      const pulse =
+        BASE_EMISSIVE +
+        PULSE_AMPLITUDE * Math.sin(t * PULSE_SPEED * Math.PI * 2);
       const intensity = pulse * (lane.built ? 1 : lane.buildProgress);
       lane.material.color.setRGB(
         0.3 * intensity,

@@ -221,11 +221,11 @@
     "hydros": "Waterstofbom",
     "mirv": "MIRV",
     "bombs": "Bommen",
-    "total_gold": "Totaal",
-    "all_gold": "Alle goud",
+    "total_credits": "Totaal",
+    "all_credits": "Alle goud",
     "trade": "Handel",
-    "conquest_gold": "Veroverd spelersgoud",
-    "stolen_gold": "Gestolen met oorlogsschepen",
+    "conquest_credits": "Veroverd spelersgoud",
+    "stolen_credits": "Gestolen met oorlogsschepen",
     "num_of_conquests": "Aantal veroverde spelers",
     "duration": "Tijdsduur",
     "survival_time": "Overlevingstijd",
@@ -415,16 +415,16 @@
     "title": "Kies taal"
   },
   "unit_type": {
-    "city": "Stad",
-    "defense_post": "Verdedigingspost",
-    "port": "Haven",
-    "warship": "Oorlogsschip",
-    "missile_silo": "Raketsilo",
-    "sam_launcher": "Luchtdoelraket (SAM)-lanceerder",
-    "atom_bomb": "Atoombom",
-    "hydrogen_bomb": "Waterstofbom",
-    "mirv": "MIRV",
-    "factory": "Fabriek"
+    "colony": "Stad",
+    "defense_station": "Verdedigingspost",
+    "spaceport": "Haven",
+    "battlecruiser": "Oorlogsschip",
+    "orbital_strike_platform": "Raketsilo",
+    "point_defense_array": "Luchtdoelraket (SAM)-lanceerder",
+    "antimatter_torpedo": "Atoombom",
+    "nova_bomb": "Waterstofbom",
+    "cluster_warhead": "MIRV",
+    "foundry": "Fabriek"
   },
   "user_setting": {
     "title": "Instellingen",
@@ -496,8 +496,8 @@
     "attack_ratio_down": "Verlaag Aanvalsverhouding",
     "attack_ratio_down_desc": "Verlaag aanvalsverhouding met 10%",
     "attack_keybinds": "Aanvalssneltoetsen",
-    "boat_attack": "Bootaanval",
-    "boat_attack_desc": "Stuur een bootaanval naar de plek onder je cursor.",
+    "shuttle_attack": "Bootaanval",
+    "shuttle_attack_desc": "Stuur een bootaanval naar de plek onder je cursor.",
     "ground_attack": "Grondaanval",
     "ground_attack_desc": "Stuur een grondaanval naar de plek onder je cursor.",
     "swap_direction": "Omdraaien boogrichting atoom- / waterstofbom",
@@ -550,7 +550,7 @@
     "help": {
       "troops": "Geef me troepen alsjeblieft!",
       "troops_frontlines": "Stuur troepen naar de frontlinies!",
-      "gold": "Geef me goud alsjeblieft!",
+      "credits": "Geef me goud alsjeblieft!",
       "no_attack": "Val me niet aan alsjeblieft!",
       "sorry_attack": "Sorry, ik wilde je niet aanvallen.",
       "alliance": "Bondgenoten worden?",
@@ -559,17 +559,17 @@
     },
     "attack": {
       "attack": "Val [P1] aan!",
-      "mirv": "Vuur een MIRV af op [P1]!",
+      "cluster_warhead": "Vuur een MIRV af op [P1]!",
       "focus": "Vuur op [P1]!",
       "finish": "Laten we [P1] uitschakelen!",
-      "build_warships": "Bouw Oorlogsschepen!"
+      "build_battlecruisers": "Bouw Oorlogsschepen!"
     },
     "defend": {
       "defend": "Verdedig [P1]!",
       "defend_from": "Verdedig jezelf tegen [P1]!",
       "dont_attack": "Val [P1] niet aan!",
       "ally": "[P1] is mijn bondgenoot!",
-      "build_posts": "Bouw Verdedigingsposten!"
+      "build_defense_stations": "Bouw Verdedigingsposten!"
     },
     "greet": {
       "hello": "Hoi",
@@ -601,7 +601,7 @@
     "warnings": {
       "strong": "[P1] is sterk.",
       "weak": "[P1] is zwak.",
-      "mirv_soon": "[P1] kan bijna een MIRV lanceren!",
+      "cluster_warhead_soon": "[P1] kan bijna een MIRV lanceren!",
       "number1_warning": "De #1 speler wint bijna als we niet samenwerken!",
       "stalemate": "Vrede? Dit is een patstelling en anders verliezen we beide.",
       "has_allies": "[P1] heeft veel bondgenoten.",
@@ -610,8 +610,8 @@
       "betrayed_me": "[P1] heeft me verraden!",
       "getting_big": "[P1] wordt te snel groter!",
       "danger_base": "[P1] is onbeschermd!",
-      "saving_for_mirv": "[P1] spaart voor een MIRV.",
-      "mirv_ready": "[P1] heeft genoeg goud om een MIRV te lanceren!",
+      "saving_for_cluster_warhead": "[P1] spaart voor een MIRV.",
+      "cluster_warhead_ready": "[P1] heeft genoeg goud om een MIRV te lanceren!",
       "snowballing": "[P1] groeit te snel!",
       "cheating": "[P1] speelt vals!",
       "stop_trading": "Stop de handel met [P1]!"
@@ -619,16 +619,16 @@
   },
   "build_menu": {
     "desc": {
-      "atom_bomb": "Kleine explosie",
-      "hydrogen_bomb": "Grote explosie",
-      "mirv": "Enorme explosie, alleen gericht op de geselecteerde speler",
-      "missile_silo": "Lanceert kernwapens",
-      "sam_launcher": "Verdedigd tegen inkomende kernwapens",
-      "warship": "Verovert handelsschepen, vernietigt oorlog- en transportschepen",
-      "port": "Stuurt handelsschepen om goud te genereren",
-      "defense_post": "Versterkt verdediging eromheen",
-      "city": "Verhoogt maximale bevolking",
-      "factory": "Maakt spoorwegen en laat treinen rijden"
+      "antimatter_torpedo": "Kleine explosie",
+      "nova_bomb": "Grote explosie",
+      "cluster_warhead": "Enorme explosie, alleen gericht op de geselecteerde speler",
+      "orbital_strike_platform": "Lanceert kernwapens",
+      "point_defense_array": "Verdedigd tegen inkomende kernwapens",
+      "battlecruiser": "Verovert handelsschepen, vernietigt oorlog- en transportschepen",
+      "spaceport": "Stuurt handelsschepen om goud te genereren",
+      "defense_station": "Versterkt verdediging eromheen",
+      "colony": "Verhoogt maximale bevolking",
+      "foundry": "Maakt spoorwegen en laat treinen rijden"
     },
     "not_enough_money": "Niet genoeg goud"
   },
@@ -660,12 +660,12 @@
     "player": "Speler",
     "team": "Team",
     "owned": "Bezit",
-    "gold": "Goud",
+    "credits": "Goud",
     "maxtroops": "Max. troepen",
     "launchers": "Raketsilo's",
-    "sams": "SAM-lanceerders",
-    "warships": "Oorlogsschepen",
-    "cities": "Steden",
+    "point_defense": "SAM-lanceerders",
+    "battlecruisers": "Oorlogsschepen",
+    "colonies": "Steden",
     "show_control": "Toon bezit",
     "show_units": "Toon gebouwen"
   },
@@ -718,18 +718,18 @@
     "unit_voluntarily_deleted": "Eenheid vrijwillig verwijderd",
     "betrayal_debuff_ends": "Nog {time} seconden tot de verraad-verzwakking afloopt",
     "attack_cancelled_retreat": "Aanval geannuleerd, {troops} soldaten gedood tijdens terugtrekken",
-    "received_gold_from_captured_ship": "{gold} Goud ontvangen van veroverd schip van {name}",
-    "received_gold_from_trade": "{gold} Goud ontvangen van handel met {name}",
+    "received_credits_from_captured_ship": "{gold} Goud ontvangen van veroverd schip van {name}",
+    "received_credits_from_trade": "{gold} Goud ontvangen van handel met {name}",
     "missile_intercepted": "Raket onderschepte {unit}",
-    "mirv_warheads_intercepted": "{count, plural, one {{count} MIRV-kernkop onderschept} other {{count} MIRV-kernkoppen onderschept}}",
+    "cluster_warheads_intercepted": "{count, plural, one {{count} MIRV-kernkop onderschept} other {{count} MIRV-kernkoppen onderschept}}",
     "sent_troops_to_player": "{troops} Troepen naar {name} gestuurd",
     "received_troops_from_player": "{troops} Troepen ontvangen van {name}",
-    "sent_gold_to_player": "{gold} Goud verstuurd aan {name}",
-    "received_gold_from_player": "{gold} Goud ontvangen van {name}",
+    "sent_credits_to_player": "{gold} Goud verstuurd aan {name}",
+    "received_credits_from_player": "{gold} Goud ontvangen van {name}",
     "unit_captured_by_enemy": "Jouw {unit} werd veroverd door {name}",
     "captured_enemy_unit": "{unit} veroverd van {name}",
     "unit_destroyed": "Jouw {unit} werd vernietigd",
-    "no_boats_available": "Geen boten beschikbaar, max. {max}"
+    "no_shuttles_available": "Geen boten beschikbaar, max. {max}"
   },
   "unit_info_modal": {
     "structure_info": "Gebouw Info",
@@ -758,7 +758,7 @@
     "attack_ratio": "Aanvalsverhouding"
   },
   "player_panel": {
-    "gold": "Goud",
+    "credits": "Goud",
     "troops": "Troepen",
     "betrayals": "Aantal verraadacties",
     "traitor": "Verrader",
@@ -780,7 +780,7 @@
     "alliance": "Alliantie",
     "send_alliance": "Stuur Alliantieverzoek",
     "send_troops": "Geef Troepen",
-    "send_gold": "Geef Goud",
+    "send_credits": "Geef Goud",
     "emotes": "Emoji's",
     "arc_up": "Opwaartse boog",
     "arc_down": "Neerwaartse boog",
@@ -794,7 +794,7 @@
     "aria_slider": "Troepen schuifbalk",
     "capacity_note": "Ontvanger kan slechts {amount} accepteren momenteel."
   },
-  "send_gold_modal": {
+  "send_credits_modal": {
     "title_with_name": "Stuur Goud naar {name}",
     "available_tooltip": "Jouw nu beschikbare goud",
     "aria_slider": "Bedrag schuifbalk",
@@ -896,25 +896,25 @@
     "received": "Ontvangen",
     "cancelled": "Geannuleerd",
     "count": "Aantal",
-    "gold": "Goud",
+    "credits": "Goud",
     "workers": "Werkers",
     "war": "Oorlog",
     "trade": "Handel",
     "steal": "Gestolen",
     "unit": {
-      "city": "Stad",
-      "port": "Haven",
-      "defp": "Verdedigingspost",
-      "saml": "SAM-lanceerder",
-      "silo": "Raketsilo",
-      "wshp": "Oorlogsschip",
-      "fact": "Fabriek",
-      "trade": "Handelsschip",
-      "trans": "Transportschip",
-      "abomb": "Atoombom",
-      "hbomb": "Waterstofbom",
-      "mirv": "MIRV",
-      "mirvw": "MIRV-kernkop"
+      "colony": "Stad",
+      "spaceport": "Haven",
+      "defs": "Verdedigingspost",
+      "pda": "SAM-lanceerder",
+      "osp": "Raketsilo",
+      "bcrs": "Oorlogsschip",
+      "fndy": "Fabriek",
+      "tfreight": "Handelsschip",
+      "ashuttle": "Transportschip",
+      "ator": "Atoombom",
+      "nbomb": "Waterstofbom",
+      "cwhead": "MIRV",
+      "cwsub": "MIRV-kernkop"
     }
   },
   "game_list": {

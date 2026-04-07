@@ -1,15 +1,15 @@
 import { AllPlayersStats, ClientID, Winner } from "../Schemas";
 import {
+  Credits,
   EmojiMessage,
+  FrigateType,
   GameUpdates,
-  Gold,
   MessageType,
   NameViewData,
   PlayerID,
   PlayerType,
   Team,
   Tick,
-  TrainType,
   UnitType,
 } from "./Game";
 import { TileRef } from "./GameMap";
@@ -59,9 +59,9 @@ export enum GameUpdateType {
   Hash,
   UnitIncoming,
   BonusEvent,
-  RailroadDestructionEvent,
-  RailroadConstructionEvent,
-  RailroadSnapEvent,
+  HyperspaceLaneDestructionEvent,
+  HyperspaceLaneConstructionEvent,
+  HyperspaceLaneSnapEvent,
   ConquestEvent,
   EmbargoEvent,
   GamePaused,
@@ -83,9 +83,9 @@ export type GameUpdate =
   | UnitIncomingUpdate
   | AllianceExtensionUpdate
   | BonusEventUpdate
-  | RailroadConstructionUpdate
-  | RailroadDestructionUpdate
-  | RailroadSnapUpdate
+  | HyperspaceLaneConstructionUpdate
+  | HyperspaceLaneDestructionUpdate
+  | HyperspaceLaneSnapUpdate
   | ConquestUpdate
   | EmbargoUpdate
   | GamePausedUpdate;
@@ -94,23 +94,23 @@ export interface BonusEventUpdate {
   type: GameUpdateType.BonusEvent;
   player: PlayerID;
   tile: TileRef;
-  gold: number;
+  credits: number;
   troops: number;
 }
 
-export interface RailroadConstructionUpdate {
-  type: GameUpdateType.RailroadConstructionEvent;
+export interface HyperspaceLaneConstructionUpdate {
+  type: GameUpdateType.HyperspaceLaneConstructionEvent;
   id: number;
   tiles: TileRef[];
 }
 
-export interface RailroadDestructionUpdate {
-  type: GameUpdateType.RailroadDestructionEvent;
+export interface HyperspaceLaneDestructionUpdate {
+  type: GameUpdateType.HyperspaceLaneDestructionEvent;
   id: number;
 }
 
-export interface RailroadSnapUpdate {
-  type: GameUpdateType.RailroadSnapEvent;
+export interface HyperspaceLaneSnapUpdate {
+  type: GameUpdateType.HyperspaceLaneSnapEvent;
   originalId: number;
   newId1: number;
   newId2: number;
@@ -122,7 +122,7 @@ export interface ConquestUpdate {
   type: GameUpdateType.ConquestEvent;
   conquerorId: PlayerID;
   conqueredId: PlayerID;
-  gold: Gold;
+  credits: Credits;
 }
 
 export interface UnitUpdate {
@@ -140,15 +140,15 @@ export interface UnitUpdate {
   retreating: boolean;
   targetable: boolean;
   markedForDeletion: number | false;
-  targetUnitId?: number; // Only for trade ships
+  targetUnitId?: number; // Only for trade freighters
   targetTile?: TileRef; // Only for nukes
   health?: number;
   underConstruction?: boolean;
   missileTimerQueue: number[];
   level: number;
-  hasTrainStation: boolean;
-  trainType?: TrainType; // Only for trains
-  loaded?: boolean; // Only for trains
+  hasTradeHub: boolean;
+  frigateType?: FrigateType; // Only for frigates
+  loaded?: boolean; // Only for frigates
 }
 
 export interface AttackUpdate {
@@ -172,7 +172,7 @@ export interface PlayerUpdate {
   isAlive: boolean;
   isDisconnected: boolean;
   tilesOwned: number;
-  gold: Gold;
+  credits: Credits;
   troops: number;
   allies: number[];
   embargoes: Set<PlayerID>;
@@ -245,7 +245,7 @@ export interface DisplayMessageUpdate {
   type: GameUpdateType.DisplayEvent;
   message: string;
   messageType: MessageType;
-  goldAmount?: bigint;
+  creditAmount?: bigint;
   playerID: number | null;
   params?: Record<string, string | number>;
 }

@@ -28,7 +28,7 @@ function snapshotPlayer(p: PlayerView, isMe: boolean): PlayerSnapshot {
     displayName: p.displayName(),
     isAlive: p.isAlive(),
     troops: p.troops(),
-    gold: p.gold(),
+    gold: p.credits(),
     numTilesOwned: p.numTilesOwned(),
     allies: p.allies().map((a) => a.smallID()),
     isMe,
@@ -97,7 +97,7 @@ function syncStoreFromGameView(gameView: GameView): void {
         id: _msgIdCounter++,
         message: u.message,
         messageType: u.messageType,
-        goldAmount: u.goldAmount,
+        creditAmount: u.creditAmount,
         playerID: u.playerID,
         tick,
       }));
@@ -153,7 +153,10 @@ export function GameBridge(): null {
   // Sync attack ratio changes into the store
   const onAttackRatioChanged = useCallback((e: AttackRatioEvent) => {
     const state = useHUDStore.getState();
-    const newRatio = Math.max(0, Math.min(100, state.attackRatio + e.attackRatio));
+    const newRatio = Math.max(
+      0,
+      Math.min(100, state.attackRatio + e.attackRatio),
+    );
     state.setAttackRatio(newRatio);
   }, []);
   useEventBus(eventBus, AttackRatioEvent, onAttackRatioChanged);

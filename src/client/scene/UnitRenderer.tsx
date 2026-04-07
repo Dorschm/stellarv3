@@ -1,26 +1,26 @@
-import React, { useRef, useEffect } from "react";
+import { useFrame } from "@react-three/fiber";
+import React, { useEffect, useRef } from "react";
 import {
-  BufferGeometry,
   BoxGeometry,
+  BufferGeometry,
+  Color,
   ConeGeometry,
   CylinderGeometry,
-  Euler,
-  SphereGeometry,
-  OctahedronGeometry,
   DodecahedronGeometry,
-  TorusGeometry,
+  Euler,
   Group,
-  InstancedMesh,
   InstancedBufferAttribute,
+  InstancedMesh,
+  Matrix4,
   MeshStandardMaterial,
   Object3D,
-  Color,
-  Matrix4,
+  OctahedronGeometry,
+  SphereGeometry,
+  TorusGeometry,
 } from "three";
-import { useFrame } from "@react-three/fiber";
-import { useGameView } from "../bridge/GameViewContext";
-import { TrainType, UnitType } from "../../core/game/Game";
+import { FrigateType, UnitType } from "../../core/game/Game";
 import { UnitView } from "../../core/game/GameView";
+import { useGameView } from "../bridge/GameViewContext";
 
 // ─── Train subtypes for distinct proxy meshes ─────────────────────────────────
 
@@ -36,8 +36,8 @@ export type TrainSubtype =
 export type RenderKey = UnitType | TrainSubtype;
 
 function trainSubtype(unit: UnitView): TrainSubtype {
-  const tt = unit.trainType();
-  if (tt === TrainType.Engine || tt === TrainType.TailEngine) {
+  const tt = unit.frigateType();
+  if (tt === FrigateType.Engine || tt === FrigateType.TailEngine) {
     return "TrainEngine";
   }
   return unit.isLoaded() ? "TrainLoadedCarriage" : "TrainCarriage";
@@ -49,7 +49,7 @@ function trainSubtype(unit: UnitView): TrainSubtype {
  * asset registries can reuse the same bucketing).
  */
 export function renderKeyFor(unit: UnitView): RenderKey {
-  if (unit.type() === UnitType.Train) return trainSubtype(unit);
+  if (unit.type() === UnitType.Frigate) return trainSubtype(unit);
   return unit.type();
 }
 
@@ -58,11 +58,11 @@ export function renderKeyFor(unit: UnitView): RenderKey {
 function createProxyGeometry(key: RenderKey): BufferGeometry {
   switch (key) {
     // Mobile units
-    case UnitType.TransportShip:
+    case UnitType.AssaultShuttle:
       return new ConeGeometry(1.5, 4, 8);
-    case UnitType.Warship:
+    case UnitType.Battlecruiser:
       return new BoxGeometry(2, 6, 2);
-    case UnitType.TradeShip:
+    case UnitType.TradeFreighter:
       return new ConeGeometry(2.5, 4, 8);
     // Train subtypes: engines = cylinder, carriages = box
     case "TrainEngine":
@@ -71,30 +71,30 @@ function createProxyGeometry(key: RenderKey): BufferGeometry {
       return new BoxGeometry(1.8, 4, 1.8);
     case "TrainLoadedCarriage":
       return new BoxGeometry(2.2, 4.5, 2.2);
-    case UnitType.Shell:
+    case UnitType.PlasmaBolt:
       return new SphereGeometry(0.8, 6, 6);
-    case UnitType.SAMMissile:
+    case UnitType.PointDefenseMissile:
       return new ConeGeometry(0.5, 2, 6);
-    case UnitType.AtomBomb:
+    case UnitType.AntimatterTorpedo:
       return new SphereGeometry(1.5, 8, 8);
-    case UnitType.HydrogenBomb:
+    case UnitType.NovaBomb:
       return new SphereGeometry(2.5, 10, 10);
-    case UnitType.MIRV:
+    case UnitType.ClusterWarhead:
       return new DodecahedronGeometry(2);
-    case UnitType.MIRVWarhead:
+    case UnitType.ClusterWarheadSubmunition:
       return new SphereGeometry(0.8, 6, 6);
     // Structures
-    case UnitType.City:
+    case UnitType.Colony:
       return new SphereGeometry(3, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2);
-    case UnitType.Port:
+    case UnitType.Spaceport:
       return new TorusGeometry(2.5, 0.6, 8, 16);
-    case UnitType.Factory:
+    case UnitType.Foundry:
       return new BoxGeometry(2.5, 2.5, 6);
-    case UnitType.MissileSilo:
+    case UnitType.OrbitalStrikePlatform:
       return new CylinderGeometry(2.5, 2.5, 1, 12);
-    case UnitType.DefensePost:
+    case UnitType.DefenseStation:
       return new OctahedronGeometry(2);
-    case UnitType.SAMLauncher:
+    case UnitType.PointDefenseArray:
       return new ConeGeometry(2, 3, 8);
     default:
       return new SphereGeometry(1, 8, 8);
@@ -147,35 +147,47 @@ export function createBaseTransform(key: RenderKey): BaseTransform {
 
   switch (key) {
     // Cone-shaped projectiles / ships: tip should point up out of the plane.
-    case UnitType.TransportShip:
-    case UnitType.TradeShip:
-    case UnitType.SAMMissile:
+    case UnitType.AssaultShuttle:
+    case UnitType.TradeFreighter:
+    case UnitType.PointDefenseMissile:
       return { ...IDENTITY_TRANSFORM, rotation: UPRIGHT_Y_TO_Z };
 
     // City hemisphere: default is a dome pointing +Y. Rotate so the dome
     // points +Z with the flat equator cut resting on the XY plane.
-    case UnitType.City:
-      return { rotation: UPRIGHT_Y_TO_Z, scale: uniformScale, offset: [0, 0, 0] };
+    case UnitType.Colony:
+      return {
+        rotation: UPRIGHT_Y_TO_Z,
+        scale: uniformScale,
+        offset: [0, 0, 0],
+      };
 
     // MissileSilo disk: default is a 1-unit-tall cylinder standing on its
     // edge (axis along +Y). Rotate so the disk lies flat on the map plane.
-    case UnitType.MissileSilo:
-      return { rotation: UPRIGHT_Y_TO_Z, scale: uniformScale, offset: [0, 0, 0] };
+    case UnitType.OrbitalStrikePlatform:
+      return {
+        rotation: UPRIGHT_Y_TO_Z,
+        scale: uniformScale,
+        offset: [0, 0, 0],
+      };
 
     // SAMLauncher: inverted cone with wide base up, narrow tip pointing into
     // the map plane. Replaces the old ad-hoc rotation.x = π override which
     // was authored for a Y-up world and read as sideways here.
-    case UnitType.SAMLauncher:
-      return { rotation: INVERTED_Y_TO_Z, scale: uniformScale, offset: [0, 0, 0] };
+    case UnitType.PointDefenseArray:
+      return {
+        rotation: INVERTED_Y_TO_Z,
+        scale: uniformScale,
+        offset: [0, 0, 0],
+      };
 
     // Port torus: default TorusGeometry already lies in the XY plane with
     // its hole axis along +Z, so it sits flat on the map without rotation.
-    case UnitType.Port:
+    case UnitType.Spaceport:
       return { rotation: [0, 0, 0], scale: uniformScale, offset: [0, 0, 0] };
 
     // DefensePost / Factory: boxes/octahedrons with structure scaling
-    case UnitType.DefensePost:
-    case UnitType.Factory:
+    case UnitType.DefenseStation:
+    case UnitType.Foundry:
       return { rotation: [0, 0, 0], scale: uniformScale, offset: [0, 0, 0] };
 
     // Boxes / spheres / dodecahedrons / octahedrons don't have an axial
@@ -188,34 +200,34 @@ export function createBaseTransform(key: RenderKey): BaseTransform {
 // ─── Unit type classification ────────────────────────────────────────────────
 
 const STRUCTURE_TYPES: ReadonlySet<UnitType> = new Set([
-  UnitType.City,
-  UnitType.Port,
-  UnitType.Factory,
-  UnitType.MissileSilo,
-  UnitType.DefensePost,
-  UnitType.SAMLauncher,
+  UnitType.Colony,
+  UnitType.Spaceport,
+  UnitType.Foundry,
+  UnitType.OrbitalStrikePlatform,
+  UnitType.DefenseStation,
+  UnitType.PointDefenseArray,
 ]);
 
 /** All render keys: unit types (excluding Train which is replaced by subtypes) + train subtypes. */
 export const ALL_RENDER_KEYS: readonly RenderKey[] = [
-  UnitType.TransportShip,
-  UnitType.Warship,
-  UnitType.TradeShip,
+  UnitType.AssaultShuttle,
+  UnitType.Battlecruiser,
+  UnitType.TradeFreighter,
   "TrainEngine",
   "TrainCarriage",
   "TrainLoadedCarriage",
-  UnitType.Shell,
-  UnitType.SAMMissile,
-  UnitType.AtomBomb,
-  UnitType.HydrogenBomb,
-  UnitType.MIRV,
-  UnitType.MIRVWarhead,
-  UnitType.City,
-  UnitType.Port,
-  UnitType.Factory,
-  UnitType.MissileSilo,
-  UnitType.DefensePost,
-  UnitType.SAMLauncher,
+  UnitType.PlasmaBolt,
+  UnitType.PointDefenseMissile,
+  UnitType.AntimatterTorpedo,
+  UnitType.NovaBomb,
+  UnitType.ClusterWarhead,
+  UnitType.ClusterWarheadSubmunition,
+  UnitType.Colony,
+  UnitType.Spaceport,
+  UnitType.Foundry,
+  UnitType.OrbitalStrikePlatform,
+  UnitType.DefenseStation,
+  UnitType.PointDefenseArray,
 ];
 
 /** Height above the map plane for mobile units. */
@@ -223,28 +235,28 @@ const UNIT_HOVER_HEIGHT = 5;
 
 /** Per-structure-type heights above the map plane, visible from 45° view. */
 const STRUCTURE_HEIGHTS: Partial<Record<UnitType, number>> = {
-  [UnitType.City]: 12,
-  [UnitType.Port]: 10,
-  [UnitType.Factory]: 10,
-  [UnitType.MissileSilo]: 6,
-  [UnitType.DefensePost]: 8,
-  [UnitType.SAMLauncher]: 6,
+  [UnitType.Colony]: 12,
+  [UnitType.Spaceport]: 10,
+  [UnitType.Foundry]: 10,
+  [UnitType.OrbitalStrikePlatform]: 6,
+  [UnitType.DefenseStation]: 8,
+  [UnitType.PointDefenseArray]: 6,
 };
 
 /** Per-structure-type scale multipliers so structures are prominent from angles. */
 const STRUCTURE_SCALES: Partial<Record<UnitType, number>> = {
-  [UnitType.City]: 2.5,
-  [UnitType.Port]: 2.0,
-  [UnitType.Factory]: 2.0,
-  [UnitType.MissileSilo]: 1.5,
-  [UnitType.DefensePost]: 2.0,
-  [UnitType.SAMLauncher]: 1.5,
+  [UnitType.Colony]: 2.5,
+  [UnitType.Spaceport]: 2.0,
+  [UnitType.Foundry]: 2.0,
+  [UnitType.OrbitalStrikePlatform]: 1.5,
+  [UnitType.DefenseStation]: 2.0,
+  [UnitType.PointDefenseArray]: 1.5,
 };
 
 /** Unit types that render as 3D arcs when crossing space (non-land) tiles. */
 const ARC_SHIP_TYPES: ReadonlySet<UnitType> = new Set([
-  UnitType.TransportShip,
-  UnitType.TradeShip,
+  UnitType.AssaultShuttle,
+  UnitType.TradeFreighter,
 ]);
 
 /** Arc apex height as a fraction of inter-planet distance. */
@@ -422,7 +434,7 @@ export interface UnitRendererGameView {
   x(tile: number): number;
   y(tile: number): number;
   units(): Iterable<UnitView>;
-  isLand(tile: number): boolean;
+  isSector(tile: number): boolean;
   nations(): { coordinates: [number, number]; name: string }[];
 }
 
@@ -504,7 +516,12 @@ export class UnitRendererEngine {
       const nations = game.nations();
       this.nationPositions = nations.map((n) => {
         const w = tileToWorld(n.coordinates[0], n.coordinates[1], halfW, halfH);
-        return { wx: w.wx, wy: w.wy, tileX: n.coordinates[0], tileY: n.coordinates[1] };
+        return {
+          wx: w.wx,
+          wy: w.wy,
+          tileX: n.coordinates[0],
+          tileY: n.coordinates[1],
+        };
       });
     }
 
@@ -658,7 +675,7 @@ export class UnitRendererEngine {
           // of the ship's space traversal, derived from the ship's source
           // planet and its targetTile (destination planet).
           if (isArcShip && this.nationPositions.length >= 2) {
-            if (!game.isLand(curTile)) {
+            if (!game.isSector(curTile)) {
               // Ship is in space — resolve or reuse cached endpoints
               let endpoints = this.arcEndpoints.get(unitId);
 
@@ -672,10 +689,14 @@ export class UnitRendererEngine {
                   const curTileY = game.y(curTile);
 
                   const srcPlanet = findNearestNation(
-                    curTileX, curTileY, this.nationPositions,
+                    curTileX,
+                    curTileY,
+                    this.nationPositions,
                   );
                   const dstPlanet = findNearestNation(
-                    targetTileX, targetTileY, this.nationPositions,
+                    targetTileX,
+                    targetTileY,
+                    this.nationPositions,
                   );
 
                   if (srcPlanet && dstPlanet && srcPlanet !== dstPlanet) {
@@ -688,15 +709,22 @@ export class UnitRendererEngine {
               if (endpoints) {
                 const totalDx = endpoints.dst.wx - endpoints.src.wx;
                 const totalDy = endpoints.dst.wy - endpoints.src.wy;
-                const totalDist = Math.sqrt(totalDx * totalDx + totalDy * totalDy);
+                const totalDist = Math.sqrt(
+                  totalDx * totalDx + totalDy * totalDy,
+                );
 
                 if (totalDist > 1) {
                   // Project current position onto the src→dst line for progress
                   const projDx = px - endpoints.src.wx;
                   const projDy = py - endpoints.src.wy;
-                  const progress = Math.max(0, Math.min(1,
-                    (projDx * totalDx + projDy * totalDy) / (totalDist * totalDist),
-                  ));
+                  const progress = Math.max(
+                    0,
+                    Math.min(
+                      1,
+                      (projDx * totalDx + projDy * totalDy) /
+                        (totalDist * totalDist),
+                    ),
+                  );
 
                   // Lerp XY between planet centers for smoother visual path
                   px = endpoints.src.wx + totalDx * progress;
@@ -704,7 +732,9 @@ export class UnitRendererEngine {
 
                   // Parabolic arc: apex at midpoint, height proportional to distance
                   const maxArcHeight = totalDist * ARC_HEIGHT_FACTOR;
-                  pz = UNIT_HOVER_HEIGHT + Math.sin(progress * Math.PI) * maxArcHeight;
+                  pz =
+                    UNIT_HOVER_HEIGHT +
+                    Math.sin(progress * Math.PI) * maxArcHeight;
                 }
               }
             } else {
@@ -803,4 +833,3 @@ export function UnitRenderer(): React.JSX.Element {
 
   return <group ref={groupRef} />;
 }
-

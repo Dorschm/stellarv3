@@ -128,11 +128,11 @@ export class GameServer {
     if (gameConfig.bots !== undefined) {
       this.gameConfig.bots = gameConfig.bots;
     }
-    if (gameConfig.infiniteGold !== undefined) {
-      this.gameConfig.infiniteGold = gameConfig.infiniteGold;
+    if (gameConfig.infiniteCredits !== undefined) {
+      this.gameConfig.infiniteCredits = gameConfig.infiniteCredits;
     }
-    if (gameConfig.donateGold !== undefined) {
-      this.gameConfig.donateGold = gameConfig.donateGold;
+    if (gameConfig.donateCredits !== undefined) {
+      this.gameConfig.donateCredits = gameConfig.donateCredits;
     }
     if (gameConfig.infiniteTroops !== undefined) {
       this.gameConfig.infiniteTroops = gameConfig.infiniteTroops;
@@ -161,11 +161,11 @@ export class GameServer {
     if (gameConfig.playerTeams !== undefined) {
       this.gameConfig.playerTeams = gameConfig.playerTeams;
     }
-    if (gameConfig.goldMultiplier !== undefined) {
-      this.gameConfig.goldMultiplier = gameConfig.goldMultiplier;
+    if (gameConfig.creditMultiplier !== undefined) {
+      this.gameConfig.creditMultiplier = gameConfig.creditMultiplier;
     }
-    if (gameConfig.startingGold !== undefined) {
-      this.gameConfig.startingGold = gameConfig.startingGold;
+    if (gameConfig.startingCredits !== undefined) {
+      this.gameConfig.startingCredits = gameConfig.startingCredits;
     }
     if (gameConfig.disableAlliances !== undefined) {
       this.gameConfig.disableAlliances = gameConfig.disableAlliances;

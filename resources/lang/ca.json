@@ -256,13 +256,13 @@
     "hydros": "d'Hidrogen",
     "mirv": "MIRV",
     "bombs": "Bombes",
-    "total_gold": "Total",
-    "all_gold": "Tot l'or",
+    "total_credits": "Total",
+    "all_credits": "Tot l'or",
     "trade": "Comerç",
-    "train_trade": "Tren",
+    "frigate_trade": "Tren",
     "naval_trade": "Vaixell de Comerç",
-    "conquest_gold": "Or de jugadors conquistats",
-    "stolen_gold": "Robat amb vaixells de guerra",
+    "conquest_credits": "Or de jugadors conquistats",
+    "stolen_credits": "Robat amb vaixells de guerra",
     "num_of_conquests_humans": "Jugadors matats",
     "num_of_conquests_bots": "Bots matats",
     "duration": "Duració",
@@ -457,22 +457,22 @@
     "random_spawn": "Punt de partida aleatori",
     "compact_map": "Mapa Compacte",
     "crowded": "Atapeït",
-    "starting_gold": "5M d'Or Inicial"
+    "starting_credits": "5M d'Or Inicial"
   },
   "select_lang": {
     "title": "Seleccionar l'Idioma"
   },
   "unit_type": {
-    "city": "Ciutat",
-    "defense_post": "Torre Defensiva",
-    "port": "Port",
-    "warship": "Vaixell de Guerra",
-    "missile_silo": "Llançador de Míssils",
-    "sam_launcher": "Defensor Aeri",
-    "atom_bomb": "Bomba Atòmica",
-    "hydrogen_bomb": "Bomba d'Hidrogen",
-    "mirv": "MIRV",
-    "factory": "Fàbrica"
+    "colony": "Ciutat",
+    "defense_station": "Torre Defensiva",
+    "spaceport": "Port",
+    "battlecruiser": "Vaixell de Guerra",
+    "orbital_strike_platform": "Llançador de Míssils",
+    "point_defense_array": "Defensor Aeri",
+    "antimatter_torpedo": "Bomba Atòmica",
+    "nova_bomb": "Bomba d'Hidrogen",
+    "cluster_warhead": "MIRV",
+    "foundry": "Fàbrica"
   },
   "user_setting": {
     "title": "Configuració",
@@ -544,8 +544,8 @@
     "attack_ratio_down": "Reduir la ràtio d'atac",
     "attack_ratio_down_desc": "Reduir la ràtio d'atac per un 10%",
     "attack_keybinds": "Dreceres d'atac",
-    "boat_attack": "Atac Marítim",
-    "boat_attack_desc": "Envia un atac amb vaixell de transport al teu cursor.",
+    "shuttle_attack": "Atac Marítim",
+    "shuttle_attack_desc": "Envia un atac amb vaixell de transport al teu cursor.",
     "ground_attack": "Atac",
     "ground_attack_desc": "Envia un atac terrestre sota el teu cursor.",
     "swap_direction": "Canvia la direcció del míssil",
@@ -598,7 +598,7 @@
     "help": {
       "troops": "Envia'm tropes, si us plau!",
       "troops_frontlines": "Envia tropes a les línies de front!",
-      "gold": "Dona'm or, si us plau!",
+      "credits": "Dona'm or, si us plau!",
       "no_attack": "Per favor, no m'ataquis!",
       "sorry_attack": "Perdona'm, no et volia atacar.",
       "alliance": "Aliança?",
@@ -607,17 +607,17 @@
     },
     "attack": {
       "attack": "Ataca a [P1]!",
-      "mirv": "Llança una MIRV a [P1]!",
+      "cluster_warhead": "Llança una MIRV a [P1]!",
       "focus": "Enfoquem les armes a [P1]!",
       "finish": "Eliminem a [P1], que està a les últimes!",
-      "build_warships": "Construeix Vaixells de Guerra!"
+      "build_battlecruisers": "Construeix Vaixells de Guerra!"
     },
     "defend": {
       "defend": "Defèn a [P1]!",
       "defend_from": "Defèn contra [P1]!",
       "dont_attack": "No ataquis a [P1]!",
       "ally": "[P1] es el meu aliat!",
-      "build_posts": "Construeix Torres Defensives!"
+      "build_defense_stations": "Construeix Torres Defensives!"
     },
     "greet": {
       "hello": "Hola!",
@@ -649,7 +649,7 @@
     "warnings": {
       "strong": "[P1] està fort.",
       "weak": "[P1] està fluix.",
-      "mirv_soon": "[P1] podrà llençar una MIRV aviat!",
+      "cluster_warhead_soon": "[P1] podrà llençar una MIRV aviat!",
       "number1_warning": "El jugador número 1 guanyarà aviat si no ens aliem!",
       "stalemate": "Fem les paus. Estem empatats, perdrem tots dos.",
       "has_allies": "[P1] té molts aliats.",
@@ -658,8 +658,8 @@
       "betrayed_me": "[P1] m'ha traït!",
       "getting_big": "[P1] està creixent massa ràpid!",
       "danger_base": "[P1] no està protegit!",
-      "saving_for_mirv": "[P1] està estalviant per llançar una MIRV.",
-      "mirv_ready": "[P1] té prou or per llançar una MIRV!",
+      "saving_for_cluster_warhead": "[P1] està estalviant per llançar una MIRV.",
+      "cluster_warhead_ready": "[P1] té prou or per llançar una MIRV!",
       "snowballing": "[P1] s'està expandint massa ràpidament!",
       "cheating": "[P1] està fent trampes!",
       "stop_trading": "Atura el comerç amb [P1]!"
@@ -667,16 +667,16 @@
   },
   "build_menu": {
     "desc": {
-      "atom_bomb": "Explosió petita",
-      "hydrogen_bomb": "Explosió gran",
-      "mirv": "Explosió immensa al jugador seleccionat",
-      "missile_silo": "Per llençar bombes nuclears",
-      "sam_launcher": "Defensa't contra bombes nuclears",
-      "warship": "Captura Vaixells de Comerç, destrueix Vaixells de Guerra i de Comerç",
-      "port": "Envia Vaixells de Comerç per generar or",
-      "defense_post": "Reforça les defenses de les fronteres properes",
-      "city": "Augmenta la població màxima",
-      "factory": "Crea ferrocarrils i genera trens"
+      "antimatter_torpedo": "Explosió petita",
+      "nova_bomb": "Explosió gran",
+      "cluster_warhead": "Explosió immensa al jugador seleccionat",
+      "orbital_strike_platform": "Per llençar bombes nuclears",
+      "point_defense_array": "Defensa't contra bombes nuclears",
+      "battlecruiser": "Captura Vaixells de Comerç, destrueix Vaixells de Guerra i de Comerç",
+      "spaceport": "Envia Vaixells de Comerç per generar or",
+      "defense_station": "Reforça les defenses de les fronteres properes",
+      "colony": "Augmenta la població màxima",
+      "foundry": "Crea ferrocarrils i genera trens"
     },
     "not_enough_money": "No tens prou diners"
   },
@@ -704,12 +704,12 @@
     "player": "Jugador",
     "team": "Equip",
     "owned": "Posseït",
-    "gold": "Or",
+    "credits": "Or",
     "maxtroops": "Tropes màximes",
     "launchers": "Llançadors",
-    "sams": "Defensors Aeris",
-    "warships": "Vaixell de Guerra",
-    "cities": "Ciutats",
+    "point_defense": "Defensors Aeris",
+    "battlecruisers": "Vaixell de Guerra",
+    "colonies": "Ciutats",
     "show_control": "Mostra el control",
     "show_units": "Mostra les unitats"
   },
@@ -740,20 +740,20 @@
     "unit_voluntarily_deleted": "Estructura esborrada voluntàriament",
     "betrayal_debuff_ends": "Defenses empitjorades per la traïció per {time}",
     "attack_cancelled_retreat": "Atac cancel·lat, {troops} soldats morts durant la retirada",
-    "received_gold_from_captured_ship": "Has rebut {gold} or d'un vaixell de comerç capturat de {name}",
-    "received_gold_from_trade": "Has rebut {gold} or d'un negoci amb {name}",
-    "received_gold_from_conquest": "Has conquerit a {name} i guanyat {gold} or",
-    "conquered_no_gold": "Has conquerit a {name} (no ha jugat, or no donat)",
+    "received_credits_from_captured_ship": "Has rebut {gold} or d'un vaixell de comerç capturat de {name}",
+    "received_credits_from_trade": "Has rebut {gold} or d'un negoci amb {name}",
+    "received_credits_from_conquest": "Has conquerit a {name} i guanyat {gold} or",
+    "conquered_no_credits": "Has conquerit a {name} (no ha jugat, or no donat)",
     "missile_intercepted": "Un míssil interceptat a {unit}",
-    "mirv_warheads_intercepted": "{count, plural, one {{count} míssil de MIRV interceptat} other {{count} míssils de MIRV interceptats}}",
+    "cluster_warheads_intercepted": "{count, plural, one {{count} míssil de MIRV interceptat} other {{count} míssils de MIRV interceptats}}",
     "sent_troops_to_player": "Enviat {troops} tropes a {name}",
     "received_troops_from_player": "Has rebut {troops} tropes de {name}",
-    "sent_gold_to_player": "Enviat {gold} or a{name}",
-    "received_gold_from_player": "Has rebut {gold} or de {name}",
+    "sent_credits_to_player": "Enviat {gold} or a{name}",
+    "received_credits_from_player": "Has rebut {gold} or de {name}",
     "unit_captured_by_enemy": "{unit} ha estat capturat per {name}",
     "captured_enemy_unit": "Has capturat {unit} de {name}",
     "unit_destroyed": "{unit} ha estat destruït",
-    "no_boats_available": "No et queden vaixells, en pots enviar com a molt {max}"
+    "no_shuttles_available": "No et queden vaixells, en pots enviar com a molt {max}"
   },
   "player_type": {
     "player": "Jugador",
@@ -768,7 +768,7 @@
     "default": "Predeterminat"
   },
   "player_panel": {
-    "gold": "Or",
+    "credits": "Or",
     "troops": "Tropes",
     "betrayals": "Traïcions",
     "traitor": "Traïdor",
@@ -786,7 +786,7 @@
     "break_alliance": "Trenca l'Aliança",
     "send_alliance": "Sol·licita l'Aliança",
     "send_troops": "Envia Tropes",
-    "send_gold": "Dona Or",
+    "send_credits": "Dona Or",
     "emotes": "Emojis",
     "moderation": "Moderació",
     "kick": "Expulsa el jugador",
@@ -807,7 +807,7 @@
     "aria_slider": "Control lliscant de tropes",
     "capacity_note": "El receptor només pot acceptar {amount} ara mateix."
   },
-  "send_gold_modal": {
+  "send_credits_modal": {
     "title_with_name": "Envia Or a {name}",
     "available_tooltip": "El teu or",
     "aria_slider": "Control lliscant de quantitat",
@@ -905,25 +905,25 @@
     "received": "Rebut",
     "cancelled": "Cancel·lat",
     "count": "Compte",
-    "gold": "Or",
+    "credits": "Or",
     "workers": "Treballadors",
     "war": "Guerra",
     "trade": "Comerç",
     "steal": "Roba",
     "unit": {
-      "city": "Ciutat",
-      "port": "Port",
-      "defp": "Torre Defensiva",
-      "saml": "Defensor Aeri",
-      "silo": "Llançador de Míssils",
-      "wshp": "Vaixell de Guerra",
-      "fact": "Fàbrica",
-      "trade": "Vaixell de Comerç",
-      "trans": "Vaixell de Transport",
-      "abomb": "Bomba Atòmica",
-      "hbomb": "Bomba d'Hidrogen",
-      "mirv": "MIRV",
-      "mirvw": "Míssil de MIRV"
+      "colony": "Ciutat",
+      "spaceport": "Port",
+      "defs": "Torre Defensiva",
+      "pda": "Defensor Aeri",
+      "osp": "Llançador de Míssils",
+      "bcrs": "Vaixell de Guerra",
+      "fndy": "Fàbrica",
+      "tfreight": "Vaixell de Comerç",
+      "ashuttle": "Vaixell de Transport",
+      "ator": "Bomba Atòmica",
+      "nbomb": "Bomba d'Hidrogen",
+      "cwhead": "MIRV",
+      "cwsub": "Míssil de MIRV"
     }
   },
   "game_list": {

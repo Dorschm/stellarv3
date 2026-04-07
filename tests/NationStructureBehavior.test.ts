@@ -1,7 +1,7 @@
 import { vi } from "vitest";
 import { NationStructureBehavior } from "../src/core/execution/nation/NationStructureBehavior";
 import { Difficulty, PlayerType } from "../src/core/game/Game";
-import { Cluster } from "../src/core/game/TrainStation";
+import { Cluster } from "../src/core/game/TradeHub";
 import { PseudoRandom } from "../src/core/PseudoRandom";
 
 // ── Fixed trade-gold values matching DefaultConfig ──────────────────────────

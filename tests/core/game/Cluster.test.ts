@@ -1,12 +1,12 @@
 import { vi, type Mocked } from "vitest";
 import { UnitType } from "../../../src/core/game/Game";
-import { Cluster, TrainStation } from "../../../src/core/game/TrainStation";
+import { Cluster, TradeHub } from "../../../src/core/game/TradeHub";
 
-const createMockStation = (id: string): Mocked<TrainStation> => {
+const createMockStation = (id: string): Mocked<TradeHub> => {
   return {
     id,
     unit: {
-      type: vi.fn(() => UnitType.City),
+      type: vi.fn(() => UnitType.Colony),
     } as any,
     setCluster: vi.fn(),
     getCluster: vi.fn(() => null),
@@ -15,9 +15,9 @@ const createMockStation = (id: string): Mocked<TrainStation> => {
 
 describe("Cluster tests", () => {
   let cluster: Cluster;
-  let stationA: Mocked<TrainStation>;
-  let stationB: Mocked<TrainStation>;
-  let stationC: Mocked<TrainStation>;
+  let stationA: Mocked<TradeHub>;
+  let stationB: Mocked<TradeHub>;
+  let stationC: Mocked<TradeHub>;
 
   beforeEach(() => {
     cluster = new Cluster();

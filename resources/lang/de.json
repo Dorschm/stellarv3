@@ -315,16 +315,16 @@
     "title": "Sprache auswählen"
   },
   "unit_type": {
-    "city": "Stadt",
-    "defense_post": "Verteidigungsposten",
-    "port": "Hafen",
-    "warship": "Kriegsschiff",
-    "missile_silo": "Raketensilo",
-    "sam_launcher": "Flugabwehr-Raketenstellung",
-    "atom_bomb": "Atombombe",
-    "hydrogen_bomb": "Wasserstoffbombe",
-    "mirv": "MIRV-Rakete",
-    "factory": "Fabrik"
+    "colony": "Stadt",
+    "defense_station": "Verteidigungsposten",
+    "spaceport": "Hafen",
+    "battlecruiser": "Kriegsschiff",
+    "orbital_strike_platform": "Raketensilo",
+    "point_defense_array": "Flugabwehr-Raketenstellung",
+    "antimatter_torpedo": "Atombombe",
+    "nova_bomb": "Wasserstoffbombe",
+    "cluster_warhead": "MIRV-Rakete",
+    "foundry": "Fabrik"
   },
   "user_setting": {
     "title": "Benutzer Einstellungen",
@@ -388,8 +388,8 @@
     "attack_ratio_down": "Angriffsverhältnis verringern",
     "attack_ratio_down_desc": "Angriffsverhältnis verringern um 10%",
     "attack_keybinds": "Angriffs-Tastenkürzel",
-    "boat_attack": "Bootsangriff",
-    "boat_attack_desc": "Sende einen Bootsangriff auf die Kachel unter deinem Cursor.",
+    "shuttle_attack": "Bootsangriff",
+    "shuttle_attack_desc": "Sende einen Bootsangriff auf die Kachel unter deinem Cursor.",
     "ground_attack": "Bodenangriff",
     "ground_attack_desc": "Sende einen Bodenangriff auf den Pixel unter deinem Cursor.",
     "zoom_controls": "Zoomeinstellungen",
@@ -439,7 +439,7 @@
     "help": {
       "troops": "Bitte gib mir Truppen!",
       "troops_frontlines": "Schicke Truppen an die Front!",
-      "gold": "Bitte gib mir Gold!",
+      "credits": "Bitte gib mir Gold!",
       "no_attack": "Bitte greife mich nicht an!",
       "sorry_attack": "Entschuldigung, ich wollte nicht angreifen.",
       "alliance": "Allianz?",
@@ -448,17 +448,17 @@
     },
     "attack": {
       "attack": "Greife [P1] an!",
-      "mirv": "Starte einen MIRV auf [P1]!",
+      "cluster_warhead": "Starte einen MIRV auf [P1]!",
       "focus": "Fokussiere Feuer auf [P1]!",
       "finish": "Lass uns mit [P1] fertig werden!",
-      "build_warships": "Baue Kriegsschiffe!"
+      "build_battlecruisers": "Baue Kriegsschiffe!"
     },
     "defend": {
       "defend": "Verteidige [P1]!",
       "defend_from": "Verteidige gegen [P1]!",
       "dont_attack": "Greife [P1] nicht an!",
       "ally": "[P1] ist mein Verbündeter!",
-      "build_posts": "Baue Verteidigungsposten!"
+      "build_defense_stations": "Baue Verteidigungsposten!"
     },
     "greet": {
       "hello": "Hallo!",
@@ -490,7 +490,7 @@
     "warnings": {
       "strong": "[P1] ist stark.",
       "weak": "[P1] ist schwach.",
-      "mirv_soon": "[P1] kann bald ein MIRV starten!",
+      "cluster_warhead_soon": "[P1] kann bald ein MIRV starten!",
       "number1_warning": "Der #1 Spieler wird bald gewinnen, es sei denn, wir werden ein Team!",
       "stalemate": "Lassen Sie uns Frieden schließen. Das ist eine Sackgasse, wir werden beide verlieren.",
       "has_allies": "[P1] hat viele Verbündete.",
@@ -499,8 +499,8 @@
       "betrayed_me": "[P1] hat mich verraten!",
       "getting_big": "[P1] wächst zu schnell!",
       "danger_base": "[P1] ist ungeschützt!",
-      "saving_for_mirv": "[P1] spart, um eine MIRV-Rakete zu starten.",
-      "mirv_ready": "[P1] hat genug Gold, um eine MIRV-Rakete zu starten!",
+      "saving_for_cluster_warhead": "[P1] spart, um eine MIRV-Rakete zu starten.",
+      "cluster_warhead_ready": "[P1] hat genug Gold, um eine MIRV-Rakete zu starten!",
       "snowballing": "[P1] wächst zu schnell!",
       "cheating": "[P1] betrügt!",
       "stop_trading": "Stoppe den Handel mit [P1]!"
@@ -508,16 +508,16 @@
   },
   "build_menu": {
     "desc": {
-      "atom_bomb": "Kleine Explosion",
-      "hydrogen_bomb": "Große Explosion",
-      "mirv": "Riesige Explosion, trifft nur ausgewählten Spieler",
-      "missile_silo": "Ermöglicht den Einsatz von Atomraketen",
-      "sam_launcher": "Verteidigt gegen eingehende Atomraketen",
-      "warship": "Erobert Handelsschiffe, zerstört Schiffe und Boote",
-      "port": "Sendet Handelsschiffe, um Gold zu generieren",
-      "defense_post": "Erhöht die Verteidigung der umliegenden Grenzen",
-      "city": "Erhöht die Bevölkerungsgrenze",
-      "factory": "Baut Eisenbahnen und schickt Züge auf die Strecke"
+      "antimatter_torpedo": "Kleine Explosion",
+      "nova_bomb": "Große Explosion",
+      "cluster_warhead": "Riesige Explosion, trifft nur ausgewählten Spieler",
+      "orbital_strike_platform": "Ermöglicht den Einsatz von Atomraketen",
+      "point_defense_array": "Verteidigt gegen eingehende Atomraketen",
+      "battlecruiser": "Erobert Handelsschiffe, zerstört Schiffe und Boote",
+      "spaceport": "Sendet Handelsschiffe, um Gold zu generieren",
+      "defense_station": "Erhöht die Verteidigung der umliegenden Grenzen",
+      "colony": "Erhöht die Bevölkerungsgrenze",
+      "foundry": "Baut Eisenbahnen und schickt Züge auf die Strecke"
     },
     "not_enough_money": "Nicht genug Geld"
   },
@@ -548,12 +548,12 @@
     "player": "Spieler",
     "team": "Team",
     "owned": "Besitz",
-    "gold": "Gold",
+    "credits": "Gold",
     "troops": "Truppen",
     "launchers": "Raketensilos",
-    "sams": "Flugabwehrsysteme",
-    "warships": "Kriegsschiffe",
-    "cities": "Städte",
+    "point_defense": "Flugabwehrsysteme",
+    "battlecruisers": "Kriegsschiffe",
+    "colonies": "Städte",
     "show_control": "Steuerung anzeigen",
     "show_units": "Einheiten anzeigen"
   },
@@ -630,7 +630,7 @@
     "attack_ratio": "Angriffsverhältnis"
   },
   "player_panel": {
-    "gold": "Gold",
+    "credits": "Gold",
     "troops": "Truppen",
     "betrayals": "Verräter",
     "traitor": "Verräter",
@@ -652,7 +652,7 @@
     "alliance": "Allianz",
     "send_alliance": "Allianz senden",
     "send_troops": "Truppen senden",
-    "send_gold": "Gold senden",
+    "send_credits": "Gold senden",
     "emotes": "Emojis"
   },
   "send_troops_modal": {
@@ -663,7 +663,7 @@
     "aria_slider": "Truppenregler",
     "capacity_note": "Der Empfänger kann derzeit nur {amount} annehmen."
   },
-  "send_gold_modal": {
+  "send_credits_modal": {
     "title_with_name": "Gold an {name} senden",
     "available_tooltip": "Verfügbares Gold",
     "aria_slider": "Mengenregler",
@@ -759,25 +759,25 @@
     "received": "Empfangen",
     "cancelled": "Abgebrochen",
     "count": "Anzahl",
-    "gold": "Gold",
+    "credits": "Gold",
     "workers": "Arbeiter",
     "war": "Krieg",
     "trade": "Handel",
     "steal": "Stehlen",
     "unit": {
-      "city": "Stadt",
-      "port": "Hafen",
-      "defp": "Verteidigungsposten",
-      "saml": "Flugabwehrsystem",
-      "silo": "Raketensilo",
-      "wshp": "Kriegsschiff",
-      "fact": "Fabrik",
-      "trade": "Handelsschiff",
-      "trans": "Transportschiff",
-      "abomb": "Atombombe",
-      "hbomb": "Wasserstoffbombe",
-      "mirv": "MIRV-Rakete",
-      "mirvw": "MIRV-Sprengkopf"
+      "colony": "Stadt",
+      "spaceport": "Hafen",
+      "defs": "Verteidigungsposten",
+      "pda": "Flugabwehrsystem",
+      "osp": "Raketensilo",
+      "bcrs": "Kriegsschiff",
+      "fndy": "Fabrik",
+      "tfreight": "Handelsschiff",
+      "ashuttle": "Transportschiff",
+      "ator": "Atombombe",
+      "nbomb": "Wasserstoffbombe",
+      "cwhead": "MIRV-Rakete",
+      "cwsub": "MIRV-Sprengkopf"
     }
   },
   "game_list": {

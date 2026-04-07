@@ -1,7 +1,7 @@
 import { GameID } from "../../../src/core/Schemas";
 import { AttackExecution } from "../../../src/core/execution/AttackExecution";
 import { SpawnExecution } from "../../../src/core/execution/SpawnExecution";
-//import { TransportShipExecution } from "../../../src/core/execution/TransportShipExecution";
+//import { AssaultShuttleExecution } from "../../../src/core/execution/AssaultShuttleExecution";
 import { AllianceRequestExecution } from "../../../src/core/execution/alliance/AllianceRequestExecution";
 import {
   Game,
@@ -22,7 +22,7 @@ let attackerSpawn: TileRef;
 describe("GameImpl", () => {
   beforeEach(async () => {
     game = await setup("ocean_and_land", {
-      infiniteGold: true,
+      infiniteCredits: true,
       instantBuild: true,
       infiniteTroops: true,
     });

@@ -256,13 +256,13 @@
     "hydros": "氢弹",
     "mirv": "MIRV",
     "bombs": "炸弹",
-    "total_gold": "总计",
-    "all_gold": "总黄金",
+    "total_credits": "总计",
+    "all_credits": "总黄金",
     "trade": "交易",
-    "train_trade": "火车",
+    "frigate_trade": "火车",
     "naval_trade": "商船",
-    "conquest_gold": "已抢夺黄金",
-    "stolen_gold": "被军舰偷走",
+    "conquest_credits": "已抢夺黄金",
+    "stolen_credits": "被军舰偷走",
     "num_of_conquests_humans": "玩家击杀数",
     "num_of_conquests_bots": "机器人击杀数",
     "duration": "时长",
@@ -457,22 +457,22 @@
     "random_spawn": "随机出生点",
     "compact_map": "紧凑地图",
     "crowded": "密度",
-    "starting_gold": "开局黄金 5M"
+    "starting_credits": "开局黄金 5M"
   },
   "select_lang": {
     "title": "选择语言"
   },
   "unit_type": {
-    "city": "城市",
-    "defense_post": "要塞",
-    "port": "港口",
-    "warship": "军舰",
-    "missile_silo": "导弹发射井",
-    "sam_launcher": "防空塔",
-    "atom_bomb": "原子弹",
-    "hydrogen_bomb": "氢弹",
-    "mirv": "MIRV",
-    "factory": "工厂"
+    "colony": "城市",
+    "defense_station": "要塞",
+    "spaceport": "港口",
+    "battlecruiser": "军舰",
+    "orbital_strike_platform": "导弹发射井",
+    "point_defense_array": "防空塔",
+    "antimatter_torpedo": "原子弹",
+    "nova_bomb": "氢弹",
+    "cluster_warhead": "MIRV",
+    "foundry": "工厂"
   },
   "user_setting": {
     "title": "设置",
@@ -544,8 +544,8 @@
     "attack_ratio_down": "降低攻击比例",
     "attack_ratio_down_desc": "降低 10% 攻击比例",
     "attack_keybinds": "攻击快捷键",
-    "boat_attack": "船只攻击",
-    "boat_attack_desc": "向鼠标所指地块发送船只攻击。",
+    "shuttle_attack": "船只攻击",
+    "shuttle_attack_desc": "向鼠标所指地块发送船只攻击。",
     "ground_attack": "对地攻击",
     "ground_attack_desc": "向鼠标所指地块发送船只攻击。",
     "swap_direction": "调换火箭方向",
@@ -598,7 +598,7 @@
     "help": {
       "troops": "请给我军队！",
       "troops_frontlines": "向前线派遣军队！",
-      "gold": "请给我金钱！",
+      "credits": "请给我金钱！",
       "no_attack": "请不要攻击我！",
       "sorry_attack": "抱歉，我没打算攻击的。",
       "alliance": "结盟吗？",
@@ -607,17 +607,17 @@
     },
     "attack": {
       "attack": "攻击 [P1]！",
-      "mirv": "向 [P1] 发射一个MIRV ！",
+      "cluster_warhead": "向 [P1] 发射一个MIRV ！",
       "focus": "集火攻击 [P1]！",
       "finish": "让我们终结 [P1] 吧！",
-      "build_warships": "建造军舰！"
+      "build_battlecruisers": "建造军舰！"
     },
     "defend": {
       "defend": "防御 [P1]！",
       "defend_from": "防御 [P1]！",
       "dont_attack": "不要攻击 [P1]！",
       "ally": "[P1] 是我的盟友！",
-      "build_posts": "建造要塞！"
+      "build_defense_stations": "建造要塞！"
     },
     "greet": {
       "hello": "你好 ！",
@@ -649,7 +649,7 @@
     "warnings": {
       "strong": "[P1] 很强。",
       "weak": "[P1] 很弱。",
-      "mirv_soon": "[P1] 马上就能发射 MIRV 了！",
+      "cluster_warhead_soon": "[P1] 马上就能发射 MIRV 了！",
       "number1_warning": "如果我们不结盟，榜一玩家就要赢了！",
       "stalemate": "我们停战吧。这种僵局对我们双方都不利。",
       "has_allies": "[P1] 有很多盟友。",
@@ -658,8 +658,8 @@
       "betrayed_me": "[P1] 背叛了我！",
       "getting_big": "[P1] 扩张太快了！",
       "danger_base": "[P1] 没有防守！",
-      "saving_for_mirv": "[P1] 正在存钱以发射 MIRV。",
-      "mirv_ready": "[P1] 有足够的金钱来发射 MIRV！",
+      "saving_for_cluster_warhead": "[P1] 正在存钱以发射 MIRV。",
+      "cluster_warhead_ready": "[P1] 有足够的金钱来发射 MIRV！",
       "snowballing": "[P1] 滚雪球滚得太快了！",
       "cheating": "[P1] 正在作弊！",
       "stop_trading": "别跟 [P1] 交易！"
@@ -667,16 +667,16 @@
   },
   "build_menu": {
     "desc": {
-      "atom_bomb": "小型爆炸",
-      "hydrogen_bomb": "大型爆炸",
-      "mirv": "巨型爆炸，仅针对选中的玩家",
-      "missile_silo": "用于发射核弹",
-      "sam_launcher": "抵御导弹攻击",
-      "warship": "俘获商船、摧毁船只和军舰",
-      "port": "发送商船来获得黄金",
-      "defense_post": "增加附近边界的防御力",
-      "city": "增加最大人口",
-      "factory": "创建铁轨并生成火车"
+      "antimatter_torpedo": "小型爆炸",
+      "nova_bomb": "大型爆炸",
+      "cluster_warhead": "巨型爆炸，仅针对选中的玩家",
+      "orbital_strike_platform": "用于发射核弹",
+      "point_defense_array": "抵御导弹攻击",
+      "battlecruiser": "俘获商船、摧毁船只和军舰",
+      "spaceport": "发送商船来获得黄金",
+      "defense_station": "增加附近边界的防御力",
+      "colony": "增加最大人口",
+      "foundry": "创建铁轨并生成火车"
     },
     "not_enough_money": "金钱不足"
   },
@@ -704,12 +704,12 @@
     "player": "玩家",
     "team": "队伍",
     "owned": "已占领",
-    "gold": "黄金",
+    "credits": "黄金",
     "maxtroops": "最大军队",
     "launchers": "导弹发射井",
-    "sams": "防空塔",
-    "warships": "军舰",
-    "cities": "城市",
+    "point_defense": "防空塔",
+    "battlecruisers": "军舰",
+    "colonies": "城市",
     "show_control": "显示面板",
     "show_units": "显示单位"
   },
@@ -740,20 +740,20 @@
     "unit_voluntarily_deleted": "单位已自毁",
     "betrayal_debuff_ends": "距离背叛减益效果结束还剩 {time} 秒",
     "attack_cancelled_retreat": "已取消进攻，在撤退时损失了 {troops} 兵力",
-    "received_gold_from_captured_ship": "捕获了 {name} 的商船，获得 {gold} 黄金",
-    "received_gold_from_trade": "与 {name} 贸易获得了 {gold} 黄金",
-    "received_gold_from_conquest": "征服了 {name} 并获得 {gold} 黄金",
-    "conquered_no_gold": "征服了 {name} （对方没在玩了，因此未掠夺到黄金）",
+    "received_credits_from_captured_ship": "捕获了 {name} 的商船，获得 {gold} 黄金",
+    "received_credits_from_trade": "与 {name} 贸易获得了 {gold} 黄金",
+    "received_credits_from_conquest": "征服了 {name} 并获得 {gold} 黄金",
+    "conquered_no_credits": "征服了 {name} （对方没在玩了，因此未掠夺到黄金）",
     "missile_intercepted": "已拦截导弹 {unit}",
-    "mirv_warheads_intercepted": "{count, plural, one {{count} 个 MIRV 弹头被拦截} other {{count} 个 MIRV 弹头被拦截}}",
+    "cluster_warheads_intercepted": "{count, plural, one {{count} 个 MIRV 弹头被拦截} other {{count} 个 MIRV 弹头被拦截}}",
     "sent_troops_to_player": "已向 {name} 发送 {troops} 军队",
     "received_troops_from_player": "已从 {name} 收到 {troops} 军队",
-    "sent_gold_to_player": "已向 {name} 发送 {gold} 黄金",
-    "received_gold_from_player": "已从 {name} 收到 {gold} 黄金",
+    "sent_credits_to_player": "已向 {name} 发送 {gold} 黄金",
+    "received_credits_from_player": "已从 {name} 收到 {gold} 黄金",
     "unit_captured_by_enemy": "你的 {unit} 被 {name} 捕获",
     "captured_enemy_unit": "已捕获 {name} 的 {unit}",
     "unit_destroyed": "你的 {unit} 已被摧毁",
-    "no_boats_available": "无可用船，最多 {max} 个"
+    "no_shuttles_available": "无可用船，最多 {max} 个"
   },
   "player_type": {
     "player": "玩家",
@@ -768,7 +768,7 @@
     "default": "默认"
   },
   "player_panel": {
-    "gold": "黄金",
+    "credits": "黄金",
     "troops": "军队",
     "betrayals": "背叛",
     "traitor": "叛变者",
@@ -786,7 +786,7 @@
     "break_alliance": "撕毁盟约",
     "send_alliance": "请求结盟",
     "send_troops": "发送军队",
-    "send_gold": "发送黄金",
+    "send_credits": "发送黄金",
     "emotes": "表情符号",
     "moderation": "管理",
     "kick": "踢出玩家",
@@ -807,7 +807,7 @@
     "aria_slider": "军队滑块",
     "capacity_note": "接收者现在仅能接收 {amount}。"
   },
-  "send_gold_modal": {
+  "send_credits_modal": {
     "title_with_name": "向 {name} 发送黄金",
     "available_tooltip": "你的剩余黄金",
     "aria_slider": "数量滑块",
@@ -905,25 +905,25 @@
     "received": "已收到",
     "cancelled": "已取消",
     "count": "总计",
-    "gold": "黄金",
+    "credits": "黄金",
     "workers": "工人",
     "war": "战争",
     "trade": "交易",
     "steal": "偷窃",
     "unit": {
-      "city": "城市",
-      "port": "港口",
-      "defp": "要塞",
-      "saml": "防空塔",
-      "silo": "导弹发射井",
-      "wshp": "军舰",
-      "fact": "工厂",
-      "trade": "商船",
-      "trans": "运输船",
-      "abomb": "原子弹",
-      "hbomb": "氢弹",
-      "mirv": "MIRV",
-      "mirvw": "MIRV 弹头"
+      "colony": "城市",
+      "spaceport": "港口",
+      "defs": "要塞",
+      "pda": "防空塔",
+      "osp": "导弹发射井",
+      "bcrs": "军舰",
+      "fndy": "工厂",
+      "tfreight": "商船",
+      "ashuttle": "运输船",
+      "ator": "原子弹",
+      "nbomb": "氢弹",
+      "cwhead": "MIRV",
+      "cwsub": "MIRV 弹头"
     }
   },
   "game_list": {

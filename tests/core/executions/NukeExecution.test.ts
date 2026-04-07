@@ -19,7 +19,7 @@ describe("NukeExecution", () => {
     game = await setup(
       "big_plains",
       {
-        infiniteGold: true,
+        infiniteCredits: true,
         instantBuild: true,
       },
       [
@@ -46,22 +46,26 @@ describe("NukeExecution", () => {
 
   test("nuke should destroy buildings and redraw out of range buildings", async () => {
     // Build a city at (1,1)
-    player.buildUnit(UnitType.City, game.ref(1, 1), {});
+    player.buildUnit(UnitType.Colony, game.ref(1, 1), {});
     // Build a missile silo in range
-    player.buildUnit(UnitType.MissileSilo, game.ref(1, 10), {});
+    player.buildUnit(UnitType.OrbitalStrikePlatform, game.ref(1, 10), {});
     // Build a SAM out of range
-    const sam = player.buildUnit(UnitType.SAMLauncher, game.ref(1, 11), {});
+    const sam = player.buildUnit(
+      UnitType.PointDefenseArray,
+      game.ref(1, 11),
+      {},
+    );
     sam.touch = vi.fn();
     // Build a Defense post out of range AND out of redraw range
     const defensePost = player.buildUnit(
-      UnitType.DefensePost,
+      UnitType.DefenseStation,
       game.ref(1, 27),
       {},
     );
     defensePost.touch = vi.fn();
     // Add a nuke execution targeting the city
     const nukeExec = new NukeExecution(
-      UnitType.AtomBomb,
+      UnitType.AntimatterTorpedo,
       player,
       game.ref(1, 1),
       game.ref(1, 2),
@@ -70,17 +74,17 @@ describe("NukeExecution", () => {
     // Run enough ticks for the nuke to detonate
     executeTicks(game, 10);
     // The city and silo should be destroyed
-    expect(player.units(UnitType.City)).toHaveLength(0);
-    expect(player.units(UnitType.MissileSilo)).toHaveLength(0);
-    expect(player.units(UnitType.SAMLauncher)).toHaveLength(1);
+    expect(player.units(UnitType.Colony)).toHaveLength(0);
+    expect(player.units(UnitType.OrbitalStrikePlatform)).toHaveLength(0);
+    expect(player.units(UnitType.PointDefenseArray)).toHaveLength(1);
     expect(sam.touch).toHaveBeenCalled();
     expect(defensePost.touch).not.toHaveBeenCalled();
   });
 
   test("nuke should only be targetable near src and dst", async () => {
-    player.buildUnit(UnitType.MissileSilo, game.ref(1, 1), {});
+    player.buildUnit(UnitType.OrbitalStrikePlatform, game.ref(1, 1), {});
     const nukeExec = new NukeExecution(
-      UnitType.AtomBomb,
+      UnitType.AntimatterTorpedo,
       player,
       game.ref(199, 199),
       game.ref(1, 1),
@@ -106,7 +110,7 @@ describe("NukeExecution", () => {
     req!.accept();
 
     player.conquer(game.ref(1, 1));
-    player.buildUnit(UnitType.MissileSilo, game.ref(1, 1), {});
+    player.buildUnit(UnitType.OrbitalStrikePlatform, game.ref(1, 1), {});
 
     for (let x = 90; x < 99; x++) {
       for (let y = 90; y < 99; y++) {
@@ -116,7 +120,12 @@ describe("NukeExecution", () => {
 
     // Add a nuke targeting just outside the other player's territory.
     game.addExecution(
-      new NukeExecution(UnitType.AtomBomb, player, game.ref(85, 85), null),
+      new NukeExecution(
+        UnitType.AntimatterTorpedo,
+        player,
+        game.ref(85, 85),
+        null,
+      ),
     );
 
     game.executeNextTick(); // init
@@ -133,21 +142,26 @@ describe("NukeExecution", () => {
     expect(player.isAlliedWith(otherPlayer)).toBe(true);
 
     player.conquer(game.ref(1, 1));
-    player.buildUnit(UnitType.MissileSilo, game.ref(1, 1), {});
+    player.buildUnit(UnitType.OrbitalStrikePlatform, game.ref(1, 1), {});
 
     // Give the other player just a few tiles (below the threshold of 5)
     // and build a port on one of them
     otherPlayer.conquer(game.ref(50, 50));
     otherPlayer.conquer(game.ref(51, 50));
     otherPlayer.conquer(game.ref(50, 51));
-    otherPlayer.buildUnit(UnitType.Port, game.ref(50, 50), {});
+    otherPlayer.buildUnit(UnitType.Spaceport, game.ref(50, 50), {});
 
-    expect(otherPlayer.units(UnitType.Port)).toHaveLength(1);
+    expect(otherPlayer.units(UnitType.Spaceport)).toHaveLength(1);
 
     // Nuke targeting the ally's port - this should break alliance
     // even though the tile count is below threshold
     game.addExecution(
-      new NukeExecution(UnitType.AtomBomb, player, game.ref(50, 50), null),
+      new NukeExecution(
+        UnitType.AntimatterTorpedo,
+        player,
+        game.ref(50, 50),
+        null,
+      ),
     );
 
     game.executeNextTick(); // init

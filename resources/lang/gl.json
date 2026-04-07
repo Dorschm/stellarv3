@@ -249,16 +249,16 @@
     "title": "Escoller lingua"
   },
   "unit_type": {
-    "city": "Cidade",
-    "defense_post": "Posto de defensa",
-    "port": "Porto",
-    "warship": "Buque de guerra",
-    "missile_silo": "Silo de mísiles",
-    "sam_launcher": "Lanzador SAM",
-    "atom_bomb": "Bomba atómica",
-    "hydrogen_bomb": "Bomba de hidróxeno",
-    "mirv": "MIRV",
-    "factory": "Fábrica"
+    "colony": "Cidade",
+    "defense_station": "Posto de defensa",
+    "spaceport": "Porto",
+    "battlecruiser": "Buque de guerra",
+    "orbital_strike_platform": "Silo de mísiles",
+    "point_defense_array": "Lanzador SAM",
+    "antimatter_torpedo": "Bomba atómica",
+    "nova_bomb": "Bomba de hidróxeno",
+    "cluster_warhead": "MIRV",
+    "foundry": "Fábrica"
   },
   "user_setting": {
     "title": "Axustes do usuario",
@@ -313,8 +313,8 @@
     "attack_ratio_down": "Reducir a proporción de ataque",
     "attack_ratio_down_desc": "Reducir a proporción de ataque un 10%",
     "attack_keybinds": "Atallos de ataque",
-    "boat_attack": "Ataque naval",
-    "boat_attack_desc": "Enviar un ataque naval á cela baixo o cursor.",
+    "shuttle_attack": "Ataque naval",
+    "shuttle_attack_desc": "Enviar un ataque naval á cela baixo o cursor.",
     "ground_attack": "Ataque terrestre",
     "ground_attack_desc": "Enviar un ataque terrestre á cela baixo o cursor.",
     "zoom_controls": "Controis de afastamento",
@@ -363,7 +363,7 @@
     },
     "help": {
       "troops": "Por favor, envíame tropas!",
-      "gold": "Por favor, envíame ouro!",
+      "credits": "Por favor, envíame ouro!",
       "no_attack": "Por favor, non me ataques!",
       "sorry_attack": "Perdoa, non quíxente atacar.",
       "alliance": "Alianza?",
@@ -372,7 +372,7 @@
     },
     "attack": {
       "attack": "Ataca a [P1]!",
-      "mirv": "Lanza un MIRV contra [P1]!",
+      "cluster_warhead": "Lanza un MIRV contra [P1]!",
       "focus": "A por [P1]!",
       "finish": "Acabemos con [P1]!"
     },
@@ -404,7 +404,7 @@
     "warnings": {
       "strong": "[P1] é forte.",
       "weak": "[P1] é débil.",
-      "mirv_soon": "[P1] poderá lanzar un MIRV en breve!",
+      "cluster_warhead_soon": "[P1] poderá lanzar un MIRV en breve!",
       "number1_warning": "O xogador #1 vai gañar pronto se non facemos equipo!",
       "stalemate": "Fagamos as paces xa. Isto é un punto morto, perderemos os dous.",
       "has_allies": "[P1] ten moitos aliados.",
@@ -412,22 +412,22 @@
       "betrayed": "[P1] traizoou o seu aliado!",
       "getting_big": "[P1] está a medrar demasiado rápido!",
       "danger_base": "[P1] está desprotexido!",
-      "saving_for_mirv": "[P1] está aforrando para lanzar un MIRV.",
-      "mirv_ready": "\"[P1] xa ten ouro dabondo para lanzar un MIRV!\""
+      "saving_for_cluster_warhead": "[P1] está aforrando para lanzar un MIRV.",
+      "cluster_warhead_ready": "\"[P1] xa ten ouro dabondo para lanzar un MIRV!\""
     }
   },
   "build_menu": {
     "desc": {
-      "atom_bomb": "Explosión pequena",
-      "hydrogen_bomb": "Explosión grande",
-      "mirv": "Explosión xigante, só dana o xogador escollido",
-      "missile_silo": "Serve para lanzar bombas atómicas",
-      "sam_launcher": "Defende contra mísiles entrantes",
-      "warship": "Captura barcos comerciais e destrúe barcos de guerra",
-      "port": "Envía barcos comerciais para xerar ouro",
-      "defense_post": "Reforza as defensas das fronteiras próximas",
-      "city": "Aumenta a poboación máxima",
-      "factory": "Constrúe vías férreas e xera trens"
+      "antimatter_torpedo": "Explosión pequena",
+      "nova_bomb": "Explosión grande",
+      "cluster_warhead": "Explosión xigante, só dana o xogador escollido",
+      "orbital_strike_platform": "Serve para lanzar bombas atómicas",
+      "point_defense_array": "Defende contra mísiles entrantes",
+      "battlecruiser": "Captura barcos comerciais e destrúe barcos de guerra",
+      "spaceport": "Envía barcos comerciais para xerar ouro",
+      "defense_station": "Reforza as defensas das fronteiras próximas",
+      "colony": "Aumenta a poboación máxima",
+      "foundry": "Constrúe vías férreas e xera trens"
     },
     "not_enough_money": "Non tes ouro dabondo"
   },
@@ -448,7 +448,7 @@
     "player": "Xogador",
     "team": "Equipo",
     "owned": "Controlado",
-    "gold": "Ouro",
+    "credits": "Ouro",
     "troops": "Tropas"
   },
   "player_info_overlay": {
@@ -515,7 +515,7 @@
     "attack_ratio": "Proporción de ataque"
   },
   "player_panel": {
-    "gold": "Ouro",
+    "credits": "Ouro",
     "troops": "Tropas",
     "betrayals": "Número de traizóns",
     "traitor": "Traidor",

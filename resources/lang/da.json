@@ -249,16 +249,16 @@
     "title": "Vælg Sprog"
   },
   "unit_type": {
-    "city": "By",
-    "defense_post": "Forsvarspost",
-    "port": "Havn",
-    "warship": "Krigsskib",
-    "missile_silo": "Missilsilo",
-    "sam_launcher": "SAM-affyringsrampe",
-    "atom_bomb": "Atombombe",
-    "hydrogen_bomb": "Brintbombe",
-    "mirv": "MIRV",
-    "factory": "Fabrik"
+    "colony": "By",
+    "defense_station": "Forsvarspost",
+    "spaceport": "Havn",
+    "battlecruiser": "Krigsskib",
+    "orbital_strike_platform": "Missilsilo",
+    "point_defense_array": "SAM-affyringsrampe",
+    "antimatter_torpedo": "Atombombe",
+    "nova_bomb": "Brintbombe",
+    "cluster_warhead": "MIRV",
+    "foundry": "Fabrik"
   },
   "user_setting": {
     "title": "Brugerindstillinger",
@@ -313,8 +313,8 @@
     "attack_ratio_down": "Formindsk Angrebsforhold",
     "attack_ratio_down_desc": "Formindsk angrebsforhold med 10%",
     "attack_keybinds": "Angrebsgenvejstaster",
-    "boat_attack": "Båd Angreb",
-    "boat_attack_desc": "Send et bådangreb til den flise, din markør peger på.",
+    "shuttle_attack": "Båd Angreb",
+    "shuttle_attack_desc": "Send et bådangreb til den flise, din markør peger på.",
     "ground_attack": "Jordangreb",
     "ground_attack_desc": "Send et jordangreb til den flise, din markør peger på.",
     "zoom_controls": "Zoom Styring",
@@ -363,7 +363,7 @@
     },
     "help": {
       "troops": "Vær venlig at give mig tropper!",
-      "gold": "Vær venlig at give mig guld!",
+      "credits": "Vær venlig at give mig guld!",
       "no_attack": "Lad være med at angribe mig!",
       "sorry_attack": "Beklager, jeg mente ikke at angribe.",
       "alliance": "Alliance?",
@@ -372,7 +372,7 @@
     },
     "attack": {
       "attack": "Angrib [P1]!",
-      "mirv": "Affyr en MIRV på [P1]!",
+      "cluster_warhead": "Affyr en MIRV på [P1]!",
       "focus": "Fokuser ilden på [P1]!",
       "finish": "Lad os gøre det af med [P1]!"
     },
@@ -404,7 +404,7 @@
     "warnings": {
       "strong": "[P1] er stærk.",
       "weak": "[P1] er svag.",
-      "mirv_soon": "[P1] kan snart affyre en MIRV!",
+      "cluster_warhead_soon": "[P1] kan snart affyre en MIRV!",
       "number1_warning": "Spiller #1 vinder snart, medmindre vi slår os sammen!",
       "stalemate": "Lad os slutte fred. Dette er en dødvande, og vi vil begge tabe.",
       "has_allies": "[P1] har mange allierede.",
@@ -412,22 +412,22 @@
       "betrayed": "[P1] forrådte deres allierede!",
       "getting_big": "[P1] vokser for hurtigt!",
       "danger_base": "[P1] er ubeskyttet!",
-      "saving_for_mirv": "[P1] sparer op til at affyre en MIRV.",
-      "mirv_ready": "[P1] har nok guld til at affyre en MIRV!"
+      "saving_for_cluster_warhead": "[P1] sparer op til at affyre en MIRV.",
+      "cluster_warhead_ready": "[P1] har nok guld til at affyre en MIRV!"
     }
   },
   "build_menu": {
     "desc": {
-      "atom_bomb": "Lille eksplosion",
-      "hydrogen_bomb": "Stor eksplosion",
-      "mirv": "Kæmpe eksplosion, rammer kun den valgte spiller",
-      "missile_silo": "Bruges til affyring af atommissiler",
-      "sam_launcher": "Forsvarer mod indkommende atommissiler",
-      "warship": "Indfanger handelsskibe, ødelægger skibe og både",
-      "port": "Sender handelsskibe for at generere guld",
-      "defense_post": "Forstærker forsvaret af nærliggende grænser",
-      "city": "Øger maksimal befolkning",
-      "factory": "Opretter jernbaner og sender tog afsted"
+      "antimatter_torpedo": "Lille eksplosion",
+      "nova_bomb": "Stor eksplosion",
+      "cluster_warhead": "Kæmpe eksplosion, rammer kun den valgte spiller",
+      "orbital_strike_platform": "Bruges til affyring af atommissiler",
+      "point_defense_array": "Forsvarer mod indkommende atommissiler",
+      "battlecruiser": "Indfanger handelsskibe, ødelægger skibe og både",
+      "spaceport": "Sender handelsskibe for at generere guld",
+      "defense_station": "Forstærker forsvaret af nærliggende grænser",
+      "colony": "Øger maksimal befolkning",
+      "foundry": "Opretter jernbaner og sender tog afsted"
     },
     "not_enough_money": "Ikke nok penge"
   },
@@ -448,7 +448,7 @@
     "player": "Spiller",
     "team": "Hold",
     "owned": "Ejet",
-    "gold": "Guld",
+    "credits": "Guld",
     "troops": "Tropper"
   },
   "player_info_overlay": {
@@ -515,7 +515,7 @@
     "attack_ratio": "Angrebsforhold"
   },
   "player_panel": {
-    "gold": "Guld",
+    "credits": "Guld",
     "troops": "Tropper",
     "betrayals": "Antal forræderier",
     "traitor": "Forræder",

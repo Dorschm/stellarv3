@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useRef } from "react";
 import DOMPurify from "dompurify";
+import React, { useEffect, useRef, useState } from "react";
 import { assetUrl } from "../../core/AssetUrls";
 import {
   getMessageCategory,
@@ -8,30 +8,15 @@ import {
   Tick,
 } from "../../core/game/Game";
 import {
-  GameUpdateType,
-  AllianceExpiredUpdate,
-  AllianceExtensionUpdate,
-  AllianceRequestReplyUpdate,
-  AllianceRequestUpdate,
-  BrokeAllianceUpdate,
   DisplayMessageUpdate,
-  EmojiUpdate,
-  TargetPlayerUpdate,
-  UnitIncomingUpdate,
+  GameUpdateType,
 } from "../../core/game/GameUpdates";
 import { GameView, PlayerView, UnitView } from "../../core/game/GameView";
 import { onlyImages } from "../../core/Util";
-import { renderNumber, translateText, getMessageTypeClasses } from "../Utils";
+import { SendAllianceExtensionIntentEvent } from "../Transport";
+import { translateText } from "../Utils";
+import { GoToPlayerEvent } from "./events";
 import { useGameTick } from "./useGameTick";
-import {
-  SendAllianceExtensionIntentEvent,
-  SendAllianceRejectIntentEvent,
-  SendAllianceRequestIntentEvent,
-} from "../Transport";
-import {
-  GoToPlayerEvent,
-  GoToUnitEvent,
-} from "./events";
 
 const allianceIcon = assetUrl("images/AllianceIconWhite.svg");
 const chatIcon = assetUrl("images/ChatIconWhite.svg");
@@ -80,10 +65,6 @@ export function EventsDisplay(): React.JSX.Element {
   const eventsContainerRef = useRef<HTMLDivElement>(null);
   const shouldScrollToBottomRef = useRef(true);
   const alliancesCheckedAtRef = useRef(new Map<number, Tick>());
-  const latestGoldAmountRef = useRef<bigint | null>(null);
-  const goldAmountTimeoutIdRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
 
   // Handle scroll position
   useEffect(() => {
@@ -126,16 +107,14 @@ export function EventsDisplay(): React.JSX.Element {
 
       if (
         alliance.expiresAt >
-        gameView.ticks() +
-          gameView.config().allianceExtensionPromptOffset()
+        gameView.ticks() + gameView.config().allianceExtensionPromptOffset()
       ) {
         continue;
       }
 
       if (
         (alliancesCheckedAtRef.current.get(alliance.id) ?? 0) >=
-        gameView.ticks() -
-          gameView.config().allianceExtensionPromptOffset()
+        gameView.ticks() - gameView.config().allianceExtensionPromptOffset()
       ) {
         continue;
       }
@@ -149,8 +128,7 @@ export function EventsDisplay(): React.JSX.Element {
           name: other.displayName(),
         }),
         type: MessageType.RENEW_ALLIANCE,
-        duration:
-          gameView.config().allianceExtensionPromptOffset() - 3 * 10,
+        duration: gameView.config().allianceExtensionPromptOffset() - 3 * 10,
         buttons: [
           {
             text: translateText("events_display.focus"),
@@ -227,9 +205,7 @@ export function EventsDisplay(): React.JSX.Element {
   };
 
   const removeAllianceRenewalEvents = (allianceID: number) => {
-    setEvents((prev) =>
-      prev.filter((e) => e.allianceID !== allianceID),
-    );
+    setEvents((prev) => prev.filter((e) => e.allianceID !== allianceID));
   };
 
   const onDisplayMessageEvent = (event: DisplayMessageUpdate) => {
@@ -298,10 +274,10 @@ export function EventsDisplay(): React.JSX.Element {
       case MessageType.ATTACK_CANCELLED:
         return { icon: swordIcon, color: "text-red-400" };
       case MessageType.NUKE_INBOUND:
-      case MessageType.MIRV_INBOUND:
+      case MessageType.CLUSTER_WARHEAD_INBOUND:
         return { icon: nukeIcon, color: "text-orange-400" };
-      case MessageType.SENT_GOLD_TO_PLAYER:
-      case MessageType.RECEIVED_GOLD_FROM_PLAYER:
+      case MessageType.SENT_CREDITS_TO_PLAYER:
+      case MessageType.RECEIVED_CREDITS_FROM_PLAYER:
         return { icon: donateGoldIcon, color: "text-yellow-400" };
       case MessageType.CHAT:
         return { icon: chatIcon, color: "text-white" };
@@ -325,9 +301,7 @@ export function EventsDisplay(): React.JSX.Element {
         hidden ? "w-fit px-2.5 py-1.25" : ""
       } rounded-md bg-black/60 relative max-h-[40vh] flex flex-col overflow-y-auto lg:bottom-2.5 lg:right-2.5 z-50 lg:max-w-[30vw] lg:w-auto w-full`}
     >
-      <div
-        className="w-full bg-black/80 sticky top-0 px-2.5 py-1 flex items-center gap-1"
-      >
+      <div className="w-full bg-black/80 sticky top-0 px-2.5 py-1 flex items-center gap-1">
         <button
           className={`text-white cursor-pointer pointer-events-auto ${
             hidden ? "hidden" : ""

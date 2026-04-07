@@ -3,7 +3,6 @@ import { assetUrl } from "../../core/AssetUrls";
 import { PlayerActions, UnitType } from "../../core/game/Game";
 import { TileRef } from "../../core/game/GameMap";
 import { PlayerView } from "../../core/game/GameView";
-import { translateText } from "../Utils";
 import { useGameView } from "../bridge/GameViewContext";
 import { useHUDStore } from "../bridge/HUDStore";
 import { useEventBus } from "../bridge/useEventBus";
@@ -16,15 +15,13 @@ import {
 } from "../InputHandler";
 import {
   SendAttackIntentEvent,
-  SendBoatAttackIntentEvent,
+  SendShuttleAttackIntentEvent,
 } from "../Transport";
-import {
-  CloseRadialMenuEvent,
-  ShowPlayerPanelEvent,
-} from "./events";
+import { translateText } from "../Utils";
+import { CloseRadialMenuEvent, ShowPlayerPanelEvent } from "./events";
 
 const attackIcon = assetUrl("images/SwordIconWhite.svg");
-const boatIcon = assetUrl("images/BoatIconWhite.svg");
+const boatIcon = assetUrl("images/ShuttleIconWhite.svg");
 const buildIcon = assetUrl("images/BuildIconWhite.svg");
 const emojiIcon = assetUrl("images/EmojiIconWhite.svg");
 const infoIcon = assetUrl("images/InfoIcon.svg");
@@ -47,7 +44,7 @@ const infoIcon = assetUrl("images/InfoIcon.svg");
  *       - Emoji    → `ShowEmojiMenuEvent(tileX, tileY)`
  *       - Player   → `ShowPlayerPanelEvent(actions, tile)`
  *       - Attack   → `SendAttackIntentEvent(targetID, troops)`
- *       - Boat     → `SendBoatAttackIntentEvent(tile, troops)`
+ *       - Boat     → `SendShuttleAttackIntentEvent(tile, troops)`
  *
  * The menu closes automatically when the player clicks the map again,
  * presses Escape, or picks any action.
@@ -167,13 +164,13 @@ export function RadialMenu(): React.JSX.Element | null {
   const handleBoat = () => {
     if (!myPlayer) return;
     const canBoat = actions?.buildableUnits.some(
-      (bu) => bu.type === UnitType.TransportShip && bu.canBuild !== false,
+      (bu) => bu.type === UnitType.AssaultShuttle && bu.canBuild !== false,
     );
     if (!canBoat) return;
     const percent = useHUDStore.getState().attackRatio;
     const ratio = Math.max(0, Math.min(100, percent)) / 100;
     eventBus.emit(
-      new SendBoatAttackIntentEvent(tile, myPlayer.troops() * ratio),
+      new SendShuttleAttackIntentEvent(tile, myPlayer.troops() * ratio),
     );
     hide();
   };
@@ -181,7 +178,7 @@ export function RadialMenu(): React.JSX.Element | null {
   const canAttack = !!actions?.canAttack;
   const canBoat =
     actions?.buildableUnits.some(
-      (bu) => bu.type === UnitType.TransportShip && bu.canBuild !== false,
+      (bu) => bu.type === UnitType.AssaultShuttle && bu.canBuild !== false,
     ) ?? false;
   const canEmoji = ownerIsPlayer;
   const canOpenPlayerPanel = ownerIsPlayer && actions !== null;

@@ -256,13 +256,13 @@
     "hydros": "水素爆弾",
     "mirv": "MIRV",
     "bombs": "爆弾",
-    "total_gold": "合計",
-    "all_gold": "合計資金",
+    "total_credits": "合計",
+    "all_credits": "合計資金",
     "trade": "貿易",
-    "train_trade": "鉄道",
+    "frigate_trade": "鉄道",
     "naval_trade": "貿易船",
-    "conquest_gold": "征服したプレイヤーの資金数",
-    "stolen_gold": "戦艦で盗んだ資金",
+    "conquest_credits": "征服したプレイヤーの資金数",
+    "stolen_credits": "戦艦で盗んだ資金",
     "num_of_conquests_humans": "プレイヤーキル数",
     "num_of_conquests_bots": "ボットキル数",
     "duration": "間隔",
@@ -457,22 +457,22 @@
     "random_spawn": "ランダムスポーン",
     "compact_map": "コンパクトマップ",
     "crowded": "過密",
-    "starting_gold": "資金5Mで開始"
+    "starting_credits": "資金5Mで開始"
   },
   "select_lang": {
     "title": "言語を選択"
   },
   "unit_type": {
-    "city": "都市",
-    "defense_post": "防衛ポスト",
-    "port": "港",
-    "warship": "戦艦",
-    "missile_silo": "ミサイル格納庫",
-    "sam_launcher": "SAMランチャー",
-    "atom_bomb": "原子爆弾",
-    "hydrogen_bomb": "水素爆弾",
-    "mirv": "MIRV",
-    "factory": "工場"
+    "colony": "都市",
+    "defense_station": "防衛ポスト",
+    "spaceport": "港",
+    "battlecruiser": "戦艦",
+    "orbital_strike_platform": "ミサイル格納庫",
+    "point_defense_array": "SAMランチャー",
+    "antimatter_torpedo": "原子爆弾",
+    "nova_bomb": "水素爆弾",
+    "cluster_warhead": "MIRV",
+    "foundry": "工場"
   },
   "user_setting": {
     "title": "設定",
@@ -544,8 +544,8 @@
     "attack_ratio_down": "出撃兵力の割合を下げる",
     "attack_ratio_down_desc": "出撃兵力を10%減少させる",
     "attack_keybinds": "攻撃機能",
-    "boat_attack": "ボート攻撃",
-    "boat_attack_desc": "カーソルの位置に合わせた土地にボート攻撃を送ります。",
+    "shuttle_attack": "ボート攻撃",
+    "shuttle_attack_desc": "カーソルの位置に合わせた土地にボート攻撃を送ります。",
     "ground_attack": "ボート攻撃",
     "ground_attack_desc": "カーソルの位置に合わせた土地にボート攻撃を送ります。",
     "swap_direction": "核の撃つ向きを逆転",
@@ -598,7 +598,7 @@
     "help": {
       "troops": "兵士頂戴！",
       "troops_frontlines": "部隊を前線へ投入せよ！",
-      "gold": "お金頂戴！",
+      "credits": "お金頂戴！",
       "no_attack": "攻撃しないで！",
       "sorry_attack": "ごめん、攻撃するつもりはなかった。",
       "alliance": "同盟？",
@@ -607,17 +607,17 @@
     },
     "attack": {
       "attack": "[P1]に攻撃だ！",
-      "mirv": "MIRVを[P1]に発射！",
+      "cluster_warhead": "MIRVを[P1]に発射！",
       "focus": "[P1]に集中砲火だ！",
       "finish": "[P1]にとどめだ！",
-      "build_warships": "戦艦を建造せよ！"
+      "build_battlecruisers": "戦艦を建造せよ！"
     },
     "defend": {
       "defend": "[P1]を守る！",
       "defend_from": "[P1] から守れ！",
       "dont_attack": "[P1]を攻撃しないで！",
       "ally": "[P1]は私の仲間だ！",
-      "build_posts": "防御ポストを建設しよう！"
+      "build_defense_stations": "防御ポストを建設しよう！"
     },
     "greet": {
       "hello": "こんにちは！",
@@ -649,7 +649,7 @@
     "warnings": {
       "strong": "[P1]は強い。",
       "weak": "[P1] は弱い。",
-      "mirv_soon": "[P1]はもうすぐMIRVを発射できる！",
+      "cluster_warhead_soon": "[P1]はもうすぐMIRVを発射できる！",
       "number1_warning": "私たちが手を組まないと１位のプレイヤーがすぐに勝ってしまう！",
       "stalemate": "和解しよう。この膠着状態を脱しないと私たちは負けてしまう。",
       "has_allies": "[P1]はいっぱい味方がいる。",
@@ -658,8 +658,8 @@
       "betrayed_me": "[P1] が私を裏切った！",
       "getting_big": "[P1]の成長が速すぎる！",
       "danger_base": "[P1]は無防備だ！",
-      "saving_for_mirv": "[P1]はMIRVを発射するために貯金している。",
-      "mirv_ready": "[P1]はMIRVを発射できるだけのお金を持っている！",
+      "saving_for_cluster_warhead": "[P1]はMIRVを発射するために貯金している。",
+      "cluster_warhead_ready": "[P1]はMIRVを発射できるだけのお金を持っている！",
       "snowballing": "[P1]の成長が早すぎる！",
       "cheating": "[P1] はチートを使っている！",
       "stop_trading": "[P1]との交易を停止せよ！"
@@ -667,16 +667,16 @@
   },
   "build_menu": {
     "desc": {
-      "atom_bomb": "小規模な爆発",
-      "hydrogen_bomb": "大規模な爆発",
-      "mirv": "指定したプレイヤーのみを狙う超大規模な爆発",
-      "missile_silo": "核ミサイルの発射に使用される",
-      "sam_launcher": "飛来する核ミサイルを迎撃する",
-      "warship": "貿易船を捕獲し、戦艦やボートを破壊する",
-      "port": "貿易船を送って資金を獲得する",
-      "defense_post": "近くの国境の防御を強化します",
-      "city": "最大人口が増加します",
-      "factory": "列車が行き来できる線路を作成します"
+      "antimatter_torpedo": "小規模な爆発",
+      "nova_bomb": "大規模な爆発",
+      "cluster_warhead": "指定したプレイヤーのみを狙う超大規模な爆発",
+      "orbital_strike_platform": "核ミサイルの発射に使用される",
+      "point_defense_array": "飛来する核ミサイルを迎撃する",
+      "battlecruiser": "貿易船を捕獲し、戦艦やボートを破壊する",
+      "spaceport": "貿易船を送って資金を獲得する",
+      "defense_station": "近くの国境の防御を強化します",
+      "colony": "最大人口が増加します",
+      "foundry": "列車が行き来できる線路を作成します"
     },
     "not_enough_money": "資金不足"
   },
@@ -704,12 +704,12 @@
     "player": "プレイヤー",
     "team": "チーム",
     "owned": "領土",
-    "gold": "ゴールド",
+    "credits": "ゴールド",
     "maxtroops": "最大兵力",
     "launchers": "ランチャー",
-    "sams": "SAM",
-    "warships": "戦艦",
-    "cities": "街",
+    "point_defense": "SAM",
+    "battlecruisers": "戦艦",
+    "colonies": "街",
     "show_control": "操作方法を表示",
     "show_units": "ユニットを表示"
   },
@@ -740,20 +740,20 @@
     "unit_voluntarily_deleted": "ユニットは自己破壊しました",
     "betrayal_debuff_ends": "裏切りのデバフ終了まであと {time} 秒",
     "attack_cancelled_retreat": "攻撃はキャンセルされました、撤退中に{troops} 人の兵士が死亡しました",
-    "received_gold_from_captured_ship": "{name} から捕獲した船から資金 {gold} を獲得しました",
-    "received_gold_from_trade": "{name} との貿易で資金 {gold}を獲得しました",
-    "received_gold_from_conquest": "{name}を征服して、{gold}ゴールドを獲得しました",
-    "conquered_no_gold": "{name}を征服しました (相手がプレイしていなかったのでゴールドは獲得できません)",
+    "received_credits_from_captured_ship": "{name} から捕獲した船から資金 {gold} を獲得しました",
+    "received_credits_from_trade": "{name} との貿易で資金 {gold}を獲得しました",
+    "received_credits_from_conquest": "{name}を征服して、{gold}ゴールドを獲得しました",
+    "conquered_no_credits": "{name}を征服しました (相手がプレイしていなかったのでゴールドは獲得できません)",
     "missile_intercepted": "ミサイルが{unit}を迎撃しました",
-    "mirv_warheads_intercepted": "{count, plural, other {{count}発の MIRV 弾頭を迎撃}}",
+    "cluster_warheads_intercepted": "{count, plural, other {{count}発の MIRV 弾頭を迎撃}}",
     "sent_troops_to_player": "{troops} の兵士を {name} に送信しました",
     "received_troops_from_player": "{name}から{troops}の軍隊を受け取りました",
-    "sent_gold_to_player": "{gold} の資金を {name}に贈りました",
-    "received_gold_from_player": "{gold} から {name} の資金を受け取りました",
+    "sent_credits_to_player": "{gold} の資金を {name}に贈りました",
+    "received_credits_from_player": "{gold} から {name} の資金を受け取りました",
     "unit_captured_by_enemy": "あなたの {unit} は {name}に鹵獲されました",
     "captured_enemy_unit": "{unit}を{name}から奪い取りました",
     "unit_destroyed": "あなたの{unit}は破壊されました",
-    "no_boats_available": "ボートをこれ以上出せません、最大は{max}隻までです"
+    "no_shuttles_available": "ボートをこれ以上出せません、最大は{max}隻までです"
   },
   "player_type": {
     "player": "プレイヤー",
@@ -768,7 +768,7 @@
     "default": "デフォルト"
   },
   "player_panel": {
-    "gold": "資金",
+    "credits": "資金",
     "troops": "兵士",
     "betrayals": "裏切り",
     "traitor": "裏切り者かどうか",
@@ -786,7 +786,7 @@
     "break_alliance": "同盟を破棄",
     "send_alliance": "同盟を要請",
     "send_troops": "軍隊を送信",
-    "send_gold": "資金を送信",
+    "send_credits": "資金を送信",
     "emotes": "絵文字",
     "moderation": "管理",
     "kick": "プレイヤーを追い出す",
@@ -807,7 +807,7 @@
     "aria_slider": "軍隊スライダー",
     "capacity_note": "現在、受取主は {amount}のみ受け取ることができます。"
   },
-  "send_gold_modal": {
+  "send_credits_modal": {
     "title_with_name": "{name}へゴールドを送信",
     "available_tooltip": "現在利用可能な資金",
     "aria_slider": "スライダー",
@@ -905,25 +905,25 @@
     "received": "受信",
     "cancelled": "取消",
     "count": "数",
-    "gold": "資金",
+    "credits": "資金",
     "workers": "労働者",
     "war": "戦争",
     "trade": "取引",
     "steal": "略奪",
     "unit": {
-      "city": "都市",
-      "port": "港",
-      "defp": "防衛ポスト",
-      "saml": "SAMランチャー",
-      "silo": "ミサイル格納庫",
-      "wshp": "戦艦",
-      "fact": "工場",
-      "trade": "交易船",
-      "trans": "輸送船",
-      "abomb": "原子爆弾",
-      "hbomb": "水素爆弾",
-      "mirv": "MIRV",
-      "mirvw": "MIRV 弾頭"
+      "colony": "都市",
+      "spaceport": "港",
+      "defs": "防衛ポスト",
+      "pda": "SAMランチャー",
+      "osp": "ミサイル格納庫",
+      "bcrs": "戦艦",
+      "fndy": "工場",
+      "tfreight": "交易船",
+      "ashuttle": "輸送船",
+      "ator": "原子爆弾",
+      "nbomb": "水素爆弾",
+      "cwhead": "MIRV",
+      "cwsub": "MIRV 弾頭"
     }
   },
   "game_list": {

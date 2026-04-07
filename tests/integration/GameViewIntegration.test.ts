@@ -1,22 +1,17 @@
 // @vitest-environment node
 import { AttackExecution } from "../../src/core/execution/AttackExecution";
 
+import { AssaultShuttleExecution } from "../../src/core/execution/AssaultShuttleExecution";
 import { ConstructionExecution } from "../../src/core/execution/ConstructionExecution";
 import { NukeExecution } from "../../src/core/execution/NukeExecution";
-import { SpawnExecution } from "../../src/core/execution/SpawnExecution";
-import { TransportShipExecution } from "../../src/core/execution/TransportShipExecution";
 import {
   Player,
   PlayerInfo,
   PlayerType,
   UnitType,
 } from "../../src/core/game/Game";
-import { TileRef } from "../../src/core/game/GameMap";
 import { GameUpdateType } from "../../src/core/game/GameUpdates";
-import { GameID } from "../../src/core/Schemas";
-import { setupGameViewTest, GameViewTestHarness } from "./GameViewTestHelper";
-
-const gameID: GameID = "test_game" as GameID;
+import { GameViewTestHarness, setupGameViewTest } from "./GameViewTestHelper";
 
 // ──────────────────────────────────────────────
 // Category 1: Tile State
@@ -26,7 +21,7 @@ describe("GameView Integration — Tile State", () => {
 
   beforeEach(async () => {
     h = await setupGameViewTest("plains", {
-      infiniteGold: true,
+      infiniteCredits: true,
       instantBuild: true,
       infiniteTroops: true,
     });
@@ -44,10 +39,10 @@ describe("GameView Integration — Tile State", () => {
     expect(owner.isPlayer()).toBe(true);
   });
 
-  test("isLand(tile) reports correct terrain", () => {
+  test("isSector(tile) reports correct terrain", () => {
     // Plains map is all land
     const landTile = h.gameView.ref(50, 50);
-    expect(h.gameView.isLand(landTile)).toBe(true);
+    expect(h.gameView.isSector(landTile)).toBe(true);
   });
 
   test("isBorder(tile) detects border tiles", () => {
@@ -90,7 +85,7 @@ describe("GameView Integration — Unit State", () => {
 
   beforeEach(async () => {
     h = await setupGameViewTest("ocean_and_land", {
-      infiniteGold: true,
+      infiniteCredits: true,
       instantBuild: true,
       infiniteTroops: true,
     });
@@ -106,26 +101,34 @@ describe("GameView Integration — Unit State", () => {
 
   test("units() reflects a built MissileSilo", () => {
     h.game.addExecution(
-      new ConstructionExecution(player, UnitType.MissileSilo, h.game.ref(5, 10)),
+      new ConstructionExecution(
+        player,
+        UnitType.OrbitalStrikePlatform,
+        h.game.ref(5, 10),
+      ),
     );
     h.executeTicks(4);
 
-    const silos = h.gameView.units(UnitType.MissileSilo);
+    const silos = h.gameView.units(UnitType.OrbitalStrikePlatform);
     expect(silos.length).toBeGreaterThanOrEqual(1);
 
     const silo = silos[0];
-    expect(silo.type()).toBe(UnitType.MissileSilo);
+    expect(silo.type()).toBe(UnitType.OrbitalStrikePlatform);
     expect(silo.owner().isPlayer()).toBe(true);
   });
 
   test("unit tile() matches expected position", () => {
     const buildTile = h.game.ref(5, 10);
     h.game.addExecution(
-      new ConstructionExecution(player, UnitType.MissileSilo, buildTile),
+      new ConstructionExecution(
+        player,
+        UnitType.OrbitalStrikePlatform,
+        buildTile,
+      ),
     );
     h.executeTicks(4);
 
-    const silos = h.gameView.units(UnitType.MissileSilo);
+    const silos = h.gameView.units(UnitType.OrbitalStrikePlatform);
     expect(silos.length).toBeGreaterThanOrEqual(1);
     expect(silos[0].tile()).toBe(buildTile);
   });
@@ -138,7 +141,7 @@ describe("GameView Integration — Unit State", () => {
     // Build a port at the shore so the player can launch a transport ship.
     const portTile = h.game.ref(6, 10);
     h.game.addExecution(
-      new ConstructionExecution(player, UnitType.Port, portTile),
+      new ConstructionExecution(player, UnitType.Spaceport, portTile),
     );
     h.executeTick();
 
@@ -146,12 +149,12 @@ describe("GameView Integration — Unit State", () => {
     // Check after just 1 tick — the ship is created during init() and visible
     // before it completes the journey (arriving deletes it within ~10 ticks).
     const oceanTarget = h.game.ref(14, 10);
-    h.game.addExecution(new TransportShipExecution(player, oceanTarget, 50));
+    h.game.addExecution(new AssaultShuttleExecution(player, oceanTarget, 50));
     h.executeTick();
 
-    const ships = h.gameView.units(UnitType.TransportShip);
+    const ships = h.gameView.units(UnitType.AssaultShuttle);
     expect(ships.length).toBeGreaterThanOrEqual(1);
-    expect(ships[0].type()).toBe(UnitType.TransportShip);
+    expect(ships[0].type()).toBe(UnitType.AssaultShuttle);
   });
 });
 
@@ -165,7 +168,7 @@ describe("GameView Integration — Player State", () => {
     h = await setupGameViewTest(
       "plains",
       {
-        infiniteGold: true,
+        infiniteCredits: true,
         instantBuild: true,
       },
       [new PlayerInfo("player1", PlayerType.Human, "client1", "p1_id")],
@@ -195,10 +198,14 @@ describe("GameView Integration — Player State", () => {
 
     // Expand into unclaimed territory
     const player = h.game.player("p1_id");
-    h.game.addExecution(new AttackExecution(100, player, null, h.game.ref(15, 10)));
+    h.game.addExecution(
+      new AttackExecution(100, player, null, h.game.ref(15, 10)),
+    );
     h.executeTicks(10);
 
-    expect(h.gameView.myPlayer()!.numTilesOwned()).toBeGreaterThan(initialTiles);
+    expect(h.gameView.myPlayer()!.numTilesOwned()).toBeGreaterThan(
+      initialTiles,
+    );
   });
 
   test("troops() reflects troop count", () => {
@@ -208,7 +215,7 @@ describe("GameView Integration — Player State", () => {
   });
 
   test("gold() returns a bigint value", () => {
-    const gold = h.gameView.myPlayer()!.gold();
+    const gold = h.gameView.myPlayer()!.credits();
     expect(typeof gold).toBe("bigint");
   });
 
@@ -234,7 +241,7 @@ describe("GameView Integration — Player State", () => {
 });
 
 // ──────────────────────────────────────────────
-// Category 4: Railroad / Train State
+// Category 4: HyperspaceLane / Train State
 // ──────────────────────────────────────────────
 describe("GameView Integration — Railroad State", () => {
   let h: GameViewTestHarness;
@@ -242,7 +249,7 @@ describe("GameView Integration — Railroad State", () => {
 
   beforeEach(async () => {
     h = await setupGameViewTest("plains", {
-      infiniteGold: true,
+      infiniteCredits: true,
       instantBuild: true,
       infiniteTroops: true,
     });
@@ -260,13 +267,13 @@ describe("GameView Integration — Railroad State", () => {
   test("Factory appears in GameView units after construction", () => {
     // Use ConstructionExecution so the unit update is captured within a tick.
     h.game.addExecution(
-      new ConstructionExecution(player, UnitType.Factory, h.game.ref(50, 50)),
+      new ConstructionExecution(player, UnitType.Foundry, h.game.ref(50, 50)),
     );
     h.executeTicks(4);
 
-    const factories = h.gameView.units(UnitType.Factory);
+    const factories = h.gameView.units(UnitType.Foundry);
     expect(factories.length).toBeGreaterThanOrEqual(1);
-    expect(factories[0].type()).toBe(UnitType.Factory);
+    expect(factories[0].type()).toBe(UnitType.Foundry);
   });
 
   test("RailroadConstruction update emitted when factory built", () => {
@@ -274,20 +281,20 @@ describe("GameView Integration — Railroad State", () => {
     // Both tiles are within the initial spawn radius of (50,50); structureMinDist=0
     // so no minimum distance is enforced between them.
     h.game.addExecution(
-      new ConstructionExecution(player, UnitType.Factory, h.game.ref(50, 50)),
+      new ConstructionExecution(player, UnitType.Foundry, h.game.ref(50, 50)),
     );
     h.executeTicks(2);
 
     h.game.addExecution(
-      new ConstructionExecution(player, UnitType.Factory, h.game.ref(52, 50)),
+      new ConstructionExecution(player, UnitType.Foundry, h.game.ref(52, 50)),
     );
     h.executeTicks(4);
 
     // Check for railroad construction updates across recent ticks
-    const updates = h.gameView.updatesSinceLastTick();
+    h.gameView.updatesSinceLastTick();
     // Railroad construction events should have been emitted at some point
     // (they may have been in an earlier tick, so we just verify factories exist)
-    const factories = h.gameView.units(UnitType.Factory);
+    const factories = h.gameView.units(UnitType.Foundry);
     expect(factories.length).toBeGreaterThanOrEqual(2);
   });
 });
@@ -353,7 +360,7 @@ describe("GameView Integration — Updates", () => {
 
   beforeEach(async () => {
     h = await setupGameViewTest("plains", {
-      infiniteGold: true,
+      infiniteCredits: true,
       instantBuild: true,
       infiniteTroops: true,
     });
@@ -382,7 +389,11 @@ describe("GameView Integration — Updates", () => {
   test("Unit updates emitted when building a structure", () => {
     const player = h.game.player("p1_id");
     h.game.addExecution(
-      new ConstructionExecution(player, UnitType.MissileSilo, h.game.ref(50, 50)),
+      new ConstructionExecution(
+        player,
+        UnitType.OrbitalStrikePlatform,
+        h.game.ref(50, 50),
+      ),
     );
 
     // Tick to init construction
@@ -408,9 +419,7 @@ describe("GameView Integration — Updates", () => {
     h.executeTicks(10);
 
     // Now attack p2; use no sourceTile so the execution picks a border tile.
-    h.game.addExecution(
-      new AttackExecution(50, attacker, defender.id()),
-    );
+    h.game.addExecution(new AttackExecution(50, attacker, defender.id()));
     h.executeTicks(3);
 
     // Check via GameView player
@@ -429,7 +438,7 @@ describe("GameView Integration — Updates", () => {
     h.game.addExecution(
       new ConstructionExecution(
         attacker,
-        UnitType.MissileSilo,
+        UnitType.OrbitalStrikePlatform,
         h.game.ref(50, 50),
       ),
     );
@@ -437,15 +446,20 @@ describe("GameView Integration — Updates", () => {
 
     // Launch a nuke
     h.game.addExecution(
-      new NukeExecution(UnitType.AtomBomb, attacker, h.game.ref(50, 60), null),
+      new NukeExecution(
+        UnitType.AntimatterTorpedo,
+        attacker,
+        h.game.ref(50, 60),
+        null,
+      ),
     );
     h.executeTick();
     h.executeTick();
 
     // AtomBomb should appear in GameView units
-    const nukes = h.gameView.units(UnitType.AtomBomb);
+    const nukes = h.gameView.units(UnitType.AntimatterTorpedo);
     expect(nukes.length).toBeGreaterThanOrEqual(1);
-    expect(nukes[0].type()).toBe(UnitType.AtomBomb);
+    expect(nukes[0].type()).toBe(UnitType.AntimatterTorpedo);
     expect(nukes[0].owner().isPlayer()).toBe(true);
   });
 });

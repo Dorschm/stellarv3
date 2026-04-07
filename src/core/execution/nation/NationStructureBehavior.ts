@@ -1,7 +1,7 @@
 import {
+  Credits,
   Difficulty,
   Game,
-  Gold,
   Player,
   PlayerType,
   Relation,
@@ -10,7 +10,7 @@ import {
   UnitType,
 } from "../../game/Game";
 import { TileRef } from "../../game/GameMap";
-import { Cluster } from "../../game/TrainStation";
+import { Cluster } from "../../game/TradeHub";
 import { PseudoRandom } from "../../PseudoRandom";
 import { assertNever } from "../../Util";
 import { ConstructionExecution } from "../ConstructionExecution";
@@ -46,20 +46,23 @@ function getStructureRatios(
   difficulty: Difficulty,
 ): Partial<Record<UnitType, StructureRatioConfig>> {
   return {
-    [UnitType.Port]: { ratioPerCity: 0.75, perceivedCostIncreasePerOwned: 1 },
-    [UnitType.Factory]: {
+    [UnitType.Spaceport]: {
       ratioPerCity: 0.75,
       perceivedCostIncreasePerOwned: 1,
     },
-    [UnitType.DefensePost]: {
+    [UnitType.Foundry]: {
+      ratioPerCity: 0.75,
+      perceivedCostIncreasePerOwned: 1,
+    },
+    [UnitType.DefenseStation]: {
       ratioPerCity: 0.25,
       perceivedCostIncreasePerOwned: 1,
     },
-    [UnitType.SAMLauncher]: {
+    [UnitType.PointDefenseArray]: {
       ratioPerCity: SAM_RATIO_BY_DIFFICULTY[difficulty],
       perceivedCostIncreasePerOwned: 0.5,
     },
-    [UnitType.MissileSilo]: {
+    [UnitType.OrbitalStrikePlatform]: {
       ratioPerCity: 0.2,
       perceivedCostIncreasePerOwned: 1,
     },
@@ -100,29 +103,31 @@ export class NationStructureBehavior {
   handleStructures(): boolean {
     this.reachableStationsCache = null;
     const config = this.game.config();
-    const citiesDisabled = config.isUnitDisabled(UnitType.City);
+    const citiesDisabled = config.isUnitDisabled(UnitType.Colony);
     const cityCount = citiesDisabled
       ? Math.max(
           1,
           Math.floor(this.player.numTilesOwned() / TILES_PER_CITY_EQUIVALENT),
         )
-      : this.player.unitsOwned(UnitType.City);
+      : this.player.unitsOwned(UnitType.Colony);
     const hasCoastalTiles = this.hasCoastalTiles();
 
     // Build order for non-city structures (priority order)
     const buildOrder: UnitType[] = [
-      UnitType.DefensePost,
-      UnitType.Port,
-      UnitType.Factory,
-      UnitType.SAMLauncher,
-      UnitType.MissileSilo,
+      UnitType.DefenseStation,
+      UnitType.Spaceport,
+      UnitType.Foundry,
+      UnitType.PointDefenseArray,
+      UnitType.OrbitalStrikePlatform,
     ];
 
     const nukesEnabled =
-      !config.isUnitDisabled(UnitType.AtomBomb) ||
-      !config.isUnitDisabled(UnitType.HydrogenBomb) ||
-      !config.isUnitDisabled(UnitType.MIRV);
-    const missileSilosEnabled = !config.isUnitDisabled(UnitType.MissileSilo);
+      !config.isUnitDisabled(UnitType.AntimatterTorpedo) ||
+      !config.isUnitDisabled(UnitType.NovaBomb) ||
+      !config.isUnitDisabled(UnitType.ClusterWarhead);
+    const missileSilosEnabled = !config.isUnitDisabled(
+      UnitType.OrbitalStrikePlatform,
+    );
 
     for (const structureType of buildOrder) {
       // Skip disabled structure types
@@ -131,21 +136,24 @@ export class NationStructureBehavior {
       }
 
       // Skip ports if no coastal tiles
-      if (structureType === UnitType.Port && !hasCoastalTiles) {
+      if (structureType === UnitType.Spaceport && !hasCoastalTiles) {
         continue;
       }
 
       // Skip missile silos and SAM launchers if all nukes are disabled
       if (
         !nukesEnabled &&
-        (structureType === UnitType.MissileSilo ||
-          structureType === UnitType.SAMLauncher)
+        (structureType === UnitType.OrbitalStrikePlatform ||
+          structureType === UnitType.PointDefenseArray)
       ) {
         continue;
       }
 
       // Skip SAM launchers if missile silos are disabled
-      if (!missileSilosEnabled && structureType === UnitType.SAMLauncher) {
+      if (
+        !missileSilosEnabled &&
+        structureType === UnitType.PointDefenseArray
+      ) {
         continue;
       }
 
@@ -158,7 +166,7 @@ export class NationStructureBehavior {
       }
     }
 
-    if (!citiesDisabled && this.maybeSpawnStructure(UnitType.City)) {
+    if (!citiesDisabled && this.maybeSpawnStructure(UnitType.Colony)) {
       return true;
     }
 
@@ -193,9 +201,9 @@ export class NationStructureBehavior {
 
     // Heavily reduce factory spawning if we have coastal tiles
     if (
-      type === UnitType.Factory &&
+      type === UnitType.Foundry &&
       hasCoastalTiles &&
-      !gameConfig.isUnitDisabled(UnitType.Port)
+      !gameConfig.isUnitDisabled(UnitType.Spaceport)
     ) {
       ratio *= FACTORY_COASTAL_RATIO_MULTIPLIER;
     }
@@ -203,12 +211,12 @@ export class NationStructureBehavior {
     const owned = this.player.unitsOwned(type);
 
     // Hard cap on missile silos
-    if (type === UnitType.MissileSilo && owned >= MAX_MISSILE_SILOS) {
+    if (type === UnitType.OrbitalStrikePlatform && owned >= MAX_MISSILE_SILOS) {
       return false;
     }
 
     // Density cap on defense posts (can't be upgraded so a new one would be built - problematic if it's a game with high starting gold)
-    if (type === UnitType.DefensePost) {
+    if (type === UnitType.DefenseStation) {
       const tilesOwned = this.player.numTilesOwned();
       if (
         tilesOwned > 0 &&
@@ -223,14 +231,14 @@ export class NationStructureBehavior {
     return owned < targetCount;
   }
 
-  private cost(type: UnitType): Gold {
+  private cost(type: UnitType): Credits {
     return this.game.unitInfo(type).cost(this.game, this.player);
   }
 
   private maybeSpawnStructure(type: UnitType): boolean {
     const game = this.game;
     const perceivedCost = this.getPerceivedCost(type);
-    if (this.player.gold() < perceivedCost) {
+    if (this.player.credits() < perceivedCost) {
       return false;
     }
 
@@ -269,18 +277,18 @@ export class NationStructureBehavior {
    * This makes nations save up gold for nukes.
    * Once the nation can afford its target stockpile, stop inflating costs.
    */
-  private getPerceivedCost(type: UnitType): Gold {
+  private getPerceivedCost(type: UnitType): Credits {
     const realCost = this.cost(type);
 
     const saveUpTarget = this.getSaveUpTarget();
-    if (saveUpTarget === 0n || this.player.gold() >= saveUpTarget) {
+    if (saveUpTarget === 0n || this.player.credits() >= saveUpTarget) {
       return realCost;
     }
 
     const owned = this.player.unitsOwned(type);
 
     let increasePerOwned: number;
-    if (type === UnitType.City) {
+    if (type === UnitType.Colony) {
       increasePerOwned = CITY_PERCEIVED_COST_INCREASE_PER_OWNED;
     } else {
       const { difficulty } = this.game.config().gameConfig();
@@ -299,29 +307,29 @@ export class NationStructureBehavior {
    * Determines the gold target we want to save up for based on which nukes are enabled.
    * Returns 0 if no saving is needed.
    */
-  private getSaveUpTarget(): Gold {
+  private getSaveUpTarget(): Credits {
     const config = this.game.config();
 
     // No need to save up if missile silos are disabled
-    if (config.isUnitDisabled(UnitType.MissileSilo)) {
+    if (config.isUnitDisabled(UnitType.OrbitalStrikePlatform)) {
       return 0n;
     }
 
-    const mirvEnabled = !config.isUnitDisabled(UnitType.MIRV);
-    const hydroEnabled = !config.isUnitDisabled(UnitType.HydrogenBomb);
-    const atomEnabled = !config.isUnitDisabled(UnitType.AtomBomb);
+    const mirvEnabled = !config.isUnitDisabled(UnitType.ClusterWarhead);
+    const hydroEnabled = !config.isUnitDisabled(UnitType.NovaBomb);
+    const atomEnabled = !config.isUnitDisabled(UnitType.AntimatterTorpedo);
 
     if (mirvEnabled) {
       // Save up for MIRV + Hydrogen Bomb
-      return this.cost(UnitType.MIRV) + this.cost(UnitType.HydrogenBomb);
+      return this.cost(UnitType.ClusterWarhead) + this.cost(UnitType.NovaBomb);
     }
     if (hydroEnabled) {
       // Save up for 5 hydrogen bombs
-      return this.cost(UnitType.HydrogenBomb) * 5n;
+      return this.cost(UnitType.NovaBomb) * 5n;
     }
     if (atomEnabled) {
       // Save up for 20 atom bombs
-      return this.cost(UnitType.AtomBomb) * 20n;
+      return this.cost(UnitType.AntimatterTorpedo) * 20n;
     }
     // No nukes enabled, no need to save up
     return 0n;
@@ -400,7 +408,7 @@ export class NationStructureBehavior {
       return this.random.randElement(upgradable);
     }
 
-    const samLaunchers = this.player.units(UnitType.SAMLauncher);
+    const samLaunchers = this.player.units(UnitType.PointDefenseArray);
 
     // Score each structure based on SAM protection
     const scored: { structure: Unit; score: number }[] = [];
@@ -410,7 +418,7 @@ export class NationStructureBehavior {
 
       // Check if protected by any SAM, using per-SAM level-based range
       for (const sam of samLaunchers) {
-        const samRange = game.config().samRange(sam.level());
+        const samRange = game.config().pointDefenseRange(sam.level());
         const samRangeSquared = samRange * samRange;
         const distSquared = game.euclideanDistSquared(
           structure.tile(),
@@ -452,7 +460,7 @@ export class NationStructureBehavior {
 
   private structureSpawnTile(type: UnitType): TileRef | null {
     const tiles =
-      type === UnitType.Port
+      type === UnitType.Spaceport
         ? this.randCoastalTileArray(25)
         : randTerritoryTileArray(this.random, this.game, this.player, 25);
     if (tiles.length === 0) return null;
@@ -497,17 +505,17 @@ export class NationStructureBehavior {
     type: UnitType,
   ): ((tile: TileRef) => number) | null {
     switch (type) {
-      case UnitType.City:
+      case UnitType.Colony:
         return this.cityValue();
-      case UnitType.MissileSilo:
+      case UnitType.OrbitalStrikePlatform:
         return this.missileSiloValue();
-      case UnitType.Factory:
+      case UnitType.Foundry:
         return this.factoryValue();
-      case UnitType.Port:
+      case UnitType.Spaceport:
         return this.portValue();
-      case UnitType.DefensePost:
+      case UnitType.DefenseStation:
         return this.defensePostValue();
-      case UnitType.SAMLauncher:
+      case UnitType.PointDefenseArray:
         return this.samLauncherValue();
       default:
         throw new Error(`Value function not implemented for ${type}`);
@@ -521,7 +529,7 @@ export class NationStructureBehavior {
   private missileSiloValue(): (tile: TileRef) => number {
     const game = this.game;
     const borderTiles = this.player.borderTiles();
-    const otherUnits = this.player.units(UnitType.MissileSilo);
+    const otherUnits = this.player.units(UnitType.OrbitalStrikePlatform);
     const { borderSpacing, structureSpacing } = this.spacingConstants();
 
     return (tile) => {
@@ -553,7 +561,7 @@ export class NationStructureBehavior {
    */
   private portValue(): (tile: TileRef) => number {
     const game = this.game;
-    const otherUnits = this.player.units(UnitType.Port);
+    const otherUnits = this.player.units(UnitType.Spaceport);
     const { structureSpacing } = this.spacingConstants();
 
     return (tile) => {
@@ -582,9 +590,9 @@ export class NationStructureBehavior {
     const game = this.game;
     const player = this.player;
     const borderTiles = this.player.borderTiles();
-    const otherUnits = player.units(UnitType.Factory);
+    const otherUnits = player.units(UnitType.Foundry);
     const { borderSpacing, structureSpacing } = this.spacingConstants();
-    const stationRange = game.config().trainStationMaxRange();
+    const stationRange = game.config().tradeHubMaxRange();
     const stationRangeSquared = stationRange * stationRange;
     const { difficulty } = game.config().gameConfig();
     const useConnectionScore = this.shouldUseConnectivityScore(difficulty);
@@ -592,11 +600,11 @@ export class NationStructureBehavior {
     const reachableStations = useConnectionScore
       ? this.getOrBuildReachableStations()
       : [];
-    const minRangeSquared = game.config().trainStationMinRange() ** 2;
+    const minRangeSquared = game.config().tradeHubMinRange() ** 2;
 
     // Cross-type spacing: prefer to be away from cities.
     const cityTiles: Set<TileRef> = new Set(
-      player.units(UnitType.City).map((u) => u.tile()),
+      player.units(UnitType.Colony).map((u) => u.tile()),
     );
 
     return (tile) => {
@@ -680,7 +688,7 @@ export class NationStructureBehavior {
    * Precomputes trade-weighted station entries for connectivity scoring.
    * Iterates all stations once (O(total_stations)) to build a unit→cluster map,
    * then collects own and non-embargoed non-bot neighbor structures with a
-   * normalized weight derived from config.trainGold().
+   * normalized weight derived from config.frigateCredits().
    */
   private buildReachableStations(): Array<{
     tile: TileRef;
@@ -691,14 +699,14 @@ export class NationStructureBehavior {
     const player = this.player;
 
     // Build unit → cluster lookup in one O(total_stations) pass.
-    const stationManager = game.railNetwork().stationManager();
+    const stationManager = game.hyperspaceLaneNetwork().stationManager();
     const unitToCluster = new Map<Unit, Cluster | null>();
     for (const station of stationManager.getAll()) {
       unitToCluster.set(station.unit, station.getCluster());
     }
 
     const maxTradeGold = Math.max(
-      Number(game.config().trainGold("ally", 0)),
+      Number(game.config().frigateCredits("ally", 0)),
       1,
     );
     const result: Array<{
@@ -709,11 +717,11 @@ export class NationStructureBehavior {
 
     // Own structures — weighted by "self" trade gold.
     const selfWeight =
-      Number(game.config().trainGold("self", 0)) / maxTradeGold;
+      Number(game.config().frigateCredits("self", 0)) / maxTradeGold;
     for (const unit of player.units(
-      UnitType.City,
-      UnitType.Port,
-      UnitType.Factory,
+      UnitType.Colony,
+      UnitType.Spaceport,
+      UnitType.Foundry,
     )) {
       if (unitToCluster.has(unit)) {
         result.push({
@@ -734,11 +742,12 @@ export class NationStructureBehavior {
         : player.isAlliedWith(neighbor)
           ? "ally"
           : "other";
-      const weight = Number(game.config().trainGold(relType, 0)) / maxTradeGold;
+      const weight =
+        Number(game.config().frigateCredits(relType, 0)) / maxTradeGold;
       for (const unit of neighbor.units(
-        UnitType.City,
-        UnitType.Port,
-        UnitType.Factory,
+        UnitType.Colony,
+        UnitType.Spaceport,
+        UnitType.Foundry,
       )) {
         if (unitToCluster.has(unit)) {
           result.push({
@@ -798,9 +807,9 @@ export class NationStructureBehavior {
     const game = this.game;
     const player = this.player;
     const borderTiles = player.borderTiles();
-    const otherUnits = player.units(UnitType.City);
+    const otherUnits = player.units(UnitType.Colony);
     const { borderSpacing, structureSpacing } = this.spacingConstants();
-    const stationRange = game.config().trainStationMaxRange();
+    const stationRange = game.config().tradeHubMaxRange();
     const stationRangeSquared = stationRange * stationRange;
     const { difficulty } = game.config().gameConfig();
     const useConnectionScore = this.shouldUseConnectivityScore(difficulty);
@@ -808,11 +817,11 @@ export class NationStructureBehavior {
     const reachableStations = useConnectionScore
       ? this.getOrBuildReachableStations()
       : [];
-    const minRangeSquared = game.config().trainStationMinRange() ** 2;
+    const minRangeSquared = game.config().tradeHubMinRange() ** 2;
 
     // Cross-type spacing: prefer to be away from factories.
     const factoryTiles: Set<TileRef> = new Set(
-      player.units(UnitType.Factory).map((u) => u.tile()),
+      player.units(UnitType.Foundry).map((u) => u.tile()),
     );
 
     return (tile) => {
@@ -863,7 +872,7 @@ export class NationStructureBehavior {
     const game = this.game;
     const player = this.player;
     const borderTiles = player.borderTiles();
-    const otherUnits = player.units(UnitType.DefensePost);
+    const otherUnits = player.units(UnitType.DefenseStation);
     const { borderSpacing, structureSpacing } = this.spacingConstants();
 
     // Check if we have any non-friendly non-bot neighbors with more troops
@@ -900,7 +909,7 @@ export class NationStructureBehavior {
         // Prefer adjacent players who are hostile and have more troops
         const neighbors: Set<Player> = new Set();
         for (const neighborTile of game.neighbors(closest)) {
-          if (!game.isLand(neighborTile)) continue;
+          if (!game.isSector(neighborTile)) continue;
           const id = game.ownerID(neighborTile);
           if (id === player.smallID()) continue;
           const neighbor = game.playerBySmallID(id);
@@ -936,7 +945,7 @@ export class NationStructureBehavior {
     const game = this.game;
     const player = this.player;
     const borderTiles = player.borderTiles();
-    const otherUnits = player.units(UnitType.SAMLauncher);
+    const otherUnits = player.units(UnitType.PointDefenseArray);
     const { borderSpacing, structureSpacing } = this.spacingConstants();
 
     const { difficulty } = game.config().gameConfig();
@@ -946,17 +955,17 @@ export class NationStructureBehavior {
     const protectEntries: { tile: TileRef; weight: number }[] = [];
     for (const unit of player.units()) {
       switch (unit.type()) {
-        case UnitType.City:
-        case UnitType.Factory:
-        case UnitType.MissileSilo:
-        case UnitType.Port:
+        case UnitType.Colony:
+        case UnitType.Foundry:
+        case UnitType.OrbitalStrikePlatform:
+        case UnitType.Spaceport:
           protectEntries.push({
             tile: unit.tile(),
             weight: weightByLevel ? unit.level() : 1,
           });
       }
     }
-    const range = game.config().defaultSamRange();
+    const range = game.config().defaultPointDefenseRange();
     const rangeSquared = range * range;
 
     const useCoverageWeighting =
@@ -966,11 +975,11 @@ export class NationStructureBehavior {
     let structureCoverage: Map<TileRef, number> | null = null;
     if (useCoverageWeighting) {
       structureCoverage = new Map<TileRef, number>();
-      const existingSams = player.units(UnitType.SAMLauncher);
+      const existingSams = player.units(UnitType.PointDefenseArray);
       for (const entry of protectEntries) {
         let coverageScore = 0;
         for (const sam of existingSams) {
-          const samRange = game.config().samRange(sam.level());
+          const samRange = game.config().pointDefenseRange(sam.level());
           const dist = game.euclideanDistSquared(entry.tile, sam.tile());
           if (dist <= samRange * samRange) {
             coverageScore += sam.level();
@@ -1028,7 +1037,7 @@ export class NationStructureBehavior {
   } {
     const borderSpacing = this.game
       .config()
-      .nukeMagnitudes(UnitType.AtomBomb).outer;
+      .nukeMagnitudes(UnitType.AntimatterTorpedo).outer;
     return { borderSpacing, structureSpacing: borderSpacing * 2 };
   }
 }

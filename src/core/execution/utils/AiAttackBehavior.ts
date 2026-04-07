@@ -1,3 +1,4 @@
+import { canBuildAssaultShuttle } from "../../game/AssaultShuttleUtils";
 import {
   Difficulty,
   Game,
@@ -13,13 +14,13 @@ import {
   UnitType,
 } from "../../game/Game";
 import { TileRef } from "../../game/GameMap";
-import { canBuildTransportShip } from "../../game/TransportShipUtils";
 import { PseudoRandom } from "../../PseudoRandom";
 import {
   assertNever,
   boundingBoxCenter,
   calculateBoundingBoxCenter,
 } from "../../Util";
+import { AssaultShuttleExecution } from "../AssaultShuttleExecution";
 import { AttackExecution } from "../AttackExecution";
 import { DonateTroopsExecution } from "../DonateTroopExecution";
 import { NationAllianceBehavior } from "../nation/NationAllianceBehavior";
@@ -30,7 +31,6 @@ import {
   EMOJI_ASSIST_TARGET_ME,
   NationEmojiBehavior,
 } from "../nation/NationEmojiBehavior";
-import { TransportShipExecution } from "../TransportShipExecution";
 import { closestTwoTiles } from "../Util";
 
 export class AiAttackBehavior {
@@ -56,7 +56,7 @@ export class AiAttackBehavior {
       .flatMap((t) => this.game.neighbors(t))
       .filter(
         (t) =>
-          this.game.isLand(t) &&
+          this.game.isSector(t) &&
           this.game.ownerID(t) !== this.player?.smallID(),
       );
     const borderingPlayers = [
@@ -103,8 +103,8 @@ export class AiAttackBehavior {
 
     // Check if we've already sent out the maximum number of transport ships
     if (
-      this.player.unitCount(UnitType.TransportShip) >=
-      this.game.config().boatMaxNumber()
+      this.player.unitCount(UnitType.AssaultShuttle) >=
+      this.game.config().shuttleMaxNumber()
     ) {
       return;
     }
@@ -130,7 +130,7 @@ export class AiAttackBehavior {
     }
 
     this.game.addExecution(
-      new TransportShipExecution(this.player, dst, this.player.troops() / 5),
+      new AssaultShuttleExecution(this.player, dst, this.player.troops() / 5),
     );
     return;
   }
@@ -151,7 +151,7 @@ export class AiAttackBehavior {
         continue;
       }
       const randTile = this.game.ref(randX, randY);
-      if (!this.game.isLand(randTile)) {
+      if (!this.game.isSector(randTile)) {
         continue;
       }
       const owner = this.game.owner(randTile);
@@ -184,7 +184,7 @@ export class AiAttackBehavior {
       }
 
       // Validate that we can actually build a transport ship to this target
-      if (canBuildTransportShip(this.game, this.player, randTile) === false) {
+      if (canBuildAssaultShuttle(this.game, this.player, randTile) === false) {
         if (owner.isPlayer()) {
           unreachablePlayers.add(owner.id());
         }
@@ -523,7 +523,7 @@ export class AiAttackBehavior {
     for (const tile of this.player.borderTiles()) {
       for (const neighbor of this.game.neighbors(tile)) {
         if (
-          this.game.isLand(neighbor) &&
+          this.game.isSector(neighbor) &&
           !this.game.hasOwner(neighbor) &&
           this.game.hasFallout(neighbor)
         ) {
@@ -568,8 +568,8 @@ export class AiAttackBehavior {
   private findNearestIslandEnemy(): Player | null {
     // Check if we've already sent out the maximum number of transport ships
     if (
-      this.player.unitCount(UnitType.TransportShip) >=
-      this.game.config().boatMaxNumber()
+      this.player.unitCount(UnitType.AssaultShuttle) >=
+      this.game.config().shuttleMaxNumber()
     ) {
       return null;
     }
@@ -623,7 +623,7 @@ export class AiAttackBehavior {
       );
       if (closest === null) continue;
 
-      if (canBuildTransportShip(this.game, this.player, closest.y)) {
+      if (canBuildAssaultShuttle(this.game, this.player, closest.y)) {
         reachablePlayers.push(entry.player);
         // We only need up to 2 reachable candidates
         if (reachablePlayers.length >= 2) break;
@@ -795,7 +795,7 @@ export class AiAttackBehavior {
       return;
     }
 
-    if (!canBuildTransportShip(this.game, this.player, closest.y)) {
+    if (!canBuildAssaultShuttle(this.game, this.player, closest.y)) {
       return;
     }
 
@@ -816,7 +816,7 @@ export class AiAttackBehavior {
     }
 
     this.game.addExecution(
-      new TransportShipExecution(this.player, closest.y, troops),
+      new AssaultShuttleExecution(this.player, closest.y, troops),
     );
   }
 

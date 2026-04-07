@@ -266,16 +266,16 @@
     "title": "Nyelv kiválasztása"
   },
   "unit_type": {
-    "city": "Város",
-    "defense_post": "Védelmi állás",
-    "port": "Kikötő",
-    "warship": "Hadihajó",
-    "missile_silo": "Rakétasiló",
-    "sam_launcher": "Rakétaelhárító rendszer",
-    "atom_bomb": "Atombomba",
-    "hydrogen_bomb": "Hidrogénbomba",
-    "mirv": "MIRV",
-    "factory": "Gyár"
+    "colony": "Város",
+    "defense_station": "Védelmi állás",
+    "spaceport": "Kikötő",
+    "battlecruiser": "Hadihajó",
+    "orbital_strike_platform": "Rakétasiló",
+    "point_defense_array": "Rakétaelhárító rendszer",
+    "antimatter_torpedo": "Atombomba",
+    "nova_bomb": "Hidrogénbomba",
+    "cluster_warhead": "MIRV",
+    "foundry": "Gyár"
   },
   "user_setting": {
     "title": "Játékos beállítások",
@@ -332,8 +332,8 @@
     "attack_ratio_down": "Támadási arány csökkentése",
     "attack_ratio_down_desc": "Támadási arány csökkentése 10%-kal",
     "attack_keybinds": "Támadás billentyűkiosztások",
-    "boat_attack": "Hajótámadás",
-    "boat_attack_desc": "Hajótámadás küldése a kurzorral megjelölt helyre.",
+    "shuttle_attack": "Hajótámadás",
+    "shuttle_attack_desc": "Hajótámadás küldése a kurzorral megjelölt helyre.",
     "ground_attack": "Szárazföldi támadás",
     "ground_attack_desc": "Szárazföldi támadás a kurzorral megjelölt helyre.",
     "zoom_controls": "Nagyítás vezérlés",
@@ -383,7 +383,7 @@
     "help": {
       "troops": "Kérlek, küldj katonákat!",
       "troops_frontlines": "Küldj csapatokat a frontvonalra!",
-      "gold": "Kérlek, küldj aranyat!",
+      "credits": "Kérlek, küldj aranyat!",
       "no_attack": "Kérlek, ne támadj meg!",
       "sorry_attack": "Bocsánat, nem akartalak megtámadni.",
       "alliance": "Szövetség?",
@@ -392,17 +392,17 @@
     },
     "attack": {
       "attack": "Támadd meg [P1]-t!",
-      "mirv": "Indíts MIRV-et [P1] ellen!",
+      "cluster_warhead": "Indíts MIRV-et [P1] ellen!",
       "focus": "Koncentrált támadás [P1] ellen!",
       "finish": "Végezzük ki [P1]-t!",
-      "build_warships": "Építs hadihajókat!"
+      "build_battlecruisers": "Építs hadihajókat!"
     },
     "defend": {
       "defend": "Védd meg [P1]-t!",
       "defend_from": "Véddekezz [P1] ellen!",
       "dont_attack": "Ne támadd meg [P1]-t!",
       "ally": "[P1] a szövetségesem!",
-      "build_posts": "Építs védelmi állomásokat!"
+      "build_defense_stations": "Építs védelmi állomásokat!"
     },
     "greet": {
       "hello": "Szia!",
@@ -434,7 +434,7 @@
     "warnings": {
       "strong": "[P1] erős.",
       "weak": "[P1] gyenge.",
-      "mirv_soon": "[P1] hamarosan indíthat MIRV-et!",
+      "cluster_warhead_soon": "[P1] hamarosan indíthat MIRV-et!",
       "number1_warning": "A #1 játékos hamarosan nyerni fog, hacsak nem állunk össze!",
       "stalemate": "Kössünk békét. Ez patthelyzet, mindketten veszíteni fogunk.",
       "has_allies": "[P1] sok szövetségessel rendelkezik.",
@@ -443,8 +443,8 @@
       "betrayed_me": "[P1] elárult engem!",
       "getting_big": "[P1] túl gyorsan fejlődik!",
       "danger_base": "[P1] védtelen!",
-      "saving_for_mirv": "[P1] MIRV indítására gyűjt.",
-      "mirv_ready": "[P1] elég arannyal rendelkezik egy MIRV indításához!",
+      "saving_for_cluster_warhead": "[P1] MIRV indítására gyűjt.",
+      "cluster_warhead_ready": "[P1] elég arannyal rendelkezik egy MIRV indításához!",
       "snowballing": "[P1] túl gyorsan fejlődik!",
       "cheating": "[P1] csal!",
       "stop_trading": "Állítsd le a kereskedést [P1]!"
@@ -452,16 +452,16 @@
   },
   "build_menu": {
     "desc": {
-      "atom_bomb": "Kis robbanás",
-      "hydrogen_bomb": "Nagy robbanás",
-      "mirv": "Hatalmas robbanás, csak a kiválasztott játékost célozza",
-      "missile_silo": "Nukleáris fegyverek indítására használható",
-      "sam_launcher": "Véd a közelgő nukleáris rakéták ellen",
-      "warship": "Elfogja a kereskedőhajókat, elpusztítja a hajókat és csónakokat",
-      "port": "Kereskedőhajókat küld, hogy arany termeljen",
-      "defense_post": "Növeli a közeli határok védelmét",
-      "city": "Növeli a maximális népességet",
-      "factory": "Vasútvonalakat hoz létre és vonatokat indít"
+      "antimatter_torpedo": "Kis robbanás",
+      "nova_bomb": "Nagy robbanás",
+      "cluster_warhead": "Hatalmas robbanás, csak a kiválasztott játékost célozza",
+      "orbital_strike_platform": "Nukleáris fegyverek indítására használható",
+      "point_defense_array": "Véd a közelgő nukleáris rakéták ellen",
+      "battlecruiser": "Elfogja a kereskedőhajókat, elpusztítja a hajókat és csónakokat",
+      "spaceport": "Kereskedőhajókat küld, hogy arany termeljen",
+      "defense_station": "Növeli a közeli határok védelmét",
+      "colony": "Növeli a maximális népességet",
+      "foundry": "Vasútvonalakat hoz létre és vonatokat indít"
     },
     "not_enough_money": "Nincs elég pénz"
   },
@@ -484,12 +484,12 @@
     "player": "Játékos",
     "team": "Csapat",
     "owned": "Birtokolt",
-    "gold": "Arany",
+    "credits": "Arany",
     "troops": "Katonák",
     "launchers": "Kilövő állomások",
-    "sams": "Rakétaelhárítók",
-    "warships": "Hadihajók",
-    "cities": "Városok",
+    "point_defense": "Rakétaelhárítók",
+    "battlecruisers": "Hadihajók",
+    "colonies": "Városok",
     "show_control": "Vezérlés megjelenítése",
     "show_units": "Egységek megjelenítése"
   },
@@ -558,7 +558,7 @@
     "attack_ratio": "Támadási ráta"
   },
   "player_panel": {
-    "gold": "Arany",
+    "credits": "Arany",
     "troops": "Katonák",
     "betrayals": "Árulások száma",
     "traitor": "Áruló",
@@ -675,25 +675,25 @@
     "received": "Fogadott",
     "cancelled": "Megszakítva",
     "count": "Mennyiség",
-    "gold": "Arany",
+    "credits": "Arany",
     "workers": "Munkások",
     "war": "Háború",
     "trade": "Kereskedelem",
     "steal": "Lopás",
     "unit": {
-      "city": "Város",
-      "port": "Kikötő",
-      "defp": "Védelmi állás",
-      "saml": "Rakétaelhárító rendszer",
-      "silo": "Rakétasiló",
-      "wshp": "Hadihajó",
-      "fact": "Gyár",
-      "trade": "Kereskedelmi hajó",
-      "trans": "Szállítóhajó",
-      "abomb": "Atombomba",
-      "hbomb": "Hidrogénbomba",
-      "mirv": "MIRV",
-      "mirvw": "MIRV robbanófej"
+      "colony": "Város",
+      "spaceport": "Kikötő",
+      "defs": "Védelmi állás",
+      "pda": "Rakétaelhárító rendszer",
+      "osp": "Rakétasiló",
+      "bcrs": "Hadihajó",
+      "fndy": "Gyár",
+      "tfreight": "Kereskedelmi hajó",
+      "ashuttle": "Szállítóhajó",
+      "ator": "Atombomba",
+      "nbomb": "Hidrogénbomba",
+      "cwhead": "MIRV",
+      "cwsub": "MIRV robbanófej"
     }
   },
   "game_list": {

@@ -1,6 +1,6 @@
+import { AssaultShuttleExecution } from "../src/core/execution/AssaultShuttleExecution";
 import { AttackExecution } from "../src/core/execution/AttackExecution";
 import { SpawnExecution } from "../src/core/execution/SpawnExecution";
-import { TransportShipExecution } from "../src/core/execution/TransportShipExecution";
 import {
   Game,
   Player,
@@ -22,7 +22,7 @@ let defenderSpawn: TileRef;
 let attackerSpawn: TileRef;
 
 function sendBoat(target: TileRef, troops: number) {
-  game.addExecution(new TransportShipExecution(defender, target, troops));
+  game.addExecution(new AssaultShuttleExecution(defender, target, troops));
 }
 
 const immunityPhaseTicks = 10;
@@ -35,7 +35,7 @@ function waitForImmunityToEnd() {
 describe("Attack", () => {
   beforeEach(async () => {
     game = await setup("ocean_and_land", {
-      infiniteGold: true,
+      infiniteCredits: true,
       instantBuild: true,
       infiniteTroops: true,
     });
@@ -91,11 +91,11 @@ describe("Attack", () => {
   test("Nuke reduce attacking troop counts", async () => {
     // Not building exactly spawn to it's better protected from attacks (but still
     // on defender territory)
-    constructionExecution(game, defender, 1, 1, UnitType.MissileSilo);
-    expect(defender.units(UnitType.MissileSilo)).toHaveLength(1);
+    constructionExecution(game, defender, 1, 1, UnitType.OrbitalStrikePlatform);
+    expect(defender.units(UnitType.OrbitalStrikePlatform)).toHaveLength(1);
     game.addExecution(new AttackExecution(100, attacker, defender.id()));
-    constructionExecution(game, defender, 0, 15, UnitType.AtomBomb, 3);
-    const nuke = defender.units(UnitType.AtomBomb)[0];
+    constructionExecution(game, defender, 0, 15, UnitType.AntimatterTorpedo, 3);
+    const nuke = defender.units(UnitType.AntimatterTorpedo)[0];
     expect(nuke.isActive()).toBe(true);
 
     expect(attacker.outgoingAttacks()).toHaveLength(1);
@@ -109,22 +109,24 @@ describe("Attack", () => {
   });
 
   test("Nuke reduce attacking boat troop count", async () => {
-    constructionExecution(game, defender, 1, 1, UnitType.MissileSilo);
-    expect(defender.units(UnitType.MissileSilo)).toHaveLength(1);
+    constructionExecution(game, defender, 1, 1, UnitType.OrbitalStrikePlatform);
+    expect(defender.units(UnitType.OrbitalStrikePlatform)).toHaveLength(1);
 
     sendBoat(game.ref(15, 8), 100);
 
-    constructionExecution(game, defender, 0, 15, UnitType.AtomBomb, 3);
-    const nuke = defender.units(UnitType.AtomBomb)[0];
+    constructionExecution(game, defender, 0, 15, UnitType.AntimatterTorpedo, 3);
+    const nuke = defender.units(UnitType.AntimatterTorpedo)[0];
     expect(nuke.isActive()).toBe(true);
 
-    const ship = defender.units(UnitType.TransportShip)[0];
+    const ship = defender.units(UnitType.AssaultShuttle)[0];
     expect(ship.troops()).toBe(100);
 
     game.executeNextTick();
 
     expect(nuke.isActive()).toBe(false);
-    expect(defender.units(UnitType.TransportShip)[0].troops()).toBeLessThan(90);
+    expect(defender.units(UnitType.AssaultShuttle)[0].troops()).toBeLessThan(
+      90,
+    );
   });
 
   test("Boat penalty on retreat Transport Ship arrival", async () => {
@@ -135,11 +137,11 @@ describe("Attack", () => {
 
     game.executeNextTick();
 
-    const ship = defender.units(UnitType.TransportShip)[0];
+    const ship = defender.units(UnitType.AssaultShuttle)[0];
     expect(ship.troops()).toBe(boat_troops);
     expect(ship.isActive()).toBe(true);
 
-    ship.orderBoatRetreat();
+    ship.orderShuttleRetreat();
     game.executeNextTick();
 
     expect(ship.isActive()).toBe(false);
@@ -164,7 +166,7 @@ function addPlayerToGame(
 describe("Attack race condition with alliance requests", () => {
   beforeEach(async () => {
     game = await setup("ocean_and_land", {
-      infiniteGold: true,
+      infiniteCredits: true,
       instantBuild: true,
       infiniteTroops: true,
     });
@@ -336,7 +338,7 @@ describe("Attack race condition with alliance requests", () => {
 describe("Transport ship alliance rejection", () => {
   beforeEach(async () => {
     game = await setup("ocean_and_land", {
-      infiniteGold: true,
+      infiniteCredits: true,
       instantBuild: true,
       infiniteTroops: true,
     });
@@ -370,7 +372,7 @@ describe("Transport ship alliance rejection", () => {
     expect(playerB.incomingAllianceRequests()).toHaveLength(1);
 
     // Player B sends a transport ship toward Player A's territory
-    game.addExecution(new TransportShipExecution(playerB, game.ref(7, 0), 0));
+    game.addExecution(new AssaultShuttleExecution(playerB, game.ref(7, 0), 0));
 
     // Execute a tick to process the transport ship launch
     game.executeNextTick();
@@ -384,7 +386,7 @@ describe("Transport ship alliance rejection", () => {
 describe("Attack immunity", () => {
   beforeEach(async () => {
     game = await setup("ocean_and_land", {
-      infiniteGold: true,
+      infiniteCredits: true,
       instantBuild: true,
       infiniteTroops: true,
     });
@@ -461,17 +463,21 @@ describe("Attack immunity", () => {
 
   test("Should not be able to send a boat during immunity phase", async () => {
     // Player A sends a boat targeting Player B
-    game.addExecution(new TransportShipExecution(playerA, game.ref(7, 15), 10));
+    game.addExecution(
+      new AssaultShuttleExecution(playerA, game.ref(7, 15), 10),
+    );
     game.executeNextTick();
-    expect(playerA.units(UnitType.TransportShip)).toHaveLength(0);
+    expect(playerA.units(UnitType.AssaultShuttle)).toHaveLength(0);
   });
 
   test("Should be able to send a boat after immunity phase", async () => {
     waitForImmunityToEnd();
     // Player A sends a boat targeting Player B
-    game.addExecution(new TransportShipExecution(playerA, game.ref(7, 15), 10));
+    game.addExecution(
+      new AssaultShuttleExecution(playerA, game.ref(7, 15), 10),
+    );
     game.executeNextTick();
-    expect(playerA.units(UnitType.TransportShip)).toHaveLength(1);
+    expect(playerA.units(UnitType.AssaultShuttle)).toHaveLength(1);
   });
 
   test("Should not be able to attack nations during nation immunity phase", async () => {
@@ -515,15 +521,15 @@ describe("Attack immunity", () => {
   });
 
   test("Can't send nuke during immunity phase", async () => {
-    constructionExecution(game, playerA, 7, 0, UnitType.MissileSilo);
-    expect(playerA.units(UnitType.MissileSilo)).toHaveLength(1);
+    constructionExecution(game, playerA, 7, 0, UnitType.OrbitalStrikePlatform);
+    expect(playerA.units(UnitType.OrbitalStrikePlatform)).toHaveLength(1);
     // Player A sends a bomb to player B
-    constructionExecution(game, playerA, 0, 11, UnitType.AtomBomb, 3);
-    expect(playerA.units(UnitType.AtomBomb)).toHaveLength(0);
+    constructionExecution(game, playerA, 0, 11, UnitType.AntimatterTorpedo, 3);
+    expect(playerA.units(UnitType.AntimatterTorpedo)).toHaveLength(0);
     // Now wait for immunity to end
     waitForImmunityToEnd();
     // And send the exact same order
-    constructionExecution(game, playerA, 0, 11, UnitType.AtomBomb, 3);
-    expect(playerA.units(UnitType.AtomBomb)).toHaveLength(1);
+    constructionExecution(game, playerA, 0, 11, UnitType.AntimatterTorpedo, 3);
+    expect(playerA.units(UnitType.AntimatterTorpedo)).toHaveLength(1);
   });
 });

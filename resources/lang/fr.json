@@ -221,11 +221,11 @@
     "hydros": "Hydros",
     "mirv": "MIRV",
     "bombs": "Bombes",
-    "total_gold": "Total",
-    "all_gold": "Tout l'or",
+    "total_credits": "Total",
+    "all_credits": "Tout l'or",
     "trade": "Commercer",
-    "conquest_gold": "Or de joueur conquis",
-    "stolen_gold": "Volé avec des navires de guerre",
+    "conquest_credits": "Or de joueur conquis",
+    "stolen_credits": "Volé avec des navires de guerre",
     "num_of_conquests": "Nombre de joueurs conquis",
     "duration": "Durée",
     "survival_time": "Temps de survie",
@@ -415,16 +415,16 @@
     "title": "Sélectionner une langue"
   },
   "unit_type": {
-    "city": "Ville",
-    "defense_post": "Poste de défense",
-    "port": "Port",
-    "warship": "Navire de guerre",
-    "missile_silo": "Silo à missiles",
-    "sam_launcher": "Lanceur de SAM",
-    "atom_bomb": "Bombe atomique",
-    "hydrogen_bomb": "Bombe à hydrogène",
-    "mirv": "MIRV",
-    "factory": "Usine"
+    "colony": "Ville",
+    "defense_station": "Poste de défense",
+    "spaceport": "Port",
+    "battlecruiser": "Navire de guerre",
+    "orbital_strike_platform": "Silo à missiles",
+    "point_defense_array": "Lanceur de SAM",
+    "antimatter_torpedo": "Bombe atomique",
+    "nova_bomb": "Bombe à hydrogène",
+    "cluster_warhead": "MIRV",
+    "foundry": "Usine"
   },
   "user_setting": {
     "title": "Paramètres",
@@ -496,8 +496,8 @@
     "attack_ratio_down": "Diminuer le ratio d'attaque",
     "attack_ratio_down_desc": "Diminuer le ratio d'attaque de 10%",
     "attack_keybinds": "Raccourcis d'attaque",
-    "boat_attack": "Attaque navale",
-    "boat_attack_desc": "Envoyer une attaque navale à la tuile sous votre curseur.",
+    "shuttle_attack": "Attaque navale",
+    "shuttle_attack_desc": "Envoyer une attaque navale à la tuile sous votre curseur.",
     "ground_attack": "Attaque au sol",
     "ground_attack_desc": "Envoyez une attaque au sol sur la tuile sous votre curseur.",
     "swap_direction": "Inverser la trajectoire balistique",
@@ -550,7 +550,7 @@
     "help": {
       "troops": "S'il te plaît, donne-moi des troupes !",
       "troops_frontlines": "Envoyez des troupes sur la ligne de front !",
-      "gold": "S'il te plaît, donne-moi de l'or !",
+      "credits": "S'il te plaît, donne-moi de l'or !",
       "no_attack": "S'il te plaît, ne m'attaque pas !",
       "sorry_attack": "Désolé, je ne voulais pas attaquer.",
       "alliance": "Alliance ?",
@@ -559,17 +559,17 @@
     },
     "attack": {
       "attack": "Attaque [P1] !",
-      "mirv": "Lance un MIRV sur [P1] !",
+      "cluster_warhead": "Lance un MIRV sur [P1] !",
       "focus": "Concentre l'attaque sur [P1] !",
       "finish": "Finissons [P1] !",
-      "build_warships": "Construis des vaisseaux de guerre !"
+      "build_battlecruisers": "Construis des vaisseaux de guerre !"
     },
     "defend": {
       "defend": "Défend [P1] !",
       "defend_from": "Défend contre [P1] !",
       "dont_attack": "N'attaque pas [P1] !",
       "ally": "[P1] est mon allié !",
-      "build_posts": "Construis des Postes de Défense !"
+      "build_defense_stations": "Construis des Postes de Défense !"
     },
     "greet": {
       "hello": "Bonjour !",
@@ -601,7 +601,7 @@
     "warnings": {
       "strong": "[P1] est fort·e.",
       "weak": "[P1] est faible.",
-      "mirv_soon": "[P1] peut bientôt lancer un MIRV !",
+      "cluster_warhead_soon": "[P1] peut bientôt lancer un MIRV !",
       "number1_warning": "Le joueur #1 gagnera bientôt si nous ne faisons pas équipe !",
       "stalemate": "Faisons la paix. C'est une impasse, nous perdrons tous les deux.",
       "has_allies": "[P1] a beaucoup d'alliés.",
@@ -610,8 +610,8 @@
       "betrayed_me": "[P1] m'a trahi !",
       "getting_big": "[P1] croît trop vite !",
       "danger_base": "[P1] n'est pas protégé !",
-      "saving_for_mirv": "[P1] économise pour lancer un MIRV.",
-      "mirv_ready": "[P1] a assez d'or pour lancer un MIRV !",
+      "saving_for_cluster_warhead": "[P1] économise pour lancer un MIRV.",
+      "cluster_warhead_ready": "[P1] a assez d'or pour lancer un MIRV !",
       "snowballing": "[P1] grandit beaucoup trop vite !",
       "cheating": "[P1] triche !",
       "stop_trading": "Arrête le commerce avec [P1] !"
@@ -619,16 +619,16 @@
   },
   "build_menu": {
     "desc": {
-      "atom_bomb": "Petite explosion",
-      "hydrogen_bomb": "Grosse explosion",
-      "mirv": "Énorme explosion, cible uniquement le joueur sélectionné",
-      "missile_silo": "Utilisé pour lancer des bombes nucléaires",
-      "sam_launcher": "Protège contre les bombes nucléaires",
-      "warship": "Capture les navires commerciaux, détruit les navires de guerre et les bateaux",
-      "port": "Envoie des navires commerciaux pour produire de l'or",
-      "defense_post": "Augmente les défenses des frontières proches",
-      "city": "Augmente la population maximale",
-      "factory": "Crée des chemins de fer et fait apparaître des trains"
+      "antimatter_torpedo": "Petite explosion",
+      "nova_bomb": "Grosse explosion",
+      "cluster_warhead": "Énorme explosion, cible uniquement le joueur sélectionné",
+      "orbital_strike_platform": "Utilisé pour lancer des bombes nucléaires",
+      "point_defense_array": "Protège contre les bombes nucléaires",
+      "battlecruiser": "Capture les navires commerciaux, détruit les navires de guerre et les bateaux",
+      "spaceport": "Envoie des navires commerciaux pour produire de l'or",
+      "defense_station": "Augmente les défenses des frontières proches",
+      "colony": "Augmente la population maximale",
+      "foundry": "Crée des chemins de fer et fait apparaître des trains"
     },
     "not_enough_money": "Pas assez d'argent"
   },
@@ -660,12 +660,12 @@
     "player": "Joueur",
     "team": "Équipe",
     "owned": "Possédé",
-    "gold": "Or",
+    "credits": "Or",
     "maxtroops": "Troupes max",
     "launchers": "Lanceurs",
-    "sams": "SAMs",
-    "warships": "Vaisseaux de guerre",
-    "cities": "Villes",
+    "point_defense": "SAMs",
+    "battlecruisers": "Vaisseaux de guerre",
+    "colonies": "Villes",
     "show_control": "Afficher les commandes",
     "show_units": "Afficher les unités"
   },
@@ -718,18 +718,18 @@
     "unit_voluntarily_deleted": "Unité volontairement supprimée",
     "betrayal_debuff_ends": "{time} secondes restantes jusqu'à la fin du malus de trahison",
     "attack_cancelled_retreat": "Attaque annulée, {troops} soldats ont été tués pendant la retraite",
-    "received_gold_from_captured_ship": "{gold} ors reçu pour la capture d'un navire de {name}",
-    "received_gold_from_trade": "{gold} ors reçu pour le commerce avec {name}",
+    "received_credits_from_captured_ship": "{gold} ors reçu pour la capture d'un navire de {name}",
+    "received_credits_from_trade": "{gold} ors reçu pour le commerce avec {name}",
     "missile_intercepted": "Le missile a intercepté {unit}",
-    "mirv_warheads_intercepted": "{count, plural, one {{count} ogive nucléaire MIRV a été interceptée} other {{count} ogives nucléaire MIRV ont été interceptées}}",
+    "cluster_warheads_intercepted": "{count, plural, one {{count} ogive nucléaire MIRV a été interceptée} other {{count} ogives nucléaire MIRV ont été interceptées}}",
     "sent_troops_to_player": "Vous avez envoyé {troops} troupes à {name}",
     "received_troops_from_player": "Vous avez reçu {troops} troupes de {name}",
-    "sent_gold_to_player": "Vous avez envoyé {gold} ors à {name}",
-    "received_gold_from_player": "Vous avez reçu {gold} ors de {name}",
+    "sent_credits_to_player": "Vous avez envoyé {gold} ors à {name}",
+    "received_credits_from_player": "Vous avez reçu {gold} ors de {name}",
     "unit_captured_by_enemy": "Votre {unit} a été capturé par {name}",
     "captured_enemy_unit": "{unit} de {name} capturé",
     "unit_destroyed": "Votre {unit} a été détruit",
-    "no_boats_available": "Aucun bateau disponible, max {max}"
+    "no_shuttles_available": "Aucun bateau disponible, max {max}"
   },
   "unit_info_modal": {
     "structure_info": "Infos sur la structure",
@@ -758,7 +758,7 @@
     "attack_ratio": "Ratio d'attaque"
   },
   "player_panel": {
-    "gold": "Or",
+    "credits": "Or",
     "troops": "Troupes",
     "betrayals": "Trahisons",
     "traitor": "Traître",
@@ -780,7 +780,7 @@
     "alliance": "Alliance",
     "send_alliance": "Envoyer une alliance",
     "send_troops": "Envoyer des troupes",
-    "send_gold": "Envoyer de l'or",
+    "send_credits": "Envoyer de l'or",
     "emotes": "Émojis",
     "arc_up": "Arc vers le haut",
     "arc_down": "Arc vers le bas",
@@ -794,7 +794,7 @@
     "aria_slider": "Curseur de troupes",
     "capacity_note": "Le destinataire ne peut accepter que {amount} pour le moment."
   },
-  "send_gold_modal": {
+  "send_credits_modal": {
     "title_with_name": "Envoyer de l'or à {name}",
     "available_tooltip": "Votre or disponible",
     "aria_slider": "Curseur de quantité",
@@ -896,25 +896,25 @@
     "received": "Reçu",
     "cancelled": "Annulé",
     "count": "Compte",
-    "gold": "Or",
+    "credits": "Or",
     "workers": "Ouvriers",
     "war": "Guerre",
     "trade": "Commercer",
     "steal": "Voler",
     "unit": {
-      "city": "Ville",
-      "port": "Port",
-      "defp": "Poste de défense",
-      "saml": "Lanceur de SAM",
-      "silo": "Silo à missiles",
-      "wshp": "Navire de guerre",
-      "fact": "Usine",
-      "trade": "Bateau de commerce",
-      "trans": "Bateau de transport",
-      "abomb": "Bombe atomique",
-      "hbomb": "Bombe à hydrogène",
-      "mirv": "MIRV",
-      "mirvw": "Ogive de MIRV"
+      "colony": "Ville",
+      "spaceport": "Port",
+      "defs": "Poste de défense",
+      "pda": "Lanceur de SAM",
+      "osp": "Silo à missiles",
+      "bcrs": "Navire de guerre",
+      "fndy": "Usine",
+      "tfreight": "Bateau de commerce",
+      "ashuttle": "Bateau de transport",
+      "ator": "Bombe atomique",
+      "nbomb": "Bombe à hydrogène",
+      "cwhead": "MIRV",
+      "cwsub": "Ogive de MIRV"
     }
   },
   "game_list": {

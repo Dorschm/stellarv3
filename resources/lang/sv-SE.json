@@ -244,16 +244,16 @@
     "title": "Välj Språk"
   },
   "unit_type": {
-    "city": "Stad",
-    "defense_post": "Försvarspost",
-    "port": "Hamn",
-    "warship": "Krigsfartyg",
-    "missile_silo": "Missilbas",
-    "sam_launcher": "Luftvärn",
-    "atom_bomb": "Liten atombomb",
-    "hydrogen_bomb": "Vätebomb",
-    "mirv": "MIRV",
-    "factory": "Fabrik"
+    "colony": "Stad",
+    "defense_station": "Försvarspost",
+    "spaceport": "Hamn",
+    "battlecruiser": "Krigsfartyg",
+    "orbital_strike_platform": "Missilbas",
+    "point_defense_array": "Luftvärn",
+    "antimatter_torpedo": "Liten atombomb",
+    "nova_bomb": "Vätebomb",
+    "cluster_warhead": "MIRV",
+    "foundry": "Fabrik"
   },
   "user_setting": {
     "title": "Användarinställningar",
@@ -301,8 +301,8 @@
     "attack_ratio_down": "Minska anfallskalan",
     "attack_ratio_down_desc": "Minska anfallsskalan med 10%",
     "attack_keybinds": "Anfallstangentbindningar",
-    "boat_attack": "Båtanfall",
-    "boat_attack_desc": "Skicka en båt att anfalla rutan under din muspekare.",
+    "shuttle_attack": "Båtanfall",
+    "shuttle_attack_desc": "Skicka en båt att anfalla rutan under din muspekare.",
     "ground_attack": "Markanfall",
     "ground_attack_desc": "Skick ett markanfall till rutan under din muspekare.",
     "zoom_controls": "Zoom Kontroller",
@@ -351,7 +351,7 @@
     },
     "help": {
       "troops": "Vänligen ge mig trupper!",
-      "gold": "Vänligen ge mig guld!",
+      "credits": "Vänligen ge mig guld!",
       "no_attack": "Vänligen anfall mig ej!",
       "sorry_attack": "Ursäkta, jag hade inte som avsikt att anfalla.",
       "alliance": "Allians?",
@@ -360,7 +360,7 @@
     },
     "attack": {
       "attack": "Anfall [P1]!",
-      "mirv": "Avfyra en MIRV mot [P1]!",
+      "cluster_warhead": "Avfyra en MIRV mot [P1]!",
       "focus": "Fokusera [P1]!",
       "finish": "Låt oss avsluta [P1]!"
     },
@@ -392,7 +392,7 @@
     "warnings": {
       "strong": "[P1] är stark.",
       "weak": "[P1] är svag.",
-      "mirv_soon": "[P1] kan avfyra en MIRV snart!",
+      "cluster_warhead_soon": "[P1] kan avfyra en MIRV snart!",
       "number1_warning": "Spelaren nummer #1 kommer snart vinna om vi inte går samman!",
       "stalemate": "Låt oss skapa fred. Detta är ett dödläge, vi kommer båda förlora.",
       "has_allies": "[P1] har många allierade.",
@@ -400,22 +400,22 @@
       "betrayed": "[P1] förrådde deras allierade!",
       "getting_big": "[P1] växer för snabbt!",
       "danger_base": "[P1] är oskyddad!",
-      "saving_for_mirv": "[P1] sparar upp till en MIRV.",
-      "mirv_ready": "[P1] har tillräckligt med guld för att avfyra en MIRV!"
+      "saving_for_cluster_warhead": "[P1] sparar upp till en MIRV.",
+      "cluster_warhead_ready": "[P1] har tillräckligt med guld för att avfyra en MIRV!"
     }
   },
   "build_menu": {
     "desc": {
-      "atom_bomb": "Liten explosion",
-      "hydrogen_bomb": "Stor explosion",
-      "mirv": "Massiv explosion, träffar enbart vald spelare",
-      "missile_silo": "Används för att avfyra kärnvapen",
-      "sam_launcher": "Skyddar mot inkommande kärnvapen",
-      "warship": "Fångar in handelsfartyg, förstör skepp och båtar",
-      "port": "Skickar handelsfartyg för att generera guld",
-      "defense_post": "Ökar försvaret mot närliggande gränser",
-      "city": "Ökar max befolkning",
-      "factory": "Skapar järnvägar och producerar tåg"
+      "antimatter_torpedo": "Liten explosion",
+      "nova_bomb": "Stor explosion",
+      "cluster_warhead": "Massiv explosion, träffar enbart vald spelare",
+      "orbital_strike_platform": "Används för att avfyra kärnvapen",
+      "point_defense_array": "Skyddar mot inkommande kärnvapen",
+      "battlecruiser": "Fångar in handelsfartyg, förstör skepp och båtar",
+      "spaceport": "Skickar handelsfartyg för att generera guld",
+      "defense_station": "Ökar försvaret mot närliggande gränser",
+      "colony": "Ökar max befolkning",
+      "foundry": "Skapar järnvägar och producerar tåg"
     },
     "not_enough_money": "Ej tillräckligt med guld"
   },
@@ -436,7 +436,7 @@
     "player": "Spelare",
     "team": "Lag",
     "owned": "Ägd",
-    "gold": "Guld",
+    "credits": "Guld",
     "troops": "Trupper"
   },
   "player_info_overlay": {
@@ -504,7 +504,7 @@
     "attack_ratio": "Anfallsskala"
   },
   "player_panel": {
-    "gold": "Guld",
+    "credits": "Guld",
     "troops": "Trupper",
     "betrayals": "Antal förräderier",
     "traitor": "Förrädare",

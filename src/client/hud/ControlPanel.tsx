@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { assetUrl } from "../../core/AssetUrls";
-import { renderNumber, renderTroops } from "../Utils";
-import { useGameTick } from "./useGameTick";
+import { useHUDStore } from "../bridge/HUDStore";
 import { useEventBus } from "../bridge/useEventBus";
 import { AttackRatioEvent } from "../InputHandler";
-import { useHUDStore } from "../bridge/HUDStore";
+import { renderNumber, renderTroops } from "../Utils";
+import { useGameTick } from "./useGameTick";
 
 const goldCoinIcon = assetUrl("images/GoldCoinIcon.svg");
 const soldierIcon = assetUrl("images/SoldierIcon.svg");
@@ -17,7 +17,7 @@ export function ControlPanel(): React.JSX.Element {
     troops: 0,
     maxTroops: 1,
     troopRate: 0,
-    gold: 0n,
+    credits: 0n,
     attackingTroops: 0,
     troopRateIsIncreasing: true,
   });
@@ -80,7 +80,7 @@ export function ControlPanel(): React.JSX.Element {
       troops: player.troops(),
       maxTroops: gameView.config().maxTroops(player),
       troopRate: gameView.config().troopIncreaseRate(player) * 10,
-      gold: player.gold(),
+      credits: player.credits(),
       attackingTroops: outgoingTroops,
       troopRateIsIncreasing,
     });
@@ -136,7 +136,7 @@ export function ControlPanel(): React.JSX.Element {
             translate="no"
           >
             <img src={goldCoinIcon} width="13" height="13" alt="" />
-            <span className="px-0.5">{renderNumber(troopData.gold)}</span>
+            <span className="px-0.5">{renderNumber(troopData.credits)}</span>
           </div>
           {/* Troop bar */}
           <div className="w-[40%] shrink-0 flex items-center">
@@ -308,8 +308,16 @@ export function ControlPanel(): React.JSX.Element {
             className="flex items-center gap-1 shrink-0 border rounded-md border-yellow-400 font-bold text-yellow-400 text-sm py-0.5 px-1 w-[4.5rem]"
             translate="no"
           >
-            <img src={goldCoinIcon} width="13" height="13" className="shrink-0" alt="" />
-            <span className="tabular-nums">{renderNumber(troopData.gold)}</span>
+            <img
+              src={goldCoinIcon}
+              width="13"
+              height="13"
+              className="shrink-0"
+              alt=""
+            />
+            <span className="tabular-nums">
+              {renderNumber(troopData.credits)}
+            </span>
           </div>
         </div>
         {/* Row 2: attack ratio | slider */}
@@ -324,8 +332,8 @@ export function ControlPanel(): React.JSX.Element {
               style={{ filter: "brightness(0) invert(1)" }}
             />
             <span>
-              {(localAttackRatio * 100).toFixed(0)}%
-              ({renderTroops(currentTroops * localAttackRatio)})
+              {(localAttackRatio * 100).toFixed(0)}% (
+              {renderTroops(currentTroops * localAttackRatio)})
             </span>
           </div>
           <input

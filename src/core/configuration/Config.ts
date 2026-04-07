@@ -1,8 +1,8 @@
 import { Colord } from "colord";
 import { JWK } from "jose";
 import {
+  Credits,
   Game,
-  Gold,
   Player,
   PlayerInfo,
   Team,
@@ -68,8 +68,8 @@ export interface Config {
   spawnNations(): boolean;
   isUnitDisabled(unitType: UnitType): boolean;
   bots(): number;
-  infiniteGold(): boolean;
-  donateGold(): boolean;
+  infiniteCredits(): boolean;
+  donateCredits(): boolean;
   infiniteTroops(): boolean;
   donateTroops(): boolean;
   instantBuild(): boolean;
@@ -79,12 +79,12 @@ export interface Config {
   numSpawnPhaseTurns(): number;
   userSettings(): UserSettings;
   playerTeams(): TeamCountConfig;
-  goldMultiplier(): number;
-  startingGold(playerInfo: PlayerInfo): Gold;
+  creditMultiplier(): number;
+  startingCredits(playerInfo: PlayerInfo): Credits;
 
   startManpower(playerInfo: PlayerInfo): number;
   troopIncreaseRate(player: Player | PlayerView): number;
-  goldAdditionRate(player: Player | PlayerView): Gold;
+  creditAdditionRate(player: Player | PlayerView): Credits;
   attackTilesPerTick(
     attckTroops: number,
     attacker: Player,
@@ -103,15 +103,18 @@ export interface Config {
     tilesPerTickUsed: number;
   };
   attackAmount(attacker: Player, defender: Player | TerraNullius): number;
-  radiusPortSpawn(): number;
-  // When computing likelihood of trading for any given port, the X closest port
+  radiusSpaceportSpawn(): number;
+  // When computing likelihood of trading for any given spaceport, the X closest spaceport
   // are twice more likely to be selected. X is determined below.
-  proximityBonusPortsNb(totalPorts: number): number;
+  proximityBonusSpaceportsNb(totalSpaceports: number): number;
   maxTroops(player: Player | PlayerView): number;
-  cityTroopIncrease(): number;
-  boatAttackAmount(attacker: Player, defender: Player | TerraNullius): number;
-  shellLifetime(): number;
-  boatMaxNumber(): number;
+  colonyTroopIncrease(): number;
+  shuttleAttackAmount(
+    attacker: Player,
+    defender: Player | TerraNullius,
+  ): number;
+  plasmaBoltLifetime(): number;
+  shuttleMaxNumber(): number;
   allianceDuration(): Tick;
   allianceRequestDuration(): Tick;
   allianceRequestCooldown(): Tick;
@@ -126,33 +129,33 @@ export interface Config {
   deleteUnitCooldown(): Tick;
   defaultDonationAmount(sender: Player): number;
   unitInfo(type: UnitType): UnitInfo;
-  tradeShipShortRangeDebuff(): number;
-  tradeShipGold(dist: number): Gold;
-  tradeShipSpawnRate(
-    tradeShipSpawnRejections: number,
-    numTradeShips: number,
+  tradeFreighterShortRangeDebuff(): number;
+  tradeFreighterCredits(dist: number): Credits;
+  tradeFreighterSpawnRate(
+    tradeFreighterSpawnRejections: number,
+    numTradeFreighters: number,
   ): number;
-  trainGold(
+  frigateCredits(
     rel: "self" | "team" | "ally" | "other",
     citiesVisited: number,
-  ): Gold;
-  trainSpawnRate(numPlayerFactories: number): number;
-  trainStationMinRange(): number;
-  trainStationMaxRange(): number;
-  railroadMaxSize(): number;
-  safeFromPiratesCooldownMax(): number;
-  defensePostRange(): number;
-  SAMCooldown(): number;
-  SiloCooldown(): number;
+  ): Credits;
+  frigateSpawnRate(numPlayerFoundries: number): number;
+  tradeHubMinRange(): number;
+  tradeHubMaxRange(): number;
+  hyperspaceLaneMaxSize(): number;
+  safeFromRaidersCooldownMax(): number;
+  defenseStationRange(): number;
+  pointDefenseCooldown(): number;
+  orbitalStrikeCooldown(): number;
   minDistanceBetweenPlayers(): number;
-  defensePostDefenseBonus(): number;
-  defensePostSpeedBonus(): number;
+  defenseStationDefenseBonus(): number;
+  defenseStationSpeedBonus(): number;
   falloutDefenseModifier(percentOfFallout: number): number;
-  warshipPatrolRange(): number;
-  warshipShellAttackRate(): number;
-  warshipTargettingRange(): number;
-  defensePostShellAttackRate(): number;
-  defensePostTargettingRange(): number;
+  battlecruiserPatrolRange(): number;
+  battlecruiserPlasmaBoltAttackRate(): number;
+  battlecruiserTargettingRange(): number;
+  defenseStationPlasmaBoltAttackRate(): number;
+  defenseStationTargettingRange(): number;
   // 0-1
   traitorDefenseDebuff(): number;
   traitorDuration(): number;
@@ -161,10 +164,10 @@ export interface Config {
   nukeAllianceBreakThreshold(): number;
   defaultNukeSpeed(): number;
   defaultNukeTargetableRange(): number;
-  defaultSamMissileSpeed(): number;
-  defaultSamRange(): number;
-  samRange(level: number): number;
-  maxSamRange(): number;
+  defaultPointDefenseMissileSpeed(): number;
+  defaultPointDefenseRange(): number;
+  pointDefenseRange(level: number): number;
+  maxPointDefenseRange(): number;
   nukeDeathFactor(
     nukeType: NukeType,
     humans: number,

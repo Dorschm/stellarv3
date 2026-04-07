@@ -6,14 +6,13 @@ import {
   PlayerBuildableUnitType,
   UnitType,
 } from "../../core/game/Game";
-import { renderNumber, translateText } from "../Utils";
-import { useGameTick } from "./useGameTick";
-import { useEventBus } from "../bridge/useEventBus";
 import {
   GhostStructureChangedEvent,
   ToggleStructureEvent,
 } from "../InputHandler";
+import { renderNumber, translateText } from "../Utils";
 import { useHUDStore } from "../bridge/HUDStore";
+import { useGameTick } from "./useGameTick";
 
 const warshipIcon = assetUrl("images/BattleshipIconWhite.svg");
 const cityIcon = assetUrl("images/CityIconWhite.svg");
@@ -30,77 +29,77 @@ const defensePostIcon = assetUrl("images/ShieldIconWhite.svg");
 const UNIT_CONFIG = [
   {
     icon: cityIcon,
-    type: UnitType.City,
+    type: UnitType.Colony,
     key: "city",
     defaultKey: "1",
   },
   {
     icon: factoryIcon,
-    type: UnitType.Factory,
+    type: UnitType.Foundry,
     key: "factory",
     defaultKey: "2",
   },
   {
     icon: portIcon,
-    type: UnitType.Port,
+    type: UnitType.Spaceport,
     key: "port",
     defaultKey: "3",
   },
   {
     icon: defensePostIcon,
-    type: UnitType.DefensePost,
+    type: UnitType.DefenseStation,
     key: "defense_post",
     defaultKey: "4",
   },
   {
     icon: missileSiloIcon,
-    type: UnitType.MissileSilo,
+    type: UnitType.OrbitalStrikePlatform,
     key: "missile_silo",
     defaultKey: "5",
   },
   {
     icon: samLauncherIcon,
-    type: UnitType.SAMLauncher,
+    type: UnitType.PointDefenseArray,
     key: "sam_launcher",
     defaultKey: "6",
   },
   {
     icon: warshipIcon,
-    type: UnitType.Warship,
+    type: UnitType.Battlecruiser,
     key: "warship",
     defaultKey: "7",
   },
   {
     icon: atomBombIcon,
-    type: UnitType.AtomBomb,
+    type: UnitType.AntimatterTorpedo,
     key: "atom_bomb",
     defaultKey: "8",
   },
   {
     icon: hydrogenBombIcon,
-    type: UnitType.HydrogenBomb,
+    type: UnitType.NovaBomb,
     key: "hydrogen_bomb",
     defaultKey: "9",
   },
   {
     icon: mirvIcon,
-    type: UnitType.MIRV,
+    type: UnitType.ClusterWarhead,
     key: "mirv",
     defaultKey: "0",
   },
 ];
 
 const KEYBIND_KEYS = {
-  [UnitType.City]: "buildCity",
-  [UnitType.Factory]: "buildFactory",
-  [UnitType.Port]: "buildPort",
-  [UnitType.DefensePost]: "buildDefensePost",
-  [UnitType.MissileSilo]: "buildMissileSilo",
-  [UnitType.SAMLauncher]: "buildSamLauncher",
-  [UnitType.Warship]: "buildWarship",
-  [UnitType.AtomBomb]: "buildAtomBomb",
-  [UnitType.HydrogenBomb]: "buildHydrogenBomb",
-  [UnitType.MIRV]: "buildMIRV",
+  [UnitType.Colony]: "buildCity",
+  [UnitType.Foundry]: "buildFactory",
+  [UnitType.Spaceport]: "buildPort",
+  [UnitType.DefenseStation]: "buildDefensePost",
+  [UnitType.OrbitalStrikePlatform]: "buildMissileSilo",
+  [UnitType.PointDefenseArray]: "buildSamLauncher",
+  [UnitType.Battlecruiser]: "buildWarship",
+  [UnitType.AntimatterTorpedo]: "buildAtomBomb",
+  [UnitType.NovaBomb]: "buildHydrogenBomb",
+  [UnitType.ClusterWarhead]: "buildMIRV",
 } as Record<PlayerBuildableUnitType, string>;
 
 export function UnitDisplay(): React.JSX.Element {
@@ -121,9 +120,8 @@ export function UnitDisplay(): React.JSX.Element {
     samLauncher: 0,
   });
   const [allDisabled, setAllDisabled] = useState(false);
-  const [hoveredUnit, setHoveredUnit] = useState<PlayerBuildableUnitType | null>(
-    null,
-  );
+  const [hoveredUnit, setHoveredUnit] =
+    useState<PlayerBuildableUnitType | null>(null);
   const ghostStructure = useHUDStore((state) => state.ghostStructure);
 
   // Initialize
@@ -139,9 +137,7 @@ export function UnitDisplay(): React.JSX.Element {
       }
     }
 
-    const disabled = BuildMenus.types.every((u) =>
-      config.isUnitDisabled(u),
-    );
+    const disabled = BuildMenus.types.every((u) => config.isUnitDisabled(u));
     setAllDisabled(disabled);
   }, [gameView]);
 
@@ -155,13 +151,13 @@ export function UnitDisplay(): React.JSX.Element {
     });
 
     setUnitCounts({
-      cities: player.totalUnitLevels(UnitType.City),
-      missileSilo: player.totalUnitLevels(UnitType.MissileSilo),
-      port: player.totalUnitLevels(UnitType.Port),
-      defensePost: player.totalUnitLevels(UnitType.DefensePost),
-      samLauncher: player.totalUnitLevels(UnitType.SAMLauncher),
-      factories: player.totalUnitLevels(UnitType.Factory),
-      warships: player.totalUnitLevels(UnitType.Warship),
+      cities: player.totalUnitLevels(UnitType.Colony),
+      missileSilo: player.totalUnitLevels(UnitType.OrbitalStrikePlatform),
+      port: player.totalUnitLevels(UnitType.Spaceport),
+      defensePost: player.totalUnitLevels(UnitType.DefenseStation),
+      samLauncher: player.totalUnitLevels(UnitType.PointDefenseArray),
+      factories: player.totalUnitLevels(UnitType.Foundry),
+      warships: player.totalUnitLevels(UnitType.Battlecruiser),
     });
   }, [tick, gameView]);
 
@@ -178,20 +174,20 @@ export function UnitDisplay(): React.JSX.Element {
     if (gameView.config().isUnitDisabled(item)) return false;
     const player = gameView.myPlayer();
     switch (item) {
-      case UnitType.AtomBomb:
-      case UnitType.HydrogenBomb:
-      case UnitType.MIRV:
+      case UnitType.AntimatterTorpedo:
+      case UnitType.NovaBomb:
+      case UnitType.ClusterWarhead:
         return (
-          getCost(item) <= (player?.gold() ?? 0n) &&
-          (player?.units(UnitType.MissileSilo).length ?? 0) > 0
+          getCost(item) <= (player?.credits() ?? 0n) &&
+          (player?.units(UnitType.OrbitalStrikePlatform).length ?? 0) > 0
         );
-      case UnitType.Warship:
+      case UnitType.Battlecruiser:
         return (
-          getCost(item) <= (player?.gold() ?? 0n) &&
-          (player?.units(UnitType.Port).length ?? 0) > 0
+          getCost(item) <= (player?.credits() ?? 0n) &&
+          (player?.units(UnitType.Spaceport).length ?? 0) > 0
         );
       default:
-        return getCost(item) <= (player?.gold() ?? 0n);
+        return getCost(item) <= (player?.credits() ?? 0n);
     }
   };
 
@@ -207,17 +203,17 @@ export function UnitDisplay(): React.JSX.Element {
 
   const handleUnitMouseEnter = (unitType: PlayerBuildableUnitType) => {
     switch (unitType) {
-      case UnitType.AtomBomb:
-      case UnitType.HydrogenBomb:
+      case UnitType.AntimatterTorpedo:
+      case UnitType.NovaBomb:
         eventBus.emit(
           new ToggleStructureEvent([
-            UnitType.MissileSilo,
-            UnitType.SAMLauncher,
+            UnitType.OrbitalStrikePlatform,
+            UnitType.PointDefenseArray,
           ]),
         );
         break;
-      case UnitType.Warship:
-        eventBus.emit(new ToggleStructureEvent([UnitType.Port]));
+      case UnitType.Battlecruiser:
+        eventBus.emit(new ToggleStructureEvent([UnitType.Spaceport]));
         break;
       default:
         eventBus.emit(new ToggleStructureEvent([unitType]));
@@ -269,9 +265,7 @@ export function UnitDisplay(): React.JSX.Element {
               {translateText(`unit_type.${key}`)}
               {` [${displayHotkey}]`}
             </div>
-            <div className="p-2">
-              {translateText(`build_menu.desc.${key}`)}
-            </div>
+            <div className="p-2">{translateText(`build_menu.desc.${key}`)}</div>
             <div className="flex items-center justify-center gap-1">
               <img src={goldCoinIcon} width="13" height="13" alt="" />
               <span className="text-yellow-300">{renderNumber(cost)}</span>
@@ -290,11 +284,7 @@ export function UnitDisplay(): React.JSX.Element {
             {displayHotkey}
           </div>
           <div className="flex items-center gap-0.5 pt-0.5">
-            <img
-              src={icon}
-              alt={key}
-              className="align-middle size-5"
-            />
+            <img src={icon} alt={key} className="align-middle size-5" />
             {countValue !== null && (
               <span className="text-xs">{renderNumber(countValue)}</span>
             )}
@@ -317,22 +307,22 @@ export function UnitDisplay(): React.JSX.Element {
 
   // Map unit counts to config
   const countMap: Record<UnitType, number | null> = {
-    [UnitType.City]: unitCounts.cities,
-    [UnitType.Factory]: unitCounts.factories,
-    [UnitType.Port]: unitCounts.port,
-    [UnitType.DefensePost]: unitCounts.defensePost,
-    [UnitType.MissileSilo]: unitCounts.missileSilo,
-    [UnitType.SAMLauncher]: unitCounts.samLauncher,
-    [UnitType.Warship]: unitCounts.warships,
-    [UnitType.AtomBomb]: null,
-    [UnitType.HydrogenBomb]: null,
-    [UnitType.MIRV]: null,
-    [UnitType.TransportShip]: null,
-    [UnitType.Shell]: null,
-    [UnitType.SAMMissile]: null,
-    [UnitType.TradeShip]: null,
-    [UnitType.MIRVWarhead]: null,
-    [UnitType.Train]: null,
+    [UnitType.Colony]: unitCounts.cities,
+    [UnitType.Foundry]: unitCounts.factories,
+    [UnitType.Spaceport]: unitCounts.port,
+    [UnitType.DefenseStation]: unitCounts.defensePost,
+    [UnitType.OrbitalStrikePlatform]: unitCounts.missileSilo,
+    [UnitType.PointDefenseArray]: unitCounts.samLauncher,
+    [UnitType.Battlecruiser]: unitCounts.warships,
+    [UnitType.AntimatterTorpedo]: null,
+    [UnitType.NovaBomb]: null,
+    [UnitType.ClusterWarhead]: null,
+    [UnitType.AssaultShuttle]: null,
+    [UnitType.PlasmaBolt]: null,
+    [UnitType.PointDefenseMissile]: null,
+    [UnitType.TradeFreighter]: null,
+    [UnitType.ClusterWarheadSubmunition]: null,
+    [UnitType.Frigate]: null,
   };
 
   return (

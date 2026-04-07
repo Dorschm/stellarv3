@@ -1,23 +1,20 @@
 import { Game } from "../game/Game";
-import { StationManager } from "../game/RailNetworkImpl";
-import { TrainStation } from "../game/TrainStation";
+import { StationManager } from "../game/HyperspaceLaneNetworkImpl";
+import { TradeHub } from "../game/TradeHub";
 import { AStar, AStarAdapter } from "./algorithms/AStar";
 import { PathFinder } from "./types";
 
-export class StationPathFinder implements PathFinder<TrainStation> {
+export class StationPathFinder implements PathFinder<TradeHub> {
   private manager: StationManager;
   private aStar: AStar;
 
   constructor(game: Game) {
-    this.manager = game.railNetwork().stationManager();
+    this.manager = game.hyperspaceLaneNetwork().stationManager();
     const adapter = new StationGraphAdapter(game, this.manager);
     this.aStar = new AStar({ adapter });
   }
 
-  findPath(
-    from: TrainStation | TrainStation[],
-    to: TrainStation,
-  ): TrainStation[] | null {
+  findPath(from: TradeHub | TradeHub[], to: TradeHub): TradeHub[] | null {
     const toCluster = to.getCluster();
     const fromArray = Array.isArray(from) ? from : [from];
     const sameCluster = fromArray.filter((s) => s.getCluster() === toCluster);

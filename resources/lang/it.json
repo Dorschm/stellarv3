@@ -208,15 +208,15 @@
     "title": "Seleziona Lingua"
   },
   "unit_type": {
-    "city": "Città",
-    "defense_post": "Fortificazione difensiva",
-    "port": "Porto",
-    "warship": "Nave da guerra",
-    "missile_silo": "Silo Missilistico",
-    "sam_launcher": "SAM Antimissile",
-    "atom_bomb": "Bomba atomica",
-    "hydrogen_bomb": "Bomba a idrogeno",
-    "mirv": "MIRV"
+    "colony": "Città",
+    "defense_station": "Fortificazione difensiva",
+    "spaceport": "Porto",
+    "battlecruiser": "Nave da guerra",
+    "orbital_strike_platform": "Silo Missilistico",
+    "point_defense_array": "SAM Antimissile",
+    "antimatter_torpedo": "Bomba atomica",
+    "nova_bomb": "Bomba a idrogeno",
+    "cluster_warhead": "MIRV"
   },
   "user_setting": {
     "title": "Impostazioni Utente",
@@ -282,7 +282,7 @@
     },
     "help": {
       "troops": "Donami truppe, per favore!",
-      "gold": "Donami oro, per favore!",
+      "credits": "Donami oro, per favore!",
       "no_attack": "Per favore, non attaccarmi!",
       "sorry_attack": "Scusa, non avevo intenzione di attaccare.",
       "alliance": "Alleanza?",
@@ -291,7 +291,7 @@
     },
     "attack": {
       "attack": "Attacca [P1]!",
-      "mirv": "Lancia una MIRV su [P1]!",
+      "cluster_warhead": "Lancia una MIRV su [P1]!",
       "focus": "Focalizziamoci su [P1]!",
       "finish": "Finiamo [P1]!"
     },
@@ -323,7 +323,7 @@
     "warnings": {
       "strong": "[P1] è forte.",
       "weak": "[P1] è debole.",
-      "mirv_soon": "[P1] potrà lanciare una MIRV a breve!",
+      "cluster_warhead_soon": "[P1] potrà lanciare una MIRV a breve!",
       "number1_warning": "Il giocatore #1 vincerà presto a meno che non ci alleiamo!",
       "stalemate": "Facciamo la pace. Siamo in stallo, perderemmo entrambi.",
       "has_allies": "[P1] ha molti alleati.",
@@ -331,21 +331,21 @@
       "betrayed": "[P1] ha tradito un alleato!",
       "getting_big": "[P1] sta crescendo troppo velocemente!",
       "danger_base": "[P1] è indifeso!",
-      "saving_for_mirv": "[P1] sta risparmiando per lanciare una MIRV.",
-      "mirv_ready": "[P1] ha abbastanza oro per lanciare una MIRV!"
+      "saving_for_cluster_warhead": "[P1] sta risparmiando per lanciare una MIRV.",
+      "cluster_warhead_ready": "[P1] ha abbastanza oro per lanciare una MIRV!"
     }
   },
   "build_menu": {
     "desc": {
-      "atom_bomb": "Piccola esplosione",
-      "hydrogen_bomb": "Grande esplosione",
-      "mirv": "Esplosione enorme ma colpisce solo il giocatore selezionato",
-      "missile_silo": "Utilizzato per lanciare attacchi nucleari",
-      "sam_launcher": "Ti difende dagli attacchi nucleari in arrivo",
-      "warship": "Cattura navi commerciali, combatte altre navi da guerra e affonda le navi trasporto",
-      "port": "Invia navi commerciali per generare oro",
-      "defense_post": "Aumenta le difese dei confini vicini",
-      "city": "Aumenta la popolazione massima"
+      "antimatter_torpedo": "Piccola esplosione",
+      "nova_bomb": "Grande esplosione",
+      "cluster_warhead": "Esplosione enorme ma colpisce solo il giocatore selezionato",
+      "orbital_strike_platform": "Utilizzato per lanciare attacchi nucleari",
+      "point_defense_array": "Ti difende dagli attacchi nucleari in arrivo",
+      "battlecruiser": "Cattura navi commerciali, combatte altre navi da guerra e affonda le navi trasporto",
+      "spaceport": "Invia navi commerciali per generare oro",
+      "defense_station": "Aumenta le difese dei confini vicini",
+      "colony": "Aumenta la popolazione massima"
     },
     "not_enough_money": "Denaro insufficiente"
   },
@@ -364,7 +364,7 @@
     "rank": "Posizione",
     "player": "Giocatore",
     "owned": "In possesso",
-    "gold": "Oro",
+    "credits": "Oro",
     "troops": "Truppe"
   },
   "player_info_overlay": {
@@ -399,7 +399,7 @@
     "attack_ratio": "Rapporto di Attacco"
   },
   "player_panel": {
-    "gold": "Oro",
+    "credits": "Oro",
     "troops": "Truppe",
     "traitor": "Traditore",
     "alliance_time_remaining": "Tempo rimanente",

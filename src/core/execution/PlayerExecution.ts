@@ -56,7 +56,7 @@ export class PlayerExecution implements Execution {
       }
 
       const captor = this.mg!.player(owner.id());
-      if (u.type() === UnitType.DefensePost) {
+      if (u.type() === UnitType.DefenseStation) {
         u.decreaseLevel(captor);
         if (u.isActive()) {
           captor.captureUnit(u);
@@ -75,11 +75,11 @@ export class PlayerExecution implements Execution {
 
     const troopInc = this.config.troopIncreaseRate(this.player);
     this.player.addTroops(troopInc);
-    const goldFromWorkers = this.config.goldAdditionRate(this.player);
-    this.player.addGold(goldFromWorkers);
+    const creditsFromWorkers = this.config.creditAdditionRate(this.player);
+    this.player.addCredits(creditsFromWorkers);
 
     // Record stats
-    this.mg.stats().goldWork(this.player, goldFromWorkers);
+    this.mg.stats().creditsWork(this.player, creditsFromWorkers);
 
     for (const alliance of this.player.alliances()) {
       if (alliance.expiresAt() <= this.mg.ticks()) {
@@ -216,7 +216,7 @@ export class PlayerExecution implements Execution {
       maxX = -Infinity,
       maxY = -Infinity;
     for (const tr of cluster) {
-      if (this.mg.isShore(tr) || this.mg.isOnEdgeOfMap(tr)) {
+      if (this.mg.isSectorEdge(tr) || this.mg.isOnEdgeOfMap(tr)) {
         return false;
       }
       this.mg.forEachNeighbor(tr, (n) => {
@@ -416,15 +416,15 @@ export class PlayerExecution implements Execution {
   private removeOnDeath(): void {
     // Player (bot, human, nation) has no tiles
     // Delete any remaining gold, non-nuke units and alliances
-    const gold = this.player.gold();
-    this.player.removeGold(gold);
+    const gold = this.player.credits();
+    this.player.removeCredits(gold);
 
     this.player.units().forEach((u) => {
       if (
-        u.type() !== UnitType.AtomBomb &&
-        u.type() !== UnitType.HydrogenBomb &&
-        u.type() !== UnitType.MIRVWarhead &&
-        u.type() !== UnitType.MIRV
+        u.type() !== UnitType.AntimatterTorpedo &&
+        u.type() !== UnitType.NovaBomb &&
+        u.type() !== UnitType.ClusterWarheadSubmunition &&
+        u.type() !== UnitType.ClusterWarhead
       ) {
         u.delete();
       }

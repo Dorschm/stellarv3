@@ -1,6 +1,6 @@
 // Either someone can straight up call player.buildUnit. It's simpler and immediate (no tick required)
 // Either someone can straight up call player.buildUnit. It's simpler and immediate (no tick required)
-// However buildUnit do not create executions (e.g.: WarshipExecution)
+// However buildUnit do not create executions (e.g.: BattlecruiserExecution)
 // If you also need execution use function below. Does not work with things not
 
 import { ConstructionExecution } from "../../src/core/execution/ConstructionExecution";

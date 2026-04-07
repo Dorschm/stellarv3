@@ -256,13 +256,13 @@
     "hydros": "Водородни бомби",
     "mirv": "МИРВ",
     "bombs": "Бомби",
-    "total_gold": "Общо",
-    "all_gold": "Всичко злато",
+    "total_credits": "Общо",
+    "all_credits": "Всичко злато",
     "trade": "Търговия",
-    "train_trade": "Влак",
+    "frigate_trade": "Влак",
     "naval_trade": "Търговски кораб",
-    "conquest_gold": "Завладяно злато от играч",
-    "stolen_gold": "Откраднато с военни кораби",
+    "conquest_credits": "Завладяно злато от играч",
+    "stolen_credits": "Откраднато с военни кораби",
     "num_of_conquests_humans": "Превзети играчи",
     "num_of_conquests_bots": "Превзети ботове",
     "duration": "Продължителност",
@@ -457,22 +457,22 @@
     "random_spawn": "Случайно появяване",
     "compact_map": "Компактна карта",
     "crowded": "Претъпкано",
-    "starting_gold": "5М начално злато"
+    "starting_credits": "5М начално злато"
   },
   "select_lang": {
     "title": "Изберете език"
   },
   "unit_type": {
-    "city": "Град",
-    "defense_post": "Отбранителен пост",
-    "port": "Пристанище",
-    "warship": "Боен кораб",
-    "missile_silo": "Ракетен силоз",
-    "sam_launcher": "Противоракетна установка земя-въздух SAM",
-    "atom_bomb": "Атомна бомба",
-    "hydrogen_bomb": "Водородна бомба",
-    "mirv": "МИРВ",
-    "factory": "Фабрика"
+    "colony": "Град",
+    "defense_station": "Отбранителен пост",
+    "spaceport": "Пристанище",
+    "battlecruiser": "Боен кораб",
+    "orbital_strike_platform": "Ракетен силоз",
+    "point_defense_array": "Противоракетна установка земя-въздух SAM",
+    "antimatter_torpedo": "Атомна бомба",
+    "nova_bomb": "Водородна бомба",
+    "cluster_warhead": "МИРВ",
+    "foundry": "Фабрика"
   },
   "user_setting": {
     "title": "Настройки",
@@ -544,8 +544,8 @@
     "attack_ratio_down": "Намаляване на съотношение на атака",
     "attack_ratio_down_desc": "Намаляване на съотношение на атака с 10%",
     "attack_keybinds": "Клавиши за атака",
-    "boat_attack": "Атака с лодка",
-    "boat_attack_desc": "Изпраща атака с лодка към плочката под курсора ви.",
+    "shuttle_attack": "Атака с лодка",
+    "shuttle_attack_desc": "Изпраща атака с лодка към плочката под курсора ви.",
     "ground_attack": "Земна атака",
     "ground_attack_desc": "Изпраща земна атака към плочката под курсора ви.",
     "swap_direction": "Размени посоката на ракетата",
@@ -598,7 +598,7 @@
     "help": {
       "troops": "Моля, дай ми войници!",
       "troops_frontlines": "Прати войници на фронта!",
-      "gold": "Моля, дай ми злато!",
+      "credits": "Моля, дай ми злато!",
       "no_attack": "Моля, не ме атакувай!",
       "sorry_attack": "Съжалявам, не исках да атакувам.",
       "alliance": "Съюз?",
@@ -607,17 +607,17 @@
     },
     "attack": {
       "attack": "Атакувай [P1]!",
-      "mirv": "Изстреляй МИРВ срещу [P1]!",
+      "cluster_warhead": "Изстреляй МИРВ срещу [P1]!",
       "focus": "Фокусирай огън срещу [P1]!",
       "finish": "Хайде да довършим [P1]!",
-      "build_warships": "Строй бойни кораби!"
+      "build_battlecruisers": "Строй бойни кораби!"
     },
     "defend": {
       "defend": "Защитавай [P1]!",
       "defend_from": "Отбранявай се от [P1]!",
       "dont_attack": "Не атакувай [P1]!",
       "ally": "[P1] ми е съюзник!",
-      "build_posts": "Строй отбранителни постове!"
+      "build_defense_stations": "Строй отбранителни постове!"
     },
     "greet": {
       "hello": "Здравей!",
@@ -649,7 +649,7 @@
     "warnings": {
       "strong": "[P1] е силен.",
       "weak": "[P1] е слаб.",
-      "mirv_soon": "[P1] може скоро да изстреля МИРВ!",
+      "cluster_warhead_soon": "[P1] може скоро да изстреля МИРВ!",
       "number1_warning": "Играч #1 ще спечели скоро, освен ако не се съюзим!",
       "stalemate": "Хайде да се ​​помирим. Това е патово положение, и двамата ще загубим.",
       "has_allies": "[P1] има много съюзници.",
@@ -658,8 +658,8 @@
       "betrayed_me": "[P1] ме предаде!",
       "getting_big": "[P1] расте твърде бързо!",
       "danger_base": "[P1] не е защитен!",
-      "saving_for_mirv": "[P1] спестява, за да изстреля МИРВ.",
-      "mirv_ready": "[P1] има достатъчно злато, за да изстреля MIRV!",
+      "saving_for_cluster_warhead": "[P1] спестява, за да изстреля МИРВ.",
+      "cluster_warhead_ready": "[P1] има достатъчно злато, за да изстреля MIRV!",
       "snowballing": "[P1] се разраства твърде бързо!",
       "cheating": "[P1] мами!",
       "stop_trading": "Спри да търгуваш с [P1]!"
@@ -667,16 +667,16 @@
   },
   "build_menu": {
     "desc": {
-      "atom_bomb": "Малка експлозия",
-      "hydrogen_bomb": "Голяма експлозия",
-      "mirv": "Огромна експлозия, насочена само към избрания играч",
-      "missile_silo": "Използван за изстрелване на ракети",
-      "sam_launcher": "Отбранява срещу входящи ракети",
-      "warship": "Превзема търговски кораби, унищожава кораби и лодки",
-      "port": "Изпраща търговски кораби, за да се получава злато",
-      "defense_post": "Увеличава отбраната на близки граници",
-      "city": "Увеличава максималната популация",
-      "factory": "Създава железопътни линии и пуска влакове"
+      "antimatter_torpedo": "Малка експлозия",
+      "nova_bomb": "Голяма експлозия",
+      "cluster_warhead": "Огромна експлозия, насочена само към избрания играч",
+      "orbital_strike_platform": "Използван за изстрелване на ракети",
+      "point_defense_array": "Отбранява срещу входящи ракети",
+      "battlecruiser": "Превзема търговски кораби, унищожава кораби и лодки",
+      "spaceport": "Изпраща търговски кораби, за да се получава злато",
+      "defense_station": "Увеличава отбраната на близки граници",
+      "colony": "Увеличава максималната популация",
+      "foundry": "Създава железопътни линии и пуска влакове"
     },
     "not_enough_money": "Няма достатъчно пари"
   },
@@ -704,12 +704,12 @@
     "player": "Играч",
     "team": "Отбор",
     "owned": "Притежавано",
-    "gold": "Злато",
+    "credits": "Злато",
     "maxtroops": "Максимални войници",
     "launchers": "Установки",
-    "sams": "Противоракетни установки земя-въздух SAM",
-    "warships": "Бойни кораби",
-    "cities": "Градове",
+    "point_defense": "Противоракетни установки земя-въздух SAM",
+    "battlecruisers": "Бойни кораби",
+    "colonies": "Градове",
     "show_control": "Показване на контрол",
     "show_units": "Показване на единици"
   },
@@ -740,20 +740,20 @@
     "unit_voluntarily_deleted": "Елементът бе изтрит доброволно",
     "betrayal_debuff_ends": "Остават {time} секунди до края на предателското отслабване",
     "attack_cancelled_retreat": "Атаката бе отменена, {troops} войници бяха убити по време на отстъплението",
-    "received_gold_from_captured_ship": "Получи {gold} злато от лодка на {name}, превзета от теб",
-    "received_gold_from_trade": "Получи {gold} злато от търговия с {name}",
-    "received_gold_from_conquest": "Превзе {name}, получи {gold} злато",
-    "conquered_no_gold": "Превзе {name} (не е играл, не получаваш злато)",
+    "received_credits_from_captured_ship": "Получи {gold} злато от лодка на {name}, превзета от теб",
+    "received_credits_from_trade": "Получи {gold} злато от търговия с {name}",
+    "received_credits_from_conquest": "Превзе {name}, получи {gold} злато",
+    "conquered_no_credits": "Превзе {name} (не е играл, не получаваш злато)",
     "missile_intercepted": "Противоракетната установка прихвана {unit}",
-    "mirv_warheads_intercepted": "{count, plural, one {{count} МИРВ бе прихванат} other {{count} МИРВ-а бяха прихванати}}",
+    "cluster_warheads_intercepted": "{count, plural, one {{count} МИРВ бе прихванат} other {{count} МИРВ-а бяха прихванати}}",
     "sent_troops_to_player": "Изпрати {troops} войници на {name}",
     "received_troops_from_player": "Получи {troops} войници от {name}",
-    "sent_gold_to_player": "Изпрати {gold} злато на {name}",
-    "received_gold_from_player": "Получи {gold} злато от {name}",
+    "sent_credits_to_player": "Изпрати {gold} злато на {name}",
+    "received_credits_from_player": "Получи {gold} злато от {name}",
     "unit_captured_by_enemy": "Твоят {unit} бе превзет от {name}",
     "captured_enemy_unit": "Превзе {unit} от {name}",
     "unit_destroyed": "Твоят {unit} бе унищожен",
-    "no_boats_available": "Няма свободни кораби, максимум {max}"
+    "no_shuttles_available": "Няма свободни кораби, максимум {max}"
   },
   "player_type": {
     "player": "Играч",
@@ -768,7 +768,7 @@
     "default": "Стандартно"
   },
   "player_panel": {
-    "gold": "Злато",
+    "credits": "Злато",
     "troops": "Войници",
     "betrayals": "Предателства",
     "traitor": "Предател",
@@ -786,7 +786,7 @@
     "break_alliance": "Прекъсни съюза",
     "send_alliance": "Изпрати съюз",
     "send_troops": "Изпрати войници",
-    "send_gold": "Изпрати злато",
+    "send_credits": "Изпрати злато",
     "emotes": "Емоджита",
     "moderation": "Модерация",
     "kick": "Изхвърляне на играч",
@@ -807,7 +807,7 @@
     "aria_slider": "Плъзгач за войници",
     "capacity_note": "Получателят може да приеме само {amount} в момента."
   },
-  "send_gold_modal": {
+  "send_credits_modal": {
     "title_with_name": "Изпрати злато на {name}",
     "available_tooltip": "Текущото ти злато на разположение",
     "aria_slider": "Количествен плъзгач",
@@ -905,25 +905,25 @@
     "received": "Получени",
     "cancelled": "Анулирани",
     "count": "Количество",
-    "gold": "Злато",
+    "credits": "Злато",
     "workers": "Работници",
     "war": "Война",
     "trade": "Търговия",
     "steal": "Кражба",
     "unit": {
-      "city": "Град",
-      "port": "Пристанище",
-      "defp": "Отбранителен пост",
-      "saml": "Противоракетна установка земя-въздух SAM",
-      "silo": "Ракетен силоз",
-      "wshp": "Боен кораб",
-      "fact": "Фабрика",
-      "trade": "Търговска лодка",
-      "trans": "Транспортна лодка",
-      "abomb": "Атомна бомба",
-      "hbomb": "Водородна бомба",
-      "mirv": "МИРВ",
-      "mirvw": "MIRV бойна глава"
+      "colony": "Град",
+      "spaceport": "Пристанище",
+      "defs": "Отбранителен пост",
+      "pda": "Противоракетна установка земя-въздух SAM",
+      "osp": "Ракетен силоз",
+      "bcrs": "Боен кораб",
+      "fndy": "Фабрика",
+      "tfreight": "Търговска лодка",
+      "ashuttle": "Транспортна лодка",
+      "ator": "Атомна бомба",
+      "nbomb": "Водородна бомба",
+      "cwhead": "МИРВ",
+      "cwsub": "MIRV бойна глава"
     }
   },
   "game_list": {

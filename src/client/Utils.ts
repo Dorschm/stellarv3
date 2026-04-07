@@ -125,7 +125,7 @@ export interface ModifierInfo {
   badgeKey: string;
   /** Parameters to pass to translateText for the badge key */
   badgeParams?: Record<string, string | number>;
-  /** The raw value if applicable (e.g. startingGold amount) */
+  /** The raw value if applicable (e.g. startingCredits amount) */
   value?: number;
   /** Pre-formatted display string (used instead of renderNumber when provided) */
   formattedValue?: string;
@@ -163,29 +163,29 @@ export function getActiveModifiers(
       badgeKey: "public_game_modifier.hard_nations",
     });
   }
-  if (modifiers.startingGold) {
+  if (modifiers.startingCredits) {
     const millions = parseFloat(
-      (modifiers.startingGold / 1_000_000).toPrecision(12),
+      (modifiers.startingCredits / 1_000_000).toPrecision(12),
     );
     result.push({
-      labelKey: "public_game_modifier.starting_gold_label",
-      badgeKey: "public_game_modifier.starting_gold",
+      labelKey: "public_game_modifier.starting_credits_label",
+      badgeKey: "public_game_modifier.starting_credits",
       badgeParams: {
         amount: millions,
       },
-      value: modifiers.startingGold,
+      value: modifiers.startingCredits,
       formattedValue: `${millions}M`,
     });
   }
-  if (modifiers.goldMultiplier) {
+  if (modifiers.creditMultiplier) {
     result.push({
-      labelKey: "host_modal.gold_multiplier",
-      badgeKey: "public_game_modifier.gold_multiplier",
+      labelKey: "host_modal.credit_multiplier",
+      badgeKey: "public_game_modifier.credit_multiplier",
       badgeParams: {
-        amount: modifiers.goldMultiplier,
+        amount: modifiers.creditMultiplier,
       },
-      value: modifiers.goldMultiplier,
-      formattedValue: `x${modifiers.goldMultiplier}`,
+      value: modifiers.creditMultiplier,
+      formattedValue: `x${modifiers.creditMultiplier}`,
     });
   }
   if (modifiers.isAlliancesDisabled) {
@@ -195,10 +195,10 @@ export function getActiveModifiers(
       formattedValue: translateText("common.disabled"),
     });
   }
-  if (modifiers.isPortsDisabled) {
+  if (modifiers.isSpaceportsDisabled) {
     result.push({
-      labelKey: "public_game_modifier.ports_disabled_label",
-      badgeKey: "public_game_modifier.ports_disabled",
+      labelKey: "public_game_modifier.spaceports_disabled_label",
+      badgeKey: "public_game_modifier.spaceports_disabled",
     });
   }
   if (modifiers.isNukesDisabled) {
@@ -207,10 +207,10 @@ export function getActiveModifiers(
       badgeKey: "public_game_modifier.nukes_disabled",
     });
   }
-  if (modifiers.isSAMsDisabled) {
+  if (modifiers.isPointDefenseDisabled) {
     result.push({
-      labelKey: "public_game_modifier.sams_disabled_label",
-      badgeKey: "public_game_modifier.sams_disabled",
+      labelKey: "public_game_modifier.point_defense_disabled_label",
+      badgeKey: "public_game_modifier.point_defense_disabled",
     });
   }
   if (modifiers.isPeaceTime) {
@@ -498,9 +498,9 @@ export const severityColors: Record<string, string> = {
  */
 export function getMessageTypeClasses(type: MessageType): string {
   switch (type) {
-    case MessageType.SAM_HIT:
+    case MessageType.POINT_DEFENSE_HIT:
     case MessageType.CAPTURED_ENEMY_UNIT:
-    case MessageType.RECEIVED_GOLD_FROM_TRADE:
+    case MessageType.RECEIVED_CREDITS_FROM_TRADE:
     case MessageType.CONQUERED_PLAYER:
       return severityColors["success"];
     case MessageType.ATTACK_FAILED:
@@ -512,17 +512,17 @@ export function getMessageTypeClasses(type: MessageType): string {
     case MessageType.ATTACK_CANCELLED:
     case MessageType.ATTACK_REQUEST:
     case MessageType.ALLIANCE_ACCEPTED:
-    case MessageType.SENT_GOLD_TO_PLAYER:
+    case MessageType.SENT_CREDITS_TO_PLAYER:
     case MessageType.SENT_TROOPS_TO_PLAYER:
-    case MessageType.RECEIVED_GOLD_FROM_PLAYER:
+    case MessageType.RECEIVED_CREDITS_FROM_PLAYER:
     case MessageType.RECEIVED_TROOPS_FROM_PLAYER:
       return severityColors["blue"];
-    case MessageType.MIRV_INBOUND:
+    case MessageType.CLUSTER_WARHEAD_INBOUND:
     case MessageType.NUKE_INBOUND:
-    case MessageType.HYDROGEN_BOMB_INBOUND:
-    case MessageType.SAM_MISS:
+    case MessageType.NOVA_BOMB_INBOUND:
+    case MessageType.POINT_DEFENSE_MISS:
     case MessageType.ALLIANCE_EXPIRED:
-    case MessageType.NAVAL_INVASION_INBOUND:
+    case MessageType.ORBITAL_ASSAULT_INBOUND:
     case MessageType.RENEW_ALLIANCE:
       return severityColors["warn"];
     case MessageType.CHAT:

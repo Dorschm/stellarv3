@@ -14,7 +14,7 @@ describe("WinCheckExecution", () => {
 
   beforeEach(async () => {
     mg = await setup("big_plains", {
-      infiniteGold: true,
+      infiniteCredits: true,
       gameMode: GameMode.FFA,
       maxTimerValue: 5,
       instantBuild: true,
@@ -93,7 +93,7 @@ describe("WinCheckExecution - Nation Winners", () => {
   test("should set Nation as winner when reaching 80% territory", async () => {
     // Setup game
     const game = await setup("big_plains", {
-      infiniteGold: true,
+      infiniteCredits: true,
       gameMode: GameMode.FFA,
       instantBuild: true,
     });
@@ -120,7 +120,7 @@ describe("WinCheckExecution - Nation Winners", () => {
 
     game.map().forEachTile((tile) => {
       if (assigned >= targetTiles) return;
-      if (!game.map().isLand(tile)) return;
+      if (!game.map().isSector(tile)) return;
       nation.conquer(tile);
       assigned++;
     });
@@ -145,7 +145,7 @@ describe("WinCheckExecution - Nation Winners", () => {
   test("should set Nation as winner when timer expires with most territory", async () => {
     // Setup game with timer
     const game = await setup("big_plains", {
-      infiniteGold: true,
+      infiniteCredits: true,
       gameMode: GameMode.FFA,
       instantBuild: true,
       maxTimerValue: 5,
@@ -185,7 +185,7 @@ describe("WinCheckExecution - Nation Winners", () => {
     let humanAssigned = 0;
 
     game.map().forEachTile((tile) => {
-      if (!game.map().isLand(tile)) return;
+      if (!game.map().isSector(tile)) return;
 
       if (nationAssigned < nationTiles) {
         nation.conquer(tile);
@@ -224,7 +224,7 @@ describe("WinCheckExecution - Nation Winners", () => {
   test("should set correct Nation as winner among multiple Nations", async () => {
     // Setup game
     const game = await setup("big_plains", {
-      infiniteGold: true,
+      infiniteCredits: true,
       gameMode: GameMode.FFA,
       instantBuild: true,
     });
@@ -272,7 +272,7 @@ describe("WinCheckExecution - Nation Winners", () => {
     let nation3Assigned = 0;
 
     game.map().forEachTile((tile) => {
-      if (!game.map().isLand(tile)) return;
+      if (!game.map().isSector(tile)) return;
 
       if (nation1Assigned < nation1Tiles) {
         nation1.conquer(tile);
@@ -307,7 +307,7 @@ describe("WinCheckExecution - Nation Winners", () => {
   test("should not set winner for bot team in Team mode", async () => {
     // Setup Team mode game
     const game = await setup("big_plains", {
-      infiniteGold: true,
+      infiniteCredits: true,
       gameMode: GameMode.Team,
       instantBuild: true,
       playerTeams: 2,
@@ -338,7 +338,7 @@ describe("WinCheckExecution - Nation Winners", () => {
     let bot2Assigned = 0;
 
     game.map().forEachTile((tile) => {
-      if (!game.map().isLand(tile)) return;
+      if (!game.map().isSector(tile)) return;
       const totalAssigned = bot1Assigned + bot2Assigned;
       if (totalAssigned >= botTeamTiles) return;
 
@@ -377,7 +377,7 @@ describe("WinCheckExecution - 1v1 Ranked Mode", () => {
     const game = await setup(
       "big_plains",
       {
-        infiniteGold: true,
+        infiniteCredits: true,
         gameMode: GameMode.FFA,
         instantBuild: true,
         rankedType: RankedType.OneVOne,
@@ -400,7 +400,7 @@ describe("WinCheckExecution - 1v1 Ranked Mode", () => {
     let human1Count = 0;
     let human2Count = 0;
     game.map().forEachTile((tile) => {
-      if (!game.map().isLand(tile)) return;
+      if (!game.map().isSector(tile)) return;
       if (human1Count < 10) {
         human1.conquer(tile);
         human1Count++;
@@ -432,7 +432,7 @@ describe("WinCheckExecution - 1v1 Ranked Mode", () => {
     const game = await setup(
       "big_plains",
       {
-        infiniteGold: true,
+        infiniteCredits: true,
         gameMode: GameMode.FFA,
         instantBuild: true,
         rankedType: RankedType.OneVOne,
@@ -455,7 +455,7 @@ describe("WinCheckExecution - 1v1 Ranked Mode", () => {
     let human1Count = 0;
     let human2Count = 0;
     game.map().forEachTile((tile) => {
-      if (!game.map().isLand(tile)) return;
+      if (!game.map().isSector(tile)) return;
       if (human1Count < 10) {
         human1.conquer(tile);
         human1Count++;
@@ -488,7 +488,7 @@ describe("WinCheckExecution - 1v1 Ranked Mode", () => {
     const game = await setup(
       "big_plains",
       {
-        infiniteGold: true,
+        infiniteCredits: true,
         gameMode: GameMode.FFA,
         instantBuild: true,
         rankedType: RankedType.OneVOne,
@@ -530,7 +530,7 @@ describe("WinCheckExecution - 1v1 Ranked Mode", () => {
     const game = await setup(
       "big_plains",
       {
-        infiniteGold: true,
+        infiniteCredits: true,
         gameMode: GameMode.FFA,
         instantBuild: true,
         rankedType: RankedType.OneVOne,
@@ -556,7 +556,7 @@ describe("WinCheckExecution - 1v1 Ranked Mode", () => {
     let botCount = 0;
     let nationCount = 0;
     game.map().forEachTile((tile) => {
-      if (!game.map().isLand(tile)) return;
+      if (!game.map().isSector(tile)) return;
       if (humanCount < 10) {
         human.conquer(tile);
         humanCount++;

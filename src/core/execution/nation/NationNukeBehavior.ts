@@ -1,8 +1,8 @@
 import {
+  Credits,
   Difficulty,
   Game,
   GameMode,
-  Gold,
   Player,
   PlayerType,
   Relation,
@@ -25,12 +25,12 @@ export class NationNukeBehavior {
   private readonly recentlySentNukes: [
     Tick,
     TileRef,
-    UnitType.AtomBomb | UnitType.HydrogenBomb,
+    UnitType.AntimatterTorpedo | UnitType.NovaBomb,
   ][] = [];
   private atomBombsLaunched = 0;
-  private atomBombPerceivedCost = this.cost(UnitType.AtomBomb);
+  private atomBombPerceivedCost = this.cost(UnitType.AntimatterTorpedo);
   private hydrogenBombsLaunched = 0;
-  private hydrogenBombPerceivedCost = this.cost(UnitType.HydrogenBomb);
+  private hydrogenBombPerceivedCost = this.cost(UnitType.NovaBomb);
   // Make 1/3 of nations "hydro-nations" that only throw hydrogen bombs (to reduce atom bomb spam)
   private readonly isHydroNation: boolean = this.random.chance(3);
 
@@ -48,7 +48,7 @@ export class NationNukeBehavior {
       return;
     }
 
-    const silos = this.player.units(UnitType.MissileSilo);
+    const silos = this.player.units(UnitType.OrbitalStrikePlatform);
     if (
       silos.length === 0 ||
       nukeTarget.type() === PlayerType.Bot || // Don't nuke tribes (as opposed to nations and humans)
@@ -58,32 +58,32 @@ export class NationNukeBehavior {
       return;
     }
 
-    const hydroCost = this.getPerceivedNukeCost(UnitType.HydrogenBomb);
-    const atomCost = this.getPerceivedNukeCost(UnitType.AtomBomb);
+    const hydroCost = this.getPerceivedNukeCost(UnitType.NovaBomb);
+    const atomCost = this.getPerceivedNukeCost(UnitType.AntimatterTorpedo);
     let nukeType: UnitType;
     if (
-      !this.game.config().isUnitDisabled(UnitType.HydrogenBomb) &&
-      this.player.gold() >= hydroCost
+      !this.game.config().isUnitDisabled(UnitType.NovaBomb) &&
+      this.player.credits() >= hydroCost
     ) {
-      nukeType = UnitType.HydrogenBomb;
+      nukeType = UnitType.NovaBomb;
     } else if (
-      !this.game.config().isUnitDisabled(UnitType.AtomBomb) &&
+      !this.game.config().isUnitDisabled(UnitType.AntimatterTorpedo) &&
       (!this.isHydroNation || this.isUnderHeavyAttack()) &&
-      this.player.gold() >= atomCost
+      this.player.credits() >= atomCost
     ) {
-      nukeType = UnitType.AtomBomb;
+      nukeType = UnitType.AntimatterTorpedo;
     } else {
       return;
     }
     const range = this.game.config().nukeMagnitudes(nukeType).outer;
 
     const structures = nukeTarget.units(
-      UnitType.City,
-      UnitType.DefensePost,
-      UnitType.MissileSilo,
-      UnitType.Port,
-      UnitType.SAMLauncher,
-      UnitType.Factory,
+      UnitType.Colony,
+      UnitType.DefenseStation,
+      UnitType.OrbitalStrikePlatform,
+      UnitType.Spaceport,
+      UnitType.PointDefenseArray,
+      UnitType.Foundry,
     );
     const structureTiles = structures.map((u) => u.tile());
     const difficulty = this.game.config().gameConfig().difficulty;
@@ -366,14 +366,14 @@ export class NationNukeBehavior {
   }
 
   // Simulate saving up for a MIRV
-  private getPerceivedNukeCost(type: UnitType): Gold {
+  private getPerceivedNukeCost(type: UnitType): Credits {
     // If only 2 players left, use actual cost (no point saving for MIRV)
     if (this.game.players().length === 2) {
       return this.cost(type);
     }
 
     // If MIRVs are disabled, return the actual cost
-    if (this.game.config().isUnitDisabled(UnitType.MIRV)) {
+    if (this.game.config().isUnitDisabled(UnitType.ClusterWarhead)) {
       return this.cost(type);
     }
 
@@ -381,8 +381,8 @@ export class NationNukeBehavior {
     // or if we already have enough gold to buy both a MIRV and a hydro
     if (
       this.game.config().gameConfig().gameMode === GameMode.Team ||
-      this.player.gold() >
-        this.cost(UnitType.MIRV) + this.cost(UnitType.HydrogenBomb)
+      this.player.credits() >
+        this.cost(UnitType.ClusterWarhead) + this.cost(UnitType.NovaBomb)
     ) {
       return this.cost(type);
     }
@@ -398,7 +398,7 @@ export class NationNukeBehavior {
       return this.cost(type);
     }
 
-    if (type === UnitType.AtomBomb) {
+    if (type === UnitType.AntimatterTorpedo) {
       return this.atomBombPerceivedCost;
     } else {
       return this.hydrogenBombPerceivedCost;
@@ -431,15 +431,15 @@ export class NationNukeBehavior {
 
   private isTeammateAlreadyNukingThisSpot(
     tile: TileRef,
-    nukeType: UnitType.AtomBomb | UnitType.HydrogenBomb,
+    nukeType: UnitType.AntimatterTorpedo | UnitType.NovaBomb,
   ): boolean {
     // Get the inner radius for our nuke type
     const ourInnerRadius = this.game.config().nukeMagnitudes(nukeType).inner;
 
     // Get all active nukes in the game
     const activeNukes = this.game.units(
-      UnitType.AtomBomb,
-      UnitType.HydrogenBomb,
+      UnitType.AntimatterTorpedo,
+      UnitType.NovaBomb,
     );
 
     // Check if any teammate's nuke blast radius overlaps with ours
@@ -535,8 +535,8 @@ export class NationNukeBehavior {
       const tile = trajectory[i];
       const nearbySams = this.game.nearbyUnits(
         tile,
-        this.game.config().maxSamRange(),
-        UnitType.SAMLauncher,
+        this.game.config().maxPointDefenseRange(),
+        UnitType.PointDefenseArray,
       );
 
       for (const sam of nearbySams) {
@@ -548,7 +548,8 @@ export class NationNukeBehavior {
         if (excludedSamIds?.has(sam.unit.id())) {
           continue;
         }
-        const rangeSquared = this.game.config().samRange(sam.unit.level()) ** 2;
+        const rangeSquared =
+          this.game.config().pointDefenseRange(sam.unit.level()) ** 2;
         if (sam.distSquared <= rangeSquared) {
           return true;
         }
@@ -582,7 +583,7 @@ export class NationNukeBehavior {
     tile: TileRef,
     silos: Unit[],
     targets: Unit[],
-    nukeType: UnitType.AtomBomb | UnitType.HydrogenBomb,
+    nukeType: UnitType.AntimatterTorpedo | UnitType.NovaBomb,
   ): number {
     const magnitude = this.game.config().nukeMagnitudes(nukeType);
     const dist = euclDistFN(tile, magnitude.outer, false);
@@ -591,15 +592,15 @@ export class NationNukeBehavior {
       .map((unit): number => {
         const level = unit.level();
         switch (unit.type()) {
-          case UnitType.City:
+          case UnitType.Colony:
             return 25_000 * level;
-          case UnitType.DefensePost:
+          case UnitType.DefenseStation:
             return 5_000 * level;
-          case UnitType.MissileSilo:
+          case UnitType.OrbitalStrikePlatform:
             return 50_000 * level;
-          case UnitType.Port:
+          case UnitType.Spaceport:
             return 15_000 * level;
-          case UnitType.Factory:
+          case UnitType.Foundry:
             return 15_000 * level;
           default:
             return 0;
@@ -615,7 +616,7 @@ export class NationNukeBehavior {
       const dist50 = euclDistFN(tile, 50, false);
       const hasSam = targets.some(
         (unit) =>
-          unit.type() === UnitType.SAMLauncher &&
+          unit.type() === UnitType.PointDefenseArray &&
           dist50(this.game, unit.tile()),
       );
       if (hasSam) return -1;
@@ -624,22 +625,22 @@ export class NationNukeBehavior {
     // On Impossible difficulty and a hydrogen bomb, add value for SAMs that can be outranged
     if (
       difficulty === Difficulty.Impossible &&
-      nukeType === UnitType.HydrogenBomb
+      nukeType === UnitType.NovaBomb
     ) {
       const hydroMagnitude = this.game
         .config()
-        .nukeMagnitudes(UnitType.HydrogenBomb);
+        .nukeMagnitudes(UnitType.NovaBomb);
       const nearbySams = this.game.nearbyUnits(
         tile,
         hydroMagnitude.outer,
-        UnitType.SAMLauncher,
+        UnitType.PointDefenseArray,
       );
 
       for (const sam of nearbySams) {
         const samLevel = sam.unit.level();
         if (samLevel >= 5) continue; // Can't outrange level 5+ SAMs
 
-        const samRange = this.game.config().samRange(samLevel);
+        const samRange = this.game.config().pointDefenseRange(samLevel);
         const distToSam = Math.sqrt(
           this.game.euclideanDistSquared(tile, sam.unit.tile()),
         );
@@ -680,17 +681,17 @@ export class NationNukeBehavior {
 
   private sendNuke(
     tile: TileRef,
-    nukeType: UnitType.AtomBomb | UnitType.HydrogenBomb,
+    nukeType: UnitType.AntimatterTorpedo | UnitType.NovaBomb,
     targetPlayer: Player,
     waitTicks = 0,
   ) {
     const tick = this.game.ticks();
     this.recentlySentNukes.push([tick, tile, nukeType]);
-    if (nukeType === UnitType.AtomBomb) {
+    if (nukeType === UnitType.AntimatterTorpedo) {
       this.atomBombsLaunched++;
       // Increase perceived cost by 50% each time to simulate saving up for a MIRV (higher than hydro to make atom bombs less attractive for the lategame)
       this.atomBombPerceivedCost = (this.atomBombPerceivedCost * 150n) / 100n;
-    } else if (nukeType === UnitType.HydrogenBomb) {
+    } else if (nukeType === UnitType.NovaBomb) {
       this.hydrogenBombsLaunched++;
       // Increase perceived cost by 25% each time to simulate saving up for a MIRV
       this.hydrogenBombPerceivedCost =
@@ -709,24 +710,24 @@ export class NationNukeBehavior {
    * so we need N+1 bombs to destroy it (accounting for all covering SAMs).
    */
   private maybeDestroyEnemySam(nukeTarget: Player): void {
-    if (this.game.config().isUnitDisabled(UnitType.AtomBomb)) {
+    if (this.game.config().isUnitDisabled(UnitType.AntimatterTorpedo)) {
       return;
     }
 
     // Don't launch another salvo if we already have atom bombs in flight
-    const ourAtomBombs = this.player.units(UnitType.AtomBomb);
+    const ourAtomBombs = this.player.units(UnitType.AntimatterTorpedo);
     if (ourAtomBombs.length > 0) {
       return;
     }
 
-    const atomCost = this.cost(UnitType.AtomBomb);
-    const enemySams = nukeTarget.units(UnitType.SAMLauncher);
+    const atomCost = this.cost(UnitType.AntimatterTorpedo);
+    const enemySams = nukeTarget.units(UnitType.PointDefenseArray);
     if (enemySams.length === 0) {
       return;
     }
 
     const ourSilos = this.player
-      .units(UnitType.MissileSilo)
+      .units(UnitType.OrbitalStrikePlatform)
       .filter((silo) => !silo.isUnderConstruction());
     if (ourSilos.length === 0) {
       return;
@@ -811,7 +812,7 @@ export class NationNukeBehavior {
       }
 
       // Use half the SAM cooldown as the max total arrival spread to be safe.
-      const samCooldown = this.game.config().SAMCooldown();
+      const samCooldown = this.game.config().pointDefenseCooldown();
       const maxTotalArrivalSpread = Math.floor(samCooldown / 2);
 
       // Add extra bombs: 1 for every 5 to account for enemy building more SAMs
@@ -902,7 +903,7 @@ export class NationNukeBehavior {
 
       // Check gold for all fired bombs (including wasted ones)
       const totalCost = atomCost * BigInt(bombsToFire);
-      if (this.player.gold() < totalCost) {
+      if (this.player.credits() < totalCost) {
         continue;
       }
 
@@ -911,7 +912,7 @@ export class NationNukeBehavior {
       for (let i = 0; i < bombsToFire; i++) {
         this.sendNuke(
           targetTile,
-          UnitType.AtomBomb,
+          UnitType.AntimatterTorpedo,
           nukeTarget,
           waitTicksPerBomb[i],
         );
@@ -932,8 +933,8 @@ export class NationNukeBehavior {
   private findEnemySamsCoveringTile(tile: TileRef): Unit[] {
     const nearbySams = this.game.nearbyUnits(
       tile,
-      this.game.config().maxSamRange(),
-      UnitType.SAMLauncher,
+      this.game.config().maxPointDefenseRange(),
+      UnitType.PointDefenseArray,
     );
 
     const result: Unit[] = [];
@@ -942,7 +943,7 @@ export class NationNukeBehavior {
       if (owner === this.player || this.player.isFriendly(owner)) {
         continue;
       }
-      const range = this.game.config().samRange(sam.unit.level());
+      const range = this.game.config().pointDefenseRange(sam.unit.level());
       if (sam.distSquared <= range * range) {
         result.push(sam.unit);
       }
@@ -955,10 +956,10 @@ export class NationNukeBehavior {
    * Called when we need more silo capacity to overwhelm enemy SAMs.
    */
   private maybeUpgradeBestProtectedSilo(): void {
-    const silos = this.player.units(UnitType.MissileSilo);
+    const silos = this.player.units(UnitType.OrbitalStrikePlatform);
     if (silos.length === 0) return;
 
-    const ourSams = this.player.units(UnitType.SAMLauncher);
+    const ourSams = this.player.units(UnitType.PointDefenseArray);
     let bestSilo: Unit | null = null;
     let bestProtection = -1;
 
@@ -967,7 +968,7 @@ export class NationNukeBehavior {
 
       let protection = 0;
       for (const sam of ourSams) {
-        const range = this.game.config().samRange(sam.level());
+        const range = this.game.config().pointDefenseRange(sam.level());
         const distSquared = this.game.euclideanDistSquared(
           silo.tile(),
           sam.tile(),
@@ -990,7 +991,7 @@ export class NationNukeBehavior {
     }
   }
 
-  private cost(type: UnitType): Gold {
+  private cost(type: UnitType): Credits {
     return this.game.unitInfo(type).cost(this.game, this.player);
   }
 }

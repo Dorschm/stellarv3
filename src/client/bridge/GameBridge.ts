@@ -52,7 +52,10 @@ export class GameBridge {
   /** Unsubscribe from the EventBus. Safe to call multiple times. */
   destroy(): void {
     if (this.eventBus) {
-      this.eventBus.off(GhostStructureChangedEvent, this.onGhostStructureChanged);
+      this.eventBus.off(
+        GhostStructureChangedEvent,
+        this.onGhostStructureChanged,
+      );
       this.eventBus.off(AttackRatioEvent, this.onAttackRatioChanged);
       this.eventBus.off(SwapRocketDirectionEvent, this.onSwapRocketDirection);
       this.eventBus = null;
@@ -65,7 +68,10 @@ export class GameBridge {
 
   private onAttackRatioChanged = (e: AttackRatioEvent): void => {
     const state = useHUDStore.getState();
-    const newRatio = Math.max(0, Math.min(100, state.attackRatio + e.attackRatio));
+    const newRatio = Math.max(
+      0,
+      Math.min(100, state.attackRatio + e.attackRatio),
+    );
     state.setAttackRatio(newRatio);
   };
 
@@ -98,7 +104,7 @@ export class GameBridge {
         displayName: p.displayName(),
         isAlive: p.isAlive(),
         troops: p.troops(),
-        gold: p.gold(),
+        gold: p.credits(),
         numTilesOwned: p.numTilesOwned(),
         allies: p.allies().map((a) => a.smallID()),
         isMe,
@@ -145,7 +151,7 @@ export class GameBridge {
           id: this._msgIdCounter++,
           message: u.message,
           messageType: u.messageType,
-          goldAmount: u.goldAmount,
+          creditAmount: u.creditAmount,
           playerID: u.playerID,
           tick,
           params: u.params,
@@ -160,7 +166,7 @@ export class GameBridge {
    *
    * The HUDStore stores the ratio as a percent integer (0..100) to match the
    * ControlPanel slider's native range. Consumers that need to multiply by a
-   * troop count (e.g. SendAttackIntentEvent, SendBoatAttackIntentEvent) want a
+   * troop count (e.g. SendAttackIntentEvent, SendShuttleAttackIntentEvent) want a
    * normalized 0..1 value, so convert here. The store value is clamped to
    * [0, 100] before normalizing to guard against out-of-range writes.
    */

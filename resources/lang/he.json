@@ -238,16 +238,16 @@
     "title": "בחר שפה"
   },
   "unit_type": {
-    "city": "עיר",
-    "defense_post": "עמדת הגנה",
-    "port": "נמל",
-    "warship": "ספינת קרב",
-    "missile_silo": "משגר טילים",
-    "sam_launcher": "טיל קרקע-אויר",
-    "atom_bomb": "פצצת אטום",
-    "hydrogen_bomb": "פצצת מימן",
-    "mirv": "MIRV",
-    "factory": "מפעל"
+    "colony": "עיר",
+    "defense_station": "עמדת הגנה",
+    "spaceport": "נמל",
+    "battlecruiser": "ספינת קרב",
+    "orbital_strike_platform": "משגר טילים",
+    "point_defense_array": "טיל קרקע-אויר",
+    "antimatter_torpedo": "פצצת אטום",
+    "nova_bomb": "פצצת מימן",
+    "cluster_warhead": "MIRV",
+    "foundry": "מפעל"
   },
   "user_setting": {
     "title": "הגדרות משתמש",
@@ -284,8 +284,8 @@
     "attack_ratio_down": "הורד יחס התקפה",
     "attack_ratio_down_desc": "הורד יחס התקפה ב-10%",
     "attack_keybinds": "קיצורי מקשים להתקפה",
-    "boat_attack": "התקפת סירה",
-    "boat_attack_desc": "שלח ספינת התקפה היכן שאתה לוחץ עם העכבר.",
+    "shuttle_attack": "התקפת סירה",
+    "shuttle_attack_desc": "שלח ספינת התקפה היכן שאתה לוחץ עם העכבר.",
     "ground_attack": "התקפת קרקע",
     "ground_attack_desc": "שלח ספינת התקפה היכן שאתה לוחץ עם העכבר.",
     "zoom_controls": "שליטת זום",
@@ -327,7 +327,7 @@
     },
     "help": {
       "troops": "בבקשה שלח לי חיילים!",
-      "gold": "בבקשה שלח לי זהב!",
+      "credits": "בבקשה שלח לי זהב!",
       "no_attack": "בבקשה אל תתקוף אותי!",
       "sorry_attack": "סליחה, לא התכוונתי לתקוף.",
       "alliance": "ברית?",
@@ -336,7 +336,7 @@
     },
     "attack": {
       "attack": "תקוף את [P1]!",
-      "mirv": "שגר MIRV נגד [P1]!",
+      "cluster_warhead": "שגר MIRV נגד [P1]!",
       "focus": "מקד התקפה נגד [P1]!",
       "finish": "בוא נגמור את [P1]!"
     },
@@ -368,7 +368,7 @@
     "warnings": {
       "strong": "[P1] חזק.",
       "weak": "[P1] חלש.",
-      "mirv_soon": "[P1] יכול לירות MIRV בקרוב.",
+      "cluster_warhead_soon": "[P1] יכול לירות MIRV בקרוב.",
       "number1_warning": "השחקן #1 ינצח בקרוב אם לא נעבוד כצוות!",
       "stalemate": "בוא נעשה שלום. זה מבוי סתום, שנינו נפסיד.",
       "has_allies": "ל-[P1] יש המון בעלי ברית.",
@@ -376,21 +376,21 @@
       "betrayed": "[P1] בגד בבעל הברית שלו!",
       "getting_big": "[P1] גודל מהר מדי!",
       "danger_base": "[P1] לא מוגן!",
-      "saving_for_mirv": "[P1] חוסך כדי לשגר MIRV.",
-      "mirv_ready": "ל-[P1] יש מספיק זהב כדי לשגר MIRV!"
+      "saving_for_cluster_warhead": "[P1] חוסך כדי לשגר MIRV.",
+      "cluster_warhead_ready": "ל-[P1] יש מספיק זהב כדי לשגר MIRV!"
     }
   },
   "build_menu": {
     "desc": {
-      "atom_bomb": "פיצוץ קטן",
-      "hydrogen_bomb": "פיצוץ גדול",
-      "mirv": "פיצוץ ענק, מכוון רק לשחקן שנבחר",
-      "missile_silo": "משתמש לשיגור פצצות",
-      "sam_launcher": "מגן מפצצות שמגיעות",
-      "warship": "לוכד ספינות סחר, הורס ספינות סחר וכיבוש.",
-      "port": "שולח ספינות סחר כדי לייצר זהב",
-      "defense_post": "מעלה הגנות של גבולות קרובים",
-      "city": "מעלה כמות אוכלוסיה מירבית"
+      "antimatter_torpedo": "פיצוץ קטן",
+      "nova_bomb": "פיצוץ גדול",
+      "cluster_warhead": "פיצוץ ענק, מכוון רק לשחקן שנבחר",
+      "orbital_strike_platform": "משתמש לשיגור פצצות",
+      "point_defense_array": "מגן מפצצות שמגיעות",
+      "battlecruiser": "לוכד ספינות סחר, הורס ספינות סחר וכיבוש.",
+      "spaceport": "שולח ספינות סחר כדי לייצר זהב",
+      "defense_station": "מעלה הגנות של גבולות קרובים",
+      "colony": "מעלה כמות אוכלוסיה מירבית"
     },
     "not_enough_money": "אין מספיק זהב"
   },
@@ -411,7 +411,7 @@
     "player": "שחקן",
     "team": "קבוצה",
     "owned": "שטח",
-    "gold": "זהב",
+    "credits": "זהב",
     "troops": "חיילים",
     "show_top_5": "הצג את החמישה העליונים",
     "show_all": "הצג הכול"
@@ -467,7 +467,7 @@
     "attack_ratio": "יחס תקיפה"
   },
   "player_panel": {
-    "gold": "זהב",
+    "credits": "זהב",
     "troops": "חיילים",
     "betrayals": "מספר בגידות",
     "traitor": "בוגד",

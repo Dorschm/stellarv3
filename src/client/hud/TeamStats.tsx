@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { GameMode, Team, UnitType } from "../../core/game/Game";
-import { GameView, PlayerView } from "../../core/game/GameView";
+import { PlayerView } from "../../core/game/GameView";
 import {
   formatPercentage,
   renderNumber,
@@ -94,12 +94,12 @@ function TeamStats({ visible }: TeamStatsProps): React.JSX.Element {
         for (const p of teamPlayers) {
           if (p.isAlive()) {
             totalMaxTroops += gameView.config().maxTroops(p);
-            totalGold += p.gold();
+            totalGold += p.credits();
             totalScoreSort += p.numTilesOwned();
-            totalLaunchers += p.totalUnitLevels(UnitType.MissileSilo);
-            totalSAMs += p.totalUnitLevels(UnitType.SAMLauncher);
-            totalWarShips += p.totalUnitLevels(UnitType.Warship);
-            totalCities += p.totalUnitLevels(UnitType.City);
+            totalLaunchers += p.totalUnitLevels(UnitType.OrbitalStrikePlatform);
+            totalSAMs += p.totalUnitLevels(UnitType.PointDefenseArray);
+            totalWarShips += p.totalUnitLevels(UnitType.Battlecruiser);
+            totalCities += p.totalUnitLevels(UnitType.Colony);
           }
         }
 

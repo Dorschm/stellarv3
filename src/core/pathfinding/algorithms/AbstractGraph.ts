@@ -41,7 +41,7 @@ export class AbstractGraph {
   private _pathCache: (TileRef[] | null)[] = [];
 
   // Water components for componentId lookup
-  private _waterComponents: ConnectedComponents | null = null;
+  private _deepSpaceComponents: ConnectedComponents | null = null;
 
   constructor(
     readonly clusterSize: number,
@@ -130,12 +130,12 @@ export class AbstractGraph {
     this._pathCache = new Array(this._edges.length * 2).fill(null);
   }
 
-  setWaterComponents(wc: ConnectedComponents): void {
-    this._waterComponents = wc;
+  setDeepSpaceComponents(wc: ConnectedComponents): void {
+    this._deepSpaceComponents = wc;
   }
 
   getComponentId(tile: TileRef): number {
-    return this._waterComponents?.getComponentId(tile) ?? 0;
+    return this._deepSpaceComponents?.getComponentId(tile) ?? 0;
   }
 
   getClusterKey(clusterX: number, clusterY: number): number {
@@ -203,7 +203,7 @@ export class AbstractGraphBuilder {
   private readonly clustersX: number;
   private readonly clustersY: number;
   private readonly tileBFS: BFSGrid;
-  private readonly waterComponents: ConnectedComponents;
+  private readonly deepSpaceComponents: ConnectedComponents;
 
   // Build state
   private graph!: AbstractGraph;
@@ -221,7 +221,7 @@ export class AbstractGraphBuilder {
     this.clustersX = Math.ceil(this.width / clusterSize);
     this.clustersY = Math.ceil(this.height / clusterSize);
     this.tileBFS = new BFSGrid(this.width * this.height);
-    this.waterComponents = new ConnectedComponents(map);
+    this.deepSpaceComponents = new ConnectedComponents(map);
   }
 
   build(): AbstractGraph {
@@ -234,7 +234,7 @@ export class AbstractGraphBuilder {
     );
 
     // Initialize water components
-    this.waterComponents.initialize();
+    this.deepSpaceComponents.initialize();
 
     // Pre-create all clusters
     for (let cy = 0; cy < this.clustersY; cy++) {
@@ -274,7 +274,7 @@ export class AbstractGraphBuilder {
     this.graph._initPathCache();
 
     // Store water components for componentId lookups
-    this.graph.setWaterComponents(this.waterComponents);
+    this.graph.setDeepSpaceComponents(this.deepSpaceComponents);
 
     DebugSpan.end(); // AbstractGraphBuilder:build
 
@@ -294,7 +294,7 @@ export class AbstractGraphBuilder {
       x,
       y,
       tile,
-      componentId: this.waterComponents.getComponentId(tile),
+      componentId: this.deepSpaceComponents.getComponentId(tile),
     };
 
     this.graph._addNode(node);
@@ -364,7 +364,9 @@ export class AbstractGraphBuilder {
       const tile = this.map.ref(x, y);
       const nextTile = x + 1 < this.map.width() ? this.map.ref(x + 1, y) : -1;
       const isEntrance =
-        this.map.isWater(tile) && nextTile !== -1 && this.map.isWater(nextTile);
+        this.map.isDeepSpace(tile) &&
+        nextTile !== -1 &&
+        this.map.isDeepSpace(nextTile);
 
       if (isEntrance) {
         if (spanStart === -1) {
@@ -400,7 +402,9 @@ export class AbstractGraphBuilder {
       const tile = this.map.ref(x, y);
       const nextTile = y + 1 < this.map.height() ? this.map.ref(x, y + 1) : -1;
       const isEntrance =
-        this.map.isWater(tile) && nextTile !== -1 && this.map.isWater(nextTile);
+        this.map.isDeepSpace(tile) &&
+        nextTile !== -1 &&
+        this.map.isDeepSpace(nextTile);
 
       if (isEntrance) {
         if (spanStart === -1) {
@@ -546,7 +550,7 @@ export class AbstractGraphBuilder {
       this.map.height(),
       from,
       maxDistance,
-      (tile: number) => this.map.isWater(tile),
+      (tile: number) => this.map.isDeepSpace(tile),
       (tile: number, dist: number) => {
         const x = this.map.x(tile);
         const y = this.map.y(tile);
