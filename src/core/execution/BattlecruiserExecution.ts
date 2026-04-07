@@ -264,7 +264,7 @@ export class BattlecruiserExecution implements Execution {
       }
       const tile = this.mg.ref(x, y);
       if (
-        !this.mg.isOcean(tile) ||
+        !this.mg.isVoid(tile) ||
         (!allowShoreline && this.mg.isSectorBoundary(tile))
       ) {
         attempts++;

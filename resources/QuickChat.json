@@ -9,7 +9,7 @@
       "requiresPlayer": false
     },
     {
-      "key": "gold",
+      "key": "credits",
       "requiresPlayer": false
     },
     {
@@ -39,7 +39,7 @@
       "requiresPlayer": true
     },
     {
-      "key": "mirv",
+      "key": "cluster_warhead",
       "requiresPlayer": true
     },
     {
@@ -51,7 +51,7 @@
       "requiresPlayer": true
     },
     {
-      "key": "build_warships",
+      "key": "build_battlecruisers",
       "requiresPlayer": false
     }
   ],
@@ -73,7 +73,7 @@
       "requiresPlayer": true
     },
     {
-      "key": "build_posts",
+      "key": "build_defense_stations",
       "requiresPlayer": false
     }
   ],
@@ -169,7 +169,7 @@
       "requiresPlayer": false
     },
     {
-      "key": "coastline",
+      "key": "deep_space_border",
       "requiresPlayer": false
     }
   ],
@@ -183,7 +183,7 @@
       "requiresPlayer": true
     },
     {
-      "key": "mirv_soon",
+      "key": "cluster_warhead_soon",
       "requiresPlayer": true
     },
     {
@@ -219,11 +219,11 @@
       "requiresPlayer": true
     },
     {
-      "key": "saving_for_mirv",
+      "key": "saving_for_cluster_warhead",
       "requiresPlayer": true
     },
     {
-      "key": "mirv_ready",
+      "key": "cluster_warhead_ready",
       "requiresPlayer": true
     },
     {

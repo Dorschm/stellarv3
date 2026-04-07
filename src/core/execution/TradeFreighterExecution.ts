@@ -174,7 +174,7 @@ export class TradeFreighterExecution implements Execution {
         this.tradeShip!.owner().id(),
         gold,
         {
-          gold: renderNumber(gold),
+          credits: renderNumber(gold),
           name: this.origOwner.displayName(),
         },
       );
@@ -191,7 +191,7 @@ export class TradeFreighterExecution implements Execution {
         this._dstPort.owner().id(),
         gold,
         {
-          gold: renderNumber(gold),
+          credits: renderNumber(gold),
           name: this.srcPort.owner().displayName(),
         },
       );
@@ -201,7 +201,7 @@ export class TradeFreighterExecution implements Execution {
         this.srcPort.owner().id(),
         gold,
         {
-          gold: renderNumber(gold),
+          credits: renderNumber(gold),
           name: this._dstPort.owner().displayName(),
         },
       );

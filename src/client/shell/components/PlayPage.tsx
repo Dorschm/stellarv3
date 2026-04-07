@@ -1,9 +1,9 @@
+import { useNavigation } from "../contexts/NavigationContext";
 import { FlagInput } from "./FlagInput";
 import { GameModeSelector } from "./GameModeSelector";
-import { OpenFrontLogo } from "./OpenFrontLogo";
 import { PatternInput } from "./PatternInput";
+import { StellarGameLogo } from "./StellarGameLogo";
 import { UsernameInput } from "./UsernameInput";
-import { useNavigation } from "../contexts/NavigationContext";
 
 export function PlayPage() {
   const { currentPage, setSidebarOpen } = useNavigation();
@@ -11,8 +11,7 @@ export function PlayPage() {
   const isVisible = currentPage === "page-play";
 
   const openFlagModal = () => window.showPage?.("flag-input-modal");
-  const openPatternModal = () =>
-    window.showPage?.("territory-patterns-modal");
+  const openPatternModal = () => window.showPage?.("territory-patterns-modal");
 
   return (
     <div
@@ -55,7 +54,7 @@ export function PlayPage() {
           </button>
 
           <div className="col-start-2 flex items-center justify-center text-[#2563eb] min-w-0">
-            <OpenFrontLogo className="h-6 w-auto drop-shadow-[0_0_10px_rgba(37,99,235,0.3)] shrink-0" />
+            <StellarGameLogo className="h-6 w-auto drop-shadow-[0_0_10px_rgba(37,99,235,0.3)] shrink-0" />
           </div>
 
           <div

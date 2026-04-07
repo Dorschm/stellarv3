@@ -171,7 +171,7 @@ export class NationNukeBehavior {
     const { difficulty, gameMode } = this.game.config().gameConfig();
     if (difficulty === Difficulty.Impossible && gameMode === GameMode.FFA) {
       const numTilesWithoutFallout =
-        this.game.numLandTiles() - this.game.numTilesWithFallout();
+        this.game.numSectorTiles() - this.game.numTilesWithFallout();
       if (numTilesWithoutFallout > 0) {
         const sortedByTiles = this.game
           .players()
@@ -264,7 +264,7 @@ export class NationNukeBehavior {
     }
 
     const numTilesWithoutFallout =
-      this.game.numLandTiles() - this.game.numTilesWithFallout();
+      this.game.numSectorTiles() - this.game.numTilesWithFallout();
     if (numTilesWithoutFallout <= 0) {
       return null;
     }

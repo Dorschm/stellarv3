@@ -337,13 +337,13 @@ export class AttackExecution implements Execution {
 
       let mag = 0;
       switch (this.mg.terrainType(neighbor)) {
-        case TerrainType.Plains:
+        case TerrainType.OpenSpace:
           mag = 1;
           break;
-        case TerrainType.Highland:
+        case TerrainType.Nebula:
           mag = 1.5;
           break;
-        case TerrainType.Mountain:
+        case TerrainType.AsteroidField:
           mag = 2;
           break;
       }

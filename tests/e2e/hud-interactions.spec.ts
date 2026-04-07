@@ -1,9 +1,12 @@
 import { expect, Page, test } from "@playwright/test";
 import {
-  startSingleplayerGame,
+  checkVisibleText,
   findOwnedTile,
-  waitForBorderEnemyTile,
+  getConsoleErrors,
   rightClickOnGameTile,
+  startSingleplayerGame,
+  trackConsoleErrors,
+  waitForBorderEnemyTile,
 } from "./fixtures/game-fixtures";
 
 /**
@@ -27,6 +30,7 @@ test.describe("HUD interactions (singleplayer)", () => {
   test.beforeAll(async ({ browser }) => {
     const context = await browser.newContext();
     page = await context.newPage();
+    trackConsoleErrors(page);
     await startSingleplayerGame(page);
   });
 
@@ -143,9 +147,9 @@ test.describe("HUD interactions (singleplayer)", () => {
     await expect(buildMenu).toBeVisible({ timeout: 10_000 });
 
     // Verify at least one unit option is visible (e.g. city, port images).
-    await expect(
-      buildMenu.locator("img[alt]").first(),
-    ).toBeVisible({ timeout: 5_000 });
+    await expect(buildMenu.locator("img[alt]").first()).toBeVisible({
+      timeout: 5_000,
+    });
 
     // Close by emitting CloseViewEvent via the exposed helper — the
     // R3F pointer pipeline does not forward synthetic Playwright mouse
@@ -190,9 +194,7 @@ test.describe("HUD interactions (singleplayer)", () => {
     await playerInfoButton.click();
 
     // Click the "Chat" button in the PlayerPanel to open ChatModal.
-    const chatButton = page
-      .locator('button[title="Chat"]')
-      .first();
+    const chatButton = page.locator('button[title="Chat"]').first();
     await expect(chatButton).toBeVisible({ timeout: 10_000 });
     await chatButton.click({ force: true });
 
@@ -223,5 +225,18 @@ test.describe("HUD interactions (singleplayer)", () => {
     // which has no client-side renderer in ChatDisplay, so we verify
     // the modal interaction rather than the message appearing in chat.
     await expect(modal).toBeHidden({ timeout: 5_000 });
+  });
+
+  test("no console errors and all visible text is correct", async () => {
+    const errors = getConsoleErrors(page);
+    expect(errors, "Unexpected console errors during HUD interactions").toEqual(
+      [],
+    );
+
+    const textViolations = await checkVisibleText(page);
+    expect(
+      textViolations,
+      "Stale terms or untranslated keys in visible UI",
+    ).toEqual([]);
   });
 });

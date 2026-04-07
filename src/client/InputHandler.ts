@@ -181,7 +181,7 @@ export class TileHoverEvent implements GameEvent {
 /**
  * Emitted by SpaceMapPlane when the pointer leaves the map mesh so
  * downstream consumers can invalidate any cached hover tile. Without this
- * signal, boat/ground-attack hotkeys would target whatever tile the pointer
+ * signal, shuttle/ground-attack hotkeys would target whatever tile the pointer
  * last hovered — even after the cursor left the map.
  */
 export class TileHoverClearEvent implements GameEvent {}
@@ -525,7 +525,7 @@ export class InputHandler {
         this.eventBus.emit(new RefreshGraphicsEvent());
       }
 
-      if (e.code === this.keybinds.boatAttack) {
+      if (e.code === this.keybinds.shuttleAttack) {
         e.preventDefault();
         this.eventBus.emit(new DoShuttleAttackEvent());
       }

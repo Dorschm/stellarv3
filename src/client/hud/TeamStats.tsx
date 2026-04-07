@@ -104,7 +104,7 @@ function TeamStats({ visible }: TeamStatsProps): React.JSX.Element {
         }
 
         const numTilesWithoutFallout =
-          gameView.numLandTiles() - gameView.numTilesWithFallout();
+          gameView.numSectorTiles() - gameView.numTilesWithFallout();
         const totalScorePercent = totalScoreSort / numTilesWithoutFallout;
 
         return {

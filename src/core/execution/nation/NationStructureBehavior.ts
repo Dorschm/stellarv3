@@ -175,7 +175,7 @@ export class NationStructureBehavior {
 
   private hasCoastalTiles(): boolean {
     for (const tile of this.player.borderTiles()) {
-      if (this.game.isOceanShore(tile)) return true;
+      if (this.game.isVoidShore(tile)) return true;
     }
     return false;
   }
@@ -481,7 +481,7 @@ export class NationStructureBehavior {
 
   private randCoastalTileArray(numTiles: number): TileRef[] {
     const tiles = Array.from(this.player.borderTiles()).filter((t) =>
-      this.game.isOceanShore(t),
+      this.game.isVoidShore(t),
     );
     return Array.from(this.arraySampler(tiles, numTiles));
   }

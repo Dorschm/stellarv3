@@ -1222,8 +1222,8 @@ export class GameView implements GameMap {
   height(): number {
     return this._map.height();
   }
-  numLandTiles(): number {
-    return this._map.numLandTiles();
+  numSectorTiles(): number {
+    return this._map.numSectorTiles();
   }
   nations(): Nation[] {
     return this._mapData.nations;
@@ -1234,11 +1234,11 @@ export class GameView implements GameMap {
   isSector(ref: TileRef): boolean {
     return this._map.isSector(ref);
   }
-  isOceanShore(ref: TileRef): boolean {
-    return this._map.isOceanShore(ref);
+  isVoidShore(ref: TileRef): boolean {
+    return this._map.isVoidShore(ref);
   }
-  isOcean(ref: TileRef): boolean {
-    return this._map.isOcean(ref);
+  isVoid(ref: TileRef): boolean {
+    return this._map.isVoid(ref);
   }
   isSectorBoundary(ref: TileRef): boolean {
     return this._map.isSectorBoundary(ref);
@@ -1270,8 +1270,8 @@ export class GameView implements GameMap {
   isDeepSpace(ref: TileRef): boolean {
     return this._map.isDeepSpace(ref);
   }
-  isLake(ref: TileRef): boolean {
-    return this._map.isLake(ref);
+  isDebrisField(ref: TileRef): boolean {
+    return this._map.isDebrisField(ref);
   }
   isSectorEdge(ref: TileRef): boolean {
     return this._map.isSectorEdge(ref);

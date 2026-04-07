@@ -775,14 +775,14 @@ export class PlayerImpl implements Player {
       MessageType.SENT_CREDITS_TO_PLAYER,
       this.id(),
       undefined,
-      { gold: renderNumber(credits), name: recipient.displayName() },
+      { credits: renderNumber(credits), name: recipient.displayName() },
     );
     this.mg.displayMessage(
       "events_display.received_credits_from_player",
       MessageType.RECEIVED_CREDITS_FROM_PLAYER,
       recipient.id(),
       credits,
-      { gold: renderNumber(credits), name: this.displayName() },
+      { credits: renderNumber(credits), name: this.displayName() },
     );
     return true;
   }
@@ -1222,7 +1222,7 @@ export class PlayerImpl implements Player {
         manhattanDistFN(tile, this.mg.config().radiusSpaceportSpawn()),
       ),
     )
-      .filter((t) => this.mg.owner(t) === this && this.mg.isOceanShore(t))
+      .filter((t) => this.mg.owner(t) === this && this.mg.isVoidShore(t))
       .sort(
         (a, b) =>
           this.mg.manhattanDist(a, tile) - this.mg.manhattanDist(b, tile),
@@ -1239,7 +1239,7 @@ export class PlayerImpl implements Player {
   }
 
   warshipSpawn(tile: TileRef): TileRef | false {
-    if (!this.mg.isOcean(tile)) {
+    if (!this.mg.isVoid(tile)) {
       return false;
     }
 

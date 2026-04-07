@@ -168,7 +168,7 @@ export class PlayerExecution implements Execution {
 
     for (const tile of cluster) {
       let hasUnownedNeighbor = false;
-      if (this.mg.isOceanShore(tile) || this.mg.isOnEdgeOfMap(tile)) {
+      if (this.mg.isVoidShore(tile) || this.mg.isOnEdgeOfMap(tile)) {
         return false;
       }
       this.mg.forEachNeighbor(tile, (n) => {

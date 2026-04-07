@@ -21,7 +21,7 @@ import { translateText } from "../Utils";
 import { CloseRadialMenuEvent, ShowPlayerPanelEvent } from "./events";
 
 const attackIcon = assetUrl("images/SwordIconWhite.svg");
-const boatIcon = assetUrl("images/ShuttleIconWhite.svg");
+const shuttleIcon = assetUrl("images/ShuttleIconWhite.svg");
 const buildIcon = assetUrl("images/BuildIconWhite.svg");
 const emojiIcon = assetUrl("images/EmojiIconWhite.svg");
 const infoIcon = assetUrl("images/InfoIcon.svg");
@@ -37,14 +37,14 @@ const infoIcon = assetUrl("images/InfoIcon.svg");
  *   • Listens for `ContextMenuEvent` from `SpaceMapPlane` (tile coordinates).
  *   • Fetches `PlayerActions` for the clicked tile against `myPlayer`.
  *   • Offers context-sensitive options: Build menu, Emoji, Player panel,
- *     Ground attack, Boat attack. These are the same entry points previously
+ *     Ground attack, Shuttle attack. These are the same entry points previously
  *     reachable via the legacy radial menu.
  *   • On selection, it emits the same events the legacy flow produced:
  *       - Build    → `ShowBuildMenuEvent(tileX, tileY)`
  *       - Emoji    → `ShowEmojiMenuEvent(tileX, tileY)`
  *       - Player   → `ShowPlayerPanelEvent(actions, tile)`
  *       - Attack   → `SendAttackIntentEvent(targetID, troops)`
- *       - Boat     → `SendShuttleAttackIntentEvent(tile, troops)`
+ *       - Shuttle  → `SendShuttleAttackIntentEvent(tile, troops)`
  *
  * The menu closes automatically when the player clicks the map again,
  * presses Escape, or picks any action.
@@ -161,12 +161,12 @@ export function RadialMenu(): React.JSX.Element | null {
     hide();
   };
 
-  const handleBoat = () => {
+  const handleShuttle = () => {
     if (!myPlayer) return;
-    const canBoat = actions?.buildableUnits.some(
+    const canShuttle = actions?.buildableUnits.some(
       (bu) => bu.type === UnitType.AssaultShuttle && bu.canBuild !== false,
     );
-    if (!canBoat) return;
+    if (!canShuttle) return;
     const percent = useHUDStore.getState().attackRatio;
     const ratio = Math.max(0, Math.min(100, percent)) / 100;
     eventBus.emit(
@@ -176,7 +176,7 @@ export function RadialMenu(): React.JSX.Element | null {
   };
 
   const canAttack = !!actions?.canAttack;
-  const canBoat =
+  const canShuttle =
     actions?.buildableUnits.some(
       (bu) => bu.type === UnitType.AssaultShuttle && bu.canBuild !== false,
     ) ?? false;
@@ -228,10 +228,10 @@ export function RadialMenu(): React.JSX.Element | null {
         />
 
         <RadialButton
-          icon={boatIcon}
-          label={translateText("radial_menu.boat") || "Boat attack"}
-          disabled={!canBoat}
-          onClick={handleBoat}
+          icon={shuttleIcon}
+          label={translateText("radial_menu.shuttle") || "Shuttle attack"}
+          disabled={!canShuttle}
+          onClick={handleShuttle}
           color="bg-sky-700/80 hover:bg-sky-600/80"
         />
 

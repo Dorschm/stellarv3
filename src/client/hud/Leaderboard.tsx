@@ -65,7 +65,7 @@ function Leaderboard({ visible }: LeaderboardProps): React.JSX.Element {
     }
 
     const numTilesWithoutFallout =
-      gameView.numLandTiles() - gameView.numTilesWithFallout();
+      gameView.numSectorTiles() - gameView.numTilesWithFallout();
 
     const alivePlayers = sorted.filter((player) => player.isAlive());
     const playersToShow = showTopFive ? alivePlayers.slice(0, 5) : alivePlayers;
@@ -108,7 +108,7 @@ function Leaderboard({ visible }: LeaderboardProps): React.JSX.Element {
           name: myPlayer.displayName(),
           position: place,
           score: formatPercentage(
-            myPlayer.numTilesOwned() / gameView.numLandTiles(),
+            myPlayer.numTilesOwned() / gameView.numSectorTiles(),
           ),
           gold: renderNumber(myPlayer.credits()),
           maxTroops: renderTroops(myPlayerMaxTroops),

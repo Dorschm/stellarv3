@@ -50,7 +50,7 @@ describe("WinCheckExecution", () => {
       name: vi.fn(() => "P1"),
     };
     mg.players = vi.fn(() => [player]);
-    mg.numLandTiles = vi.fn(() => 100);
+    mg.numSectorTiles = vi.fn(() => 100);
     mg.numTilesWithFallout = vi.fn(() => 0);
     winCheck.checkWinnerFFA();
     expect(mg.setWinner).toHaveBeenCalledWith(player, expect.anything());
@@ -62,7 +62,7 @@ describe("WinCheckExecution", () => {
       name: vi.fn(() => "P1"),
     };
     mg.players = vi.fn(() => [player]);
-    mg.numLandTiles = vi.fn(() => 100);
+    mg.numSectorTiles = vi.fn(() => 100);
     mg.numTilesWithFallout = vi.fn(() => 0);
     mg.stats = vi.fn(() => ({ stats: () => ({ mocked: true }) }));
     // Advance ticks until timeElapsed (in seconds) >= maxTimerValue * 60
@@ -114,7 +114,7 @@ describe("WinCheckExecution - Nation Winners", () => {
     }
 
     // Assign 81% of land to Nation
-    const totalLand = game.numLandTiles();
+    const totalLand = game.numSectorTiles();
     const targetTiles = Math.ceil(totalLand * 0.81);
     let assigned = 0;
 
@@ -178,7 +178,7 @@ describe("WinCheckExecution - Nation Winners", () => {
 
     // Give Nation 60% territory (below 80% threshold)
     // Give human 30% territory
-    const totalLand = game.numLandTiles();
+    const totalLand = game.numSectorTiles();
     const nationTiles = Math.ceil(totalLand * 0.6);
     const humanTiles = Math.ceil(totalLand * 0.3);
     let nationAssigned = 0;
@@ -263,7 +263,7 @@ describe("WinCheckExecution - Nation Winners", () => {
     }
 
     // Assign territories: Nation1 (85%), Nation2 (10%), Nation3 (5%)
-    const totalLand = game.numLandTiles();
+    const totalLand = game.numSectorTiles();
     const nation1Tiles = Math.ceil(totalLand * 0.85);
     const nation2Tiles = Math.ceil(totalLand * 0.1);
     let nation1Assigned = 0;
@@ -332,7 +332,7 @@ describe("WinCheckExecution - Nation Winners", () => {
     }
 
     // Assign 96% of land to bot team (above 95% Team mode threshold)
-    const totalLand = game.numLandTiles();
+    const totalLand = game.numSectorTiles();
     const botTeamTiles = Math.ceil(totalLand * 0.96);
     let bot1Assigned = 0;
     let bot2Assigned = 0;

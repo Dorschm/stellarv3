@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { UserMeResponse } from "../../../core/ApiSchemas";
+import { getDiscordAvatarUrl, translateText } from "../../Utils";
 import { useNavigation, type PageId } from "../contexts/NavigationContext";
 import { useNotifications } from "../hooks/useNotifications";
-import { getDiscordAvatarUrl, translateText } from "../../Utils";
 import { NotificationDot } from "./NotificationDot";
-import { OpenFrontLogo } from "./OpenFrontLogo";
+import { StellarGameLogo } from "./StellarGameLogo";
 
 function NavButton({
   pageId,
@@ -52,8 +52,7 @@ export function DesktopNavBar() {
     return () => document.removeEventListener("userMeResponse", handler);
   }, []);
 
-  const discord =
-    userMe !== false ? userMe.user.discord : undefined;
+  const discord = userMe !== false ? userMe.user.discord : undefined;
   const email = userMe !== false ? userMe.user.email : undefined;
   const avatarUrl = discord ? getDiscordAvatarUrl(discord) : null;
 
@@ -61,7 +60,7 @@ export function DesktopNavBar() {
     <nav className="hidden lg:flex w-full bg-zinc-900/90 backdrop-blur-md items-center justify-center gap-8 py-4 shrink-0 z-50 relative">
       <div className="flex flex-col items-center justify-center">
         <div className="h-8 text-[#2563eb]">
-          <OpenFrontLogo className="h-full w-auto" />
+          <StellarGameLogo className="h-full w-auto" />
         </div>
         <div className="l-header__highlightText text-center game-version-display" />
       </div>

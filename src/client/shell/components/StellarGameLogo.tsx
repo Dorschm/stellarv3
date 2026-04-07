@@ -1,7 +1,7 @@
 /**
  * Shared SVG logo component used by both mobile and desktop nav bars.
  */
-export function OpenFrontLogo({ className }: { className?: string }) {
+export function StellarGameLogo({ className }: { className?: string }) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"

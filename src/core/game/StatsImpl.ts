@@ -95,7 +95,7 @@ export class StatsImpl implements Stats {
     data.betrayals += _bigint(value);
   }
 
-  private _addBoat(
+  private _addSpaceUnit(
     player: Player,
     type: SpaceUnit,
     index: number,
@@ -124,7 +124,7 @@ export class StatsImpl implements Stats {
     p.bombs[type][index] += _bigint(value);
   }
 
-  private _addGold(player: Player, index: number, value: BigIntLike) {
+  private _addCredits(player: Player, index: number, value: BigIntLike) {
     const p = this._makePlayerStats(player);
     if (p === undefined) return;
     p.credits ??= [0n];
@@ -189,26 +189,30 @@ export class StatsImpl implements Stats {
   }
 
   freighterSendTrade(player: Player, target: Player): void {
-    this._addBoat(player, "tfreight", SHUTTLE_INDEX_SENT, 1);
+    this._addSpaceUnit(player, "tfreight", SHUTTLE_INDEX_SENT, 1);
   }
 
-  freighterArriveTrade(player: Player, target: Player, gold: BigIntLike): void {
-    this._addBoat(player, "tfreight", SHUTTLE_INDEX_ARRIVE, 1);
-    this._addGold(player, CREDITS_INDEX_TRADE, gold);
-    this._addGold(target, CREDITS_INDEX_TRADE, gold);
+  freighterArriveTrade(
+    player: Player,
+    target: Player,
+    credits: BigIntLike,
+  ): void {
+    this._addSpaceUnit(player, "tfreight", SHUTTLE_INDEX_ARRIVE, 1);
+    this._addCredits(player, CREDITS_INDEX_TRADE, credits);
+    this._addCredits(target, CREDITS_INDEX_TRADE, credits);
   }
 
   freighterCapturedTrade(
     player: Player,
     target: Player,
-    gold: BigIntLike,
+    credits: BigIntLike,
   ): void {
-    this._addBoat(player, "tfreight", SHUTTLE_INDEX_CAPTURE, 1);
-    this._addGold(player, CREDITS_INDEX_STEAL, gold);
+    this._addSpaceUnit(player, "tfreight", SHUTTLE_INDEX_CAPTURE, 1);
+    this._addCredits(player, CREDITS_INDEX_STEAL, credits);
   }
 
   freighterDestroyTrade(player: Player, target: Player): void {
-    this._addBoat(player, "tfreight", SHUTTLE_INDEX_DESTROY, 1);
+    this._addSpaceUnit(player, "tfreight", SHUTTLE_INDEX_DESTROY, 1);
   }
 
   shuttleSendTroops(
@@ -216,7 +220,7 @@ export class StatsImpl implements Stats {
     target: Player | TerraNullius,
     troops: BigIntLike,
   ): void {
-    this._addBoat(player, "ashuttle", SHUTTLE_INDEX_SENT, 1);
+    this._addSpaceUnit(player, "ashuttle", SHUTTLE_INDEX_SENT, 1);
   }
 
   shuttleArriveTroops(
@@ -224,7 +228,7 @@ export class StatsImpl implements Stats {
     target: Player | TerraNullius,
     troops: BigIntLike,
   ): void {
-    this._addBoat(player, "ashuttle", SHUTTLE_INDEX_ARRIVE, 1);
+    this._addSpaceUnit(player, "ashuttle", SHUTTLE_INDEX_ARRIVE, 1);
   }
 
   shuttleDestroyTroops(
@@ -232,7 +236,7 @@ export class StatsImpl implements Stats {
     target: Player,
     troops: BigIntLike,
   ): void {
-    this._addBoat(player, "ashuttle", SHUTTLE_INDEX_DESTROY, 1);
+    this._addSpaceUnit(player, "ashuttle", SHUTTLE_INDEX_DESTROY, 1);
   }
 
   bombLaunch(
@@ -258,12 +262,12 @@ export class StatsImpl implements Stats {
     this._addBomb(player, type, BOMB_INDEX_INTERCEPT, count);
   }
 
-  creditsWork(player: Player, gold: BigIntLike): void {
-    this._addGold(player, CREDITS_INDEX_WORK, gold);
+  creditsWork(player: Player, credits: BigIntLike): void {
+    this._addCredits(player, CREDITS_INDEX_WORK, credits);
   }
 
-  creditsWar(player: Player, captured: Player, gold: BigIntLike): void {
-    this._addGold(player, CREDITS_INDEX_WAR, gold);
+  creditsWar(player: Player, captured: Player, credits: BigIntLike): void {
+    this._addCredits(player, CREDITS_INDEX_WAR, credits);
     const conquestType = conquest_by_type[captured.type()];
     if (conquestType !== undefined) {
       this._addConquest(player, conquestType);
@@ -294,12 +298,12 @@ export class StatsImpl implements Stats {
     this._addPlayerKilled(player, tick);
   }
 
-  frigateSelfTrade(player: Player, gold: BigIntLike): void {
-    this._addGold(player, CREDITS_INDEX_FRIGATE_SELF, gold);
+  frigateSelfTrade(player: Player, credits: BigIntLike): void {
+    this._addCredits(player, CREDITS_INDEX_FRIGATE_SELF, credits);
   }
 
-  frigateExternalTrade(player: Player, gold: BigIntLike): void {
-    this._addGold(player, CREDITS_INDEX_FRIGATE_OTHER, gold);
+  frigateExternalTrade(player: Player, credits: BigIntLike): void {
+    this._addCredits(player, CREDITS_INDEX_FRIGATE_OTHER, credits);
   }
 
   lobbyFillTime(fillTimeMs: number): void {}

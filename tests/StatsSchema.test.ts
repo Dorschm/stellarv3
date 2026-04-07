@@ -29,7 +29,7 @@ describe("StatsSchema", () => {
   });
 
   test("Parse partial", () => {
-    testPlayerSchema('{"units":{"port":["0","0","0","1"]}}');
+    testPlayerSchema('{"units":{"sprt":["0","0","0","1"]}}');
   });
 
   test("Parse invalid", () => {

@@ -29,7 +29,7 @@ describe("PublicAssetManifest", () => {
       path.join(resourcesDir, "manifest.json"),
       JSON.stringify(
         {
-          name: "OpenFront",
+          name: "Stellar.Game",
           icons: [{ src: "icons/app-icon.png" }],
         },
         null,

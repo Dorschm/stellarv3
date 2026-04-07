@@ -255,7 +255,7 @@ export class NationExecution implements Execution {
       const tile = this.mg.ref(x, y);
       if (this.mg.isSector(tile) && !this.mg.hasOwner(tile)) {
         if (
-          this.mg.terrainType(tile) === TerrainType.Mountain &&
+          this.mg.terrainType(tile) === TerrainType.AsteroidField &&
           this.random.chance(2)
         ) {
           continue;

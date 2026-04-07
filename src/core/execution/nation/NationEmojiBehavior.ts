@@ -187,7 +187,7 @@ export class NationEmojiBehavior {
     if (this.game.ticks() < 6000) return; // Ignore first 10 minutes (everybody is small in the early game)
     if (!this.random.chance(10000)) return;
 
-    const totalLand = this.game.numLandTiles();
+    const totalLand = this.game.numSectorTiles();
     const threshold = totalLand * 0.01; // 1% of land
 
     const smallPlayers = this.game

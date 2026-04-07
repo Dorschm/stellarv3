@@ -1,10 +1,13 @@
 import { expect, Page, test } from "@playwright/test";
 import {
+  checkVisibleText,
+  findBorderUnownedTile,
   findInteriorOwnedTile,
   findOwnedTile,
-  findSpawnTile,
+  getConsoleErrors,
   rightClickOnGameTile,
   startSingleplayerGame,
+  trackConsoleErrors,
   waitForBorderEnemyTile,
   waitForTicksAbove,
 } from "./fixtures/game-fixtures";
@@ -39,6 +42,7 @@ test.describe("Full gameplay (singleplayer)", () => {
   test.beforeAll(async ({ browser }) => {
     const context = await browser.newContext();
     page = await context.newPage();
+    trackConsoleErrors(page);
     await startSingleplayerGame(page);
   });
 
@@ -142,7 +146,7 @@ test.describe("Full gameplay (singleplayer)", () => {
     // Find an unowned land tile and attack it via the RadialMenu.
     // Right-clicking on unowned territory → "Attack" dispatches
     // SendAttackIntentEvent(null, troops) → terra nullius expansion.
-    const unownedTile = await findSpawnTile(page);
+    const unownedTile = await findBorderUnownedTile(page);
     expect(unownedTile).not.toBeNull();
     await rightClickOnGameTile(page, unownedTile!.tileX, unownedTile!.tileY);
     const attackButton = page.getByRole("button", { name: /attack/i }).first();
@@ -306,5 +310,16 @@ test.describe("Full gameplay (singleplayer)", () => {
     expect(finalState.alive).toBe(true);
     expect(finalState.tiles).toBeGreaterThan(0);
     expect(finalState.troops).toBeGreaterThan(0);
+  });
+
+  test("no console errors and all visible text is correct", async () => {
+    const errors = getConsoleErrors(page);
+    expect(errors, "Unexpected console errors during gameplay").toEqual([]);
+
+    const textViolations = await checkVisibleText(page);
+    expect(
+      textViolations,
+      "Stale terms or untranslated keys in visible UI",
+    ).toEqual([]);
   });
 });

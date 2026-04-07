@@ -78,7 +78,7 @@ export class NationBattlecruiserBehavior {
       }
       const tile = this.game.ref(randX, randY);
       // Sanity check
-      if (!this.game.isOcean(tile)) {
+      if (!this.game.isVoid(tile)) {
         continue;
       }
       return tile;

@@ -12,9 +12,9 @@ export class PastelThemeDark extends PastelTheme {
   // | Terrain Type      | Magnitude | Base Color Logic                                | Visual Description    |
   // | :---------------- | :-------- | :---------------------------------------------- | :-------------------- |
   // | **Sector Edge**   | N/A       | Fixed: `rgb(134, 133, 88)`                    | Dark olive.           |
-  // | **Plains**        | 0 - 9     | `rgb(140, 170, 88)` - `rgb(140, 152, 88)`   | Muted green.          |
-  // | **Highland**      | 10 - 19   | `rgb(170, 153, 108)` - `rgb(188, 171, 126)` | Dark earth tone.      |
-  // | **Mountain**      | 20 - 30   | `rgb(190, 190, 190)` - `rgb(195, 195, 195)` | Dark gray.            |
+  // | **OpenSpace**     | 0 - 9     | `rgb(140, 170, 88)` - `rgb(140, 152, 88)`   | Muted green.          |
+  // | **Nebula**        | 10 - 19   | `rgb(170, 153, 108)` - `rgb(188, 171, 126)` | Dark earth tone.      |
+  // | **AsteroidField** | 20 - 30   | `rgb(190, 190, 190)` - `rgb(195, 195, 195)` | Dark gray.            |
   // | **Deep Space (Sector Edge)** | 0 | Fixed: `rgb(50, 50, 50)`                   | Dark gray/black.      |
   // | **Deep Space**    | 1 - 10+   | `rgb(22, 19, 38)` - `rgb(14, 11, 30)`       | Very dark blue/black. |
 
@@ -39,19 +39,19 @@ export class PastelThemeDark extends PastelTheme {
         }
         return this.darkDeepSpace;
       }
-      case TerrainType.Plains:
+      case TerrainType.OpenSpace:
         return colord({
           r: 140,
           g: 170 - 2 * mag,
           b: 88,
         });
-      case TerrainType.Highland:
+      case TerrainType.Nebula:
         return colord({
           r: 150 + 2 * mag,
           g: 133 + 2 * mag,
           b: 88 + 2 * mag,
         });
-      case TerrainType.Mountain:
+      case TerrainType.AsteroidField:
         return colord({
           r: 180 + mag / 2,
           g: 180 + mag / 2,

@@ -9,7 +9,7 @@
     "close": "Bezár"
   },
   "main": {
-    "title": "OpenFront (ALPHA)",
+    "title": "Stellar.Game (ALPHA)",
     "join_discord": "Csatlakozz discord szerverünkhöz!",
     "login_discord": "Bejelentkezés Discord fiókkal",
     "checking_login": "Bejelentkezés ellenőrzése...",
@@ -51,7 +51,7 @@
     "ui_control": "Vezérlőpult",
     "ui_control_desc": "A vezérlőpult a következő elemeket tartalmazza:",
     "ui_pop": "Népesség - A népesség száma, a maximális népesség és a népesség növekedési üteme.",
-    "ui_gold": "Arany - Az arany mennyisége és a növekedési üteme.",
+    "ui_credits": "Kreditek - A kreditek mennyisége és a növekedési ütemük.",
     "ui_attack_ratio": "Támadási arány - A támadáskor felhasznált egységek mennyisége. A támadási arányt a csúszka segítségével állíthatod be. Ha több támadó csapatod van, mint védekező, akkor kevesebb katonát veszítesz a támadás során, míg ha kevesebb, akkor nagyobb a támadó csapatoknak okozott sebzés. A hatás nem lépi túl a 2:1 arányt.",
     "ui_events": "Eseménynapló",
     "ui_events_desc": "Az eseménynapló a legújabb eseményeket, kéréseket és gyors csevegési üzeneteket jeleníti meg. Néhány példa:",
@@ -72,10 +72,10 @@
     "radial_build": "Építési menü megnyitása.",
     "radial_attack": "Támadási menü megnyitása.",
     "radial_info": "Információs menü megnyitása.",
-    "radial_boat": "Küldj egy hajót (szállítóhajó) támadásra a kiválasztott helyre. Csak akkor elérhető, ha van hozzáférésed vízhez.",
+    "radial_shuttle": "Küldj egy rohaműrsiklót támadásra a kiválasztott helyre.",
     "radial_close": "Menü bezárása.",
     "info_title": "Információs menü",
-    "info_enemy_desc": "Tartalmazza a kiválasztott játékos nevét, aranyát, seregeit, azt, hogy leállította-e veled a kereskedést, hány nukleáris rakétát küldött neked, valamint hogy áruló-e. A kereskedés leállítása azt jelenti, hogy nem kapsz tőlük aranyat, és ők sem küldenek neked aranyat kereskedő hajókkal. Ez történhet manuálisan (ha a játékos rákattintott a ‘Kereskedés leállítása’ gombra, ami mindkettőtök ‘Kereskedés indítása’ gombjának megnyomásáig tart), vagy automatikusan (ha elárultad a szövetséged, ami addig tart, amíg újra szövetségesek nem lesztek, vagy 5 perc után lejár). Az ‘Áruló’ 30 másodpercig ‘Igen’-ként jelenik meg, amikor a játékos elárult és megtámadott egy vele szövetséges játékost. Az alábbi ikonok a következő interakciókat jelölik:",
+    "info_enemy_desc": "Tartalmazza a kiválasztott játékos nevét, kreditjeit, seregeit, azt, hogy leállította-e veled a kereskedést, hány nukleáris rakétát küldött neked, valamint hogy áruló-e. A kereskedés leállítása azt jelenti, hogy nem kapsz tőlük krediteket, és ők sem küldenek neked krediteket kereskedő hajókkal. Ez történhet manuálisan (ha a játékos rákattintott a ‘Kereskedés leállítása’ gombra, ami mindkettőtök ‘Kereskedés indítása’ gombjának megnyomásáig tart), vagy automatikusan (ha elárultad a szövetséged, ami addig tart, amíg újra szövetségesek nem lesztek, vagy 5 perc után lejár). Az ‘Áruló’ 30 másodpercig ‘Igen’-ként jelenik meg, amikor a játékos elárult és megtámadott egy vele szövetséges játékost. Az alábbi ikonok a következő interakciókat jelölik:",
     "info_chat": "Gyors csevegőüzenet küldése a játékosnak. Válassz egy kategóriát, egy mondatot, és ha a mondat tartalmaz [P1] válassz egy játékosnevet, amivel helyettesíteni szeretnéd. Kattints a Küldésre.",
     "info_target": "Helyezz célpontot a játékosra, amelyet az összes szövetséges láthat, támadások koordinálására szolgál.",
     "info_alliance": "Szövetségi kérelem küldése játékosnak. A szövetségesek megoszthatják az erőforrásokat és seregeket, de nem támadhatják egymást.",
@@ -85,32 +85,31 @@
     "info_ally_desc": "Amikor szövetséget kötsz egy játékossal, a következő új ikonok válnak elérhetővé:",
     "ally_betray": "Szövetséges elárulása, véget vet a szövetségnek, leállítva a kereskedelmet és gyengítve a védekezésedet. A kereskedelem köztetek 5 percre szünetel (vagy amíg újra szövetségesek nem lesztek), és mások is leállíthatják a kereskedést veled. Ha a másik játékos nem volt áruló, akkor 30 másodpercig árulónak jelölnek. Ezalatt egy áruló ikon jelenik meg a neved fölött, és 50%-os védekezési gyengítést kapsz. A botok kevésbé hajlamosak szövetséget kötni veled, és a játékosok is kétszer meggondolják, mielőtt szövetségesek lesznek.",
     "ally_donate": "Küldj egységeket a szövetségesednek. Akkor használatos, ha ő kevés katonával rendelkezik és támadás alatt áll, vagy ha extra erőre van szüksége egy ellenség legyőzéséhez.",
-    "ally_donate_gold": "Küldj át aranyat a szövetségesednek. Akkor hasznos, ha kevés az aranya és építkezéshez van rá szüksége, vagy ha a csapattársad a MIRV-re gyűjt.",
     "build_menu_title": "Építési menü",
     "build_menu_desc": "Építsd meg ezeket, vagy nézd meg, hányat építettél már belőlük:",
     "build_name": "Név",
     "build_icon": "Ikon",
     "build_desc": "Leírás",
-    "build_city": "Város",
-    "build_city_desc": "Növeli a maximális populációdat. Hasznos, ha nem tudsz terjeszkedni, vagy ha hamarosan eléred a népességkorlátot.",
-    "build_factory": "Gyár",
-    "build_factory_desc": "Automatikusan vasútvonalakat épít a közeli városokhoz, kikötőkhöz és egyéb gyárakhoz, valamint összekapcsolódhat a szomszédos szövetségesekkel is. A vonatok rendszeresen indulnak, és fix mennyiségű aranyat adnak minden épületért, amit az útvonal mentén meglátogatnak. Extra arany jár a szomszédok épületeinek meglátogatásáért.",
+    "build_colony": "Kolónia",
+    "build_colony_desc": "Növeli a maximális populációdat. Hasznos, ha nem tudsz terjeszkedni, vagy ha hamarosan eléred a népességkorlátot.",
+    "build_foundry": "Gyár",
+    "build_foundry_desc": "Automatikusan vasútvonalakat épít a közeli városokhoz, kikötőkhöz és egyéb gyárakhoz, valamint összekapcsolódhat a szomszédos szövetségesekkel is. A vonatok rendszeresen indulnak, és fix mennyiségű aranyat adnak minden épületért, amit az útvonal mentén meglátogatnak. Extra arany jár a szomszédok épületeinek meglátogatásáért.",
     "build_defense": "Védelmi állomás",
     "build_defense_desc": "Növeli a védekezést a közeli határok mentén, amelyek sakktáblaszerű mintázattal jelennek meg. Az ellenséges támadások lassabbak lesznek, és több veszteséggel járnak.",
-    "build_port": "Kikötő",
-    "build_port_desc": "Csak víz közelében építhető. Lehetővé teszi hadihajók építését. Automatikusan kereskedőhajókat küld az országod kikötői és más országok kikötői között (kivéve, ha a kereskedelem le van állítva), aranyat adva mindkét félnek. A kereskedelem automatikusan leáll, ha megtámadsz egy játékost, vagy téged támad meg egy játékos. 5 perc elteltével a kereskedelem automatikusan újraindul, vagy azonnal, ha szövetségesekké váltok. A kereskedelmet manuálisan is válthatod a „Kereskedelem leállítása” vagy a „Kereskedelem indítása” opcióval.",
-    "build_warship": "Hadihajó",
-    "build_warship_desc": "Egy területen járőrözik, elfogja az ellenséges kereskedő hajókat, és elpusztítja azok hajóit (szállítóhajó) és Hadihajóit. A legközelebbi Kikötőből indul, és azon a területet járőrözik, ahová először kattintottál az építéshez. A Hadihajókat irányíthatod úgy, hogy támadás-kattintasz (lásd a ‘Támadás’ műveletet a Gyorsbillentyűk alatt), majd támadás-kattintasz arra az új területre, ahová szeretnéd őket mozgatni.",
-    "build_silo": "Rakétasiló állomás",
-    "build_silo_desc": "Lehetővé teszi rakéták indítását.",
-    "build_sam": "Légvédelmi rakétavető",
-    "build_sam_desc": "El tudja fogni az ellenséges rakétákat 100 pixeles hatótávolságon belül. Az atombomba ellen 100%-os találati esélye van, a hidrogénbomba ellen 80%, az egyedi MIRV rakéták ellen pedig 50%. A légvédelmi rakétavető 7,5 másodperces újratöltési idővel rendelkezik.",
-    "build_atom": "Atombomba",
-    "build_atom_desc": "Kis robbanó bomba, amely elpusztítja a területet, épületeket, hajókat és csónakokat. A legközelebbi Rakétasilóból indul, és azon a területen csapódik be, ahová először kattintottál az építéshez.",
-    "build_hydrogen": "Hidrogénbomba",
-    "build_hydrogen_desc": "Nagy robbanó bomba. A legközelebbi Rakétasilóból indul, és azon a területen csapódik be, ahová először kattintottál az építéshez.",
-    "build_mirv": "MIRV",
-    "build_mirv_desc": "A játék legerősebb bombája. Kisebb bombákra oszlik, amelyek hatalmas területet fednek le. Csak azt a játékost károsítja, akire először kattintottál az építéshez. A legközelebbi Rakétasilóból indul, és azon a területen csapódik be, ahová először kattintottál az építéshez.",
+    "build_spaceport": "Kikötő",
+    "build_spaceport_desc": "Csak víz közelében építhető. Lehetővé teszi hadihajók építését. Automatikusan kereskedőhajókat küld az országod kikötői és más országok kikötői között (kivéve, ha a kereskedelem le van állítva), aranyat adva mindkét félnek. A kereskedelem automatikusan leáll, ha megtámadsz egy játékost, vagy téged támad meg egy játékos. 5 perc elteltével a kereskedelem automatikusan újraindul, vagy azonnal, ha szövetségesekké váltok. A kereskedelmet manuálisan is válthatod a „Kereskedelem leállítása” vagy a „Kereskedelem indítása” opcióval.",
+    "build_battlecruiser": "Hadihajó",
+    "build_battlecruiser_desc": "Egy területen járőrözik, elfogja az ellenséges kereskedő hajókat, és elpusztítja azok hajóit (szállítóhajó) és Hadihajóit. A legközelebbi Kikötőből indul, és azon a területet járőrözik, ahová először kattintottál az építéshez. A Hadihajókat irányíthatod úgy, hogy támadás-kattintasz (lásd a ‘Támadás’ műveletet a Gyorsbillentyűk alatt), majd támadás-kattintasz arra az új területre, ahová szeretnéd őket mozgatni.",
+    "build_orbital_strike_platform": "Rakétasiló állomás",
+    "build_orbital_strike_platform_desc": "Lehetővé teszi rakéták indítását.",
+    "build_point_defense_array": "Légvédelmi rakétavető",
+    "build_point_defense_array_desc": "El tudja fogni az ellenséges rakétákat 100 pixeles hatótávolságon belül. Az atombomba ellen 100%-os találati esélye van, a hidrogénbomba ellen 80%, az egyedi MIRV rakéták ellen pedig 50%. A légvédelmi rakétavető 7,5 másodperces újratöltési idővel rendelkezik.",
+    "build_antimatter_torpedo": "Atombomba",
+    "build_antimatter_torpedo_desc": "Kis robbanó bomba, amely elpusztítja a területet, épületeket, hajókat és csónakokat. A legközelebbi Rakétasilóból indul, és azon a területen csapódik be, ahová először kattintottál az építéshez.",
+    "build_nova_bomb": "Hidrogénbomba",
+    "build_nova_bomb_desc": "Nagy robbanó bomba. A legközelebbi Rakétasilóból indul, és azon a területen csapódik be, ahová először kattintottál az építéshez.",
+    "build_cluster_warhead": "MIRV",
+    "build_cluster_warhead_desc": "A játék legerősebb bombája. Kisebb bombákra oszlik, amelyek hatalmas területet fednek le. Csak azt a játékost károsítja, akire először kattintottál az építéshez. A legközelebbi Rakétasilóból indul, és azon a területen csapódik be, ahová először kattintottál az építéshez.",
     "player_icons": "Játékos ikonok",
     "icon_desc": "Néhány példa a játékban előforduló ikonokra és azok jelentésére:",
     "icon_crown": "Korona – 1. hely. A ranglista legjobb játékosa.",
@@ -119,7 +118,8 @@
     "icon_embargo": "Dollár tiltótábla – Embargó. Ez a játékos automatikusan vagy manuálisan leállította a kereskedelmet veled.",
     "icon_request": "Boríték – Szövetségkérés. Ez a játékos szövetségkérést küldött neked.",
     "info_enemy_panel": "Ellenség információs panel",
-    "exit_confirmation": "Biztos ki szeretnél lépni a játékból?"
+    "exit_confirmation": "Biztos ki szeretnél lépni a játékból?",
+    "ally_donate_credits": "Küldj át aranyat a szövetségesednek. Akkor hasznos, ha kevés az aranya és építkezéshez van rá szüksége, vagy ha a csapattársad a MIRV-re gyűjt."
   },
   "single_modal": {
     "title": "Egyjátékos",
@@ -129,12 +129,12 @@
     "bots_disabled": "Letiltva",
     "disable_nations": "Letiltott nemzetek",
     "instant_build": "Instant építés",
-    "infinite_gold": "Végtelen arany",
     "infinite_troops": "Végtelen katonák",
     "compact_map": "Mini térkép",
     "disable_nukes": "Nukleáris fegyverek letiltása",
     "enables_title": "Beállítások engedélyezése",
-    "start": "Játék indítása"
+    "start": "Játék indítása",
+    "infinite_credits": "Végtelen kredit"
   },
   "token_login_modal": {
     "title": "Bejelentkezés folyamatban...",
@@ -225,8 +225,6 @@
     "bots_disabled": "Letiltva",
     "disable_nations": "Országok letiltása",
     "instant_build": "Azonnali építés",
-    "infinite_gold": "Végtelen arany",
-    "donate_gold": "Arany adományozása",
     "infinite_troops": "Végtelen katonák",
     "donate_troops": "Katonák adományozása",
     "compact_map": "Mini térkép",
@@ -235,7 +233,9 @@
     "players": "Játékosok",
     "waiting": "Várakozás a játékosokra...",
     "start": "Játék indítása",
-    "host_badge": "Host"
+    "host_badge": "Host",
+    "infinite_credits": "Végtelen arany",
+    "donate_credits": "Kredit adományozása"
   },
   "team_colors": {
     "red": "Piros",
@@ -429,7 +429,7 @@
       "team_up": "Fogjunk össze [P1] ellen!",
       "pr": "Mikor lesz végre összevonva a PR-om...?",
       "build_closer": "Építs közelebb, hogy vonatokat kapj!",
-      "coastline": "Kérlek, engedd, hogy legyen tengerpartom."
+      "deep_space_border": "Kérlek, engedd, hogy elérjek egy mélyűr-határt."
     },
     "warnings": {
       "strong": "[P1] erős.",
@@ -466,8 +466,7 @@
     "not_enough_money": "Nincs elég pénz"
   },
   "win_modal": {
-    "support_openfront": "Támogasd az OpenFrontot!",
-    "territory_pattern": "Vásárolj egy területi mintát az OpenFront támogatásához!",
+    "territory_pattern": "Vásárolj egy területi mintát az Stellar.Game támogatásához!",
     "died": "Meghaltál",
     "your_team": "A csapatod nyert!",
     "other_team": "A(z) {team} csapat győzött!",
@@ -475,7 +474,8 @@
     "other_won": "{player} nyert!",
     "exit": "Kilépés a játékból",
     "keep": "Játék folytatása",
-    "wishlist": "Tedd a kívánságlistádra a Steam-en!"
+    "wishlist": "Tedd a kívánságlistádra a Steam-en!",
+    "support_stellar_game": "Támogasd az Stellar.Game-ot!"
   },
   "leaderboard": {
     "title": "Ranglista",
@@ -484,7 +484,7 @@
     "player": "Játékos",
     "team": "Csapat",
     "owned": "Birtokolt",
-    "credits": "Arany",
+    "credits": "Kredit",
     "troops": "Katonák",
     "launchers": "Kilövő állomások",
     "point_defense": "Rakétaelhárítók",
@@ -558,7 +558,7 @@
     "attack_ratio": "Támadási ráta"
   },
   "player_panel": {
-    "credits": "Arany",
+    "credits": "Kredit",
     "troops": "Katonák",
     "betrayals": "Árulások száma",
     "traitor": "Áruló",
@@ -624,13 +624,13 @@
       "cursor": "Egérmutató",
       "hand": "Kéz",
       "radiation": "Sugárzás",
-      "openfront_qr": "OpenFront.io QR kód",
-      "openfront": "OpenFront",
       "t_rex": "T-Rex",
       "embelem": "Embléma",
       "contributor": "Közreműködő",
       "grogu_head": "Grogu fej",
-      "grogu": "Grogu"
+      "grogu": "Grogu",
+      "stellar_game_qr": "Stellar.Game QR kód",
+      "stellar_game": "Stellar.Game"
     }
   },
   "flag_input": {
@@ -675,7 +675,7 @@
     "received": "Fogadott",
     "cancelled": "Megszakítva",
     "count": "Mennyiség",
-    "credits": "Arany",
+    "credits": "Kredit",
     "workers": "Munkások",
     "war": "Háború",
     "trade": "Kereskedelem",

@@ -35,7 +35,10 @@ export default defineConfig(({ mode }) => {
       assetManifest,
     ),
     backgroundImageUrl: buildAssetUrl("images/background.webp", assetManifest),
-    desktopLogoImageUrl: buildAssetUrl("images/OpenFront.webp", assetManifest),
+    desktopLogoImageUrl: buildAssetUrl(
+      "images/StellarGame.webp",
+      assetManifest,
+    ),
     mobileLogoImageUrl: buildAssetUrl("images/OF.webp", assetManifest),
   };
 

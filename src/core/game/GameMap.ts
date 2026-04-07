@@ -10,13 +10,13 @@ export interface GameMap {
   cell(ref: TileRef): Cell;
   width(): number;
   height(): number;
-  numLandTiles(): number;
+  numSectorTiles(): number;
 
   isValidCoord(x: number, y: number): boolean;
   // Terrain getters (immutable)
   isSector(ref: TileRef): boolean;
-  isOceanShore(ref: TileRef): boolean;
-  isOcean(ref: TileRef): boolean;
+  isVoidShore(ref: TileRef): boolean;
+  isVoid(ref: TileRef): boolean;
   isSectorBoundary(ref: TileRef): boolean;
   magnitude(ref: TileRef): number;
   // State getters and setters (mutable)
@@ -30,7 +30,7 @@ export interface GameMap {
   isBorder(ref: TileRef): boolean;
   neighbors(ref: TileRef): TileRef[];
   isDeepSpace(ref: TileRef): boolean;
-  isLake(ref: TileRef): boolean;
+  isDebrisField(ref: TileRef): boolean;
   isSectorEdge(ref: TileRef): boolean;
   cost(ref: TileRef): number;
   terrainType(ref: TileRef): TerrainType;
@@ -82,7 +82,7 @@ export class GameMapImpl implements GameMap {
   // Terrain bits (Uint8Array)
   private static readonly IS_LAND_BIT = 7;
   private static readonly SHORELINE_BIT = 6;
-  private static readonly OCEAN_BIT = 5;
+  private static readonly VOID_BIT = 5;
   private static readonly MAGNITUDE_MASK = 0x1f; // 11111 in binary
 
   // State bits (Uint16Array)
@@ -95,7 +95,7 @@ export class GameMapImpl implements GameMap {
     width: number,
     height: number,
     terrainData: Uint8Array,
-    private numLandTiles_: number,
+    private numSectorTiles_: number,
   ) {
     if (terrainData.length !== width * height) {
       throw new Error(
@@ -153,8 +153,8 @@ export class GameMapImpl implements GameMap {
   height(): number {
     return this.height_;
   }
-  numLandTiles(): number {
-    return this.numLandTiles_;
+  numSectorTiles(): number {
+    return this.numSectorTiles_;
   }
 
   isValidCoord(x: number, y: number): boolean {
@@ -166,14 +166,14 @@ export class GameMapImpl implements GameMap {
     return Boolean(this.terrain[ref] & (1 << GameMapImpl.IS_LAND_BIT));
   }
 
-  isOceanShore(ref: TileRef): boolean {
+  isVoidShore(ref: TileRef): boolean {
     return (
-      this.isSector(ref) && this.neighbors(ref).some((tr) => this.isOcean(tr))
+      this.isSector(ref) && this.neighbors(ref).some((tr) => this.isVoid(tr))
     );
   }
 
-  isOcean(ref: TileRef): boolean {
-    return Boolean(this.terrain[ref] & (1 << GameMapImpl.OCEAN_BIT));
+  isVoid(ref: TileRef): boolean {
+    return Boolean(this.terrain[ref] & (1 << GameMapImpl.VOID_BIT));
   }
 
   isSectorBoundary(ref: TileRef): boolean {
@@ -253,8 +253,8 @@ export class GameMapImpl implements GameMap {
     return !this.isSector(ref);
   }
 
-  isLake(ref: TileRef): boolean {
-    return !this.isSector(ref) && !this.isOcean(ref);
+  isDebrisField(ref: TileRef): boolean {
+    return !this.isSector(ref) && !this.isVoid(ref);
   }
 
   isSectorEdge(ref: TileRef): boolean {
@@ -270,11 +270,11 @@ export class GameMapImpl implements GameMap {
   terrainType(ref: TileRef): TerrainType {
     if (this.isSector(ref)) {
       const magnitude = this.magnitude(ref);
-      if (magnitude < 10) return TerrainType.Plains;
-      if (magnitude < 20) return TerrainType.Highland;
-      return TerrainType.Mountain;
+      if (magnitude < 10) return TerrainType.OpenSpace;
+      if (magnitude < 20) return TerrainType.Nebula;
+      return TerrainType.AsteroidField;
     }
-    return this.isOcean(ref) ? TerrainType.DeepSpace : TerrainType.DebrisField;
+    return this.isVoid(ref) ? TerrainType.DeepSpace : TerrainType.DebrisField;
   }
 
   neighbors(ref: TileRef): TileRef[] {

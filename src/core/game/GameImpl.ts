@@ -1014,8 +1014,8 @@ export class GameImpl implements Game {
   height(): number {
     return this._map.height();
   }
-  numLandTiles(): number {
-    return this._map.numLandTiles();
+  numSectorTiles(): number {
+    return this._map.numSectorTiles();
   }
   isValidCoord(x: number, y: number): boolean {
     return this._map.isValidCoord(x, y);
@@ -1023,11 +1023,11 @@ export class GameImpl implements Game {
   isSector(ref: TileRef): boolean {
     return this._map.isSector(ref);
   }
-  isOceanShore(ref: TileRef): boolean {
-    return this._map.isOceanShore(ref);
+  isVoidShore(ref: TileRef): boolean {
+    return this._map.isVoidShore(ref);
   }
-  isOcean(ref: TileRef): boolean {
-    return this._map.isOcean(ref);
+  isVoid(ref: TileRef): boolean {
+    return this._map.isVoid(ref);
   }
   isSectorBoundary(ref: TileRef): boolean {
     return this._map.isSectorBoundary(ref);
@@ -1065,8 +1065,8 @@ export class GameImpl implements Game {
   isDeepSpace(ref: TileRef): boolean {
     return this._map.isDeepSpace(ref);
   }
-  isLake(ref: TileRef): boolean {
-    return this._map.isLake(ref);
+  isDebrisField(ref: TileRef): boolean {
+    return this._map.isDebrisField(ref);
   }
   isSectorEdge(ref: TileRef): boolean {
     return this._map.isSectorEdge(ref);
@@ -1228,7 +1228,7 @@ export class GameImpl implements Game {
         conqueror.id(),
         gold,
         {
-          gold: renderNumber(gold),
+          credits: renderNumber(gold),
           name: conquered.displayName(),
         },
       );

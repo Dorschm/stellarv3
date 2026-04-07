@@ -320,9 +320,9 @@ export class Cell {
 }
 
 export enum TerrainType {
-  Plains,
-  Highland,
-  Mountain,
+  OpenSpace,
+  Nebula,
+  AsteroidField,
   DebrisField,
   DeepSpace,
 }

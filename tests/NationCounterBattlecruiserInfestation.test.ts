@@ -82,7 +82,7 @@ describe("Counter Warship Infestation", () => {
       const oceanX = 8 + (i % 8);
       const oceanY = i < 8 ? 4 : 12;
       const oceanTile = game.ref(oceanX, oceanY);
-      if (game.map().isOcean(oceanTile)) {
+      if (game.map().isVoid(oceanTile)) {
         enemy.buildUnit(UnitType.Battlecruiser, oceanTile, {
           patrolTile: oceanTile,
         });
@@ -252,7 +252,7 @@ describe("Counter Warship Infestation", () => {
       const oceanX = 8 + (i % 8);
       const oceanY = 2 + Math.floor(i / 8);
       const oceanTile = game.ref(oceanX, oceanY);
-      if (game.map().isOcean(oceanTile)) {
+      if (game.map().isVoid(oceanTile)) {
         enemy1.buildUnit(UnitType.Battlecruiser, oceanTile, {
           patrolTile: oceanTile,
         });
@@ -263,7 +263,7 @@ describe("Counter Warship Infestation", () => {
       const oceanX = 8 + i;
       const oceanY = 10;
       const oceanTile = game.ref(oceanX, oceanY);
-      if (game.map().isOcean(oceanTile)) {
+      if (game.map().isVoid(oceanTile)) {
         enemy2.buildUnit(UnitType.Battlecruiser, oceanTile, {
           patrolTile: oceanTile,
         });

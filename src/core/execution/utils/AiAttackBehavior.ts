@@ -109,15 +109,15 @@ export class AiAttackBehavior {
       return;
     }
 
-    // Check if we have any ocean shore tiles to launch from
-    const oceanShore = Array.from(this.player.borderTiles()).filter((t) =>
-      this.game.isOceanShore(t),
+    // Check if we have any void shore tiles to launch from
+    const voidShore = Array.from(this.player.borderTiles()).filter((t) =>
+      this.game.isVoidShore(t),
     );
-    if (oceanShore.length === 0) {
+    if (voidShore.length === 0) {
       return;
     }
 
-    const src = this.random.randElement(oceanShore);
+    const src = this.random.randElement(voidShore);
 
     // First look for high-interest targets (unowned or bot-owned). Mainly relevant for earlygame
     let dst = this.findRandomBoatTarget(src, borderingEnemies, true);
@@ -574,9 +574,9 @@ export class AiAttackBehavior {
       return null;
     }
 
-    // Check if we have any ocean shore tiles to launch from
+    // Check if we have any void shore tiles to launch from
     const hasOceanShore = Array.from(this.player.borderTiles()).some((t) =>
-      this.game.isOceanShore(t),
+      this.game.isVoidShore(t),
     );
     if (!hasOceanShore) return null;
 
@@ -615,10 +615,10 @@ export class AiAttackBehavior {
       const closest = closestTwoTiles(
         this.game,
         Array.from(this.player.borderTiles()).filter((t) =>
-          this.game.isOceanShore(t),
+          this.game.isVoidShore(t),
         ),
         Array.from(entry.player.borderTiles()).filter((t) =>
-          this.game.isOceanShore(t),
+          this.game.isVoidShore(t),
         ),
       );
       if (closest === null) continue;
@@ -787,9 +787,9 @@ export class AiAttackBehavior {
     const closest = closestTwoTiles(
       this.game,
       Array.from(this.player.borderTiles()).filter((t) =>
-        this.game.isOceanShore(t),
+        this.game.isVoidShore(t),
       ),
-      Array.from(target.borderTiles()).filter((t) => this.game.isOceanShore(t)),
+      Array.from(target.borderTiles()).filter((t) => this.game.isVoidShore(t)),
     );
     if (closest === null) {
       return;

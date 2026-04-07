@@ -1,10 +1,13 @@
 import { expect, Page, test } from "@playwright/test";
 import {
+  checkVisibleText,
   findBorderUnownedTile,
   findOwnedTile,
+  getConsoleErrors,
   rightClickOnGameTile,
   spawnLocalPlayer,
   startMultiplayerGame,
+  trackConsoleErrors,
   waitForBorderEnemyTile,
   waitForImmunityEnd,
   waitForTicksAbove,
@@ -35,6 +38,8 @@ test.describe("Full 2-player multiplayer game", () => {
     const handles = await startMultiplayerGame(browser);
     host = handles.host;
     guest = handles.guest;
+    trackConsoleErrors(host);
+    trackConsoleErrors(guest);
   });
 
   test.afterAll(async () => {
@@ -105,9 +110,7 @@ test.describe("Full 2-player multiplayer game", () => {
     const unownedTile = await findBorderUnownedTile(host);
     expect(unownedTile).not.toBeNull();
     await rightClickOnGameTile(host, unownedTile!.tileX, unownedTile!.tileY);
-    const attackButton = host
-      .getByRole("button", { name: /attack/i })
-      .first();
+    const attackButton = host.getByRole("button", { name: /attack/i }).first();
     await expect(attackButton).toBeEnabled({ timeout: 30_000 });
     await attackButton.click();
 
@@ -137,14 +140,8 @@ test.describe("Full 2-player multiplayer game", () => {
 
     const unownedTile = await findBorderUnownedTile(guest);
     expect(unownedTile).not.toBeNull();
-    await rightClickOnGameTile(
-      guest,
-      unownedTile!.tileX,
-      unownedTile!.tileY,
-    );
-    const attackButton = guest
-      .getByRole("button", { name: /attack/i })
-      .first();
+    await rightClickOnGameTile(guest, unownedTile!.tileX, unownedTile!.tileY);
+    const attackButton = guest.getByRole("button", { name: /attack/i }).first();
     await expect(attackButton).toBeEnabled({ timeout: 30_000 });
     await attackButton.click();
 
@@ -182,9 +179,7 @@ test.describe("Full 2-player multiplayer game", () => {
     await rightClickOnGameTile(host, ownedTile!.tileX, ownedTile!.tileY);
 
     // Click "Build" in the RadialMenu.
-    const buildButton = host
-      .getByRole("button", { name: /build/i })
-      .first();
+    const buildButton = host.getByRole("button", { name: /build/i }).first();
     await expect(buildButton).toBeEnabled({ timeout: 10_000 });
     await buildButton.click();
 
@@ -229,9 +224,7 @@ test.describe("Full 2-player multiplayer game", () => {
     const enemyTile = await waitForBorderEnemyTile(host, 90_000);
 
     await rightClickOnGameTile(host, enemyTile!.tileX, enemyTile!.tileY);
-    const attackButton = host
-      .getByRole("button", { name: /attack/i })
-      .first();
+    const attackButton = host.getByRole("button", { name: /attack/i }).first();
     await expect(attackButton).toBeEnabled({ timeout: 30_000 });
     await attackButton.click();
 
@@ -255,9 +248,7 @@ test.describe("Full 2-player multiplayer game", () => {
     const enemyTile = await waitForBorderEnemyTile(guest, 90_000);
 
     await rightClickOnGameTile(guest, enemyTile!.tileX, enemyTile!.tileY);
-    const attackButton = guest
-      .getByRole("button", { name: /attack/i })
-      .first();
+    const attackButton = guest.getByRole("button", { name: /attack/i }).first();
     await expect(attackButton).toBeEnabled({ timeout: 30_000 });
     await attackButton.click();
 
@@ -349,5 +340,23 @@ test.describe("Full 2-player multiplayer game", () => {
       }),
     ]);
     expect(Math.abs(hostTicks - guestTicks)).toBeLessThanOrEqual(3);
+  });
+
+  test("no console errors and all visible text is correct", async () => {
+    const hostErrors = getConsoleErrors(host);
+    const guestErrors = getConsoleErrors(guest);
+    expect(hostErrors, "Unexpected console errors on host").toEqual([]);
+    expect(guestErrors, "Unexpected console errors on guest").toEqual([]);
+
+    const hostTextViolations = await checkVisibleText(host);
+    const guestTextViolations = await checkVisibleText(guest);
+    expect(
+      hostTextViolations,
+      "Stale terms or untranslated keys on host",
+    ).toEqual([]);
+    expect(
+      guestTextViolations,
+      "Stale terms or untranslated keys on guest",
+    ).toEqual([]);
   });
 });

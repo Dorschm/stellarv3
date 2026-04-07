@@ -54,11 +54,11 @@ async function generateScenarioForMap(
     const game = await setupFromPath(mapsDirectory, mapName);
     const map = game.map();
 
-    // Find all water shoreline tiles
+    // Find all void boundary tiles
     const shorelinePorts: Array<[number, number]> = [];
 
     map.forEachTile((tile) => {
-      if (map.isOcean(tile) && map.isSectorBoundary(tile)) {
+      if (map.isVoid(tile) && map.isSectorBoundary(tile)) {
         shorelinePorts.push([map.x(tile), map.y(tile)]);
       }
     });

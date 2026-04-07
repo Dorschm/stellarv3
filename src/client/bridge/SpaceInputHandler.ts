@@ -375,7 +375,7 @@ export class SpaceInputHandler {
       this.eventBus.emit(new RefreshGraphicsEvent());
     }
 
-    if (e.code === this.keybinds.boatAttack) {
+    if (e.code === this.keybinds.shuttleAttack) {
       e.preventDefault();
       this.eventBus.emit(new DoShuttleAttackEvent());
     }

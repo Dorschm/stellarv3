@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { ColorPalette, Pattern } from "../../core/CosmeticSchemas";
 import { RankedType } from "../../core/game/Game";
 import { GameUpdateType } from "../../core/game/GameUpdates";
@@ -32,7 +32,9 @@ export function WinModal(): React.JSX.Element {
   const [isWin, setIsWin] = useState(false);
   const [isRankedGame, setIsRankedGame] = useState(false);
   const [title, setTitle] = useState("");
-  const [patternContent, setPatternContent] = useState<PatternContent[] | null>(null);
+  const [patternContent, setPatternContent] = useState<PatternContent[] | null>(
+    null,
+  );
   const [hasShownDeathModal, setHasShownDeathModal] = useState(false);
   const [rand] = useState(Math.random());
 
@@ -46,7 +48,8 @@ export function WinModal(): React.JSX.Element {
       for (const pattern of Object.values(patterns?.patterns ?? {})) {
         for (const colorPalette of pattern.colorPalettes ?? []) {
           if (
-            patternRelationship(pattern, colorPalette, me, null) === "purchasable"
+            patternRelationship(pattern, colorPalette, me, null) ===
+            "purchasable"
           ) {
             const palette = patterns?.colorPalettes?.[colorPalette.name];
             if (palette) {
@@ -218,26 +221,26 @@ export function WinModal(): React.JSX.Element {
   const renderPatternButton = () => (
     <div className="text-center mb-6 bg-black/30 p-2.5 rounded-sm">
       <h3 className="text-xl font-semibold text-white mb-3">
-        {translateText("win_modal.support_openfront")}
+        {translateText("win_modal.support_stellar_game")}
       </h3>
       <p className="text-white mb-3">
         {translateText("win_modal.territory_pattern")}
       </p>
       <div className="flex justify-center flex-wrap gap-4">
-        {patternContent && patternContent.length > 0 ? (
-          patternContent.map(({ pattern, colorPalette }) => (
-            <pattern-button
-              key={`${pattern.name}-${colorPalette.name}`}
-              pattern={pattern}
-              colorPalette={colorPalette}
-              requiresPurchase={true}
-              onSelect={() => {}}
-              onPurchase={(p: Pattern, cp: ColorPalette | null) =>
-                handlePurchase(p.product!, cp?.name)
-              }
-            ></pattern-button>
-          ))
-        ) : null}
+        {patternContent && patternContent.length > 0
+          ? patternContent.map(({ pattern, colorPalette }) => (
+              <pattern-button
+                key={`${pattern.name}-${colorPalette.name}`}
+                pattern={pattern}
+                colorPalette={colorPalette}
+                requiresPurchase={true}
+                onSelect={() => {}}
+                onPurchase={(p: Pattern, cp: ColorPalette | null) =>
+                  handlePurchase(p.product!, cp?.name)
+                }
+              ></pattern-button>
+            ))
+          : null}
       </div>
     </div>
   );
@@ -282,17 +285,9 @@ export function WinModal(): React.JSX.Element {
           : "hidden"
       }
     >
-      <h2 className="m-0 mb-4 text-[26px] text-center text-white">
-        {title}
-      </h2>
+      <h2 className="m-0 mb-4 text-[26px] text-center text-white">{title}</h2>
       {renderInnerContent()}
-      <div
-        className={
-          showButtons
-            ? "flex justify-between gap-2.5"
-            : "hidden"
-        }
-      >
+      <div className={showButtons ? "flex justify-between gap-2.5" : "hidden"}>
         <button
           onClick={handleExit}
           className="flex-1 px-3 py-3 text-base cursor-pointer bg-blue-500/60 text-white border-0 rounded-sm transition-all duration-200 hover:bg-blue-500/80 hover:-translate-y-px active:translate-y-px"

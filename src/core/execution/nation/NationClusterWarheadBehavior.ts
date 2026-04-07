@@ -162,7 +162,7 @@ export class NationClusterWarheadBehavior {
 
   private selectVictoryDenialTarget(): Player | null {
     if (this.player === null) throw new Error("not initialized");
-    const totalLand = this.game.numLandTiles();
+    const totalLand = this.game.numSectorTiles();
     if (totalLand === 0) return null;
     let best: { p: Player; severity: number } | null = null;
     for (const p of this.getValidMirvTargetPlayers()) {

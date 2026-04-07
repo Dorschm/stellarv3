@@ -3,7 +3,7 @@ import { Platform } from "../../Platform";
 import { useNavigation, type PageId } from "../contexts/NavigationContext";
 import { useNotifications } from "../hooks/useNotifications";
 import { NotificationDot } from "./NotificationDot";
-import { OpenFrontLogo } from "./OpenFrontLogo";
+import { StellarGameLogo } from "./StellarGameLogo";
 
 function MobileNavItem({
   pageId,
@@ -125,7 +125,7 @@ export function MobileNavBar() {
           {/* Logo */}
           <div className="flex flex-col text-[#2563eb] mb-[clamp(1rem,2vh,2rem)] ml-[clamp(0.2rem,0.4vw,0.4vh)]">
             <div className="flex flex-col items-center gap-2">
-              <OpenFrontLogo className="w-[clamp(120px,15vw,192px)] h-[clamp(40px,6vh,64px)] drop-shadow-[0_0_10px_rgba(37,99,235,0.3)]" />
+              <StellarGameLogo className="w-[clamp(120px,15vw,192px)] h-[clamp(40px,6vh,64px)] drop-shadow-[0_0_10px_rgba(37,99,235,0.3)]" />
               <div className="l-header__highlightText text-center game-version-display" />
             </div>
           </div>

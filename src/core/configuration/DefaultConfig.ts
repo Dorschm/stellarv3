@@ -588,15 +588,15 @@ export class DefaultConfig implements Config {
     let speed = 0;
     const type = gm.terrainType(tileToConquer);
     switch (type) {
-      case TerrainType.Plains:
+      case TerrainType.OpenSpace:
         mag = 80;
         speed = 16.5;
         break;
-      case TerrainType.Highland:
+      case TerrainType.Nebula:
         mag = 100;
         speed = 20;
         break;
-      case TerrainType.Mountain:
+      case TerrainType.AsteroidField:
         mag = 120;
         speed = 25;
         break;
@@ -618,7 +618,7 @@ export class DefaultConfig implements Config {
     }
 
     if (gm.hasFallout(tileToConquer)) {
-      const falloutRatio = gm.numTilesWithFallout() / gm.numLandTiles();
+      const falloutRatio = gm.numTilesWithFallout() / gm.numSectorTiles();
       mag *= this.falloutDefenseModifier(falloutRatio);
       speed *= this.falloutDefenseModifier(falloutRatio);
     }

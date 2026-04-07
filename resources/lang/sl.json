@@ -9,7 +9,7 @@
     "close": "Zapri"
   },
   "main": {
-    "title": "OpenFront (Alfa)",
+    "title": "Stellar.Game (Alfa)",
     "join_discord": "Pridruži se našemu Discord serverju!",
     "login_discord": "Prijava z Discord računom",
     "checking_login": "Preverjanje prijave...",
@@ -51,7 +51,7 @@
     "ui_control": "Nadzorna plošča",
     "ui_control_desc": "Nadzorna plošča vsebuje naslednje elemente:",
     "ui_pop": "Pop - Število enot, ki jih imate, vaša največja populacija in hitrost, s katero jih pridobivate.",
-    "ui_gold": "Zlato - Količina zlata, ki ga imate, in hitrost, s katero ga pridobivate.",
+    "ui_credits": "Krediti - Količina kreditov, ki jih imate, in hitrost, s katero jih pridobivate.",
     "ui_attack_ratio": "Razmerje napadov - Količina enot, ki bodo uporabljene pri napadu. Razmerje napadov lahko prilagodite z drsnikom. Če imate več napadalnih enot kot obrambnih enot, boste v napadu izgubili manj enot, če pa jih imate manj, boste povečali škodo, ki jo bodo napadalne enote utrpele. Učinek ne presega razmerja 2:1.",
     "ui_events": "Panel dogodkov",
     "ui_events_desc": "V zavihku Dogodki so prikazani najnovejši dogodki, zahteve in sporočila hitrega klepeta. Nekaj primerov:",
@@ -72,10 +72,10 @@
     "radial_build": "Odprite meni Zgradb.",
     "radial_attack": "Odpri meni napada.",
     "radial_info": "Odpri meni Informacije.",
-    "radial_boat": "Pošljite čoln (transportno ladjo) v napad na izbrano lokacijo. Na voljo le, če imate dostop do vode.",
+    "radial_shuttle": "Pošljite jurišni raketoplan v napad na izbrano lokacijo.",
     "radial_close": "Zapri meni.",
     "info_title": "Informacije",
-    "info_enemy_desc": "Vsebuje informacije, kot so ime izbranega igralca, zlato, vojaki, prenehanje trgovanja z vami, poslano jedrsko orožje in ali je igralec izdajalec. Ustavitev trgovanja pomeni, da od njega ne boste prejeli zlata in da vam igralec ne bo pošiljal zlata prek trgovskih ladij. Ročno (če je igralec kliknil »Ustavi trgovanje«, kar traja, dokler oba ne kliknete »Začni trgovati«) ali samodejno (če ste izdali svoje zavezništvo, kar traja, dokler ponovno ne postanete zaveznika ali po 5 minutah). Izdajalec prikaže Da 30 sekund, ko igralec izda in napade igralca, ki je bil z njim v zavezništvu. Spodnje ikone predstavljajo naslednje interakcije:",
+    "info_enemy_desc": "Vsebuje informacije, kot so ime izbranega igralca, krediti, vojaki, prenehanje trgovanja z vami, poslano jedrsko orožje in ali je igralec izdajalec. Ustavitev trgovanja pomeni, da od njega ne boste prejeli kreditov in da vam igralec ne bo pošiljal kreditov prek trgovskih ladij. Ročno (če je igralec kliknil »Ustavi trgovanje«, kar traja, dokler oba ne kliknete »Začni trgovati«) ali samodejno (če ste izdali svoje zavezništvo, kar traja, dokler ponovno ne postanete zaveznika ali po 5 minutah). Izdajalec prikaže Da 30 sekund, ko igralec izda in napade igralca, ki je bil z njim v zavezništvu. Spodnje ikone predstavljajo naslednje interakcije:",
     "info_chat": "Pošlji igralcu hitro sporočilo v klepetu. Izberi kategorijo, frazo in če fraza vsebuje [P1] izberi ime igralca, s katerim jo boš zamenjal. Klikni Pošlji.",
     "info_target": "Na igralca postavite ciljno oznako, ki jo označi za vse zaveznike in se uporablja za usklajevanje napadov.",
     "info_alliance": "Pošlji igralcu zahtevo za zavezništvo. Zavezniki si lahko delijo vire in čete, vendar se ne morejo napadati.",
@@ -85,32 +85,31 @@
     "info_ally_desc": "Ko se vzpostavite zavezništvo z igralcem, postanejo na voljo naslednje nove ikone:",
     "ally_betray": "Izdajte svojega zaveznika, s čimer končate zavezništvo, ustavite trgovino in oslabite svojo obrambo. Trgovanje med vami se za 5 minut ustavi (ali dokler ponovno ne postanete zavezniki) in tudi drugi lahko prenehajo trgovati. Razen če je bil drugi igralec sam izdajalec, boste 30 sekund označeni kot izdajalec. V tem času bo nad vašim imenom ikona in imeli boste 50-odstotni negativni učinek na obrambo. Roboti se bodo manj verjetno povezali z vami in igralci bodo dvakrat premislili, preden to storijo.",
     "ally_donate": "Donirajte nekaj svojih vojakov zavezniku. Uporablja se, ko imajo malo vojakov in so napadeni ali ko potrebujejo dodatno moč, da uničijo sovražnika.",
-    "ally_donate_gold": "Donirajte nekaj svojega zlata svojemu zavezniku. Uporabi se, ko mu primanjkuje zlata in ga potrebuje za gradnjo ali ko član vaše ekipe varčuje za MIRV.",
     "build_menu_title": "Meni gradnje",
     "build_menu_desc": "Zgradite te ali pa si oglejte, koliko jih že imate zgrajenih:",
     "build_name": "Ime",
     "build_icon": "Ikona",
     "build_desc": "Opis",
-    "build_city": "Mesto",
-    "build_city_desc": "Poveča vašo največjo populacijo. Uporabno, ko ne morete razširiti svojega ozemlja ali ko ste tik pred dosego omejitve populacije.",
-    "build_factory": "Tovarna",
-    "build_factory_desc": "Samodejno gradi železnice do bližnjih mest, pristanišč in drugih tovarn ter se lahko poveže tudi s prijaznimi sosedi. Vlaki se redno pojavljajo in vam dajo fiksno količino zlata za vsako stavbo, ki jo obiščejo na poti, z dodatnim zlatom za obisk stavb vaših sosedov.",
+    "build_colony": "Kolonija",
+    "build_colony_desc": "Poveča vašo največjo populacijo. Uporabno, ko ne morete razširiti svojega ozemlja ali ko ste tik pred dosego omejitve populacije.",
+    "build_foundry": "Tovarna",
+    "build_foundry_desc": "Samodejno gradi železnice do bližnjih mest, pristanišč in drugih tovarn ter se lahko poveže tudi s prijaznimi sosedi. Vlaki se redno pojavljajo in vam dajo fiksno količino zlata za vsako stavbo, ki jo obiščejo na poti, z dodatnim zlatom za obisk stavb vaših sosedov.",
     "build_defense": "Trdnjava",
     "build_defense_desc": "Poveča obrambo okoli bližnjih meja, ki kažejo karirast vzorec. Napadi sovražnikov so počasnejši in imajo več žrtev.",
-    "build_port": "Luka",
-    "build_port_desc": "Gradnja je mogoča le v bližini vode. Omogoča gradnjo bojnih ladij. Samodejno pošilja trgovske ladje med pristanišči vaše države in drugimi državami (razen ko je trgovina ustavljena), kar daje zlato obema stranema. Trgovina z igralcem se samodejno ustavi, ko napadete vi ali vas napade igralec. Nadaljuje se po 5 minutah ali če postanete zavezniki. Trgovanje lahko ročno preklapljate z »Ustavi trgovanje« ali »Začni trgovati«.",
-    "build_warship": "Bojna ladja",
-    "build_warship_desc": "Patruljira na območju, zajame sovražne trgovske ladje in uničuje njihove čolne (transportne ladje) in vojne ladje. Zgradi se v najbližjem pristanišču in patruljira na območju, na katerega ste najprej kliknili, da ste jo zgradili. Vojne ladje lahko nadzorujete tako, da nanje kliknete z napadom (glejte akcijo Napad pod Bližnjice) in nato s klikom na napad na novo območje, kamor jih želite premakniti.",
-    "build_silo": "Raketni silos",
-    "build_silo_desc": "Omogoča izstreljevanje raket.",
-    "build_sam": "SAM sistem",
-    "build_sam_desc": "Lahko prestreže sovražne rakete v dosegu 100 slikovnih pik. S 100-odstotno možnostjo zadetka za atomsko bombo, 80-odstotno za vodikovo bombo in 50-odstotno za posamezne bojne glave MIRV. Sistem SAM ima 7,5 sekunde ohlajanja.",
-    "build_atom": "Atomska bomba",
-    "build_atom_desc": "Majhna eksplozivna bomba, ki uničuje ozemlje, zgradbe, ladje in čolne. Pojavi se iz najbližjega raketnega silosa in pristane na območju, kjer ste ga najprej kliknili, da bi ga zgradili.",
-    "build_hydrogen": "Vodikova bomba",
-    "build_hydrogen_desc": "Velika eksplozivna bomba. Pojavi se iz najbližjega raketnega silosa in pristane na območju, kjer ste jo najprej kliknili, da bi jo zgradili.",
-    "build_mirv": "MIRV",
-    "build_mirv_desc": "Najmočnejša bomba v igri. Razdeli se na manjše bombe, ki pokrivajo ogromno ozemlje. Poškoduje samo igralca, na katerega ste najprej kliknili, da bi jo zgradili. Pojavi se iz najbližjega raketnega silosa in pristane na območju, kjer ste ga najprej kliknili, da bi ga zgradili.",
+    "build_spaceport": "Luka",
+    "build_spaceport_desc": "Gradnja je mogoča le v bližini vode. Omogoča gradnjo bojnih ladij. Samodejno pošilja trgovske ladje med pristanišči vaše države in drugimi državami (razen ko je trgovina ustavljena), kar daje zlato obema stranema. Trgovina z igralcem se samodejno ustavi, ko napadete vi ali vas napade igralec. Nadaljuje se po 5 minutah ali če postanete zavezniki. Trgovanje lahko ročno preklapljate z »Ustavi trgovanje« ali »Začni trgovati«.",
+    "build_battlecruiser": "Bojna ladja",
+    "build_battlecruiser_desc": "Patruljira na območju, zajame sovražne trgovske ladje in uničuje njihove čolne (transportne ladje) in vojne ladje. Zgradi se v najbližjem pristanišču in patruljira na območju, na katerega ste najprej kliknili, da ste jo zgradili. Vojne ladje lahko nadzorujete tako, da nanje kliknete z napadom (glejte akcijo Napad pod Bližnjice) in nato s klikom na napad na novo območje, kamor jih želite premakniti.",
+    "build_orbital_strike_platform": "Raketni silos",
+    "build_orbital_strike_platform_desc": "Omogoča izstreljevanje raket.",
+    "build_point_defense_array": "SAM sistem",
+    "build_point_defense_array_desc": "Lahko prestreže sovražne rakete v dosegu 100 slikovnih pik. S 100-odstotno možnostjo zadetka za atomsko bombo, 80-odstotno za vodikovo bombo in 50-odstotno za posamezne bojne glave MIRV. Sistem SAM ima 7,5 sekunde ohlajanja.",
+    "build_antimatter_torpedo": "Atomska bomba",
+    "build_antimatter_torpedo_desc": "Majhna eksplozivna bomba, ki uničuje ozemlje, zgradbe, ladje in čolne. Pojavi se iz najbližjega raketnega silosa in pristane na območju, kjer ste ga najprej kliknili, da bi ga zgradili.",
+    "build_nova_bomb": "Vodikova bomba",
+    "build_nova_bomb_desc": "Velika eksplozivna bomba. Pojavi se iz najbližjega raketnega silosa in pristane na območju, kjer ste jo najprej kliknili, da bi jo zgradili.",
+    "build_cluster_warhead": "MIRV",
+    "build_cluster_warhead_desc": "Najmočnejša bomba v igri. Razdeli se na manjše bombe, ki pokrivajo ogromno ozemlje. Poškoduje samo igralca, na katerega ste najprej kliknili, da bi jo zgradili. Pojavi se iz najbližjega raketnega silosa in pristane na območju, kjer ste ga najprej kliknili, da bi ga zgradili.",
     "player_icons": "Ikona igralca",
     "icon_desc": "Primeri nekaterih ikon v igri, na katere boste naleteli, in njihov pomen:",
     "icon_crown": "Krona - Številka 1. To je najboljši igralec na lestvici.",
@@ -119,7 +118,8 @@
     "icon_embargo": "Znak stop za dolar - Embargo. Ta igralec je samodejno ali ročno prenehal trgovati z vami.",
     "icon_request": "Ovojnica - Zahteva za zavezništvo. Ta igralec vam je poslal zahtevo za zavezništvo.",
     "info_enemy_panel": "Informacijska plošča o sovražniku",
-    "exit_confirmation": "Ste prepričani, da želite zapustiti igro?"
+    "exit_confirmation": "Ste prepričani, da želite zapustiti igro?",
+    "ally_donate_credits": "Donirajte nekaj svojega zlata svojemu zavezniku. Uporabi se, ko mu primanjkuje zlata in ga potrebuje za gradnjo ali ko član vaše ekipe varčuje za MIRV."
   },
   "single_modal": {
     "title": "En igralec",
@@ -129,12 +129,12 @@
     "bots_disabled": "Deaktivirano",
     "disable_nations": "Deaktiviraj nacije",
     "instant_build": "Instantna gradnja",
-    "infinite_gold": "Neomejeno zlata",
     "infinite_troops": "Neomejene enote",
     "compact_map": "Mini mapa",
     "disable_nukes": "Deaktiviraj bombe",
     "enables_title": "Aktiviraj nastavitve",
-    "start": "Začni igro"
+    "start": "Začni igro",
+    "infinite_credits": "Neomejeni krediti"
   },
   "token_login_modal": {
     "title": "Prijava...",
@@ -225,8 +225,6 @@
     "bots_disabled": "Onemogočeno",
     "disable_nations": "Deaktiviraj nacije",
     "instant_build": "Instantna gradnja",
-    "infinite_gold": "Neomejeno zlata",
-    "donate_gold": "Doniraj zlato",
     "infinite_troops": "Neomejene enote",
     "donate_troops": "Doniraj enote",
     "compact_map": "Mini mapa",
@@ -235,7 +233,9 @@
     "players": "Igralci",
     "waiting": "Čakanje na igralce...",
     "start": "Začni igro",
-    "host_badge": "Gostitelj"
+    "host_badge": "Gostitelj",
+    "infinite_credits": "Neomejeno zlata",
+    "donate_credits": "Doniraj kredite"
   },
   "team_colors": {
     "red": "Rdeča",
@@ -429,7 +429,7 @@
       "team_up": "Združimo se skupaj proti [P1]!",
       "pr": "Kdaj se bo moj PR končno združil...?",
       "build_closer": "Gradi bližje da dobiš vlake!",
-      "coastline": "Prosim pusti mi dostop do obale."
+      "deep_space_border": "Prosim, pusti mi dostop do meje globokega vesolja."
     },
     "warnings": {
       "strong": "[P1] je močan.",
@@ -466,8 +466,7 @@
     "not_enough_money": "Ni dovolj denarja"
   },
   "win_modal": {
-    "support_openfront": "Podprite OpenFront!",
-    "territory_pattern": "Kupite vzorec teritorija, da podprete OpenFront!",
+    "territory_pattern": "Kupite vzorec teritorija, da podprete Stellar.Game!",
     "died": "Umrl si",
     "your_team": "Vaša ekipa je zmagala!",
     "other_team": "Ekipa {team} je zmagala!",
@@ -475,7 +474,8 @@
     "other_won": "{player} je zmagal/a!",
     "exit": "Zapri Igro",
     "keep": "Nadaljuj z igro",
-    "wishlist": "Dodaj na seznam želja na Steamu!"
+    "wishlist": "Dodaj na seznam želja na Steamu!",
+    "support_stellar_game": "Podprite Stellar.Game!"
   },
   "leaderboard": {
     "title": "Lestvica vodilnih",
@@ -484,7 +484,7 @@
     "player": "Igralec",
     "team": "Ekipa",
     "owned": "V lasti",
-    "credits": "Zlato",
+    "credits": "Krediti",
     "troops": "Enote",
     "launchers": "Silosi",
     "point_defense": "SAM-s",
@@ -558,7 +558,7 @@
     "attack_ratio": "Napadalno razmerje"
   },
   "player_panel": {
-    "credits": "Zlato",
+    "credits": "Krediti",
     "troops": "Enote",
     "betrayals": "Število izdaj",
     "traitor": "Izdajalec",
@@ -624,13 +624,13 @@
       "cursor": "Kazalnik",
       "hand": "Roka",
       "radiation": "Radiacija",
-      "openfront_qr": "OpenFront.io QR koda",
-      "openfront": "OpenFront",
       "t_rex": "T-Rex",
       "embelem": "Grb",
       "contributor": "Podpornik",
       "grogu_head": "Groguva glava",
-      "grogu": "Grogu"
+      "grogu": "Grogu",
+      "stellar_game_qr": "Stellar.Game QR koda",
+      "stellar_game": "Stellar.Game"
     }
   },
   "flag_input": {
@@ -675,7 +675,7 @@
     "received": "Prejeto",
     "cancelled": "Prekinjeno",
     "count": "Število",
-    "credits": "Zlato",
+    "credits": "Krediti",
     "workers": "Delavci",
     "war": "Vojna",
     "trade": "Trgovanje",

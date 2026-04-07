@@ -100,7 +100,7 @@ export class SendEmojiIntentEvent implements GameEvent {
   ) {}
 }
 
-export class SendDonateGoldIntentEvent implements GameEvent {
+export class SendDonateCreditsIntentEvent implements GameEvent {
   constructor(
     public readonly recipient: PlayerView,
     public readonly credits: Credits | null,
@@ -158,7 +158,7 @@ export class SendHashEvent implements GameEvent {
   ) {}
 }
 
-export class MoveWarshipIntentEvent implements GameEvent {
+export class MoveBattlecruiserIntentEvent implements GameEvent {
   constructor(
     public readonly unitId: number,
     public readonly tile: number,
@@ -216,14 +216,14 @@ export class Transport {
       this.onSendUpgradeStructureIntent(e),
     );
     this.eventBus.on(SendShuttleAttackIntentEvent, (e) =>
-      this.onSendBoatAttackIntent(e),
+      this.onSendShuttleAttackIntent(e),
     );
     this.eventBus.on(SendTargetPlayerIntentEvent, (e) =>
       this.onSendTargetPlayerIntent(e),
     );
     this.eventBus.on(SendEmojiIntentEvent, (e) => this.onSendEmojiIntent(e));
-    this.eventBus.on(SendDonateGoldIntentEvent, (e) =>
-      this.onSendDonateGoldIntent(e),
+    this.eventBus.on(SendDonateCreditsIntentEvent, (e) =>
+      this.onSendDonateCreditsIntent(e),
     );
     this.eventBus.on(SendDonateTroopsIntentEvent, (e) =>
       this.onSendDonateTroopIntent(e),
@@ -247,8 +247,8 @@ export class Transport {
       this.onCancelShuttleIntentEvent(e),
     );
 
-    this.eventBus.on(MoveWarshipIntentEvent, (e) => {
-      this.onMoveWarshipEvent(e);
+    this.eventBus.on(MoveBattlecruiserIntentEvent, (e) => {
+      this.onMoveBattlecruiserEvent(e);
     });
 
     this.eventBus.on(SendDeleteUnitIntentEvent, (e) =>
@@ -511,7 +511,7 @@ export class Transport {
     });
   }
 
-  private onSendBoatAttackIntent(event: SendShuttleAttackIntentEvent) {
+  private onSendShuttleAttackIntent(event: SendShuttleAttackIntentEvent) {
     this.sendIntent({
       type: "shuttle",
       troops: event.troops,
@@ -543,7 +543,7 @@ export class Transport {
     });
   }
 
-  private onSendDonateGoldIntent(event: SendDonateGoldIntentEvent) {
+  private onSendDonateCreditsIntent(event: SendDonateCreditsIntentEvent) {
     this.sendIntent({
       type: "donate_credits",
       recipient: event.recipient.id(),
@@ -645,7 +645,7 @@ export class Transport {
     });
   }
 
-  private onMoveWarshipEvent(event: MoveWarshipIntentEvent) {
+  private onMoveBattlecruiserEvent(event: MoveBattlecruiserIntentEvent) {
     this.sendIntent({
       type: "move_battlecruiser",
       unitId: event.unitId,

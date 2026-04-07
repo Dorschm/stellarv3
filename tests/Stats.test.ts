@@ -19,8 +19,8 @@ describe("Stats", () => {
   beforeEach(async () => {
     stats = new StatsImpl();
     game = await setup("half_land_half_ocean", {}, [
-      new PlayerInfo("boat dude", PlayerType.Human, "client1", "player_1_id"),
-      new PlayerInfo("boat dude", PlayerType.Human, "client2", "player_2_id"),
+      new PlayerInfo("pilot alpha", PlayerType.Human, "client1", "player_1_id"),
+      new PlayerInfo("pilot beta", PlayerType.Human, "client2", "player_2_id"),
     ]);
 
     while (game.inSpawnPhase()) {
@@ -68,8 +68,8 @@ describe("Stats", () => {
     stats.freighterSendTrade(player1, player2);
     expect(stats.stats()).toStrictEqual({
       client1: {
-        boats: {
-          trade: [1n],
+        shuttles: {
+          tfreight: [1n],
         },
       },
     });
@@ -79,11 +79,11 @@ describe("Stats", () => {
     stats.freighterArriveTrade(player1, player2, 1);
     expect(stats.stats()).toStrictEqual({
       client1: {
-        boats: { trade: [0n, 1n] },
-        gold: [0n, 0n, 1n],
+        shuttles: { tfreight: [0n, 1n] },
+        credits: [0n, 0n, 1n],
       },
       client2: {
-        gold: [0n, 0n, 1n],
+        credits: [0n, 0n, 1n],
       },
     });
   });
@@ -92,8 +92,8 @@ describe("Stats", () => {
     stats.freighterCapturedTrade(player1, player2, 1);
     expect(stats.stats()).toStrictEqual({
       client1: {
-        boats: { trade: [0n, 0n, 1n] },
-        gold: [0n, 0n, 0n, 1n],
+        shuttles: { tfreight: [0n, 0n, 1n] },
+        credits: [0n, 0n, 0n, 1n],
       },
     });
   });
@@ -102,7 +102,7 @@ describe("Stats", () => {
     stats.freighterDestroyTrade(player1, player2);
     expect(stats.stats()).toStrictEqual({
       client1: {
-        boats: { trade: [0n, 0n, 0n, 1n] },
+        shuttles: { tfreight: [0n, 0n, 0n, 1n] },
       },
     });
   });
@@ -111,8 +111,8 @@ describe("Stats", () => {
     stats.shuttleSendTroops(player1, player2, 1);
     expect(stats.stats()).toStrictEqual({
       client1: {
-        boats: {
-          trans: [1n],
+        shuttles: {
+          ashuttle: [1n],
         },
       },
     });
@@ -122,7 +122,7 @@ describe("Stats", () => {
     stats.shuttleArriveTroops(player1, player2, 1);
     expect(stats.stats()).toStrictEqual({
       client1: {
-        boats: { trans: [0n, 1n] },
+        shuttles: { ashuttle: [0n, 1n] },
       },
     });
   });
@@ -131,7 +131,7 @@ describe("Stats", () => {
     stats.shuttleDestroyTroops(player1, player2, 1);
     expect(stats.stats()).toStrictEqual({
       client1: {
-        boats: { trans: [0n, 0n, 0n, 1n] },
+        shuttles: { ashuttle: [0n, 0n, 0n, 1n] },
       },
     });
   });
@@ -139,21 +139,21 @@ describe("Stats", () => {
   test("bombLaunch", () => {
     stats.bombLaunch(player1, player2, UnitType.AntimatterTorpedo);
     expect(stats.stats()).toStrictEqual({
-      client1: { bombs: { abomb: [1n] } },
+      client1: { bombs: { ator: [1n] } },
     });
   });
 
   test("bombLand", () => {
     stats.bombLand(player1, player2, UnitType.NovaBomb);
     expect(stats.stats()).toStrictEqual({
-      client1: { bombs: { hbomb: [0n, 1n] } },
+      client1: { bombs: { nbomb: [0n, 1n] } },
     });
   });
 
   test("bombIntercept", () => {
     stats.bombIntercept(player1, UnitType.ClusterWarheadSubmunition, 1);
     expect(stats.stats()).toStrictEqual({
-      client1: { bombs: { mirvw: [0n, 0n, 1n] } },
+      client1: { bombs: { cwsub: [0n, 0n, 1n] } },
     });
   });
 
@@ -161,14 +161,14 @@ describe("Stats", () => {
     stats.creditsWar(player1, player2, 1);
     expect(stats.stats()).toStrictEqual({
       client1: {
-        gold: [0n, 1n],
+        credits: [0n, 1n],
         conquests: [1n],
       },
     });
     stats.creditsWar(player1, player2, 1);
     expect(stats.stats()).toStrictEqual({
       client1: {
-        gold: [0n, 2n],
+        credits: [0n, 2n],
         conquests: [2n],
       },
     });
@@ -177,14 +177,14 @@ describe("Stats", () => {
   test("creditsWork", () => {
     stats.creditsWork(player1, 1);
     expect(stats.stats()).toStrictEqual({
-      client1: { gold: [1n] },
+      client1: { credits: [1n] },
     });
   });
 
   test("unitBuild", () => {
     stats.unitBuild(player1, UnitType.Colony);
     expect(stats.stats()).toStrictEqual({
-      client1: { units: { city: [1n] } },
+      client1: { units: { coln: [1n] } },
     });
   });
 
@@ -193,7 +193,7 @@ describe("Stats", () => {
     expect(stats.stats()).toStrictEqual({
       client1: {
         units: {
-          defp: [0n, 0n, 1n],
+          defs: [0n, 0n, 1n],
         },
       },
     });
@@ -204,7 +204,7 @@ describe("Stats", () => {
     expect(stats.stats()).toStrictEqual({
       client1: {
         units: {
-          silo: [0n, 1n],
+          osp: [0n, 1n],
         },
       },
     });
@@ -215,7 +215,7 @@ describe("Stats", () => {
     expect(stats.stats()).toStrictEqual({
       client1: {
         units: {
-          port: [0n, 0n, 0n, 1n],
+          sprt: [0n, 0n, 0n, 1n],
         },
       },
     });
@@ -237,7 +237,7 @@ describe("Stats", () => {
   test("stringify", () => {
     stats.unitLose(player1, UnitType.Spaceport);
     expect(JSON.stringify(stats.stats(), replacer)).toBe(
-      '{"client1":{"units":{"port":["0","0","0","1"]}}}',
+      '{"client1":{"units":{"sprt":["0","0","0","1"]}}}',
     );
   });
 });

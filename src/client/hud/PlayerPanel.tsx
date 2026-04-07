@@ -64,7 +64,9 @@ export function PlayerPanel(): React.JSX.Element {
   const [allianceExpiryText, setAllianceExpiryText] = useState<string | null>(
     null,
   );
+  const [, setAllianceExpirySeconds] = useState<number | null>(null);
   const [suppressNextHide, setSuppressNextHide] = useState(false);
+  const [, setModerationTarget] = useState(null);
   const [profileForPlayerId, setProfileForPlayerId] = useState<number | null>(
     null,
   );

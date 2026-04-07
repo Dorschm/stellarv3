@@ -214,7 +214,7 @@ describe("Nation MIRV Retaliation", () => {
 
     // Then give dominant player a large amount of territory
     // This should trigger the victory denial threshold
-    const totalLandTiles = game.map().numLandTiles();
+    const totalLandTiles = game.map().numSectorTiles();
     const targetTiles = Math.floor(totalLandTiles * 0.66);
 
     let conqueredTiles = 0;
@@ -254,7 +254,7 @@ describe("Nation MIRV Retaliation", () => {
 
     // Verify dominant player has enough territory to trigger victory denial
     const dominantTerritoryShare =
-      dominantPlayer.numTilesOwned() / game.map().numLandTiles();
+      dominantPlayer.numTilesOwned() / game.map().numSectorTiles();
     expect(dominantTerritoryShare).toBeGreaterThan(0.65);
 
     // Track MIRVs before nation considers victory denial
@@ -668,7 +668,7 @@ describe("Nation MIRV Retaliation", () => {
 
     // Give team players a large amount of territory to exceed team threshold,
     // but skew so teamPlayer1 is clearly the largest member
-    const totalLandTiles = game.map().numLandTiles();
+    const totalLandTiles = game.map().numSectorTiles();
     const teamTargetTiles = Math.floor(totalLandTiles * 0.82);
 
     let conqueredTiles = 0;
@@ -710,7 +710,7 @@ describe("Nation MIRV Retaliation", () => {
     // Verify team has enough territory to trigger team victory denial
     const teamTerritory =
       teamPlayer1.numTilesOwned() + teamPlayer2.numTilesOwned();
-    const teamShare = teamTerritory / game.map().numLandTiles();
+    const teamShare = teamTerritory / game.map().numSectorTiles();
     expect(teamShare).toBeGreaterThan(0.8); //
 
     // Track MIRVs before nation considers team victory denial

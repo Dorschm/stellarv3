@@ -9,7 +9,7 @@
     "close": "Fermi"
   },
   "main": {
-    "title": "OpenFront (ALFA)",
+    "title": "Stellar.Game (ALFA)",
     "join_discord": "Kunigu la Discord-servilon !",
     "login_discord": "Ensaluti kun Diskordo",
     "checking_login": "Kontrolado de la ensaluto...",
@@ -51,7 +51,7 @@
     "ui_control": "Kontrolpanelo",
     "ui_control_desc": "La kontrolpanelo enhavas la sekvajn elementojn:",
     "ui_pop": "Pop - La nombro de trupunoj kiujn vi havas, via maksimuma populacio kaj la procento kun kiu vi ricevas ilin.",
-    "ui_gold": "La kvanto da oro kiun vi havas kaj la procento kun kiu vi ricevas ilin.",
+    "ui_credits": "La kvanto da kreditoj kiun vi havas kaj la procento kun kiu vi ricevas ilin.",
     "ui_attack_ratio": "Ataka kvociento - La nombro da uzaj soldatoj kiam vi atakas. Vi povas ĝustigi la atakan kvocienton uzante la glitilon. Havi pli da atakaj trupoj ol la defendaj trupoj malpliigos la perdojn dum atako, dum havi malpli multe pliigos la damaĝon ricevitajn de viaj atakaj trupoj. La efiko ne superas rilatumon de 2:1.",
     "ui_events": "Eventa panelo",
     "ui_events_desc": "La eventa panelo montras la plej lastajn eventojn, petojn kaj mesaĝojn de Rapida Babilejo. Jen kelkaj ekzemploj:",
@@ -72,10 +72,10 @@
     "radial_build": "Malfermi la konstrumenuon.",
     "radial_attack": "Malfermi la atakmenuon.",
     "radial_info": "Malfermi la informmenuon.",
-    "radial_boat": "Sendi boaton (transporta ŝipon) por ataki ĉe la elektita loko. Havebla nur se vi havas aliron al akvo.",
+    "radial_shuttle": "Sendi atakan ŝatlon por ataki ĉe la elektita loko.",
     "radial_close": "Fermi la menuon.",
     "info_title": "Informmenuo",
-    "info_enemy_desc": "Enhavas informojn kiel la nomo de la elektita ludanto, oro, trupoj, ĉu ili ĉesis komerci kun vi, atombomboj senditaj al vi, kaj ĉu la ludanto estas perfidulo. Ĉesi komerci signifas, ke vi ne ricevos oron de ili kaj ili ne sendos al vi oron per komercŝipoj. Ĉi tio okazas mane (se la ludanto alklakis \"Ĉesi komercadon\", kiu daŭras ĝis ambaŭ reaktivigas komercon per \"Komenci komercadon\") aŭ aŭtomate (se vi perfidis vian aliancan partneron, kio daŭras ĝis vi realianciĝas aŭ post 5 minutoj). La etikedo \"Perfidulo\" aperas dum 30 sekundoj kiam la ludanto perfidis kaj atakis alian ludanton kun kiu li estis en alianco. La ikonoj sube reprezentas la jenajn interagojn:",
+    "info_enemy_desc": "Enhavas informojn kiel la nomo de la elektita ludanto, kreditoj, trupoj, ĉu ili ĉesis komerci kun vi, atombomboj senditaj al vi, kaj ĉu la ludanto estas perfidulo. Ĉesi komerci signifas, ke vi ne ricevos kreditojn de ili kaj ili ne sendos al vi kreditojn per komercŝipoj. Ĉi tio okazas mane (se la ludanto alklakis \"Ĉesi komercadon\", kiu daŭras ĝis ambaŭ reaktivigas komercon per \"Komenci komercadon\") aŭ aŭtomate (se vi perfidis vian aliancan partneron, kio daŭras ĝis vi realianciĝas aŭ post 5 minutoj). La etikedo \"Perfidulo\" aperas dum 30 sekundoj kiam la ludanto perfidis kaj atakis alian ludanton kun kiu li estis en alianco. La ikonoj sube reprezentas la jenajn interagojn:",
     "info_chat": "Sendu rapidan babilmesaĝon al la ludanto. Elektu Kategorion, Frazon, kaj se la frazo enhavas [P1], elektu ludantnomon por anstataŭigi ĝin. Premu Sendi.",
     "info_target": "Meti celmarkon sur la ludanton, videblan por ĉiuj aliancanoj, uzata por kunordigi atakojn.",
     "info_alliance": "Sendi aliancpeton al la ludanto. Aliancanoj povas dividi rimedojn kaj trupojn, sed ne povas ataki unu la alian.",
@@ -85,32 +85,31 @@
     "info_ally_desc": "Kiam vi alianciĝas kun ludanto, la jenaj novaj piktogramoj fariĝas disponeblaj:",
     "ally_betray": "Perfidi vian aliancanon, finante la aliancon, haltigante la komercon kaj malfortigante vian defendon. Komerco inter vi estas haltigita dum 5 minutoj (aŭ ĝis vi denove fariĝos aliancanoj) kaj aliaj eble ankaŭ ĉesigos komercon. Kaj krom se la alia ludanto mem estis perfidulo, vi estos markita kiel perfidulo dum 30 sekundoj. Dum tiu tempo ikono aperos super via nomo kaj vi havos 50% malfortigon de via defendo. Bot-oj malpli verŝajne alianciĝos kun vi kaj ludantoj dufoje pripensos antaŭ fari tion.",
     "ally_donate": "Doni parton de viaj trupoj al aliancano. Uzata kiam ili mankas da trupoj kaj estas atakataj, aŭ kiam ili bezonas kroman potencon por venki malamikon.",
-    "ally_donate_gold": "Donaci iom da via oro al via aliancano. Uzata kiam ili mankas je oro kaj bezonas ĝin por konstruaĵoj, aŭ kiam via teamano ŝparas por tiu MIRV-o.",
     "build_menu_title": "Konstrua menuo",
     "build_menu_desc": "Konstrui ĉi tiujn aŭ vidi kiom da ĉiu vi jam konstruis:",
     "build_name": "Nomo",
     "build_icon": "Ikono",
     "build_desc": "Priskribo",
-    "build_city": "Urbo",
-    "build_city_desc": "Utila kiam vi ne povas pligrandigi vian teritorion aŭ kiam vi atingas vian loĝantlimon.",
-    "build_factory": "Fabriko",
-    "build_factory_desc": "Aŭtomate konstruas relvojojn al apudaj urboj, havenoj kaj aliaj fabrikoj, kaj ankaŭ povas ligiĝi kun amikaj najbaroj. Trajnoj aperas regule kaj donas al vi fiksan kvanton da oro por ĉiu konstruaĵo, kiun ili vizitas laŭ la itinero, kun ekstra oro pro vizito al la konstruaĵoj de viaj najbaroj.",
+    "build_colony": "Kolonio",
+    "build_colony_desc": "Utila kiam vi ne povas pligrandigi vian teritorion aŭ kiam vi atingas vian loĝantlimon.",
+    "build_foundry": "Fabriko",
+    "build_foundry_desc": "Aŭtomate konstruas relvojojn al apudaj urboj, havenoj kaj aliaj fabrikoj, kaj ankaŭ povas ligiĝi kun amikaj najbaroj. Trajnoj aperas regule kaj donas al vi fiksan kvanton da oro por ĉiu konstruaĵo, kiun ili vizitas laŭ la itinero, kun ekstra oro pro vizito al la konstruaĵoj de viaj najbaroj.",
     "build_defense": "Defenda posteno",
     "build_defense_desc": "Plialtigas la defendon ĉirkaŭ najbaraj landlimoj, kiuj montriĝas per kontrolita ŝablono. Atakoj de malamikoj estas pli malrapidaj kaj kaŭzas pli da viktimoj.",
-    "build_port": "Haveno",
-    "build_port_desc": "Nur povas esti konstruita apud akvo. Permesas konstrui militŝipojn. Aŭtomate sendas komercajn ŝipojn inter havenoj de via lando kaj aliaj landoj (krom kiam komerco estas haltigita), donante oron al ambaŭ flankoj. Komerci kun ludanto haltigas aŭtomate kiam vi atakas aŭ estas atakita de ludanto. Ĝi reprenas 5 minutojn poste aŭ se vi devenas aliancanoj. Vi povas permane ŝalti komercadon per \"Ĉesigi komercadon\" aŭ \"Komenci komercadon\".",
-    "build_warship": "Militŝipo",
-    "build_warship_desc": "Patrolas en areo, kapteblante malamikajn komercajn ŝipojn kaj detruante iliajn Boatojn (transportŝipojn) kaj Militŝipojn. Aperas ĉe la plej proksima haveno kaj patrolas la areon kie vi unue alklakis por konstrui ĝin. Vi povas regi Militŝipojn per atak-alklako (vidu agon Ataki sub Hotklavoj) kaj poste atak-alklaki la novan areon, kien vi volas, ke ili moviĝu.",
-    "build_silo": "Misila silo",
-    "build_silo_desc": "Ebligas lanĉi misilojn.",
-    "build_sam": "SAM-lanĉilo",
-    "build_sam_desc": "Ĝi povas kapti malamikajn misilojn ene de sia 100-bildera gamo. Ĝi havas 100% ŝancon trafi por Atombombo, 80% por Hidrogenbombo kaj 50% por individuaj MIRV-ogivoj. La SAM-o havas malvarmigan tempon de 7,5 sekundoj.",
-    "build_atom": "Atombombo",
-    "build_atom_desc": "Eta eksploda bombo kiu detruas teritorion, konstruaĵojn, ŝipojn kaj boatojn. Aperas el la plej proksima Misila silo kaj atingas la elektitan areon.",
-    "build_hydrogen": "Hidrogenbombo",
-    "build_hydrogen_desc": "Granda eksploda bombo. Aperas el la plej proksima Misila silo kaj atingas la elektitan areon.",
-    "build_mirv": "MIRV",
-    "build_mirv_desc": "La plej potenca bombo en la ludo. Dividiĝas en pli malgrandajn bombojn kiuj kovros vastan teritorion. Damaĝas nur la ludanton, kontraŭ kiu vi celis ĝin. Aperas el la plej proksima Misila silo kaj atingas la elektitan areon.",
+    "build_spaceport": "Haveno",
+    "build_spaceport_desc": "Nur povas esti konstruita apud akvo. Permesas konstrui militŝipojn. Aŭtomate sendas komercajn ŝipojn inter havenoj de via lando kaj aliaj landoj (krom kiam komerco estas haltigita), donante oron al ambaŭ flankoj. Komerci kun ludanto haltigas aŭtomate kiam vi atakas aŭ estas atakita de ludanto. Ĝi reprenas 5 minutojn poste aŭ se vi devenas aliancanoj. Vi povas permane ŝalti komercadon per \"Ĉesigi komercadon\" aŭ \"Komenci komercadon\".",
+    "build_battlecruiser": "Militŝipo",
+    "build_battlecruiser_desc": "Patrolas en areo, kapteblante malamikajn komercajn ŝipojn kaj detruante iliajn Boatojn (transportŝipojn) kaj Militŝipojn. Aperas ĉe la plej proksima haveno kaj patrolas la areon kie vi unue alklakis por konstrui ĝin. Vi povas regi Militŝipojn per atak-alklako (vidu agon Ataki sub Hotklavoj) kaj poste atak-alklaki la novan areon, kien vi volas, ke ili moviĝu.",
+    "build_orbital_strike_platform": "Misila silo",
+    "build_orbital_strike_platform_desc": "Ebligas lanĉi misilojn.",
+    "build_point_defense_array": "SAM-lanĉilo",
+    "build_point_defense_array_desc": "Ĝi povas kapti malamikajn misilojn ene de sia 100-bildera gamo. Ĝi havas 100% ŝancon trafi por Atombombo, 80% por Hidrogenbombo kaj 50% por individuaj MIRV-ogivoj. La SAM-o havas malvarmigan tempon de 7,5 sekundoj.",
+    "build_antimatter_torpedo": "Atombombo",
+    "build_antimatter_torpedo_desc": "Eta eksploda bombo kiu detruas teritorion, konstruaĵojn, ŝipojn kaj boatojn. Aperas el la plej proksima Misila silo kaj atingas la elektitan areon.",
+    "build_nova_bomb": "Hidrogenbombo",
+    "build_nova_bomb_desc": "Granda eksploda bombo. Aperas el la plej proksima Misila silo kaj atingas la elektitan areon.",
+    "build_cluster_warhead": "MIRV",
+    "build_cluster_warhead_desc": "La plej potenca bombo en la ludo. Dividiĝas en pli malgrandajn bombojn kiuj kovros vastan teritorion. Damaĝas nur la ludanton, kontraŭ kiu vi celis ĝin. Aperas el la plej proksima Misila silo kaj atingas la elektitan areon.",
     "player_icons": "Ludantaj Ikonoj",
     "icon_desc": "Ekzemploj de iuj ludaj ikonoj, kiujn vi renkontos, kaj ilia signifo:",
     "icon_crown": "Krono - Ĉi tiu ludanto estas numero 1 en la ranglisto.",
@@ -119,7 +118,8 @@
     "icon_embargo": "Dolar-haltsigno - Embargo. Ĉi tiu ludanto ĉesis komerci kun vi aŭtomate aŭ mane.",
     "icon_request": "Koverto – Aliancopeto. Ĉi tiu ludanto sendis al vi peton pri alianco.",
     "info_enemy_panel": "Malamiko informpanelo",
-    "exit_confirmation": "Ĉu vi certe volas eliri el la ludo?"
+    "exit_confirmation": "Ĉu vi certe volas eliri el la ludo?",
+    "ally_donate_credits": "Donaci iom da via oro al via aliancano. Uzata kiam ili mankas je oro kaj bezonas ĝin por konstruaĵoj, aŭ kiam via teamano ŝparas por tiu MIRV-o."
   },
   "single_modal": {
     "title": "Sola Ludanto",
@@ -129,12 +129,12 @@
     "bots_disabled": "Malŝaltita",
     "disable_nations": "Malŝalti naciojn",
     "instant_build": "Tujkonstruaĵo",
-    "infinite_gold": "Senfina oro",
     "infinite_troops": "Senfinaj trupoj",
     "compact_map": "Karteto",
     "disable_nukes": "Malŝalti nukleajn armilojn",
     "enables_title": "Ebligi Agordojn",
-    "start": "Komenci la ludon"
+    "start": "Komenci la ludon",
+    "infinite_credits": "Senfina kreditoj"
   },
   "token_login_modal": {
     "title": "Ensalutante...",
@@ -225,8 +225,6 @@
     "bots_disabled": "Malŝaltita",
     "disable_nations": "Malŝalti naciojn",
     "instant_build": "Tujkonstruaĵo",
-    "infinite_gold": "Senfina oro",
-    "donate_gold": "Donacu oron",
     "infinite_troops": "Senfinaj trupoj",
     "donate_troops": "Donacu trupojn",
     "compact_map": "Karteto",
@@ -235,7 +233,9 @@
     "players": "Ludantoj",
     "waiting": "Atendante ludantojn...",
     "start": "Komenci la ludon",
-    "host_badge": "Gastiganto"
+    "host_badge": "Gastiganto",
+    "infinite_credits": "Senfina oro",
+    "donate_credits": "Donacu kreditojn"
   },
   "team_colors": {
     "red": "Ruĝa",
@@ -429,7 +429,7 @@
       "team_up": "Ni kuniĝu kontraŭ [P1]!",
       "pr": "Kiam mia tirpeto finfine estos kunfandita...?",
       "build_closer": "Konstruu pli proksime por havi trajnojn!",
-      "coastline": "Bonvolu lasi min akiri marbordon."
+      "deep_space_border": "Bonvolu lasi min atingi profundkosmon."
     },
     "warnings": {
       "strong": "[P1] estas forta.",
@@ -466,8 +466,7 @@
     "not_enough_money": "Ne sufiĉe da mono"
   },
   "win_modal": {
-    "support_openfront": "Subtenu OpenFront!",
-    "territory_pattern": "Aĉetu territorian ŝablonon por subteni OpenFront!",
+    "territory_pattern": "Aĉetu territorian ŝablonon por subteni Stellar.Game!",
     "died": "Vi mortiĝis",
     "your_team": "Via teamo venkis!",
     "other_team": "{team} teamo venkis!",
@@ -475,7 +474,8 @@
     "other_won": "{player} venkis!",
     "exit": "Eliri el la ludon",
     "keep": "Daŭrigu ludi",
-    "wishlist": "Dezirlisto ĉe Steam!"
+    "wishlist": "Dezirlisto ĉe Steam!",
+    "support_stellar_game": "Subtenu Stellar.Game!"
   },
   "leaderboard": {
     "title": "Ĉampionejo",
@@ -484,7 +484,7 @@
     "player": "Ludanto",
     "team": "Teamo",
     "owned": "Posedata",
-    "credits": "Oro",
+    "credits": "Kreditoj",
     "troops": "Trupoj",
     "launchers": "Lanĉiloj",
     "point_defense": "SAM-oj",
@@ -558,7 +558,7 @@
     "attack_ratio": "Atakkvociento"
   },
   "player_panel": {
-    "credits": "Oro",
+    "credits": "Kreditoj",
     "troops": "Trupoj",
     "betrayals": "Nombro da perfidoj",
     "traitor": "Perfidulo",
@@ -624,13 +624,13 @@
       "cursor": "Kursoro",
       "hand": "Mano",
       "radiation": "Radiado",
-      "openfront_qr": "OpenFront.io QR-kodo",
-      "openfront": "OpenFront",
       "t_rex": "Tiranosaŭro",
       "embelem": "Emblemo",
       "contributor": "Kontribuanto",
       "grogu_head": "Grogu Kapo",
-      "grogu": "Grogu"
+      "grogu": "Grogu",
+      "stellar_game_qr": "Stellar.Game QR-kodo",
+      "stellar_game": "Stellar.Game"
     }
   },
   "flag_input": {
@@ -675,7 +675,7 @@
     "received": "Ricevita",
     "cancelled": "Nuligita",
     "count": "Nombro",
-    "credits": "Oro",
+    "credits": "Kreditoj",
     "workers": "Laboristoj",
     "war": "Milito",
     "trade": "Komerci",

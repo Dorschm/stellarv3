@@ -1,7 +1,7 @@
-import { Browser, expect, Page } from "@playwright/test";
+import { Browser, ConsoleMessage, expect, Page } from "@playwright/test";
 
 /**
- * Shared Playwright helpers for driving the OpenFront/StellarGame shell into
+ * Shared Playwright helpers for driving the Stellar.Game shell into
  * an active game session. These helpers encapsulate the non-trivial click
  * sequences (play page -> mode selector -> modal -> start) so individual
  * specs can focus on assertions rather than navigation.
@@ -767,4 +767,137 @@ export async function waitForTicksAbove(
       { timeout: timeoutMs },
     )
     .then((handle) => handle.jsonValue() as Promise<number>);
+}
+
+// ── Console error tracking ────────────────────────────────────────────────────
+
+/** Collected console errors for a page. */
+const pageErrors = new WeakMap<Page, string[]>();
+
+/**
+ * Start collecting console errors on a page. Call once per page (idempotent).
+ * Ignored messages:
+ * - Vite HMR / dev-server noise
+ * - Third-party resource load failures (fonts, analytics)
+ * - React StrictMode double-render warnings
+ */
+export function trackConsoleErrors(page: Page): void {
+  if (pageErrors.has(page)) return;
+  const errors: string[] = [];
+  pageErrors.set(page, errors);
+
+  page.on("console", (msg: ConsoleMessage) => {
+    if (msg.type() !== "error") return;
+    const text = msg.text();
+    // Filter out known noise
+    if (/\[vite\]|hmr|hot.update/i.test(text)) return;
+    if (/failed to load resource|net::ERR_/i.test(text)) return;
+    if (/react.*strict mode|deprecated/i.test(text)) return;
+    if (/turnstile/i.test(text)) return;
+    errors.push(text);
+  });
+
+  page.on("pageerror", (err) => {
+    errors.push(`[PAGE ERROR] ${err.message}`);
+  });
+}
+
+/**
+ * Return all collected console errors for a page and clear the buffer.
+ */
+export function getConsoleErrors(page: Page): string[] {
+  const errors = pageErrors.get(page) ?? [];
+  pageErrors.set(page, []);
+  return [...errors];
+}
+
+// ── Text correctness validation ───────────────────────────────────────────────
+
+/**
+ * Stale terrestrial/naval terms that should NOT appear in visible in-game UI.
+ * Each entry is [regex, description]. The regex is case-sensitive to avoid
+ * false positives (e.g. "port" inside "transport", "gold" inside "golden").
+ */
+const STALE_TERM_PATTERNS: [RegExp, string][] = [
+  [/\bGold\b/, "Gold (should be Credits)"],
+  [/\bWarship\b/, "Warship (should be Battlecruiser)"],
+  [/\bMissile Silo\b/, "Missile Silo (should be Orbital Strike Platform)"],
+  [/\bSAM Launcher\b/, "SAM Launcher (should be Point Defense Array)"],
+  [/\bAtom Bomb\b/, "Atom Bomb (should be Antimatter Torpedo)"],
+  [/\bHydrogen Bomb\b/, "Hydrogen Bomb (should be Nova Bomb)"],
+  [/\bDefense Post\b/, "Defense Post (should be Defense Station)"],
+  [/\bCity\b(?!\s*of)/, "City (should be Colony)"],
+  [/\bFactory\b/, "Factory (should be Foundry)"],
+  [/\bMIRV\b/, "MIRV (should be Cluster Warhead)"],
+  [/\bTransport Ship\b/, "Transport Ship (should be Assault Shuttle)"],
+  [/\bTrade Ship\b/, "Trade Ship (should be Trade Freighter)"],
+  [/\bTrain Station\b/, "Train Station (should be Trade Hub)"],
+  [/\bRailroad\b/, "Railroad (should be Hyperspace Lane)"],
+];
+
+/**
+ * Pattern for raw untranslated keys — strings like "radial_menu.attack" or
+ * "build_menu.colony" that slipped through `translateText()` without matching
+ * an en.json key. We only flag keys with at least one dot (namespace.key).
+ */
+const UNTRANSLATED_KEY_RE =
+  /\b[a-z][a-z0-9]*(?:_[a-z0-9]+)+\.[a-z][a-z0-9_]*\b/;
+
+/**
+ * Scrape all visible text from the HUD overlay (#react-root) and check for
+ * stale terminology or untranslated i18n keys.
+ *
+ * Returns an array of violation descriptions (empty = all clear).
+ */
+export async function checkVisibleText(page: Page): Promise<string[]> {
+  const text = await page.evaluate(() => {
+    const root = document.getElementById("react-root");
+    if (!root) return "";
+    // Collect only visible text — skip hidden elements
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode(node) {
+        const el = node.parentElement;
+        if (!el) return NodeFilter.FILTER_REJECT;
+        const style = getComputedStyle(el);
+        if (
+          style.display === "none" ||
+          style.visibility === "hidden" ||
+          style.opacity === "0"
+        )
+          return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      },
+    });
+    const parts: string[] = [];
+    while (walker.nextNode()) {
+      const t = walker.currentNode.textContent?.trim();
+      if (t) parts.push(t);
+    }
+    return parts.join(" ");
+  });
+
+  const violations: string[] = [];
+
+  for (const [re, desc] of STALE_TERM_PATTERNS) {
+    if (re.test(text)) {
+      violations.push(`Stale term found: ${desc}`);
+    }
+  }
+
+  // Check for untranslated keys — but filter out known false positives
+  const untranslatedMatches = text.match(
+    new RegExp(UNTRANSLATED_KEY_RE.source, "g"),
+  );
+  if (untranslatedMatches) {
+    const falsePositives = new Set([
+      "events_display.empty", // Known key shown as placeholder
+    ]);
+    for (const m of untranslatedMatches) {
+      if (!falsePositives.has(m)) {
+        violations.push(`Untranslated key: "${m}"`);
+      }
+    }
+  }
+
+  return violations;
 }

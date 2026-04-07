@@ -73,7 +73,7 @@ function spaceTerrainColor(
       // Deep space – near-black void so planetary zones pop
       return { r: 2, g: 2, b: 5 };
     }
-    case TerrainType.Plains: {
+    case TerrainType.OpenSpace: {
       // Habitable sector – teal / cyan glow, slight variation with magnitude
       const m = Math.min(magnitude, 9);
       return {
@@ -82,7 +82,7 @@ function spaceTerrainColor(
         b: 100 + m * 2,
       };
     }
-    case TerrainType.Highland: {
+    case TerrainType.Nebula: {
       // Dense nebula – warm amber / orange tones
       const m = Math.min(magnitude, 19);
       return {
@@ -91,7 +91,7 @@ function spaceTerrainColor(
         b: 50 + m,
       };
     }
-    case TerrainType.Mountain: {
+    case TerrainType.AsteroidField: {
       // Asteroid field – bright silver / white
       const m = Math.min(magnitude, 30);
       return {
