@@ -33,7 +33,7 @@
     "action_reset_gfx": "Reiniciar gráficos",
     "ui_section": "IU de juego",
     "ui_leaderboard": "Clasificación",
-    "ui_leaderboard_desc": "Muestra a los mejores jugadores de la partida y sus nombres, % tierra en propiedad, oro y tropas. Usando \"Mostrar todos\" puedes ver todos los jugadores de la partida. Si no quieres ver la tabla de posiciones, haz clic en Ocultar.",
+    "ui_leaderboard_desc": "Muestra a los mejores jugadores de la partida y sus nombres, % territorio en propiedad, créditos y tropas. Usando \"Mostrar todos\" puedes ver todos los jugadores de la partida. Si no quieres ver la tabla de posiciones, haz clic en Ocultar.",
     "ui_control": "Panel de control",
     "ui_control_desc": "El panel de control contiene los siguientes elementos:",
     "ui_pop": "Población - La cantidad de unidades que posees, tu población máxima y la velocidad a la que esta aumenta.",

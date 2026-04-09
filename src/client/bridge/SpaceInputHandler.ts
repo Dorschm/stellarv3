@@ -8,8 +8,8 @@ import {
   CenterCameraEvent,
   CloseViewEvent,
   ConfirmGhostStructureEvent,
-  DoGroundAttackEvent,
   DoShuttleAttackEvent,
+  DoSpaceAttackEvent,
   DragEvent,
   GameSpeedDownIntentEvent,
   GameSpeedUpIntentEvent,
@@ -80,7 +80,7 @@ export function loadKeybinds(): Record<string, string> {
     attackRatioDown: "KeyT",
     attackRatioUp: "KeyY",
     shuttleAttack: "KeyB",
-    groundAttack: "KeyG",
+    spaceAttack: "KeyG",
     swapDirection: "KeyU",
     modifierKey: isMac ? "MetaLeft" : "ControlLeft",
     altKey: "AltLeft",
@@ -380,9 +380,9 @@ export class SpaceInputHandler {
       this.eventBus.emit(new DoShuttleAttackEvent());
     }
 
-    if (e.code === this.keybinds.groundAttack) {
+    if (e.code === this.keybinds.spaceAttack) {
       e.preventDefault();
-      this.eventBus.emit(new DoGroundAttackEvent());
+      this.eventBus.emit(new DoSpaceAttackEvent());
     }
 
     if (e.code === this.keybinds.attackRatioDown) {

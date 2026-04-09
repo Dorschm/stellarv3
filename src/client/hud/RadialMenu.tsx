@@ -37,7 +37,7 @@ const infoIcon = assetUrl("images/InfoIcon.svg");
  *   • Listens for `ContextMenuEvent` from `SpaceMapPlane` (tile coordinates).
  *   • Fetches `PlayerActions` for the clicked tile against `myPlayer`.
  *   • Offers context-sensitive options: Build menu, Emoji, Player panel,
- *     Ground attack, Shuttle attack. These are the same entry points previously
+ *     Space attack, Shuttle attack. These are the same entry points previously
  *     reachable via the legacy radial menu.
  *   • On selection, it emits the same events the legacy flow produced:
  *       - Build    → `ShowBuildMenuEvent(tileX, tileY)`

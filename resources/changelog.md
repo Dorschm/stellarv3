@@ -1,6 +1,6 @@
 🛰️ **Sector Command — Lobby Reliability Patch**
 
-*Before any fleet can jump, Command needs a stable dock. This patch hardens the pre-flight sequence: starbase provisioning, fleet roster handshake, and docking-clamp release are now atomic, fault-tolerant, and fully recoverable. No more ghost sectors, no more frozen loading spinners while your wingmates wait in the void.*
+_Before any fleet can jump, Command needs a stable dock. This patch hardens the pre-flight sequence: starbase provisioning, fleet roster handshake, and docking-clamp release are now atomic, fault-tolerant, and fully recoverable. No more ghost sectors, no more frozen loading spinners while your wingmates wait in the void._
 
 🛸 **Host Starbase: Join-Failure Recovery**
 
@@ -11,9 +11,9 @@
 
 ⚛️ **Atomic Fleet Launch — No More Config Races**
 
-- Starting a sector match used to emit an `updateGameConfig` intent over WebSocket and *immediately* fire `POST /start_game/:id`, which could execute before the config intent arrived. Once `GameServer` locked the game to "started", any in-flight config update was rejected, so matches could launch with stale or default settings despite host UI selections.
+- Starting a sector match used to emit an `updateGameConfig` intent over WebSocket and _immediately_ fire `POST /start_game/:id`, which could execute before the config intent arrived. Once `GameServer` locked the game to "started", any in-flight config update was rejected, so matches could launch with stale or default settings despite host UI selections.
 - The host's **Start Game** button now bundles the final sector config (map, difficulty, game mode, bot count, team settings) directly into the `start_game` request body.
-- Server-side, `/api/start_game/:id` validates the payload with `GameInputSchema`, blocks any attempt to flip a private lobby to `Public` via start, applies the config via `game.updateGameConfig(...)`, and *only then* calls `game.start()`. The authoritative config is guaranteed to be in place before the match clock begins — the fire-and-forget race is eliminated.
+- Server-side, `/api/start_game/:id` validates the payload with `GameInputSchema`, blocks any attempt to flip a private lobby to `Public` via start, applies the config via `game.updateGameConfig(...)`, and _only then_ calls `game.start()`. The authoritative config is guaranteed to be in place before the match clock begins — the fire-and-forget race is eliminated.
 - The creator-only authorization check on `start_game` ensures no other pilot can smuggle a config change through this path.
 
 📡 **Join Modal: WebSocket Close-Code Recovery**
@@ -39,7 +39,7 @@
 
 🚀 **StellarGame V3 — 3D Space Edition**
 
-*The battlefield is no longer a map — it's a sector of deep space. This update rebuilds the entire rendering pipeline on React Three Fiber and re-skins every piece of terrain as a cosmic environment. Every tile you fight over is now a slice of the galaxy.*
+_The battlefield is no longer a map — it's a sector of deep space. This update rebuilds the entire rendering pipeline on React Three Fiber and re-skins every piece of terrain as a cosmic environment. Every tile you fight over is now a slice of the galaxy._
 
 🌌 **New 3D Space Rendering Pipeline**
 
@@ -71,7 +71,7 @@
 
 - **Left-click & drag now pans the camera** across the sector — emits `DragEvent` during pointer drag while still preserving left-click tile selection, right-click context menu, and middle-click auto-upgrade
 - Click-vs-drag is latched once the pointer crosses the 10px threshold, so drag-ends never accidentally fire a tile action
-- `TileHoverClearEvent` fires when the pointer leaves the map — boat and ground attack hotkeys (B / G) no longer target a stale tile after the cursor drifts off-map
+- `TileHoverClearEvent` fires when the pointer leaves the map — shuttle and space attack hotkeys (B / G) no longer target a stale tile after the cursor drifts off-map
 - Keyboard-only `SpaceInputHandler` cleanly separates hotkeys from pointer input (pointer input now lives entirely in R3F)
 - Scroll-wheel zoom, WASD pan, and QE dolly all feed the same unified DragEvent/ZoomEvent pipeline
 

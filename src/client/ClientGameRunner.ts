@@ -40,8 +40,8 @@ import { GoToPlayerEvent } from "./CameraEvents";
 import { ShowPlayerPanelEvent } from "./hud/events";
 import {
   AutoUpgradeEvent,
-  DoGroundAttackEvent,
   DoShuttleAttackEvent,
+  DoSpaceAttackEvent,
   GhostStructureChangedEvent,
   MouseUpEvent,
   SceneTickEvent,
@@ -380,8 +380,8 @@ export class ClientGameRunner {
       this.doBoatAttackUnderCursor.bind(this),
     );
     this.eventBus.on(
-      DoGroundAttackEvent,
-      this.doGroundAttackUnderCursor.bind(this),
+      DoSpaceAttackEvent,
+      this.doSpaceAttackUnderCursor.bind(this),
     );
 
     this.input.initialize();
@@ -801,7 +801,7 @@ export class ClientGameRunner {
       });
   }
 
-  private doGroundAttackUnderCursor(): void {
+  private doSpaceAttackUnderCursor(): void {
     const tile = this.getTileUnderCursor();
     if (tile === null) {
       return;
@@ -880,7 +880,7 @@ export class ClientGameRunner {
 
   private onTileHoverClear() {
     // Pointer left the map — drop the cached hover tile so subsequent
-    // shuttle/ground-attack hotkeys fall through to no-op rather than
+    // shuttle/space-attack hotkeys fall through to no-op rather than
     // targeting a stale tile.
     this.lastHoveredTile = null;
   }

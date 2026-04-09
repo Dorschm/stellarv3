@@ -139,7 +139,7 @@ export class ShowEmojiMenuEvent implements GameEvent {
 
 export class DoShuttleAttackEvent implements GameEvent {}
 
-export class DoGroundAttackEvent implements GameEvent {}
+export class DoSpaceAttackEvent implements GameEvent {}
 
 export class AttackRatioEvent implements GameEvent {
   constructor(public readonly attackRatio: number) {}
@@ -290,7 +290,7 @@ export class InputHandler {
       attackRatioDown: "KeyT",
       attackRatioUp: "KeyY",
       shuttleAttack: "KeyB",
-      groundAttack: "KeyG",
+      spaceAttack: "KeyG",
       swapDirection: "KeyU",
       modifierKey: isMac ? "MetaLeft" : "ControlLeft",
       altKey: "AltLeft",
@@ -530,9 +530,9 @@ export class InputHandler {
         this.eventBus.emit(new DoShuttleAttackEvent());
       }
 
-      if (e.code === this.keybinds.groundAttack) {
+      if (e.code === this.keybinds.spaceAttack) {
         e.preventDefault();
-        this.eventBus.emit(new DoGroundAttackEvent());
+        this.eventBus.emit(new DoSpaceAttackEvent());
       }
 
       if (e.code === this.keybinds.attackRatioDown) {

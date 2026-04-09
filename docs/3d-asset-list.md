@@ -159,7 +159,7 @@ Create a 16-poly orbital strike platform. A wide flat circular platform: use a 6
 
 ### 17. DefenseStation
 
-**In-game role:** Ground-based defense station — fires at incoming units.
+**In-game role:** Planet-side defense station — fires at incoming units.
 
 **Low-poly prompt:**
 Create an 18-poly defense station. A 6-sided base bunker (top hex + 6 sides = 12 faces) 2 units across, 1 unit tall, slightly tapered. On top, a rotating turret represented as a short 4-sided box (4 faces). Protruding from the turret box, 2 parallel thin rectangular gun barrels (1 face each as flat quads). Total: ~18 faces.

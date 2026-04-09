@@ -22,7 +22,7 @@
     "action_reset_gfx": "Redefinir gráficos",
     "ui_section": "Interface",
     "ui_leaderboard": "Classificação",
-    "ui_leaderboard_desc": "Mostra os maiores jogadores do jogo e seus nomes, % de ouro e terreno possuídos.",
+    "ui_leaderboard_desc": "Mostra os maiores jogadores do jogo e seus nomes, % de créditos e território possuídos.",
     "ui_control": "Painel de controle",
     "ui_control_desc": "O painel de controle contém os seguintes elementos:",
     "ui_pop": "Pop - A quantidade de unidades que você tem, a sua população máxima e a taxa em que você os ganha.",
