@@ -44,6 +44,9 @@ import { UserSettings } from "./UserSettings";
 
 const userSettings: UserSettings = new UserSettings();
 
+/** Shared TerraNullius instance returned for every unowned tile query. */
+const TERRA_NULLIUS_SINGLETON = new TerraNulliusImpl();
+
 const FRIENDLY_TINT_TARGET = { r: 0, g: 255, b: 0, a: 1 };
 const EMBARGO_TINT_TARGET = { r: 255, g: 0, b: 0, a: 1 };
 const BORDER_TINT_RATIO = 0.35;
@@ -1133,7 +1136,10 @@ export class GameView implements GameMap {
 
   playerBySmallID(id: number): PlayerView | TerraNullius {
     if (id === 0) {
-      return new TerraNulliusImpl();
+      // Singleton — avoids ~500k allocations during the initial SpaceMapPlane
+      // paint pass when nearly every tile is unowned. TerraNulliusImpl is
+      // stateless, so sharing one instance is safe.
+      return TERRA_NULLIUS_SINGLETON;
     }
     const playerId = this.smallIDToID.get(id);
     if (playerId === undefined) {
