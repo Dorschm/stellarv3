@@ -23,12 +23,6 @@ export async function renderHtmlContent(htmlPath: string): Promise<string> {
       "images/GameplayScreenshot.png",
       assetManifest,
     ),
-    backgroundImageUrl: buildAssetUrl("images/background.webp", assetManifest),
-    desktopLogoImageUrl: buildAssetUrl(
-      "images/StellarGame.webp",
-      assetManifest,
-    ),
-    mobileLogoImageUrl: buildAssetUrl("images/OF.webp", assetManifest),
   });
 }
 

@@ -114,7 +114,7 @@ function tileToWorld(
  * Handles:
  * - Nuke detonations (expanding sphere + shockwave ring + point-light flash)
  * - Shell impacts (small flash)
- * - Warship destruction (medium explosion)
+ * - Battlecruiser destruction (medium explosion)
  * - Structure destruction (flash)
  * - Territory conquest (pulsing highlight)
  * - SAM interceptions (flash + shockwave)

@@ -26,7 +26,7 @@ function NavButton({
       <button
         className={`nav-menu-item ${
           isActive ? "active" : ""
-        } text-white/70 hover:text-blue-500 font-medium tracking-wider uppercase cursor-pointer transition-colors [&.active]:text-blue-500`}
+        } text-white/70 hover:text-cyan-400 font-medium tracking-wider uppercase cursor-pointer transition-colors [&.active]:text-cyan-400`}
         data-page={pageId}
         data-i18n={i18nKey}
         onClick={() => {
@@ -57,10 +57,10 @@ export function DesktopNavBar() {
   const avatarUrl = discord ? getDiscordAvatarUrl(discord) : null;
 
   return (
-    <nav className="hidden lg:flex w-full bg-zinc-900/90 backdrop-blur-md items-center justify-center gap-8 py-4 shrink-0 z-50 relative">
+    <nav className="hidden lg:flex w-full bg-[#050a18]/95 backdrop-blur-md items-center justify-center gap-8 py-4 shrink-0 z-50 relative border-b border-cyan-400/10">
       <div className="flex flex-col items-center justify-center">
-        <div className="h-8 text-[#2563eb]">
-          <StellarGameLogo className="h-full w-auto" />
+        <div className="h-8 text-cyan-400">
+          <StellarGameLogo className="h-full w-auto drop-shadow-[0_0_12px_rgba(34,211,238,0.3)]" />
         </div>
         <div className="l-header__highlightText text-center game-version-display" />
       </div>
@@ -68,7 +68,7 @@ export function DesktopNavBar() {
       <button
         className={`nav-menu-item ${
           currentPage === "page-play" ? "active" : ""
-        } text-white/70 hover:text-blue-500 font-medium tracking-wider uppercase cursor-pointer transition-colors [&.active]:text-blue-500`}
+        } text-white/70 hover:text-cyan-400 font-medium tracking-wider uppercase cursor-pointer transition-colors [&.active]:text-cyan-400`}
         data-page="page-play"
         data-i18n="main.play"
         onClick={() => showPage("page-play")}
@@ -97,14 +97,14 @@ export function DesktopNavBar() {
       </NavButton>
 
       <button
-        className="nav-menu-item text-white/70 hover:text-blue-500 font-medium tracking-wider uppercase cursor-pointer transition-colors [&.active]:text-blue-500"
+        className="nav-menu-item text-white/70 hover:text-cyan-400 font-medium tracking-wider uppercase cursor-pointer transition-colors [&.active]:text-cyan-400"
         data-page="page-settings"
         data-i18n="main.settings"
         onClick={() => showPage("page-settings")}
       />
 
       <button
-        className="nav-menu-item text-white/70 hover:text-blue-500 font-medium tracking-wider uppercase cursor-pointer transition-colors [&.active]:text-blue-500"
+        className="nav-menu-item text-white/70 hover:text-cyan-400 font-medium tracking-wider uppercase cursor-pointer transition-colors [&.active]:text-cyan-400"
         data-page="page-leaderboard"
         data-i18n="main.leaderboard"
         onClick={() => showPage("page-leaderboard")}

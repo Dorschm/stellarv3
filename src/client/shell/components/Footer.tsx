@@ -2,7 +2,7 @@ import { assetUrl } from "../../../core/AssetUrls";
 
 export function Footer() {
   return (
-    <footer className="[.in-game_&]:hidden bg-zinc-900/90 backdrop-blur-md flex flex-col items-center justify-center gap-1 pt-1 pb-3 text-white/50 w-full border-t border-white/10 shrink-0 relative z-50">
+    <footer className="[.in-game_&]:hidden bg-[#050a18]/95 backdrop-blur-md flex flex-col items-center justify-center gap-1 pt-1 pb-3 text-white/50 w-full border-t border-cyan-400/10 shrink-0 relative z-50">
       <div className="flex items-center justify-center gap-4 lg:gap-6 pt-2 w-full relative">
         <a
           href="https://github.com/openfrontio/OpenFrontIO"

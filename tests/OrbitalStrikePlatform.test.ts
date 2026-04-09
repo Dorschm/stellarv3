@@ -31,7 +31,7 @@ function attackerBuildsNuke(
   }
 }
 
-describe("MissileSilo", () => {
+describe("OrbitalStrikePlatform", () => {
   beforeEach(async () => {
     game = await setup("plains", { infiniteCredits: true, instantBuild: true });
     const attacker_info = new PlayerInfo(
@@ -59,7 +59,7 @@ describe("MissileSilo", () => {
     constructionExecution(game, attacker, 1, 1, UnitType.OrbitalStrikePlatform);
   });
 
-  test("missilesilo should launch nuke", async () => {
+  test("orbital strike platform should launch nuke", async () => {
     attackerBuildsNuke(null, game.ref(7, 7));
     expect(attacker.units(UnitType.AntimatterTorpedo)).toHaveLength(1);
     expect(attacker.units(UnitType.AntimatterTorpedo)[0].tile()).not.toBe(
@@ -72,13 +72,13 @@ describe("MissileSilo", () => {
     expect(attacker.units(UnitType.AntimatterTorpedo)).toHaveLength(0);
   });
 
-  test("missilesilo should only launch one nuke at a time", async () => {
+  test("orbital strike platform should only launch one nuke at a time", async () => {
     attackerBuildsNuke(null, game.ref(7, 7));
     attackerBuildsNuke(null, game.ref(7, 7));
     expect(attacker.units(UnitType.AntimatterTorpedo)).toHaveLength(1);
   });
 
-  test("missilesilo should cooldown as long as configured", async () => {
+  test("orbital strike platform should cooldown as long as configured", async () => {
     expect(
       attacker.units(UnitType.OrbitalStrikePlatform)[0].isInCooldown(),
     ).toBeFalsy();
@@ -100,7 +100,7 @@ describe("MissileSilo", () => {
     ).toBeFalsy();
   });
 
-  test("missilesilo should have increased level after upgrade", async () => {
+  test("orbital strike platform should have increased level after upgrade", async () => {
     expect(attacker.units(UnitType.OrbitalStrikePlatform)[0].level()).toEqual(
       1,
     );

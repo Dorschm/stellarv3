@@ -38,14 +38,14 @@ describe("PlayerExecution", () => {
     game.addExecution(new PlayerExecution(otherPlayer));
   });
 
-  test("DefensePost lv. 1 is destroyed when tile owner changes", () => {
+  test("DefenseStation lv. 1 is destroyed when tile owner changes", () => {
     const tile = game.ref(50, 50);
     player.conquer(tile);
-    const defensePost = player.buildUnit(UnitType.DefenseStation, tile, {});
+    const defenseStation = player.buildUnit(UnitType.DefenseStation, tile, {});
 
     game.executeNextTick();
     expect(game.unitCount(UnitType.DefenseStation)).toBe(1);
-    expect(defensePost.level()).toBe(1);
+    expect(defenseStation.level()).toBe(1);
 
     otherPlayer.conquer(tile);
     executeTicks(game, 2);
@@ -53,28 +53,28 @@ describe("PlayerExecution", () => {
     expect(game.unitCount(UnitType.DefenseStation)).toBe(0);
   });
 
-  test("DefensePost lv. 2+ is downgraded when tile owner changes", () => {
+  test("DefenseStation lv. 2+ is downgraded when tile owner changes", () => {
     const tile = game.ref(50, 50);
     player.conquer(tile);
-    const defensePost = player.buildUnit(UnitType.DefenseStation, tile, {});
-    defensePost.increaseLevel();
+    const defenseStation = player.buildUnit(UnitType.DefenseStation, tile, {});
+    defenseStation.increaseLevel();
 
-    expect(defensePost.level()).toBe(2);
+    expect(defenseStation.level()).toBe(2);
     expect(game.unitCount(UnitType.DefenseStation)).toBe(2); // unitCount sums levels
     expect(player.units(UnitType.DefenseStation)).toHaveLength(1);
-    expect(defensePost.isActive()).toBe(true);
+    expect(defenseStation.isActive()).toBe(true);
 
     otherPlayer.conquer(tile);
     executeTicks(game, 2);
 
-    expect(defensePost.level()).toBe(1);
+    expect(defenseStation.level()).toBe(1);
     expect(game.unitCount(UnitType.DefenseStation)).toBe(1);
     expect(otherPlayer.units(UnitType.DefenseStation)).toHaveLength(1);
-    expect(defensePost.owner()).toBe(otherPlayer);
-    expect(defensePost.isActive()).toBe(true);
+    expect(defenseStation.owner()).toBe(otherPlayer);
+    expect(defenseStation.isActive()).toBe(true);
   });
 
-  test("Non-DefensePost structures are transferred (not downgraded) when tile owner changes", () => {
+  test("Non-DefenseStation structures are transferred (not downgraded) when tile owner changes", () => {
     const tile = game.ref(50, 50);
     player.conquer(tile);
     const city = player.buildUnit(UnitType.Colony, tile, {});

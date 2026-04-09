@@ -610,7 +610,7 @@ export class PlayerView {
   }
 }
 
-type TrainPlanState = {
+type FrigatePlanState = {
   planId: number;
   startTick: number;
   speed: number;
@@ -643,7 +643,7 @@ export class GameView implements GameMap {
       path: Uint32Array;
     }
   >();
-  private trainMotionPlans = new Map<number, TrainPlanState>();
+  private frigateMotionPlans = new Map<number, FrigatePlanState>();
   private trainUnitToEngine = new Map<number, number>();
 
   private toDelete = new Set<number>();
@@ -715,7 +715,7 @@ export class GameView implements GameMap {
     for (const unitId of this.unitMotionPlans.keys()) {
       out.push(unitId);
     }
-    for (const [engineId, plan] of this.trainMotionPlans) {
+    for (const [engineId, plan] of this.frigateMotionPlans) {
       out.push(engineId);
       for (let i = 0; i < plan.carUnitIds.length; i++) {
         const id = plan.carUnitIds[i] >>> 0;
@@ -819,7 +819,7 @@ export class GameView implements GameMap {
         if (this.unitMotionPlans.delete(unit.id())) {
           this.markMotionPlannedUnitIdsDirty();
         }
-        this.clearTrainPlanForUnit(unit.id());
+        this.clearFrigatePlanForUnit(unit.id());
       }
     });
 
@@ -863,19 +863,19 @@ export class GameView implements GameMap {
     this.advanceTrainMotionPlannedUnits(currentTick);
   }
 
-  private clearTrainPlanForUnit(unitId: number): void {
+  private clearFrigatePlanForUnit(unitId: number): void {
     const engineId =
       this.trainUnitToEngine.get(unitId) ??
-      (this.trainMotionPlans.has(unitId) ? unitId : null);
+      (this.frigateMotionPlans.has(unitId) ? unitId : null);
     if (engineId === null) {
       return;
     }
-    const plan = this.trainMotionPlans.get(engineId);
+    const plan = this.frigateMotionPlans.get(engineId);
     if (!plan) {
       this.trainUnitToEngine.delete(unitId);
       return;
     }
-    if (this.trainMotionPlans.delete(engineId)) {
+    if (this.frigateMotionPlans.delete(engineId)) {
       this.markMotionPlannedUnitIdsDirty();
     }
     this.trainUnitToEngine.delete(engineId);
@@ -887,7 +887,7 @@ export class GameView implements GameMap {
 
   private advanceTrainMotionPlannedUnits(currentTick: Tick): void {
     const staleEngineIds: number[] = [];
-    for (const [engineId, plan] of this.trainMotionPlans) {
+    for (const [engineId, plan] of this.frigateMotionPlans) {
       const engine = this._units.get(engineId);
       if (!engine || !engine.isActive()) {
         staleEngineIds.push(engineId);
@@ -965,7 +965,7 @@ export class GameView implements GameMap {
       plan.lastAdvancedTick = currentTick;
 
       // Preserve the final-step redraw (plan remains for the tick where motion ends),
-      // then clear once the train has settled and no longer moves.
+      // then clear once the frigate has settled and no longer moves.
       // Note: trains are currently deleted at the end of FrigateExecution, and the ensuing
       // `Unit` update (isActive=false) also clears any associated motion plan records.
       // This expiry is defensive to avoid keeping stale plans around if that behavior changes.
@@ -975,7 +975,7 @@ export class GameView implements GameMap {
     }
 
     for (const engineId of staleEngineIds) {
-      this.clearTrainPlanForUnit(engineId);
+      this.clearFrigatePlanForUnit(engineId);
     }
   }
 
@@ -1005,16 +1005,16 @@ export class GameView implements GameMap {
           this.markMotionPlannedUnitIdsDirty();
           break;
         }
-        case "train": {
+        case "frigate": {
           if (record.speed < 1 || record.path.length < 1) {
             break;
           }
-          const existing = this.trainMotionPlans.get(record.engineUnitId);
+          const existing = this.frigateMotionPlans.get(record.engineUnitId);
           if (existing && record.planId <= existing.planId) {
             break;
           }
           if (existing) {
-            this.clearTrainPlanForUnit(record.engineUnitId);
+            this.clearFrigatePlanForUnit(record.engineUnitId);
           }
 
           const carUnitIds =
@@ -1029,7 +1029,7 @@ export class GameView implements GameMap {
           const usedCap = carUnitIds.length * record.spacing + 3;
           const usedTilesBuf = new Uint32Array(Math.max(0, usedCap));
 
-          this.trainMotionPlans.set(record.engineUnitId, {
+          this.frigateMotionPlans.set(record.engineUnitId, {
             planId: record.planId,
             startTick: record.startTick,
             speed: record.speed,

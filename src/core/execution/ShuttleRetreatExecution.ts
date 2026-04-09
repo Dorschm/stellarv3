@@ -18,7 +18,7 @@ export class ShuttleRetreatExecution implements Execution {
       );
 
     if (!unit) {
-      console.warn(`Didn't find outgoing boat with id ${this.unitID}`);
+      console.warn(`Didn't find outgoing shuttle with id ${this.unitID}`);
       this.active = false;
       return;
     }

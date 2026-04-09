@@ -2,7 +2,7 @@ import { TileRef } from "./GameMap";
 
 export enum PackedMotionPlanKind {
   GridPathSet = 1,
-  TrainRailPathSet = 2,
+  FrigateRailPathSet = 2,
 }
 
 export interface GridPathPlan {
@@ -17,8 +17,8 @@ export interface GridPathPlan {
   path: readonly TileRef[] | Uint32Array;
 }
 
-export interface TrainRailPathPlan {
-  kind: "train";
+export interface FrigateRailPathPlan {
+  kind: "frigate";
   engineUnitId: number;
   /**
    * FrigateExecution `cars[]` order (tail engine + carriages).
@@ -34,7 +34,7 @@ export interface TrainRailPathPlan {
   path: readonly TileRef[] | Uint32Array;
 }
 
-export type MotionPlanRecord = GridPathPlan | TrainRailPathPlan;
+export type MotionPlanRecord = GridPathPlan | FrigateRailPathPlan;
 
 export function packMotionPlans(
   records: readonly MotionPlanRecord[],
@@ -47,7 +47,7 @@ export function packMotionPlans(
         totalWords += 2 + 5 + pathLen;
         break;
       }
-      case "train": {
+      case "frigate": {
         const carCount = (record.carUnitIds.length >>> 0) as number;
         const pathLen = (record.path.length >>> 0) as number;
         totalWords += 2 + 7 + carCount + pathLen;
@@ -80,7 +80,7 @@ export function packMotionPlans(
         }
         break;
       }
-      case "train": {
+      case "frigate": {
         const carUnitIds = record.carUnitIds as ArrayLike<number>;
         const carCount = carUnitIds.length >>> 0;
 
@@ -88,7 +88,7 @@ export function packMotionPlans(
         const pathLen = path.length >>> 0;
 
         const wordCount = 2 + 7 + carCount + pathLen;
-        out[offset++] = PackedMotionPlanKind.TrainRailPathSet;
+        out[offset++] = PackedMotionPlanKind.FrigateRailPathSet;
         out[offset++] = wordCount >>> 0;
         out[offset++] = record.engineUnitId >>> 0;
         out[offset++] = record.planId >>> 0;
@@ -164,7 +164,7 @@ export function unpackMotionPlans(packed: Uint32Array): MotionPlanRecord[] {
         });
         break;
       }
-      case PackedMotionPlanKind.TrainRailPathSet: {
+      case PackedMotionPlanKind.FrigateRailPathSet: {
         if (wordCount < 2 + 7) {
           break;
         }
@@ -189,7 +189,7 @@ export function unpackMotionPlans(packed: Uint32Array): MotionPlanRecord[] {
         const path = packed.slice(pathStart, pathEnd);
 
         records.push({
-          kind: "train",
+          kind: "frigate",
           engineUnitId,
           carUnitIds,
           planId,

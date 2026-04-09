@@ -1,12 +1,12 @@
-import React, { Suspense } from "react";
-import { Canvas } from "@react-three/fiber";
 import { Stars } from "@react-three/drei";
+import { Canvas } from "@react-three/fiber";
+import React, { Suspense } from "react";
+import { CameraController } from "./CameraController";
+import { FxRenderer } from "./FxRenderer";
+import { PlanetLandmarks } from "./PlanetLandmarks";
 import { SpaceMapPlane } from "./SpaceMapPlane";
 import { UnitRenderer } from "./UnitRenderer";
 import { WarpLaneRenderer } from "./WarpLaneRenderer";
-import { FxRenderer } from "./FxRenderer";
-import { CameraController } from "./CameraController";
-import { PlanetLandmarks } from "./PlanetLandmarks";
 
 /**
  * Top-level R3F scene — the **primary** rendering path.
@@ -29,10 +29,18 @@ export function SpaceScene(): React.JSX.Element {
         touchAction: "none",
         pointerEvents: "auto",
       }}
-      gl={{ antialias: false, alpha: false }}
-      camera={{ position: [0, -300, 350], fov: 60, near: 1, far: 8000, up: [0, 0, 1] }}
+      gl={{ antialias: false, alpha: true, premultipliedAlpha: false }}
+      camera={{
+        position: [0, -300, 350],
+        fov: 60,
+        near: 1,
+        far: 8000,
+        up: [0, 0, 1],
+      }}
       onCreated={({ gl }) => {
-        gl.setClearColor("#050510");
+        // Fully transparent clear so the CSS #space-bg starfield behind
+        // the canvas shows through deep-space pixels on the map texture.
+        gl.setClearColor("#000000", 0);
       }}
     >
       {/* Lighting — dim ambient for space feel + directional for 3D mesh readability.
@@ -41,7 +49,11 @@ export function SpaceScene(): React.JSX.Element {
       {/* Key light — above and behind the default camera angle */}
       <directionalLight position={[100, -300, 500]} intensity={1.2} />
       {/* Fill light — opposite side, cool blue tint for space ambiance */}
-      <directionalLight position={[-200, 200, 300]} intensity={0.4} color="#4488ff" />
+      <directionalLight
+        position={[-200, 200, 300]}
+        intensity={0.4}
+        color="#4488ff"
+      />
       {/* Low-cost static point lights dedicated to FX readability. They sit
           above the map plane and give transient explosions / spawns / nukes
           a dynamic highlight that directional lighting alone can't produce.

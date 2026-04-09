@@ -13,7 +13,7 @@ interface Entry {
   name: string;
   position: number;
   score: string;
-  gold: string;
+  credits: string;
   maxTroops: string;
   isMyPlayer: boolean;
   isOnSameTeam: boolean;
@@ -27,7 +27,7 @@ interface LeaderboardProps {
 function Leaderboard({ visible }: LeaderboardProps): React.JSX.Element {
   const { gameView, eventBus, tick } = useGameTick(1000);
   const [players, setPlayers] = useState<Entry[]>([]);
-  const [sortKey, setSortKey] = useState<"tiles" | "gold" | "maxtroops">(
+  const [sortKey, setSortKey] = useState<"tiles" | "credits" | "maxtroops">(
     "tiles",
   );
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
@@ -50,7 +50,7 @@ function Leaderboard({ visible }: LeaderboardProps): React.JSX.Element {
     const maxTroops = (p: PlayerView) => gameView.config().maxTroops(p);
 
     switch (sortKey) {
-      case "gold":
+      case "credits":
         sorted = sorted.sort((a, b) =>
           compare(Number(a.credits()), Number(b.credits())),
         );
@@ -78,7 +78,7 @@ function Leaderboard({ visible }: LeaderboardProps): React.JSX.Element {
         score: formatPercentage(
           player.numTilesOwned() / numTilesWithoutFallout,
         ),
-        gold: renderNumber(player.credits()),
+        credits: renderNumber(player.credits()),
         maxTroops: renderTroops(maxTroopsVal),
         isMyPlayer: player === myPlayer,
         isOnSameTeam:
@@ -110,7 +110,7 @@ function Leaderboard({ visible }: LeaderboardProps): React.JSX.Element {
           score: formatPercentage(
             myPlayer.numTilesOwned() / gameView.numSectorTiles(),
           ),
-          gold: renderNumber(myPlayer.credits()),
+          credits: renderNumber(myPlayer.credits()),
           maxTroops: renderTroops(myPlayerMaxTroops),
           isMyPlayer: true,
           isOnSameTeam: true,
@@ -122,7 +122,7 @@ function Leaderboard({ visible }: LeaderboardProps): React.JSX.Element {
     setPlayers(entriesData);
   };
 
-  const handleSetSort = (key: "tiles" | "gold" | "maxtroops") => {
+  const handleSetSort = (key: "tiles" | "credits" | "maxtroops") => {
     if (sortKey === key) {
       setSortOrder(sortOrder === "asc" ? "desc" : "asc");
     } else {
@@ -168,10 +168,10 @@ function Leaderboard({ visible }: LeaderboardProps): React.JSX.Element {
           </div>
           <div
             className="py-1 md:py-2 text-center border-b border-slate-500 cursor-pointer whitespace-nowrap truncate"
-            onClick={() => handleSetSort("gold")}
+            onClick={() => handleSetSort("credits")}
           >
             {translateText("leaderboard.gold")}
-            {sortKey === "gold" ? (sortOrder === "asc" ? "⬆️" : "⬇️") : ""}
+            {sortKey === "credits" ? (sortOrder === "asc" ? "⬆️" : "⬇️") : ""}
           </div>
           <div
             className="py-1 md:py-2 text-center border-b border-slate-500 cursor-pointer whitespace-nowrap truncate"
@@ -217,7 +217,7 @@ function Leaderboard({ visible }: LeaderboardProps): React.JSX.Element {
                 index < players.length - 1 ? "border-b border-slate-500" : ""
               }`}
             >
-              {player.gold}
+              {player.credits}
             </div>
             <div
               className={`py-1 md:py-2 text-center ${

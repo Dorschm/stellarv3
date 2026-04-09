@@ -537,14 +537,14 @@ describe("InputHandler AutoUpgrade", () => {
       inputHandler.initialize();
     });
 
-    test("Numpad1 sets ghost structure to City when buildCity is Digit1", () => {
+    test("Numpad1 sets ghost structure to Colony when buildColony is Digit1", () => {
       window.dispatchEvent(
         new KeyboardEvent("keyup", { code: "Numpad1", key: "1" }),
       );
       expect(inputHandler["uiState"].ghostStructure).toBe(UnitType.Colony);
     });
 
-    test("Numpad5 sets ghost structure to MissileSilo when buildMissileSilo is Digit5", () => {
+    test("Numpad5 sets ghost structure to OrbitalStrikePlatform when buildOrbitalStrikePlatform is Digit5", () => {
       window.dispatchEvent(
         new KeyboardEvent("keyup", { code: "Numpad5", key: "5" }),
       );
@@ -553,7 +553,7 @@ describe("InputHandler AutoUpgrade", () => {
       );
     });
 
-    test("Numpad0 sets ghost structure to MIRV when buildMIRV is Digit0", () => {
+    test("Numpad0 sets ghost structure to ClusterWarhead when buildClusterWarhead is Digit0", () => {
       window.dispatchEvent(
         new KeyboardEvent("keyup", { code: "Numpad0", key: "0" }),
       );
@@ -578,12 +578,12 @@ describe("InputHandler AutoUpgrade", () => {
       inputHandler.initialize();
     });
 
-    test("exact code match wins: Digit1 sets City when buildCity=Digit1 and buildFactory=Numpad1", () => {
+    test("exact code match wins: Digit1 sets Colony when buildColony=Digit1 and buildFoundry=Numpad1", () => {
       localStorage.setItem(
         "settings.keybinds",
         JSON.stringify({
-          buildCity: "Digit1",
-          buildFactory: "Numpad1",
+          buildColony: "Digit1",
+          buildFoundry: "Numpad1",
         }),
       );
       inputHandler.destroy();
@@ -604,12 +604,12 @@ describe("InputHandler AutoUpgrade", () => {
       expect(inputHandler["uiState"].ghostStructure).toBe(UnitType.Colony);
     });
 
-    test("exact code match wins: Numpad1 sets Factory when buildCity=Digit1 and buildFactory=Numpad1", () => {
+    test("exact code match wins: Numpad1 sets Foundry when buildColony=Digit1 and buildFoundry=Numpad1", () => {
       localStorage.setItem(
         "settings.keybinds",
         JSON.stringify({
-          buildCity: "Digit1",
-          buildFactory: "Numpad1",
+          buildColony: "Digit1",
+          buildFoundry: "Numpad1",
         }),
       );
       inputHandler.destroy();
@@ -630,10 +630,10 @@ describe("InputHandler AutoUpgrade", () => {
       expect(inputHandler["uiState"].ghostStructure).toBe(UnitType.Foundry);
     });
 
-    test("digit alias used when no exact match: Numpad1 sets City when only buildCity=Digit1", () => {
+    test("digit alias used when no exact match: Numpad1 sets Colony when only buildColony=Digit1", () => {
       localStorage.setItem(
         "settings.keybinds",
-        JSON.stringify({ buildCity: "Digit1" }),
+        JSON.stringify({ buildColony: "Digit1" }),
       );
       inputHandler.destroy();
       const uiState: UIState = {

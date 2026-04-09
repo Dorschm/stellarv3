@@ -45,60 +45,80 @@ import {
 // Highland → dense nebula (warm amber / orange)
 // Mountain → asteroid field (bright white / silver)
 
-interface SpaceColor {
-  r: number;
-  g: number;
-  b: number;
-}
-
-function spaceTerrainColor(
+/**
+ * Writes the space-themed RGBA colour for a single terrain tile directly
+ * into `buf` at byte offset `idx`. Avoids allocating a temporary object
+ * per tile — at init time this is called once per pixel on the whole map
+ * (up to ~16M tiles for a 4096² map), so allocation is the dominant cost.
+ *
+ * Deep-space / debris-field tiles are written with alpha=0 so the CSS
+ * starfield behind the canvas shows through the map plane.
+ */
+function writeTerrainColorAt(
+  buf: Uint8ClampedArray,
+  idx: number,
   terrainType: TerrainType,
   magnitude: number,
   isShore: boolean,
   isShoreline: boolean,
   isWater: boolean,
-): SpaceColor {
+): void {
   if (isShore) {
     // Planetary zone perimeter – subtle brightness to define planet boundary
-    return { r: 95, g: 75, b: 140 };
+    buf[idx] = 95;
+    buf[idx + 1] = 75;
+    buf[idx + 2] = 140;
+    buf[idx + 3] = 255;
+    return;
   }
 
   switch (terrainType) {
     case TerrainType.DeepSpace:
     case TerrainType.DebrisField: {
+      // Fully transparent so the CSS starfield background shows through
+      // the map plane. The RGB values are ignored when a=0 but we keep
+      // them around so any downstream composite that mixes with a non-zero
+      // alpha channel (e.g. territory overlay) picks up the same tint the
+      // old opaque rendering used.
       if (isShoreline && isWater) {
-        // Shoreline water near habitable zones – faint glow
-        return { r: 6, g: 5, b: 18 };
+        buf[idx] = 6;
+        buf[idx + 1] = 5;
+        buf[idx + 2] = 18;
+      } else {
+        buf[idx] = 2;
+        buf[idx + 1] = 2;
+        buf[idx + 2] = 5;
       }
-      // Deep space – near-black void so planetary zones pop
-      return { r: 2, g: 2, b: 5 };
+      buf[idx + 3] = 0;
+      return;
     }
     case TerrainType.OpenSpace: {
       // Habitable sector – teal / cyan glow, slight variation with magnitude
-      const m = Math.min(magnitude, 9);
-      return {
-        r: 30 + m * 2,
-        g: 90 + m * 3,
-        b: 100 + m * 2,
-      };
+      const m = magnitude < 9 ? magnitude : 9;
+      buf[idx] = 30 + m * 2;
+      buf[idx + 1] = 90 + m * 3;
+      buf[idx + 2] = 100 + m * 2;
+      buf[idx + 3] = 255;
+      return;
     }
     case TerrainType.Nebula: {
       // Dense nebula – warm amber / orange tones
-      const m = Math.min(magnitude, 19);
-      return {
-        r: 120 + m * 2,
-        g: 80 + m,
-        b: 50 + m,
-      };
+      const m = magnitude < 19 ? magnitude : 19;
+      buf[idx] = 120 + m * 2;
+      buf[idx + 1] = 80 + m;
+      buf[idx + 2] = 50 + m;
+      buf[idx + 3] = 255;
+      return;
     }
     case TerrainType.AsteroidField: {
       // Asteroid field – bright silver / white
-      const m = Math.min(magnitude, 30);
-      return {
-        r: 180 + Math.floor(m / 2),
-        g: 180 + Math.floor(m / 2),
-        b: 190 + Math.floor(m / 2),
-      };
+      const m = magnitude < 30 ? magnitude : 30;
+      const half = m >> 1;
+      buf[idx] = 180 + half;
+      buf[idx + 1] = 180 + half;
+      buf[idx + 2] = 190 + half;
+      buf[idx + 3] = 255;
+      return;
     }
   }
 }
@@ -194,54 +214,100 @@ export function SpaceMapPlane(): React.JSX.Element | null {
     const territory = new Uint8ClampedArray(numPixels * 4); // RGBA, starts transparent
     const composite = new Uint8ClampedArray(numPixels * 4);
 
-    // Paint terrain
-    game.forEachTile((tile: TileRef) => {
-      const tx = game.x(tile);
-      const ty = game.y(tile);
-      if (tx >= texWidth || ty >= texHeight) return;
-
-      const idx = (ty * texWidth + tx) * 4;
-      const color = spaceTerrainColor(
-        game.terrainType(tile),
-        game.magnitude(tile),
-        game.isSectorEdge(tile),
-        game.isSectorBoundary(tile),
-        game.isDeepSpace(tile),
-      );
-      terrain[idx] = color.r;
-      terrain[idx + 1] = color.g;
-      terrain[idx + 2] = color.b;
-      terrain[idx + 3] = 255;
-    });
-
     terrainBufRef.current = terrain;
     territoryBufRef.current = territory;
     compositeBufRef.current = composite;
 
-    // Also paint initial territory for all owned tiles and fallout
-    game.forEachTile((tile: TileRef) => {
-      const tx = game.x(tile);
-      const ty = game.y(tile);
-      if (tx >= texWidth || ty >= texHeight) return;
-      const idx = (ty * texWidth + tx) * 4;
+    // Single-pass initial paint: terrain + territory + composite in one
+    // walk over the tiles. Previously this did three passes (two forEachTile
+    // walks + a separate compositeBuffers loop), which burned a lot of time
+    // on large maps doing redundant x/y lookups and object allocation.
+    //
+    // Fast path: when the map fits within the texture budget (mapWidth ==
+    // texWidth, mapHeight == texHeight), `TileRef` values from GameMap are
+    // the linear tile index (ref = y*width + x), so pixel index is simply
+    // ref*4 — no per-tile method calls to derive x/y.
+    const fastPath = mapWidth === texWidth && mapHeight === texHeight;
 
-      const owner = game.owner(tile);
-      if (owner.isPlayer()) {
-        const c = owner.territoryColor(tile).rgba;
-        territory[idx] = c.r;
-        territory[idx + 1] = c.g;
-        territory[idx + 2] = c.b;
-        territory[idx + 3] = TERRITORY_ALPHA;
-      } else if (game.hasFallout(tile)) {
-        territory[idx] = FALLOUT_COLOR.r;
-        territory[idx + 1] = FALLOUT_COLOR.g;
-        territory[idx + 2] = FALLOUT_COLOR.b;
-        territory[idx + 3] = FALLOUT_ALPHA;
+    if (fastPath) {
+      for (let ref = 0; ref < numPixels; ref++) {
+        const idx = ref * 4;
+
+        writeTerrainColorAt(
+          terrain,
+          idx,
+          game.terrainType(ref),
+          game.magnitude(ref),
+          game.isSectorEdge(ref),
+          game.isSectorBoundary(ref),
+          game.isDeepSpace(ref),
+        );
+
+        // Initial territory: most tiles are unowned, so skip the composite
+        // call and fast-copy terrain → composite for the empty case.
+        const owner = game.owner(ref);
+        if (owner.isPlayer()) {
+          const c = owner.territoryColor(ref).rgba;
+          territory[idx] = c.r;
+          territory[idx + 1] = c.g;
+          territory[idx + 2] = c.b;
+          territory[idx + 3] = TERRITORY_ALPHA;
+          compositePixel(terrain, territory, composite, idx);
+        } else if (game.hasFallout(ref)) {
+          territory[idx] = FALLOUT_COLOR.r;
+          territory[idx + 1] = FALLOUT_COLOR.g;
+          territory[idx + 2] = FALLOUT_COLOR.b;
+          territory[idx + 3] = FALLOUT_ALPHA;
+          compositePixel(terrain, territory, composite, idx);
+        } else {
+          // No territory: composite = terrain (straight copy, 4 bytes)
+          composite[idx] = terrain[idx];
+          composite[idx + 1] = terrain[idx + 1];
+          composite[idx + 2] = terrain[idx + 2];
+          composite[idx + 3] = terrain[idx + 3];
+        }
       }
-    });
+    } else {
+      // Slow path: map exceeds texture budget. Need x/y lookups to skip
+      // out-of-range tiles. See the MAX_TEXTURE_DIM guardrail above.
+      game.forEachTile((tile: TileRef) => {
+        const tx = game.x(tile);
+        const ty = game.y(tile);
+        if (tx >= texWidth || ty >= texHeight) return;
+        const idx = (ty * texWidth + tx) * 4;
 
-    // Build composite
-    compositeBuffers(terrain, territory, composite);
+        writeTerrainColorAt(
+          terrain,
+          idx,
+          game.terrainType(tile),
+          game.magnitude(tile),
+          game.isSectorEdge(tile),
+          game.isSectorBoundary(tile),
+          game.isDeepSpace(tile),
+        );
+
+        const owner = game.owner(tile);
+        if (owner.isPlayer()) {
+          const c = owner.territoryColor(tile).rgba;
+          territory[idx] = c.r;
+          territory[idx + 1] = c.g;
+          territory[idx + 2] = c.b;
+          territory[idx + 3] = TERRITORY_ALPHA;
+          compositePixel(terrain, territory, composite, idx);
+        } else if (game.hasFallout(tile)) {
+          territory[idx] = FALLOUT_COLOR.r;
+          territory[idx + 1] = FALLOUT_COLOR.g;
+          territory[idx + 2] = FALLOUT_COLOR.b;
+          territory[idx + 3] = FALLOUT_ALPHA;
+          compositePixel(terrain, territory, composite, idx);
+        } else {
+          composite[idx] = terrain[idx];
+          composite[idx + 1] = terrain[idx + 1];
+          composite[idx + 2] = terrain[idx + 2];
+          composite[idx + 3] = terrain[idx + 3];
+        }
+      });
+    }
 
     // Create DataTexture backed directly by the composite buffer
     const data = new Uint8Array(
@@ -299,6 +365,11 @@ export function SpaceMapPlane(): React.JSX.Element | null {
     };
   }, [game, eventBus]);
 
+  // Fast-path flag: when the map fits within the texture budget, tile refs
+  // are directly usable as linear pixel indices (ref*4), avoiding per-tile
+  // x/y method calls in the per-frame territory flush below.
+  const fastRefIndex = mapWidth === texWidth && mapHeight === texHeight;
+
   // ── Per-frame territory flush ──────────────────────────────────────────
   useFrame(() => {
     const territory = territoryBufRef.current;
@@ -308,14 +379,25 @@ export function SpaceMapPlane(): React.JSX.Element | null {
     if (!territory || !terrain || !composite || !tex) return;
 
     const pending = pendingDirtyTilesRef.current;
-    if (pending.length === 0) return;
+    const n = pending.length;
+    if (n === 0) return;
 
-    // Update territory buffer for changed tiles
-    for (const tile of pending) {
-      const tx = game.x(tile);
-      const ty = game.y(tile);
-      if (tx >= texWidth || ty >= texHeight) continue;
-      const idx = (ty * texWidth + tx) * 4;
+    // Single pass: write territory buffer AND re-composite for each dirty
+    // tile. Previously this was two separate loops, doubling x/y lookups
+    // and cache pressure on large maps with many simultaneous updates
+    // (combat frontlines, fallout spreads, reconnect catch-up).
+    for (let i = 0; i < n; i++) {
+      const tile = pending[i];
+
+      let idx: number;
+      if (fastRefIndex) {
+        idx = tile * 4;
+      } else {
+        const tx = game.x(tile);
+        const ty = game.y(tile);
+        if (tx >= texWidth || ty >= texHeight) continue;
+        idx = (ty * texWidth + tx) * 4;
+      }
 
       const owner = game.owner(tile);
       if (owner.isPlayer()) {
@@ -334,14 +416,7 @@ export function SpaceMapPlane(): React.JSX.Element | null {
         // Unowned – clear territory
         territory[idx + 3] = 0;
       }
-    }
 
-    // Re-composite only changed tiles (fast path)
-    for (const tile of pending) {
-      const tx = game.x(tile);
-      const ty = game.y(tile);
-      if (tx >= texWidth || ty >= texHeight) continue;
-      const idx = (ty * texWidth + tx) * 4;
       compositePixel(terrain, territory, composite, idx);
     }
 
@@ -621,23 +696,16 @@ export function SpaceMapPlane(): React.JSX.Element | null {
       onPointerCancel={onPointerCancel}
       onContextMenu={onContextMenu}
     >
-      <meshBasicMaterial map={textureRef.current} />
+      <meshBasicMaterial
+        map={textureRef.current}
+        transparent
+        depthWrite={false}
+      />
     </mesh>
   );
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-
-/** Alpha-composite territory over terrain for the full buffer. */
-function compositeBuffers(
-  terrain: Uint8ClampedArray,
-  territory: Uint8ClampedArray,
-  out: Uint8ClampedArray,
-): void {
-  for (let i = 0; i < terrain.length; i += 4) {
-    compositePixel(terrain, territory, out, i);
-  }
-}
 
 /** Alpha-composite a single pixel at offset `i`. */
 function compositePixel(
@@ -648,18 +716,36 @@ function compositePixel(
 ): void {
   const tAlpha = territory[i + 3];
   if (tAlpha === 0) {
-    // No territory – straight terrain
+    // No territory – straight terrain (preserves alpha=0 for deep space)
     out[i] = terrain[i];
     out[i + 1] = terrain[i + 1];
     out[i + 2] = terrain[i + 2];
     out[i + 3] = terrain[i + 3];
   } else {
-    // Alpha blend: territory over terrain
+    // Standard Porter–Duff "over" with straight (non-premultiplied) alpha.
+    // Preserving the output alpha matters because deep-space terrain is
+    // now transparent (alpha=0) — hard-coding 255 would re-opaque any tile
+    // that has even a hint of territory coverage and defeat the starfield
+    // showing through.
+    const terrAlpha = terrain[i + 3];
     const a = tAlpha / 255;
+    const bA = terrAlpha / 255;
     const inv = 1 - a;
-    out[i] = Math.round(territory[i] * a + terrain[i] * inv);
-    out[i + 1] = Math.round(territory[i + 1] * a + terrain[i + 1] * inv);
-    out[i + 2] = Math.round(territory[i + 2] * a + terrain[i + 2] * inv);
-    out[i + 3] = 255;
+    const outA = a + bA * inv;
+    if (outA <= 0) {
+      out[i] = 0;
+      out[i + 1] = 0;
+      out[i + 2] = 0;
+      out[i + 3] = 0;
+      return;
+    }
+    out[i] = Math.round((territory[i] * a + terrain[i] * bA * inv) / outA);
+    out[i + 1] = Math.round(
+      (territory[i + 1] * a + terrain[i + 1] * bA * inv) / outA,
+    );
+    out[i + 2] = Math.round(
+      (territory[i + 2] * a + terrain[i + 2] * bA * inv) / outA,
+    );
+    out[i + 3] = Math.round(outA * 255);
   }
 }

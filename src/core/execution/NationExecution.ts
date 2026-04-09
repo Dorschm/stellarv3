@@ -29,7 +29,7 @@ export class NationExecution implements Execution {
   private mirvBehavior!: NationClusterWarheadBehavior;
   private attackBehavior!: AiAttackBehavior;
   private allianceBehavior!: NationAllianceBehavior;
-  private warshipBehavior!: NationBattlecruiserBehavior;
+  private battlecruiserBehavior!: NationBattlecruiserBehavior;
   private nukeBehavior!: NationNukeBehavior;
   private structureBehavior!: NationStructureBehavior;
   private mg: Game;
@@ -91,7 +91,7 @@ export class NationExecution implements Execution {
       this.player.isAlive() &&
       this.mg.config().gameConfig().difficulty !== Difficulty.Easy
     ) {
-      this.warshipBehavior.trackShipsAndRetaliate();
+      this.battlecruiserBehavior.trackShipsAndRetaliate();
     }
 
     if (this.player === null) {
@@ -159,7 +159,7 @@ export class NationExecution implements Execution {
 
     if (ticks % this.attackRate !== this.attackTick) {
       // Call handleStructures twice between regular attack ticks (at 1/3 and 2/3 of the interval)
-      // Otherwise it is possible that we earn more gold than we can spend
+      // Otherwise it is possible that we earn more credits than we can spend
       // The alternative is placing multiple structures in handleStructures, but that causes problems
       if (this.player.isAlive()) {
         const offset = ticks % this.attackRate;
@@ -181,10 +181,10 @@ export class NationExecution implements Execution {
     this.allianceBehavior.handleAllianceExtensionRequests();
     this.mirvBehavior.considerMIRV();
     this.structureBehavior.handleStructures();
-    this.warshipBehavior.maybeSpawnWarship();
+    this.battlecruiserBehavior.maybeSpawnBattlecruiser();
     this.handleEmbargoesToHostileNations();
     this.attackBehavior.maybeAttack();
-    this.warshipBehavior.counterBattlecruiserInfestation();
+    this.battlecruiserBehavior.counterBattlecruiserInfestation();
     this.nukeBehavior.maybeSendNuke();
   }
 
@@ -208,7 +208,7 @@ export class NationExecution implements Execution {
       this.player,
       this.emojiBehavior,
     );
-    this.warshipBehavior = new NationBattlecruiserBehavior(
+    this.battlecruiserBehavior = new NationBattlecruiserBehavior(
       this.random,
       this.mg,
       this.player,

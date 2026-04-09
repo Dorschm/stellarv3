@@ -7,10 +7,10 @@
   --fontColor: #202020;
   --fontColorLight: #fff;
 
-  /* Palette: Deep French Blue / Muted Cyan / Black / Forest Teal */
-  --frenchBlue: #1f3a70; /* Deeper French Blue */
-  --cyanBlue: #0f6ca3; /* Muted Cyan secondary */
-  --tealAccent: #1f6c5a; /* Darker Teal accent */
+  /* Palette: Deep Space / Nebula Cyan / Stellar Purple */
+  --frenchBlue: #0d1b3e; /* Deep space navy */
+  --cyanBlue: #0e7490; /* Nebula cyan secondary */
+  --tealAccent: #6d28d9; /* Stellar purple accent */
 
   --primaryColor: var(--frenchBlue);
   --primaryColorHover: var(--tealAccent);

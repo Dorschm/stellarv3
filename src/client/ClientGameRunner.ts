@@ -677,7 +677,7 @@ export class ClientGameRunner {
       this.myPlayer = myPlayer;
     }
     // Fetch the full action set (null = all structures) so that we can
-    // both decide attack/boat behaviour and pass a valid PlayerActions
+    // both decide attack/shuttle behaviour and pass a valid PlayerActions
     // payload to the PlayerPanel when no attack is possible.
     this.myPlayer.actions(tile, null).then((actions) => {
       if (actions.canAttack) {
@@ -690,10 +690,10 @@ export class ClientGameRunner {
         return;
       }
       if (this.canAutoShuttle(actions.buildableUnits, tile)) {
-        this.sendBoatAttackIntent(tile);
+        this.sendShuttleAttackIntent(tile);
         return;
       }
-      // No attack / boat path available — if the tile is owned by a player
+      // No attack / shuttle path available — if the tile is owned by a player
       // (self or other), open the PlayerPanel so alliance / embargo / target
       // / chat actions remain reachable. This is the direct R3F-path trigger
       // for ShowPlayerPanelEvent, replacing the legacy layer flow.
@@ -792,10 +792,10 @@ export class ClientGameRunner {
       .buildables(tile, [UnitType.AssaultShuttle])
       .then((buildables) => {
         if (this.canShuttleAttack(buildables) !== false) {
-          this.sendBoatAttackIntent(tile);
+          this.sendShuttleAttackIntent(tile);
         } else {
           console.warn(
-            "Boat attack triggered but can't send Transport Ship to tile",
+            "Shuttle attack triggered but can't send Assault Shuttle to tile",
           );
         }
       });
@@ -835,7 +835,7 @@ export class ClientGameRunner {
     }
     // R3F pointer events supply the hovered tile directly — but only while
     // the pointer is actually over the map. TileHoverClearEvent resets
-    // lastHoveredTile to null on pointer-out so boat/ground-attack hotkeys
+    // lastHoveredTile to null on pointer-out so shuttle/local-attack hotkeys
     // do not fire on whatever tile the cursor last grazed.
     if (this.lastHoveredTile !== null) {
       return this.lastHoveredTile;
@@ -848,7 +848,7 @@ export class ClientGameRunner {
     return bu?.canBuild ?? false;
   }
 
-  private sendBoatAttackIntent(tile: TileRef) {
+  private sendShuttleAttackIntent(tile: TileRef) {
     if (!this.myPlayer) return;
 
     this.eventBus.emit(
@@ -880,7 +880,7 @@ export class ClientGameRunner {
 
   private onTileHoverClear() {
     // Pointer left the map — drop the cached hover tile so subsequent
-    // boat/ground-attack hotkeys fall through to no-op rather than
+    // shuttle/ground-attack hotkeys fall through to no-op rather than
     // targeting a stale tile.
     this.lastHoveredTile = null;
   }

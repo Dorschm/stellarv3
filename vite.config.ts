@@ -34,12 +34,6 @@ export default defineConfig(({ mode }) => {
       "images/GameplayScreenshot.png",
       assetManifest,
     ),
-    backgroundImageUrl: buildAssetUrl("images/background.webp", assetManifest),
-    desktopLogoImageUrl: buildAssetUrl(
-      "images/StellarGame.webp",
-      assetManifest,
-    ),
-    mobileLogoImageUrl: buildAssetUrl("images/OF.webp", assetManifest),
   };
 
   const syncHashedPublicAssets = () => ({

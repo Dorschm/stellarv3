@@ -22,7 +22,7 @@ function MobileNavItem({
 }) {
   const { showPage } = useNavigation();
   const baseButtonClass =
-    "block text-left font-bold uppercase tracking-[0.05em] text-white/70 transition-all duration-200 cursor-pointer hover:text-blue-600 hover:translate-x-2.5 hover:drop-shadow-[0_0_20px_rgba(37,99,235,0.5)] [&.active]:text-blue-600 [&.active]:translate-x-2.5 [&.active]:drop-shadow-[0_0_20px_rgba(37,99,235,0.5)] text-[clamp(18px,2.8vh,32px)] py-[clamp(0.2rem,0.8vh,0.75rem)]";
+    "block text-left font-bold uppercase tracking-[0.05em] text-white/70 transition-all duration-200 cursor-pointer hover:text-cyan-400 hover:translate-x-2.5 hover:drop-shadow-[0_0_20px_rgba(34,211,238,0.5)] [&.active]:text-cyan-400 [&.active]:translate-x-2.5 [&.active]:drop-shadow-[0_0_20px_rgba(34,211,238,0.5)] text-[clamp(18px,2.8vh,32px)] py-[clamp(0.2rem,0.8vh,0.75rem)]";
 
   if (children) {
     // Wrapper div with notification dot
@@ -115,7 +115,7 @@ export function MobileNavBar() {
       <div
         ref={sidebarRef}
         id="sidebar-menu"
-        className={`peer [.in-game_&]:hidden z-[40001] fixed left-0 top-0 h-full flex flex-col justify-start overflow-visible bg-black/70 backdrop-blur-xl border-r border-white/10 transition-transform duration-500 ease-out transform w-[70%] lg:hidden ${
+        className={`peer [.in-game_&]:hidden z-[40001] fixed left-0 top-0 h-full flex flex-col justify-start overflow-visible bg-[#050a18]/90 backdrop-blur-xl border-r border-cyan-400/10 transition-transform duration-500 ease-out transform w-[70%] lg:hidden ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
         role="dialog"
@@ -123,9 +123,9 @@ export function MobileNavBar() {
       >
         <div className="flex-1 w-full flex flex-col justify-start overflow-y-auto lg:pt-[clamp(1rem,3vh,4rem)] lg:pb-[clamp(0.5rem,2vh,2rem)] lg:px-[clamp(1rem,1.5vw,2rem)] p-5 gap-[clamp(1rem,3vh,3rem)]">
           {/* Logo */}
-          <div className="flex flex-col text-[#2563eb] mb-[clamp(1rem,2vh,2rem)] ml-[clamp(0.2rem,0.4vw,0.4vh)]">
+          <div className="flex flex-col text-cyan-400 mb-[clamp(1rem,2vh,2rem)] ml-[clamp(0.2rem,0.4vw,0.4vh)]">
             <div className="flex flex-col items-center gap-2">
-              <StellarGameLogo className="w-[clamp(120px,15vw,192px)] h-[clamp(40px,6vh,64px)] drop-shadow-[0_0_10px_rgba(37,99,235,0.3)]" />
+              <StellarGameLogo className="w-[clamp(120px,15vw,192px)] h-[clamp(40px,6vh,64px)] drop-shadow-[0_0_12px_rgba(34,211,238,0.4)]" />
               <div className="l-header__highlightText text-center game-version-display" />
             </div>
           </div>

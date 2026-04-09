@@ -87,9 +87,15 @@ export function RadialMenu(): React.JSX.Element | null {
       setActions(null);
       setIsVisible(true);
 
-      myPlayer.actions(clickedTile, null).then((resolved) => {
-        setActions(resolved);
-      });
+      // Request the AssaultShuttle buildable entry specifically — the rest
+      // of the menu doesn't read buildableUnits, and passing `null` forces
+      // GameRunner.playerActions to return an empty array, which would make
+      // the Shuttle button permanently unusable (no rejectReason surfaced).
+      myPlayer
+        .actions(clickedTile, [UnitType.AssaultShuttle])
+        .then((resolved) => {
+          setActions(resolved);
+        });
     },
     [gameView],
   );
@@ -162,11 +168,55 @@ export function RadialMenu(): React.JSX.Element | null {
   };
 
   const handleShuttle = () => {
-    if (!myPlayer) return;
-    const canShuttle = actions?.buildableUnits.some(
-      (bu) => bu.type === UnitType.AssaultShuttle && bu.canBuild !== false,
+    if (!myPlayer) {
+      showShuttleError("Shuttle attack: no local player");
+      return;
+    }
+
+    // Actions haven't resolved yet — the buildableUnits request is still
+    // in flight from the worker. Tell the user rather than silently doing
+    // nothing.
+    if (actions === null) {
+      showShuttleError("Shuttle attack: still loading target info, try again");
+      return;
+    }
+
+    const shuttleBuildable = actions.buildableUnits.find(
+      (bu) => bu.type === UnitType.AssaultShuttle,
     );
-    if (!canShuttle) return;
+
+    if (shuttleBuildable === undefined) {
+      // buildableUnits didn't include a shuttle entry at all. This is a
+      // bug in whatever populated actions (the radial menu requests the
+      // shuttle type explicitly, so it should always be present).
+      showShuttleError(
+        "Shuttle attack: AssaultShuttle missing from buildables — report this",
+      );
+      return;
+    }
+
+    if (shuttleBuildable.canBuild === false) {
+      const tag = shuttleBuildable.rejectReason;
+      const friendly = tag
+        ? humanReadableShuttleReason(tag)
+        : "Cannot launch (no reason reported — likely still in spawn phase or Assault Shuttle disabled in lobby)";
+      showShuttleError(
+        tag
+          ? `Shuttle attack: ${friendly} [${tag}]`
+          : `Shuttle attack: ${friendly}`,
+      );
+      // Also log a structured diagnostic so the user can inspect it.
+
+      console.warn("[RadialMenu] Shuttle attack blocked", {
+        rejectReason: tag ?? null,
+        tile,
+        target: ownerPlayer?.displayName() ?? "unowned",
+        inSpawnPhase: gameView.inSpawnPhase(),
+        isSpawnImmunityActive: gameView.isSpawnImmunityActive(),
+      });
+      return;
+    }
+
     const percent = useHUDStore.getState().attackRatio;
     const ratio = Math.max(0, Math.min(100, percent)) / 100;
     eventBus.emit(
@@ -176,10 +226,13 @@ export function RadialMenu(): React.JSX.Element | null {
   };
 
   const canAttack = !!actions?.canAttack;
-  const canShuttle =
-    actions?.buildableUnits.some(
-      (bu) => bu.type === UnitType.AssaultShuttle && bu.canBuild !== false,
-    ) ?? false;
+  const shuttleBuildable = actions?.buildableUnits.find(
+    (bu) => bu.type === UnitType.AssaultShuttle,
+  );
+  const shuttleDisabledReason =
+    shuttleBuildable?.canBuild === false && shuttleBuildable.rejectReason
+      ? humanReadableShuttleReason(shuttleBuildable.rejectReason)
+      : undefined;
   const canEmoji = ownerIsPlayer;
   const canOpenPlayerPanel = ownerIsPlayer && actions !== null;
   const canBuild = !gameView.inSpawnPhase();
@@ -227,12 +280,20 @@ export function RadialMenu(): React.JSX.Element | null {
           color="bg-red-700/80 hover:bg-red-600/80"
         />
 
+        {/*
+         * Shuttle attack is intentionally always clickable so that players
+         * (and devs) can troubleshoot when a launch is blocked. The click
+         * handler diagnoses `rejectReason` and surfaces it as a toast; the
+         * native `title` still shows the same reason on hover when one is
+         * known.
+         */}
         <RadialButton
           icon={shuttleIcon}
           label={translateText("radial_menu.shuttle") || "Shuttle attack"}
-          disabled={!canShuttle}
+          disabled={false}
           onClick={handleShuttle}
           color="bg-sky-700/80 hover:bg-sky-600/80"
+          tooltip={shuttleDisabledReason}
         />
 
         <RadialButton
@@ -259,6 +320,11 @@ interface RadialButtonProps {
   disabled: boolean;
   onClick: () => void;
   color?: string;
+  /**
+   * Optional native tooltip shown on hover — used to explain *why* a
+   * button is disabled (e.g. which Assault Shuttle precondition failed).
+   */
+  tooltip?: string;
 }
 
 function RadialButton({
@@ -267,6 +333,7 @@ function RadialButton({
   disabled,
   onClick,
   color,
+  tooltip,
 }: RadialButtonProps): React.JSX.Element {
   const base =
     "flex items-center gap-2 px-3 py-2 rounded text-white text-sm transition-colors";
@@ -278,6 +345,7 @@ function RadialButton({
     <button
       className={cls}
       disabled={disabled}
+      title={tooltip}
       onClick={(e) => {
         e.stopPropagation();
         if (!disabled) onClick();
@@ -285,7 +353,52 @@ function RadialButton({
     >
       <img src={icon} alt="" className="w-5 h-5" />
       <span>{label}</span>
+      {disabled && tooltip ? (
+        <span className="ml-auto text-[10px] text-zinc-400 italic">
+          {tooltip}
+        </span>
+      ) : null}
     </button>
+  );
+}
+
+/**
+ * Map an AssaultShuttle `rejectReason` tag (from {@link AssaultShuttleRejection}
+ * in AssaultShuttleUtils) to a short human-readable explanation. Kept inline
+ * here rather than in the i18n bundle because these are dev-facing diagnostics
+ * — they describe internal pathing preconditions and will rarely be seen by
+ * regular players once the ruleset stabilises.
+ */
+function humanReadableShuttleReason(reason: string): string {
+  switch (reason) {
+    case "max_shuttles_in_flight":
+      return "Max shuttles already in flight";
+    case "target_has_no_sector_edge":
+      return "Target planet has no reachable edge";
+    case "target_is_self":
+      return "Can't shuttle to your own territory";
+    case "target_is_ally_or_immune":
+      return "Target is allied or immune";
+    case "no_spaceport":
+      return "Build a Spaceport first — shuttles launch from Spaceports";
+    case "no_deep_space_path":
+      return "No deep-space path from your nearest Spaceport";
+    default:
+      return reason;
+  }
+}
+
+/**
+ * Show a red toast via the existing `show-message` custom event the
+ * HeadsUpMessage component listens for. Kept local to the radial menu so
+ * the Shuttle button can explain *why* a launch was blocked instead of
+ * silently doing nothing.
+ */
+function showShuttleError(message: string): void {
+  window.dispatchEvent(
+    new CustomEvent("show-message", {
+      detail: { message, color: "red", duration: 4000 },
+    }),
   );
 }
 

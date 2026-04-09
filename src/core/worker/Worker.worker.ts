@@ -3,6 +3,7 @@ import { createGameRunner, GameRunner } from "../GameRunner";
 import { FetchGameMapLoader } from "../game/FetchGameMapLoader";
 import { ErrorUpdate, GameUpdateViewData } from "../game/GameUpdates";
 import {
+  AssaultShuttleSpawnResultMessage,
   AttackClusteredPositionsResultMessage,
   InitializedMessage,
   MainThreadMessage,
@@ -10,7 +11,6 @@ import {
   PlayerBorderTilesResultMessage,
   PlayerBuildablesResultMessage,
   PlayerProfileResultMessage,
-  TransportShipSpawnResultMessage,
   WorkerMessage,
 } from "./WorkerMessages";
 
@@ -268,7 +268,7 @@ ctx.addEventListener("message", async (e: MessageEvent<MainThreadMessage>) => {
         } as AttackClusteredPositionsResultMessage);
       }
       break;
-    case "transport_ship_spawn":
+    case "assault_shuttle_spawn":
       if (!gameRunner) {
         throw new Error("Game runner not initialized");
       }
@@ -279,12 +279,12 @@ ctx.addEventListener("message", async (e: MessageEvent<MainThreadMessage>) => {
           message.targetTile,
         );
         sendMessage({
-          type: "transport_ship_spawn_result",
+          type: "assault_shuttle_spawn_result",
           id: message.id,
           result: spawnTile,
-        } as TransportShipSpawnResultMessage);
+        } as AssaultShuttleSpawnResultMessage);
       } catch (error) {
-        console.error("Failed to spawn transport ship:", error);
+        console.error("Failed to spawn assault shuttle:", error);
       }
       break;
     default:

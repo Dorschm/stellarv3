@@ -453,7 +453,7 @@ export class GameImpl implements Game {
       case "grid":
         this.planDrivenUnitIds.add(record.unitId);
         break;
-      case "train":
+      case "frigate":
         this.planDrivenUnitIds.add(record.engineUnitId);
         for (const unitId of record.carUnitIds) {
           this.planDrivenUnitIds.add(unitId);
@@ -1203,15 +1203,15 @@ export class GameImpl implements Game {
       }
     }
 
-    // Don't transfer gold when the conquered player didn't play (never attacked anyone)
-    // This is especially important when starting gold is enabled
+    // Don't transfer credits when the conquered player didn't play (never attacked anyone)
+    // This is especially important when starting credits is enabled
     const stats = this._stats.getPlayerStats(conquered);
     const attacksSent = stats?.attacks?.[ATTACK_INDEX_SENT] ?? 0n;
-    const skipGoldTransfer =
+    const skipCreditTransfer =
       attacksSent === 0n && conquered.type() === PlayerType.Human;
-    const gold = skipGoldTransfer ? 0n : conquered.credits();
+    const creditAmount = skipCreditTransfer ? 0n : conquered.credits();
 
-    if (skipGoldTransfer) {
+    if (skipCreditTransfer) {
       this.displayMessage(
         "events_display.conquered_no_credits",
         MessageType.CONQUERED_PLAYER,
@@ -1226,24 +1226,24 @@ export class GameImpl implements Game {
         "events_display.received_credits_from_conquest",
         MessageType.CONQUERED_PLAYER,
         conqueror.id(),
-        gold,
+        creditAmount,
         {
-          credits: renderNumber(gold),
+          credits: renderNumber(creditAmount),
           name: conquered.displayName(),
         },
       );
-      conqueror.addCredits(gold);
-      conquered.removeCredits(gold);
+      conqueror.addCredits(creditAmount);
+      conquered.removeCredits(creditAmount);
 
       // Record stats
-      this.stats().creditsWar(conqueror, conquered, gold);
+      this.stats().creditsWar(conqueror, conquered, creditAmount);
     }
 
     this.addUpdate({
       type: GameUpdateType.ConquestEvent,
       conquerorId: conqueror.id(),
       conqueredId: conquered.id(),
-      credits: gold,
+      credits: creditAmount,
     });
   }
 }

@@ -26,7 +26,7 @@ import { useGameTick } from "./useGameTick";
 const warshipIcon = assetUrl("images/BattleshipIconWhite.svg");
 const cityIcon = assetUrl("images/CityIconWhite.svg");
 const factoryIcon = assetUrl("images/FactoryIconWhite.svg");
-const goldCoinIcon = assetUrl("images/GoldCoinIcon.svg");
+const creditsIcon = assetUrl("images/GoldCoinIcon.svg");
 const mirvIcon = assetUrl("images/MIRVIcon.svg");
 const missileSiloIcon = assetUrl("images/MissileSiloIconWhite.svg");
 const hydrogenBombIcon = assetUrl("images/MushroomCloudIconWhite.svg");
@@ -384,8 +384,8 @@ export function BuildMenu(): React.JSX.Element {
                     gameView && gameView.myPlayer() ? cost(item) : 0,
                   )}
                   <img
-                    src={goldCoinIcon}
-                    alt="gold"
+                    src={creditsIcon}
+                    alt="credits"
                     width={12}
                     height={12}
                     style={{ verticalAlign: "middle" }}

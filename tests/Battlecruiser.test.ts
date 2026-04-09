@@ -15,7 +15,7 @@ let game: Game;
 let player1: Player;
 let player2: Player;
 
-describe("Warship", () => {
+describe("Battlecruiser", () => {
   beforeEach(async () => {
     game = await setup(
       "half_land_half_ocean",
@@ -24,8 +24,8 @@ describe("Warship", () => {
         instantBuild: true,
       },
       [
-        new PlayerInfo("boat dude", PlayerType.Human, null, "player_1_id"),
-        new PlayerInfo("boat dude", PlayerType.Human, null, "player_2_id"),
+        new PlayerInfo("pilot alpha", PlayerType.Human, null, "player_1_id"),
+        new PlayerInfo("pilot alpha", PlayerType.Human, null, "player_2_id"),
       ],
     );
 
@@ -37,7 +37,7 @@ describe("Warship", () => {
     player2 = game.player("player_2_id");
   });
 
-  test("Warship heals only if player has port", async () => {
+  test("Battlecruiser heals only if player has spaceport", async () => {
     const maxHealth = game.config().unitInfo(UnitType.Battlecruiser).maxHealth;
     if (typeof maxHealth !== "number") {
       expect(typeof maxHealth).toBe("number");
@@ -49,30 +49,30 @@ describe("Warship", () => {
       game.ref(coastX, 10),
       {},
     );
-    const warship = player1.buildUnit(
+    const battlecruiser = player1.buildUnit(
       UnitType.Battlecruiser,
       game.ref(coastX + 1, 10),
       {
         patrolTile: game.ref(coastX + 1, 10),
       },
     );
-    game.addExecution(new BattlecruiserExecution(warship));
+    game.addExecution(new BattlecruiserExecution(battlecruiser));
 
     game.executeNextTick();
 
-    expect(warship.health()).toBe(maxHealth);
-    warship.modifyHealth(-10);
-    expect(warship.health()).toBe(maxHealth - 10);
+    expect(battlecruiser.health()).toBe(maxHealth);
+    battlecruiser.modifyHealth(-10);
+    expect(battlecruiser.health()).toBe(maxHealth - 10);
     game.executeNextTick();
-    expect(warship.health()).toBe(maxHealth - 9);
+    expect(battlecruiser.health()).toBe(maxHealth - 9);
 
     port.delete();
 
     game.executeNextTick();
-    expect(warship.health()).toBe(maxHealth - 9);
+    expect(battlecruiser.health()).toBe(maxHealth - 9);
   });
 
-  test("Warship captures trade if player has port", async () => {
+  test("Battlecruiser captures trade if player has spaceport", async () => {
     const portTile = game.ref(coastX, 10);
     player1.buildUnit(UnitType.Spaceport, portTile, {});
     game.addExecution(
@@ -83,7 +83,7 @@ describe("Warship", () => {
       ),
     );
 
-    const tradeShip = player2.buildUnit(
+    const tradeFreighter = player2.buildUnit(
       UnitType.TradeFreighter,
       game.ref(coastX + 1, 7),
       {
@@ -95,15 +95,15 @@ describe("Warship", () => {
       },
     );
 
-    expect(tradeShip.owner().id()).toBe(player2.id());
+    expect(tradeFreighter.owner().id()).toBe(player2.id());
     // Let plenty of time for A* to execute
     for (let i = 0; i < 10; i++) {
       game.executeNextTick();
     }
-    expect(tradeShip.owner()).toBe(player1);
+    expect(tradeFreighter.owner()).toBe(player1);
   });
 
-  test("Warship do not capture trade if player has no port", async () => {
+  test("Battlecruiser do not capture trade if player has no spaceport", async () => {
     game.addExecution(
       new BattlecruiserExecution(
         player1.buildUnit(UnitType.Battlecruiser, game.ref(coastX + 1, 11), {
@@ -112,7 +112,7 @@ describe("Warship", () => {
       ),
     );
 
-    const tradeShip = player2.buildUnit(
+    const tradeFreighter = player2.buildUnit(
       UnitType.TradeFreighter,
       game.ref(coastX + 1, 11),
       {
@@ -124,29 +124,29 @@ describe("Warship", () => {
       },
     );
 
-    expect(tradeShip.owner().id()).toBe(player2.id());
-    // Let plenty of time for warship to potentially capture trade ship
+    expect(tradeFreighter.owner().id()).toBe(player2.id());
+    // Let plenty of time for battlecruiser to potentially capture trade freighter
     for (let i = 0; i < 10; i++) {
       game.executeNextTick();
     }
 
-    expect(tradeShip.owner().id()).toBe(player2.id());
+    expect(tradeFreighter.owner().id()).toBe(player2.id());
   });
 
-  test("Warship does not target trade ships that are safe from pirates", async () => {
-    // build port so warship can target trade ships
+  test("Battlecruiser does not target trade freighters that are safe from pirates", async () => {
+    // build port so battlecruiser can target trade freighters
     player1.buildUnit(UnitType.Spaceport, game.ref(coastX, 10), {});
 
-    const warship = player1.buildUnit(
+    const battlecruiser = player1.buildUnit(
       UnitType.Battlecruiser,
       game.ref(coastX + 1, 10),
       {
         patrolTile: game.ref(coastX + 1, 10),
       },
     );
-    game.addExecution(new BattlecruiserExecution(warship));
+    game.addExecution(new BattlecruiserExecution(battlecruiser));
 
-    const tradeShip = player2.buildUnit(
+    const tradeFreighter = player2.buildUnit(
       UnitType.TradeFreighter,
       game.ref(coastX + 1, 10),
       {
@@ -158,17 +158,17 @@ describe("Warship", () => {
       },
     );
 
-    tradeShip.setSafeFromRaiders();
+    tradeFreighter.setSafeFromRaiders();
 
     executeTicks(game, 10);
 
-    expect(tradeShip.owner().id()).toBe(player2.id());
+    expect(tradeFreighter.owner().id()).toBe(player2.id());
   });
 
-  test("Warship moves to new patrol tile", async () => {
+  test("Battlecruiser moves to new patrol tile", async () => {
     game.config().battlecruiserTargettingRange = () => 1;
 
-    const warship = player1.buildUnit(
+    const battlecruiser = player1.buildUnit(
       UnitType.Battlecruiser,
       game.ref(coastX + 1, 10),
       {
@@ -176,37 +176,37 @@ describe("Warship", () => {
       },
     );
 
-    game.addExecution(new BattlecruiserExecution(warship));
+    game.addExecution(new BattlecruiserExecution(battlecruiser));
 
     game.addExecution(
       new MoveBattlecruiserExecution(
         player1,
-        warship.id(),
+        battlecruiser.id(),
         game.ref(coastX + 5, 15),
       ),
     );
 
     executeTicks(game, 10);
 
-    expect(warship.patrolTile()).toBe(game.ref(coastX + 5, 15));
+    expect(battlecruiser.patrolTile()).toBe(game.ref(coastX + 5, 15));
   });
 
-  test("Warship does not not target trade ships outside of patrol range", async () => {
+  test("Battlecruiser does not not target trade freighters outside of patrol range", async () => {
     game.config().battlecruiserTargettingRange = () => 3;
 
-    // build port so warship can target trade ships
+    // build port so battlecruiser can target trade freighters
     player1.buildUnit(UnitType.Spaceport, game.ref(coastX, 10), {});
 
-    const warship = player1.buildUnit(
+    const battlecruiser = player1.buildUnit(
       UnitType.Battlecruiser,
       game.ref(coastX + 1, 10),
       {
         patrolTile: game.ref(coastX + 1, 10),
       },
     );
-    game.addExecution(new BattlecruiserExecution(warship));
+    game.addExecution(new BattlecruiserExecution(battlecruiser));
 
-    const tradeShip = player2.buildUnit(
+    const tradeFreighter = player2.buildUnit(
       UnitType.TradeFreighter,
       game.ref(coastX + 1, 15),
       {
@@ -221,12 +221,12 @@ describe("Warship", () => {
     executeTicks(game, 10);
 
     // Trade ship should not be captured
-    expect(tradeShip.owner().id()).toBe(player2.id());
+    expect(tradeFreighter.owner().id()).toBe(player2.id());
   });
 
   test("MoveBattlecruiserExecution fails if player is not the owner", async () => {
     const originalPatrolTile = game.ref(coastX + 1, 10);
-    const warship = player1.buildUnit(
+    const battlecruiser = player1.buildUnit(
       UnitType.Battlecruiser,
       game.ref(coastX + 1, 5),
       {
@@ -235,31 +235,31 @@ describe("Warship", () => {
     );
     new MoveBattlecruiserExecution(
       player2,
-      warship.id(),
+      battlecruiser.id(),
       game.ref(coastX + 5, 15),
     ).init(game, 0);
-    expect(warship.patrolTile()).toBe(originalPatrolTile);
+    expect(battlecruiser.patrolTile()).toBe(originalPatrolTile);
   });
 
-  test("MoveBattlecruiserExecution fails if warship is not active", async () => {
+  test("MoveBattlecruiserExecution fails if battlecruiser is not active", async () => {
     const originalPatrolTile = game.ref(coastX + 1, 10);
-    const warship = player1.buildUnit(
+    const battlecruiser = player1.buildUnit(
       UnitType.Battlecruiser,
       game.ref(coastX + 1, 5),
       {
         patrolTile: originalPatrolTile,
       },
     );
-    warship.delete();
+    battlecruiser.delete();
     new MoveBattlecruiserExecution(
       player1,
-      warship.id(),
+      battlecruiser.id(),
       game.ref(coastX + 5, 15),
     ).init(game, 0);
-    expect(warship.patrolTile()).toBe(originalPatrolTile);
+    expect(battlecruiser.patrolTile()).toBe(originalPatrolTile);
   });
 
-  test("MoveBattlecruiserExecution fails gracefully if warship not found", async () => {
+  test("MoveBattlecruiserExecution fails gracefully if battlecruiser not found", async () => {
     const exec = new MoveBattlecruiserExecution(
       player1,
       123,

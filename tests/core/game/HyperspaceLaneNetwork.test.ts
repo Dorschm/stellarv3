@@ -20,9 +20,9 @@ const createMockStation = (unitId: number): any => {
     neighbors: vi.fn(() => []),
     getCluster: vi.fn(() => cluster),
     setCluster: vi.fn(),
-    addRailroad: vi.fn(),
-    getRailroads: vi.fn(() => lane),
-    clearRailroads: vi.fn(),
+    addHyperspaceLane: vi.fn(),
+    getHyperspaceLanes: vi.fn(() => lane),
+    clearHyperspaceLanes: vi.fn(),
   };
 };
 
@@ -99,12 +99,12 @@ describe("HyperspaceLaneNetworkImpl", () => {
   });
 
   test("removeStation removes all neighbor links", () => {
-    const neighbor = { removeNeighboringRails: vi.fn() };
+    const neighbor = { removeNeighboringLanes: vi.fn() };
     const station = createMockStation(1);
     station.neighbors = vi.fn(() => [neighbor]);
     stationManager.findStation.mockReturnValue(station);
     network.removeStation(station);
-    expect(station.clearRailroads).toHaveBeenCalled();
+    expect(station.clearHyperspaceLanes).toHaveBeenCalled();
   });
 
   test("connectStation calls addStation and connects to nearby", () => {
@@ -257,7 +257,7 @@ describe("HyperspaceLaneNetworkImpl", () => {
       expect(result).toEqual([]);
     });
 
-    test("skips paths that exceed max railroad size", () => {
+    test("skips paths that exceed max hyperspace lane size", () => {
       const tile = 42 as any;
       const hyperspaceLaneGridMock = { query: vi.fn(() => new Set()) };
       (network as any).hyperspaceLaneGrid = hyperspaceLaneGridMock;

@@ -26,8 +26,8 @@ export type WorkerMessageType =
   | "player_border_tiles_result"
   | "attack_clustered_positions"
   | "attack_clustered_positions_result"
-  | "transport_ship_spawn"
-  | "transport_ship_spawn_result";
+  | "assault_shuttle_spawn"
+  | "assault_shuttle_spawn_result";
 
 // Base interface for all messages
 interface BaseWorkerMessage {
@@ -120,14 +120,14 @@ export interface AttackClusteredPositionsResultMessage
   attacks: { id: string; positions: { x: number; y: number }[] }[];
 }
 
-export interface TransportShipSpawnMessage extends BaseWorkerMessage {
-  type: "transport_ship_spawn";
+export interface AssaultShuttleSpawnMessage extends BaseWorkerMessage {
+  type: "assault_shuttle_spawn";
   playerID: PlayerID;
   targetTile: TileRef;
 }
 
-export interface TransportShipSpawnResultMessage extends BaseWorkerMessage {
-  type: "transport_ship_spawn_result";
+export interface AssaultShuttleSpawnResultMessage extends BaseWorkerMessage {
+  type: "assault_shuttle_spawn_result";
   result: TileRef | false;
 }
 
@@ -140,7 +140,7 @@ export type MainThreadMessage =
   | PlayerProfileMessage
   | PlayerBorderTilesMessage
   | AttackClusteredPositionsMessage
-  | TransportShipSpawnMessage;
+  | AssaultShuttleSpawnMessage;
 
 // Message send from worker
 export type WorkerMessage =
@@ -152,4 +152,4 @@ export type WorkerMessage =
   | PlayerProfileResultMessage
   | PlayerBorderTilesResultMessage
   | AttackClusteredPositionsResultMessage
-  | TransportShipSpawnResultMessage;
+  | AssaultShuttleSpawnResultMessage;

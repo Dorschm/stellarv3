@@ -578,7 +578,7 @@ export interface Player {
   // Returns the existing unit that can be upgraded,
   // or false if it cannot be upgraded.
   // New units of the same type can upgrade existing units.
-  // e.g. if a place a new city here, can it upgrade an existing city?
+  // e.g. if I place a new colony here, can it upgrade an existing colony?
   findUnitToUpgrade(type: UnitType, targetTile: TileRef): Unit | false;
   canUpgradeUnit(unit: Unit): boolean;
   upgradeUnit(unit: Unit): void;
@@ -797,6 +797,13 @@ export interface BuildableUnit {
   cost: Credits;
   overlappingHyperspaceLanes: number[];
   ghostHyperspaceLanePaths: TileRef[][];
+  /**
+   * When `canBuild === false`, an optional machine-readable rejection tag
+   * that explains *why* the build is unavailable. Populated per-unit-type
+   * on a best-effort basis (currently only AssaultShuttle) so the UI can
+   * surface a human-readable tooltip on the disabled build button.
+   */
+  rejectReason?: string;
 }
 
 export interface PlayerProfile {

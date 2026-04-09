@@ -6,13 +6,13 @@ import { GameUpdateType } from "./GameUpdates";
 import { HyperspaceLane } from "./HyperspaceLane";
 
 /**
- * Handle train stops at various station types
+ * Handle frigate stops at various station types
  */
-interface TrainStopHandler {
+interface FrigateStopHandler {
   onStop(mg: Game, station: TradeHub, trainExecution: FrigateExecution): void;
 }
 
-class TradeStationStopHandler implements TrainStopHandler {
+class TradeStationStopHandler implements FrigateStopHandler {
   onStop(mg: Game, station: TradeHub, trainExecution: FrigateExecution): void {
     const stationOwner = station.unit.owner();
     const trainOwner = trainExecution.owner();
@@ -32,13 +32,13 @@ class TradeStationStopHandler implements TrainStopHandler {
   }
 }
 
-class FactoryStopHandler implements TrainStopHandler {
+class FactoryStopHandler implements FrigateStopHandler {
   onStop(mg: Game, station: TradeHub, trainExecution: FrigateExecution): void {}
 }
 
-export function createTrainStopHandlers(
+export function createFrigateStopHandlers(
   random: PseudoRandom,
-): Partial<Record<UnitType, TrainStopHandler>> {
+): Partial<Record<UnitType, FrigateStopHandler>> {
   return {
     [UnitType.Colony]: new TradeStationStopHandler(),
     [UnitType.Spaceport]: new TradeStationStopHandler(),
@@ -48,18 +48,18 @@ export function createTrainStopHandlers(
 
 export class TradeHub {
   id: number = -1; // assigned by StationManager
-  private readonly stopHandlers: Partial<Record<UnitType, TrainStopHandler>> =
+  private readonly stopHandlers: Partial<Record<UnitType, FrigateStopHandler>> =
     {};
   private cluster: Cluster | null = null;
-  private railroads: Set<HyperspaceLane> = new Set();
-  // Quick lookup from neighboring station to connecting railroad
-  private railroadByNeighbor: Map<TradeHub, HyperspaceLane> = new Map();
+  private hyperspaceLanes: Set<HyperspaceLane> = new Set();
+  // Quick lookup from neighboring station to connecting hyperspace lane
+  private laneByNeighbor: Map<TradeHub, HyperspaceLane> = new Map();
 
   constructor(
     private mg: Game,
     public unit: Unit,
   ) {
-    this.stopHandlers = createTrainStopHandlers(new PseudoRandom(mg.ticks()));
+    this.stopHandlers = createFrigateStopHandlers(new PseudoRandom(mg.ticks()));
   }
 
   tradeAvailable(otherPlayer: Player): boolean {
@@ -67,25 +67,25 @@ export class TradeHub {
     return otherPlayer === player || player.canTrade(otherPlayer);
   }
 
-  clearRailroads() {
-    this.railroads.clear();
-    this.railroadByNeighbor.clear();
+  clearHyperspaceLanes() {
+    this.hyperspaceLanes.clear();
+    this.laneByNeighbor.clear();
   }
 
-  addRailroad(railRoad: HyperspaceLane) {
-    this.railroads.add(railRoad);
-    const neighbor = railRoad.from === this ? railRoad.to : railRoad.from;
-    this.railroadByNeighbor.set(neighbor, railRoad);
+  addHyperspaceLane(lane: HyperspaceLane) {
+    this.hyperspaceLanes.add(lane);
+    const neighbor = lane.from === this ? lane.to : lane.from;
+    this.laneByNeighbor.set(neighbor, lane);
   }
 
-  removeRailroad(railRoad: HyperspaceLane) {
-    this.railroads.delete(railRoad);
-    const neighbor = railRoad.from === this ? railRoad.to : railRoad.from;
-    this.railroadByNeighbor.delete(neighbor);
+  removeHyperspaceLane(lane: HyperspaceLane) {
+    this.hyperspaceLanes.delete(lane);
+    const neighbor = lane.from === this ? lane.to : lane.from;
+    this.laneByNeighbor.delete(neighbor);
   }
 
-  removeNeighboringRails(station: TradeHub) {
-    const toRemove = [...this.railroads].find(
+  removeNeighboringLanes(station: TradeHub) {
+    const toRemove = [...this.hyperspaceLanes].find(
       (r) => r.from === station || r.to === station,
     );
     if (toRemove) {
@@ -93,13 +93,13 @@ export class TradeHub {
         type: GameUpdateType.HyperspaceLaneDestructionEvent,
         id: toRemove.id,
       });
-      this.removeRailroad(toRemove);
+      this.removeHyperspaceLane(toRemove);
     }
   }
 
   neighbors(): TradeHub[] {
     const neighbors: TradeHub[] = [];
-    for (const r of this.railroads) {
+    for (const r of this.hyperspaceLanes) {
       if (r.from !== this) {
         neighbors.push(r.from);
       } else {
@@ -117,12 +117,12 @@ export class TradeHub {
     return this.unit.isActive();
   }
 
-  getRailroads(): Set<HyperspaceLane> {
-    return this.railroads;
+  getHyperspaceLanes(): Set<HyperspaceLane> {
+    return this.hyperspaceLanes;
   }
 
-  getRailroadTo(station: TradeHub): HyperspaceLane | null {
-    return this.railroadByNeighbor.get(station) ?? null;
+  getHyperspaceLaneTo(station: TradeHub): HyperspaceLane | null {
+    return this.laneByNeighbor.get(station) ?? null;
   }
 
   setCluster(cluster: Cluster | null) {
@@ -137,7 +137,7 @@ export class TradeHub {
     return this.cluster;
   }
 
-  onTrainStop(trainExecution: FrigateExecution) {
+  onFrigateStop(trainExecution: FrigateExecution) {
     const type = this.unit.type();
     const handler = this.stopHandlers[type];
     if (handler) {

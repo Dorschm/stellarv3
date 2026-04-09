@@ -1,7 +1,10 @@
 import { expect, test } from "@playwright/test";
 import {
+  checkVisibleText,
+  getConsoleErrors,
   spawnLocalPlayer,
   startMultiplayerGame,
+  trackConsoleErrors,
   waitForTicksAbove,
 } from "./fixtures/game-fixtures";
 
@@ -19,6 +22,8 @@ test.describe("multiplayer sync", () => {
     browser,
   }) => {
     const { host, guest } = await startMultiplayerGame(browser);
+    trackConsoleErrors(host);
+    trackConsoleErrors(guest);
 
     // Both pages landed in an `in-game` shell state — waitForInGame already
     // covers this, but re-asserting here keeps the failure message local to
@@ -67,14 +72,16 @@ test.describe("multiplayer sync", () => {
           async () =>
             pg.evaluate(
               ({ hName, gName }) => {
-                const gv = (window as unknown as {
-                  __gameView?: {
-                    playerViews(): {
-                      displayName(): string;
-                      isAlive(): boolean;
-                    }[];
-                  };
-                }).__gameView;
+                const gv = (
+                  window as unknown as {
+                    __gameView?: {
+                      playerViews(): {
+                        displayName(): string;
+                        isAlive(): boolean;
+                      }[];
+                    };
+                  }
+                ).__gameView;
                 if (!gv) return false;
                 const names = gv
                   .playerViews()
@@ -111,6 +118,23 @@ test.describe("multiplayer sync", () => {
       }),
     ]);
     expect(Math.abs(finalHostTicks - finalGuestTicks)).toBeLessThanOrEqual(2);
+
+    // Validate no console errors and no stale/untranslated text.
+    const hostErrors = getConsoleErrors(host);
+    const guestErrors = getConsoleErrors(guest);
+    expect(hostErrors, "Unexpected console errors on host").toEqual([]);
+    expect(guestErrors, "Unexpected console errors on guest").toEqual([]);
+
+    const hostTextViolations = await checkVisibleText(host);
+    const guestTextViolations = await checkVisibleText(guest);
+    expect(
+      hostTextViolations,
+      "Stale terms or untranslated keys on host",
+    ).toEqual([]);
+    expect(
+      guestTextViolations,
+      "Stale terms or untranslated keys on guest",
+    ).toEqual([]);
 
     await host.context().close();
     await guest.context().close();

@@ -70,7 +70,7 @@ describe("TradeHub", () => {
     unit.type.mockReturnValue(UnitType.Colony);
     const station = new TradeHub(game, unit);
 
-    station.onTrainStop(trainExecution);
+    station.onFrigateStop(trainExecution);
 
     expect(unit.owner().addCredits).toHaveBeenCalledWith(1000n, unit.tile());
   });
@@ -80,7 +80,7 @@ describe("TradeHub", () => {
     player.isFriendly.mockReturnValue(true);
     const station = new TradeHub(game, unit);
 
-    station.onTrainStop(trainExecution);
+    station.onFrigateStop(trainExecution);
 
     expect(unit.owner().addCredits).toHaveBeenCalledWith(1000n, unit.tile());
     expect(trainExecution.owner().addCredits).toHaveBeenCalledWith(
@@ -98,7 +98,7 @@ describe("TradeHub", () => {
     (trainExecution as any).tradeStopsVisited = vi.fn().mockReturnValue(3);
     const station = new TradeHub(game, unit);
 
-    station.onTrainStop(trainExecution);
+    station.onFrigateStop(trainExecution);
 
     expect(trainGoldSpy).toHaveBeenCalledWith(expect.any(String), 3);
   });
@@ -117,9 +117,9 @@ describe("TradeHub", () => {
   it("adds and retrieves neighbors", () => {
     const stationA = new TradeHub(game, unit);
     const stationB = new TradeHub(game, unit);
-    const railRoad = { from: stationA, to: stationB, tiles: [] } as any;
+    const lane = { from: stationA, to: stationB, tiles: [] } as any;
 
-    stationA.addRailroad(railRoad);
+    stationA.addHyperspaceLane(lane);
 
     const neighbors = stationA.neighbors();
     expect(neighbors).toContain(stationB);
@@ -129,23 +129,23 @@ describe("TradeHub", () => {
     const stationA = new TradeHub(game, unit);
     const stationB = new TradeHub(game, unit);
 
-    const railRoad = {
+    const lane = {
       from: stationA,
       to: stationB,
       tiles: [{ x: 1, y: 1 }],
     } as any;
 
-    stationA.addRailroad(railRoad);
-    expect(stationA.getRailroads().size).toBe(1);
+    stationA.addHyperspaceLane(lane);
+    expect(stationA.getHyperspaceLanes().size).toBe(1);
 
-    stationA.removeNeighboringRails(stationB);
+    stationA.removeNeighboringLanes(stationB);
 
     expect(game.addUpdate).toHaveBeenCalledWith(
       expect.objectContaining({
         type: GameUpdateType.HyperspaceLaneDestructionEvent,
       }),
     );
-    expect(stationA.getRailroads().size).toBe(0);
+    expect(stationA.getHyperspaceLanes().size).toBe(0);
   });
 
   it("assigns and retrieves cluster", () => {

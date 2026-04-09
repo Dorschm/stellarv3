@@ -39,7 +39,7 @@ import { useGameTick } from "./useGameTick";
 
 const allianceIcon = assetUrl("images/AllianceIconWhite.svg");
 const chatIcon = assetUrl("images/ChatIconWhite.svg");
-const donateGoldIcon = assetUrl("images/DonateGoldIconWhite.svg");
+const donateCreditsIcon = assetUrl("images/DonateGoldIconWhite.svg");
 const donateTroopIcon = assetUrl("images/DonateTroopIconWhite.svg");
 const emojiIcon = assetUrl("images/EmojiIconWhite.svg");
 const shieldIcon = assetUrl("images/ShieldIconWhite.svg");
@@ -231,7 +231,7 @@ export function PlayerPanel(): React.JSX.Element {
     [eventBus, gameView, tile, hidePanel],
   );
 
-  // -- Donate troops / gold (legacy opened an inline send-resource modal;
+  // -- Donate troops / credits (legacy opened an inline send-resource modal;
   //    in the migrated HUD we emit an event so a dedicated modal component
   //    can consume it). --
   const handleDonateTroopClick = useCallback(
@@ -242,9 +242,9 @@ export function PlayerPanel(): React.JSX.Element {
     [eventBus],
   );
 
-  const handleDonateGoldClick = useCallback(
+  const handleDonateCreditsClick = useCallback(
     (other: any) => {
-      eventBus.emit(new ShowDonateResourceModalEvent(other, "gold"));
+      eventBus.emit(new ShowDonateResourceModalEvent(other, "credits"));
       setSuppressNextHide(true);
     },
     [eventBus],
@@ -340,7 +340,7 @@ export function PlayerPanel(): React.JSX.Element {
     ? actions?.canSendEmojiAllPlayers
     : actions?.interaction?.canSendEmoji;
   const canEmbargo = actions?.interaction?.canEmbargo;
-  const canDonateGold = actions?.interaction?.canDonateCredits;
+  const canDonateCredits = actions?.interaction?.canDonateCredits;
   const canDonateTroops = actions?.interaction?.canDonateTroops;
   const canEmbargoAll = actions?.canEmbargoAll;
   const isLobbyCreator =
@@ -544,13 +544,13 @@ export function PlayerPanel(): React.JSX.Element {
               </button>
             )}
 
-            {canDonateGold && (
+            {canDonateCredits && (
               <button
-                onClick={() => handleDonateGoldClick(other)}
+                onClick={() => handleDonateCreditsClick(other)}
                 className="flex items-center gap-2 px-3 py-2 bg-zinc-700 hover:bg-zinc-600 text-white rounded transition-colors"
                 title={translateText("player_panel.send_credits")}
               >
-                <img src={donateGoldIcon} alt="" className="w-4 h-4" />
+                <img src={donateCreditsIcon} alt="" className="w-4 h-4" />
                 {translateText("player_panel.gold")}
               </button>
             )}

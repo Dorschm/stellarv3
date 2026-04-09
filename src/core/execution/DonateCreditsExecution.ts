@@ -55,7 +55,7 @@ export class DonateCreditsExecution implements Execution {
       this.sender.canDonateCredits(this.recipient) &&
       this.sender.donateCredits(this.recipient, this.credits)
     ) {
-      // Give relation points based on how much gold was donated
+      // Give relation points based on how many credits were donated
       const relationUpdate = this.calculateRelationUpdate(this.credits, ticks);
       if (relationUpdate > 0) {
         this.recipient.updateRelation(this.sender, relationUpdate);
@@ -84,7 +84,7 @@ export class DonateCreditsExecution implements Execution {
       }
     } else {
       console.warn(
-        `cannot send gold from ${this.sender.name()} to ${this.recipient.name()}`,
+        `cannot send credits from ${this.sender.name()} to ${this.recipient.name()}`,
       );
     }
     this.active = false;

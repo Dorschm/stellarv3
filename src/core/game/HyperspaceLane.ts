@@ -16,8 +16,8 @@ export class HyperspaceLane {
       type: GameUpdateType.HyperspaceLaneDestructionEvent,
       id: this.id,
     });
-    this.from.removeRailroad(this);
-    this.to.removeRailroad(this);
+    this.from.removeHyperspaceLane(this);
+    this.to.removeHyperspaceLane(this);
   }
 
   getClosestTileIndex(game: Game, to: TileRef): number {
@@ -45,7 +45,7 @@ export function getOrientedHyperspaceLane(
   from: TradeHub,
   to: TradeHub,
 ): OrientedHyperspaceLane | null {
-  const lane = from.getRailroadTo(to);
+  const lane = from.getHyperspaceLaneTo(to);
   if (!lane) return null;
   // If tiles are stored from -> to, we go forward when lane.to === to
   const forward = lane.to === to;
@@ -53,7 +53,7 @@ export function getOrientedHyperspaceLane(
 }
 
 /**
- * Wrap a railroad with a direction so it always starts at tiles[0]
+ * Wrap a hyperspace lane with a direction so it always starts at tiles[0]
  */
 export class OrientedHyperspaceLane {
   private tiles: TileRef[] = [];

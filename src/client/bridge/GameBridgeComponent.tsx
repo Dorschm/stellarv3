@@ -28,7 +28,7 @@ function snapshotPlayer(p: PlayerView, isMe: boolean): PlayerSnapshot {
     displayName: p.displayName(),
     isAlive: p.isAlive(),
     troops: p.troops(),
-    gold: p.credits(),
+    credits: p.credits(),
     numTilesOwned: p.numTilesOwned(),
     allies: p.allies().map((a) => a.smallID()),
     isMe,

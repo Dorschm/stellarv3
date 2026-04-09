@@ -101,7 +101,7 @@ describe("Hydrogen Bomb and MIRV flows", () => {
     const goldAfterConstruction = playerWithConstruction.credits();
     expect(goldAfterConstruction).toBeLessThan(goldBeforeSilo + siloCost);
 
-    // Attempt to launch HydrogenBomb while silo is under construction
+    // Attempt to launch NovaBomb while silo is under construction
     const targetTile = gameWithConstruction.ref(10, 10);
     const hydrogenBombCountBefore = playerWithConstruction.units(
       UnitType.NovaBomb,

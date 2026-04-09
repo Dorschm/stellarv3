@@ -12,15 +12,15 @@ import { TileRef } from "../../game/GameMap";
 import { PseudoRandom } from "../../PseudoRandom";
 import { ConstructionExecution } from "../ConstructionExecution";
 import {
-  EMOJI_WARSHIP_RETALIATION,
+  EMOJI_BATTLECRUISER_RETALIATION,
   NationEmojiBehavior,
 } from "./NationEmojiBehavior";
 
 export class NationBattlecruiserBehavior {
-  // Track our transport ships we currently own
-  private trackedTransportShips: Set<Unit> = new Set();
-  // Track our trade ships we currently own
-  private trackedTradeShips: Set<Unit> = new Set();
+  // Track our assault shuttles we currently own
+  private trackedAssaultShuttles: Set<Unit> = new Set();
+  // Track our trade freighters we currently own
+  private trackedTradeFreighters: Set<Unit> = new Set();
 
   constructor(
     private random: PseudoRandom,
@@ -29,7 +29,7 @@ export class NationBattlecruiserBehavior {
     private emojiBehavior: NationEmojiBehavior,
   ) {}
 
-  maybeSpawnWarship(): boolean {
+  maybeSpawnBattlecruiser(): boolean {
     if (this.player === null) throw new Error("not initialized");
     if (!this.random.chance(50)) {
       return false;
@@ -42,7 +42,7 @@ export class NationBattlecruiserBehavior {
       this.player.credits() > this.cost(UnitType.Battlecruiser)
     ) {
       const port = this.random.randElement(ports);
-      const targetTile = this.warshipSpawnTile(port.tile());
+      const targetTile = this.battlecruiserSpawnTile(port.tile());
       if (targetTile === null) {
         return false;
       }
@@ -62,7 +62,7 @@ export class NationBattlecruiserBehavior {
     return false;
   }
 
-  private warshipSpawnTile(portTile: TileRef): TileRef | null {
+  private battlecruiserSpawnTile(portTile: TileRef): TileRef | null {
     const radius = 250;
     for (let attempts = 0; attempts < 50; attempts++) {
       const randX = this.random.nextInt(
@@ -87,55 +87,59 @@ export class NationBattlecruiserBehavior {
   }
 
   trackShipsAndRetaliate(): void {
-    this.trackTransportShipsAndRetaliate();
-    this.trackTradeShipsAndRetaliate();
+    this.trackAssaultShuttlesAndRetaliate();
+    this.trackTradeFreightersAndRetaliate();
   }
 
-  // Send out a warship if our transport ship got captured
-  private trackTransportShipsAndRetaliate(): void {
-    // Add any currently owned transport ships to our tracking set
+  // Send out a battlecruiser if our assault shuttle got destroyed
+  private trackAssaultShuttlesAndRetaliate(): void {
+    // Add any currently owned assault shuttles to our tracking set
     this.player
       .units(UnitType.AssaultShuttle)
-      .forEach((u) => this.trackedTransportShips.add(u));
+      .forEach((u) => this.trackedAssaultShuttles.add(u));
 
-    // Iterate tracked transport ships; if it got destroyed by an enemy: retaliate
-    for (const ship of Array.from(this.trackedTransportShips)) {
+    // Iterate tracked assault shuttles; if destroyed by an enemy: retaliate
+    for (const ship of Array.from(this.trackedAssaultShuttles)) {
       if (!ship.isActive()) {
         // Distinguish between arrival/retreat and enemy destruction
         if (ship.wasDestroyedByEnemy() && ship.destroyer() !== undefined) {
-          this.maybeRetaliateWithWarship(
+          this.maybeRetaliateWithBattlecruiser(
             ship.tile(),
             ship.destroyer()!,
             "transport",
           );
         }
-        this.trackedTransportShips.delete(ship);
+        this.trackedAssaultShuttles.delete(ship);
       }
     }
   }
 
-  // Send out a warship if our trade ship got captured
-  private trackTradeShipsAndRetaliate(): void {
-    // Add any currently owned trade ships to our tracking map
+  // Send out a battlecruiser if our trade freighter got captured
+  private trackTradeFreightersAndRetaliate(): void {
+    // Add any currently owned trade freighters to our tracking map
     this.player
       .units(UnitType.TradeFreighter)
-      .forEach((u) => this.trackedTradeShips.add(u));
+      .forEach((u) => this.trackedTradeFreighters.add(u));
 
-    // Iterate tracked trade ships; if we no longer own it, it was captured: retaliate
-    for (const ship of Array.from(this.trackedTradeShips)) {
+    // Iterate tracked trade freighters; if we no longer own it, it was captured: retaliate
+    for (const ship of Array.from(this.trackedTradeFreighters)) {
       if (!ship.isActive()) {
-        this.trackedTradeShips.delete(ship);
+        this.trackedTradeFreighters.delete(ship);
         continue;
       }
       if (ship.owner().id() !== this.player.id()) {
         // Ship was ours and is now owned by someone else -> captured
-        this.maybeRetaliateWithWarship(ship.tile(), ship.owner(), "trade");
-        this.trackedTradeShips.delete(ship);
+        this.maybeRetaliateWithBattlecruiser(
+          ship.tile(),
+          ship.owner(),
+          "trade",
+        );
+        this.trackedTradeFreighters.delete(ship);
       }
     }
   }
 
-  private maybeRetaliateWithWarship(
+  private maybeRetaliateWithBattlecruiser(
     tile: TileRef,
     enemy: Player,
     reason: "trade" | "transport",
@@ -145,7 +149,7 @@ export class NationBattlecruiserBehavior {
       return;
     }
 
-    // Don't send too many warships
+    // Don't send too many battlecruisers
     if (this.player.units(UnitType.Battlecruiser).length >= 10) {
       return;
     }
@@ -164,15 +168,15 @@ export class NationBattlecruiserBehavior {
       this.game.addExecution(
         new ConstructionExecution(this.player, UnitType.Battlecruiser, tile),
       );
-      this.emojiBehavior.maybeSendEmoji(enemy, EMOJI_WARSHIP_RETALIATION);
+      this.emojiBehavior.maybeSendEmoji(enemy, EMOJI_BATTLECRUISER_RETALIATION);
       this.player.updateRelation(enemy, reason === "trade" ? -7.5 : -15);
     }
   }
 
-  // Prevent warship infestations: if current player is one of the 3 richest and an enemy has too many warships, send a counter-warship.
-  // What is a warship infestation? A player tries to dominate the entire ocean to block all trade and transport boats.
+  // Prevent battlecruiser infestations: if current player is one of the 3 richest and an enemy has too many battlecruisers, send a counter.
+  // What is a battlecruiser infestation? A player tries to dominate deep space to block all trade freighters and assault shuttles.
   counterBattlecruiserInfestation(): void {
-    if (!this.shouldCounterWarshipInfestation()) {
+    if (!this.shouldCounterBattlecruiserInfestation()) {
       return;
     }
 
@@ -182,13 +186,13 @@ export class NationBattlecruiserBehavior {
       return;
     }
 
-    const target = this.findWarshipInfestationCounterTarget(isTeamGame);
+    const target = this.findBattlecruiserInfestationCounterTarget(isTeamGame);
     if (target !== null) {
-      this.buildCounterWarship(target);
+      this.buildCounterBattlecruiser(target);
     }
   }
 
-  private shouldCounterWarshipInfestation(): boolean {
+  private shouldCounterBattlecruiserInfestation(): boolean {
     // Only the smart nations can do this
     const { difficulty } = this.game.config().gameConfig();
     if (
@@ -198,22 +202,22 @@ export class NationBattlecruiserBehavior {
       return false;
     }
 
-    // Quit early if there aren't many warships in the game
+    // Quit early if there aren't many battlecruisers in the game
     if (this.game.unitCount(UnitType.Battlecruiser) <= 10) {
       return false;
     }
 
-    // Quit early if we can't afford a warship
+    // Quit early if we can't afford a battlecruiser
     if (this.cost(UnitType.Battlecruiser) > this.player.credits()) {
       return false;
     }
 
-    // Quit early if we don't have a port to send warships from
+    // Quit early if we don't have a spaceport to send battlecruisers from
     if (this.player.units(UnitType.Spaceport).length === 0) {
       return false;
     }
 
-    // Don't send too many warships
+    // Don't send too many battlecruisers
     if (this.player.units(UnitType.Battlecruiser).length >= 10) {
       return false;
     }
@@ -221,7 +225,7 @@ export class NationBattlecruiserBehavior {
     return true;
   }
 
-  // Check if current player is one of the 3 richest (We don't want poor nations to use their precious gold on this)
+  // Check if current player is one of the 3 richest (We don't want poor nations to use their precious credits on this)
   private isRichPlayer(isTeamGame: boolean): boolean {
     const players = this.game.players().filter((p) => {
       if (p.type() === PlayerType.Human) return false;
@@ -233,19 +237,19 @@ export class NationBattlecruiserBehavior {
     return topThree.some((p) => p.id() === this.player.id());
   }
 
-  private findWarshipInfestationCounterTarget(
+  private findBattlecruiserInfestationCounterTarget(
     isTeamGame: boolean,
-  ): { player: Player; warship: Unit } | null {
+  ): { player: Player; battlecruiser: Unit } | null {
     return isTeamGame
-      ? this.findTeamGameWarshipTarget()
-      : this.findFreeForAllWarshipTarget();
+      ? this.findTeamGameBattlecruiserTarget()
+      : this.findFreeForAllBattlecruiserTarget();
   }
 
-  private findTeamGameWarshipTarget(): {
+  private findTeamGameBattlecruiserTarget(): {
     player: Player;
-    warship: Unit;
+    battlecruiser: Unit;
   } | null {
-    const enemyTeamWarships = new Map<
+    const enemyTeamBattlecruisers = new Map<
       string,
       { count: number; team: string; players: Player[] }
     >();
@@ -260,25 +264,25 @@ export class NationBattlecruiserBehavior {
       if (team === null) continue;
 
       const teamKey = team.toString();
-      const warshipCount = p.units(UnitType.Battlecruiser).length;
+      const battlecruiserCount = p.units(UnitType.Battlecruiser).length;
 
-      if (!enemyTeamWarships.has(teamKey)) {
-        enemyTeamWarships.set(teamKey, {
+      if (!enemyTeamBattlecruisers.has(teamKey)) {
+        enemyTeamBattlecruisers.set(teamKey, {
           count: 0,
           team: teamKey,
           players: [],
         });
       }
-      const teamData = enemyTeamWarships.get(teamKey)!;
-      teamData.count += warshipCount;
+      const teamData = enemyTeamBattlecruisers.get(teamKey)!;
+      teamData.count += battlecruiserCount;
       teamData.players.push(p);
     }
 
-    // Find team with more than 15 warships
-    for (const [, teamData] of enemyTeamWarships.entries()) {
+    // Find team with more than 15 battlecruisers
+    for (const [, teamData] of enemyTeamBattlecruisers.entries()) {
       if (teamData.count > 15) {
-        // Find player in that team with most warships
-        const playerWithMostWarships = teamData.players.reduce(
+        // Find player in that team with most battlecruisers
+        const playerWithMostBattlecruisers = teamData.players.reduce(
           (max, p) => {
             const count = p.units(UnitType.Battlecruiser).length;
             const maxCount = max ? max.units(UnitType.Battlecruiser).length : 0;
@@ -287,12 +291,14 @@ export class NationBattlecruiserBehavior {
           null as Player | null,
         );
 
-        if (playerWithMostWarships) {
-          const warships = playerWithMostWarships.units(UnitType.Battlecruiser);
-          if (warships.length > 3) {
+        if (playerWithMostBattlecruisers) {
+          const bcs = playerWithMostBattlecruisers.units(
+            UnitType.Battlecruiser,
+          );
+          if (bcs.length > 3) {
             return {
-              player: playerWithMostWarships,
-              warship: this.random.randElement(warships),
+              player: playerWithMostBattlecruisers,
+              battlecruiser: this.random.randElement(bcs),
             };
           }
         }
@@ -302,20 +308,20 @@ export class NationBattlecruiserBehavior {
     return null;
   }
 
-  private findFreeForAllWarshipTarget(): {
+  private findFreeForAllBattlecruiserTarget(): {
     player: Player;
-    warship: Unit;
+    battlecruiser: Unit;
   } | null {
     const enemies = this.game
       .players()
       .filter((p) => !this.player.isFriendly(p) && p.id() !== this.player.id());
 
     for (const enemy of enemies) {
-      const enemyWarships = enemy.units(UnitType.Battlecruiser);
-      if (enemyWarships.length > 10) {
+      const enemyBattlecruisers = enemy.units(UnitType.Battlecruiser);
+      if (enemyBattlecruisers.length > 10) {
         return {
           player: enemy,
-          warship: this.random.randElement(enemyWarships),
+          battlecruiser: this.random.randElement(enemyBattlecruisers),
         };
       }
     }
@@ -323,10 +329,13 @@ export class NationBattlecruiserBehavior {
     return null;
   }
 
-  private buildCounterWarship(target: { player: Player; warship: Unit }): void {
+  private buildCounterBattlecruiser(target: {
+    player: Player;
+    battlecruiser: Unit;
+  }): void {
     const canBuild = this.player.canBuild(
       UnitType.Battlecruiser,
-      target.warship.tile(),
+      target.battlecruiser.tile(),
     );
     if (canBuild === false) {
       return;
@@ -336,10 +345,10 @@ export class NationBattlecruiserBehavior {
       new ConstructionExecution(
         this.player,
         UnitType.Battlecruiser,
-        target.warship.tile(),
+        target.battlecruiser.tile(),
       ),
     );
-    this.emojiBehavior.sendEmoji(AllPlayers, EMOJI_WARSHIP_RETALIATION);
+    this.emojiBehavior.sendEmoji(AllPlayers, EMOJI_BATTLECRUISER_RETALIATION);
   }
 
   private cost(type: UnitType): Credits {

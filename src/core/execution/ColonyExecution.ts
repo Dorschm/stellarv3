@@ -6,7 +6,7 @@ export class ColonyExecution implements Execution {
   private active: boolean = true;
   private stationCreated = false;
 
-  constructor(private city: Unit) {}
+  constructor(private colony: Unit) {}
 
   init(mg: Game, ticks: number): void {
     this.mg = mg;
@@ -17,7 +17,7 @@ export class ColonyExecution implements Execution {
       this.createStation();
       this.stationCreated = true;
     }
-    if (!this.city.isActive()) {
+    if (!this.colony.isActive()) {
       this.active = false;
       return;
     }
@@ -33,12 +33,12 @@ export class ColonyExecution implements Execution {
 
   private createStation(): void {
     const nearbyFactory = this.mg.hasUnitNearby(
-      this.city.tile()!,
+      this.colony.tile()!,
       this.mg.config().tradeHubMaxRange(),
       UnitType.Foundry,
     );
     if (nearbyFactory) {
-      this.mg.addExecution(new TradeHubExecution(this.city));
+      this.mg.addExecution(new TradeHubExecution(this.colony));
     }
   }
 }

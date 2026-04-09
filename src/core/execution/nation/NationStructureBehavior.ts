@@ -20,17 +20,17 @@ import { randTerritoryTileArray } from "./NationUtils";
 
 /**
  * Configuration for how many structures of each type a nation should build
- * relative to the number of cities it owns.
+ * relative to the number of colonies it owns.
  */
 interface StructureRatioConfig {
-  /** How many of this structure per city (e.g., 0.75 means 3 ports for every 4 cities) */
-  ratioPerCity: number;
+  /** How many of this structure per colony (e.g., 0.75 means 3 spaceports for every 4 colonies) */
+  ratioPerColony: number;
   /** Perceived cost increase percentage per owned structure (e.g., 0.1 = 10% more expensive per owned) */
   perceivedCostIncreasePerOwned: number;
 }
 
-/** SAM launcher ratio per city, keyed by difficulty */
-const SAM_RATIO_BY_DIFFICULTY: Record<Difficulty, number> = {
+/** point defense array ratio per colony, keyed by difficulty */
+const PDA_RATIO_BY_DIFFICULTY: Record<Difficulty, number> = {
   [Difficulty.Easy]: 0.15,
   [Difficulty.Medium]: 0.2,
   [Difficulty.Hard]: 0.25,
@@ -38,44 +38,44 @@ const SAM_RATIO_BY_DIFFICULTY: Record<Difficulty, number> = {
 };
 
 /**
- * Returns structure ratios relative to city count, adjusted by difficulty.
+ * Returns structure ratios relative to colony count, adjusted by difficulty.
  * Cities are always prioritized and built first.
- * When cities are disabled, we use TILES_PER_CITY_EQUIVALENT. That's not ideal, nations won't properly upgrade structures, but it's better than nothing. Probably 99.9% of players won't disable cities anyway.
+ * When colonies are disabled, we use TILES_PER_COLONY_EQUIVALENT. That's not ideal, nations won't properly upgrade structures, but it's better than nothing. Probably 99.9% of players won't disable colonies anyway.
  */
 function getStructureRatios(
   difficulty: Difficulty,
 ): Partial<Record<UnitType, StructureRatioConfig>> {
   return {
     [UnitType.Spaceport]: {
-      ratioPerCity: 0.75,
+      ratioPerColony: 0.75,
       perceivedCostIncreasePerOwned: 1,
     },
     [UnitType.Foundry]: {
-      ratioPerCity: 0.75,
+      ratioPerColony: 0.75,
       perceivedCostIncreasePerOwned: 1,
     },
     [UnitType.DefenseStation]: {
-      ratioPerCity: 0.25,
+      ratioPerColony: 0.25,
       perceivedCostIncreasePerOwned: 1,
     },
     [UnitType.PointDefenseArray]: {
-      ratioPerCity: SAM_RATIO_BY_DIFFICULTY[difficulty],
+      ratioPerColony: PDA_RATIO_BY_DIFFICULTY[difficulty],
       perceivedCostIncreasePerOwned: 0.5,
     },
     [UnitType.OrbitalStrikePlatform]: {
-      ratioPerCity: 0.2,
+      ratioPerColony: 0.2,
       perceivedCostIncreasePerOwned: 1,
     },
   };
 }
 
-/** Perceived cost increase percentage per city owned */
+/** Perceived cost increase percentage per colony owned */
 const CITY_PERCEIVED_COST_INCREASE_PER_OWNED = 1;
 
-/** Factory ratio multiplier when the nation has coastal tiles */
+/** Foundry ratio multiplier when the nation has coastal tiles */
 const FACTORY_COASTAL_RATIO_MULTIPLIER = 0.33;
 
-/** Maximum number of missile silos a nation will build */
+/** Maximum number of orbital strike platforms a nation will build */
 const MAX_MISSILE_SILOS = 3;
 
 /** If we have more than this many structures per tiles, prefer upgrading over building */
@@ -84,8 +84,8 @@ const UPGRADE_DENSITY_THRESHOLD = 1 / 1500;
 /** Maximum density of defense posts (per tile owned) before no more can be built */
 const DEFENSE_POST_DENSITY_THRESHOLD = 1 / 5000;
 
-/** Estimated number of tiles per city equivalent, used when cities are disabled */
-const TILES_PER_CITY_EQUIVALENT = 2000;
+/** Estimated number of tiles per colony equivalent, used when colonies are disabled */
+const TILES_PER_COLONY_EQUIVALENT = 2000;
 
 export class NationStructureBehavior {
   private reachableStationsCache: Array<{
@@ -103,16 +103,16 @@ export class NationStructureBehavior {
   handleStructures(): boolean {
     this.reachableStationsCache = null;
     const config = this.game.config();
-    const citiesDisabled = config.isUnitDisabled(UnitType.Colony);
-    const cityCount = citiesDisabled
+    const coloniesDisabled = config.isUnitDisabled(UnitType.Colony);
+    const colonyCount = coloniesDisabled
       ? Math.max(
           1,
-          Math.floor(this.player.numTilesOwned() / TILES_PER_CITY_EQUIVALENT),
+          Math.floor(this.player.numTilesOwned() / TILES_PER_COLONY_EQUIVALENT),
         )
       : this.player.unitsOwned(UnitType.Colony);
     const hasCoastalTiles = this.hasCoastalTiles();
 
-    // Build order for non-city structures (priority order)
+    // Build order for non-colony structures (priority order)
     const buildOrder: UnitType[] = [
       UnitType.DefenseStation,
       UnitType.Spaceport,
@@ -135,12 +135,12 @@ export class NationStructureBehavior {
         continue;
       }
 
-      // Skip ports if no coastal tiles
+      // Skip spaceports if no coastal tiles
       if (structureType === UnitType.Spaceport && !hasCoastalTiles) {
         continue;
       }
 
-      // Skip missile silos and SAM launchers if all nukes are disabled
+      // Skip orbital strike platforms and point defense arrays if all nukes are disabled
       if (
         !nukesEnabled &&
         (structureType === UnitType.OrbitalStrikePlatform ||
@@ -149,7 +149,7 @@ export class NationStructureBehavior {
         continue;
       }
 
-      // Skip SAM launchers if missile silos are disabled
+      // Skip point defense arrays if orbital strike platforms are disabled
       if (
         !missileSilosEnabled &&
         structureType === UnitType.PointDefenseArray
@@ -158,7 +158,7 @@ export class NationStructureBehavior {
       }
 
       if (
-        this.shouldBuildStructure(structureType, cityCount, hasCoastalTiles)
+        this.shouldBuildStructure(structureType, colonyCount, hasCoastalTiles)
       ) {
         if (this.maybeSpawnStructure(structureType)) {
           return true;
@@ -166,7 +166,7 @@ export class NationStructureBehavior {
       }
     }
 
-    if (!citiesDisabled && this.maybeSpawnStructure(UnitType.Colony)) {
+    if (!coloniesDisabled && this.maybeSpawnStructure(UnitType.Colony)) {
       return true;
     }
 
@@ -182,11 +182,11 @@ export class NationStructureBehavior {
 
   /**
    * Determines if we should build more of this structure type based on
-   * the current city count and the configured ratio.
+   * the current colony count and the configured ratio.
    */
   private shouldBuildStructure(
     type: UnitType,
-    cityCount: number,
+    colonyCount: number,
     hasCoastalTiles: boolean,
   ): boolean {
     const gameConfig = this.game.config();
@@ -197,9 +197,9 @@ export class NationStructureBehavior {
       return false;
     }
 
-    let ratio = config.ratioPerCity;
+    let ratio = config.ratioPerColony;
 
-    // Heavily reduce factory spawning if we have coastal tiles
+    // Heavily reduce foundry spawning if we have coastal tiles
     if (
       type === UnitType.Foundry &&
       hasCoastalTiles &&
@@ -210,12 +210,12 @@ export class NationStructureBehavior {
 
     const owned = this.player.unitsOwned(type);
 
-    // Hard cap on missile silos
+    // Hard cap on orbital strike platforms
     if (type === UnitType.OrbitalStrikePlatform && owned >= MAX_MISSILE_SILOS) {
       return false;
     }
 
-    // Density cap on defense posts (can't be upgraded so a new one would be built - problematic if it's a game with high starting gold)
+    // Density cap on defense stations (can't be upgraded so a new one would be built - problematic if it's a game with high starting credits)
     if (type === UnitType.DefenseStation) {
       const tilesOwned = this.player.numTilesOwned();
       if (
@@ -226,7 +226,7 @@ export class NationStructureBehavior {
       }
     }
 
-    const targetCount = Math.floor(cityCount * ratio);
+    const targetCount = Math.floor(colonyCount * ratio);
 
     return owned < targetCount;
   }
@@ -251,7 +251,7 @@ export class NationStructureBehavior {
       if (this.maybeUpgradeStructure(structures)) {
         return true;
       }
-      // Density too high but couldn't upgrade (e.g. all under construction) — don't build new, wait for construction (most relevant for SAMs)
+      // Density too high but couldn't upgrade (e.g. all under construction) — don't build new, wait for construction (most relevant for PDAs)
       if (structures.length > 0) {
         return false;
       }
@@ -274,7 +274,7 @@ export class NationStructureBehavior {
   /**
    * Calculates the perceived cost for a structure type.
    * The perceived cost increases by a percentage for each structure of that type already owned.
-   * This makes nations save up gold for nukes.
+   * This makes nations save up credits for nukes.
    * Once the nation can afford its target stockpile, stop inflating costs.
    */
   private getPerceivedCost(type: UnitType): Credits {
@@ -304,13 +304,13 @@ export class NationStructureBehavior {
   }
 
   /**
-   * Determines the gold target we want to save up for based on which nukes are enabled.
+   * Determines the credit target we want to save up for based on which nukes are enabled.
    * Returns 0 if no saving is needed.
    */
   private getSaveUpTarget(): Credits {
     const config = this.game.config();
 
-    // No need to save up if missile silos are disabled
+    // No need to save up if orbital strike platforms are disabled
     if (config.isUnitDisabled(UnitType.OrbitalStrikePlatform)) {
       return 0n;
     }
@@ -320,15 +320,15 @@ export class NationStructureBehavior {
     const atomEnabled = !config.isUnitDisabled(UnitType.AntimatterTorpedo);
 
     if (mirvEnabled) {
-      // Save up for MIRV + Hydrogen Bomb
+      // Save up for ClusterWarhead + NovaBomb
       return this.cost(UnitType.ClusterWarhead) + this.cost(UnitType.NovaBomb);
     }
     if (hydroEnabled) {
-      // Save up for 5 hydrogen bombs
+      // Save up for 5 nova bombs
       return this.cost(UnitType.NovaBomb) * 5n;
     }
     if (atomEnabled) {
-      // Save up for 20 atom bombs
+      // Save up for 20 antimatter torpedoes
       return this.cost(UnitType.AntimatterTorpedo) * 20n;
     }
     // No nukes enabled, no need to save up
@@ -369,7 +369,7 @@ export class NationStructureBehavior {
   }
 
   /**
-   * Finds the best structure to upgrade, preferring structures protected by a SAM.
+   * Finds the best structure to upgrade, preferring structures protected by a PDA.
    * In 50% of cases, picks the second or third best to add variety.
    */
   private findBestStructureToUpgrade(structures: Unit[]): Unit | null {
@@ -408,27 +408,27 @@ export class NationStructureBehavior {
       return this.random.randElement(upgradable);
     }
 
-    const samLaunchers = this.player.units(UnitType.PointDefenseArray);
+    const pointDefenseArrays = this.player.units(UnitType.PointDefenseArray);
 
-    // Score each structure based on SAM protection
+    // Score each structure based on PDA protection
     const scored: { structure: Unit; score: number }[] = [];
 
     for (const structure of upgradable) {
       let score = 0;
 
-      // Check if protected by any SAM, using per-SAM level-based range
-      for (const sam of samLaunchers) {
-        const samRange = game.config().pointDefenseRange(sam.level());
-        const samRangeSquared = samRange * samRange;
+      // Check if protected by any PDA, using per-PDA level-based range
+      for (const pda of pointDefenseArrays) {
+        const pdaRange = game.config().pointDefenseRange(pda.level());
+        const pdaRangeSquared = pdaRange * pdaRange;
         const distSquared = game.euclideanDistSquared(
           structure.tile(),
-          sam.tile(),
+          pda.tile(),
         );
-        if (distSquared <= samRangeSquared) {
-          // Protected by this SAM, add score based on SAM level
+        if (distSquared <= pdaRangeSquared) {
+          // Protected by this PDA, add score based on PDA level
           score += 10;
-          if (sam.level() > 1) {
-            score += (sam.level() - 1) * 7.5;
+          if (pda.level() > 1) {
+            score += (pda.level() - 1) * 7.5;
           }
         }
       }
@@ -516,14 +516,14 @@ export class NationStructureBehavior {
       case UnitType.DefenseStation:
         return this.defensePostValue();
       case UnitType.PointDefenseArray:
-        return this.samLauncherValue();
+        return this.pointDefenseArrayValue();
       default:
         throw new Error(`Value function not implemented for ${type}`);
     }
   }
 
   /**
-   * Value function for MissileSilo.
+   * Value function for OrbitalStrikePlatform.
    * Prefers high elevation, distance from border, and spacing from same-type structures.
    */
   private missileSiloValue(): (tile: TileRef) => number {
@@ -556,8 +556,8 @@ export class NationStructureBehavior {
   }
 
   /**
-   * Value function for ports.
-   * Prefers spacing from other ports.
+   * Value function for spaceports.
+   * Prefers spacing from other spaceports.
    */
   private portValue(): (tile: TileRef) => number {
     const game = this.game;
@@ -578,10 +578,10 @@ export class NationStructureBehavior {
   }
 
   /**
-   * Value function for factories.
-   * Prefers high elevation, spacing from other factories, and distance from border.
-   * Based on difficulty, scores connectivity by the number of distinct rail
-   * clusters within train-station range, weighted by trade gold:
+   * Value function for foundries.
+   * Prefers high elevation, spacing from other foundries, and distance from border.
+   * Based on difficulty, scores connectivity by the number of distinct lane
+   * clusters within frigate-station range, weighted by trade credits:
    * ally (1.0) > team/neutral (~0.71) > self (~0.29).
    * Embargoed and bot neighbors are excluded. Per cluster, the best reachable
    * trade relationship determines the weight.
@@ -602,7 +602,7 @@ export class NationStructureBehavior {
       : [];
     const minRangeSquared = game.config().tradeHubMinRange() ** 2;
 
-    // Cross-type spacing: prefer to be away from cities.
+    // Cross-type spacing: prefer to be away from colonies.
     const cityTiles: Set<TileRef> = new Set(
       player.units(UnitType.Colony).map((u) => u.tile()),
     );
@@ -617,7 +617,7 @@ export class NationStructureBehavior {
       const [, closestBorderDist] = closestTile(game, borderTiles, tile);
       w += Math.min(closestBorderDist, borderSpacing);
 
-      // Prefer to be away from other factories
+      // Prefer to be away from other foundries
       const otherTiles: Set<TileRef> = new Set(otherUnits.map((u) => u.tile()));
       otherTiles.delete(tile);
       const closestOther = closestTwoTiles(game, otherTiles, [tile]);
@@ -626,7 +626,7 @@ export class NationStructureBehavior {
         w += Math.min(d, stationRange);
       }
 
-      // Prefer to be away from cities (cross-type spacing)
+      // Prefer to be away from colonies (cross-type spacing)
       const closestCity = closestTwoTiles(game, cityTiles, [tile]);
       if (closestCity !== null) {
         const d = game.manhattanDist(closestCity.x, tile);
@@ -651,7 +651,7 @@ export class NationStructureBehavior {
 
   /**
    * Given the game difficulty, decide if we should use connectivity scoring
-   * to determine the best placement for factories and cities.
+   * to determine the best placement for foundries and colonies.
    */
   private shouldUseConnectivityScore(difficulty: Difficulty): boolean {
     let randomChance: number;
@@ -715,7 +715,7 @@ export class NationStructureBehavior {
       weight: number;
     }> = [];
 
-    // Own structures — weighted by "self" trade gold.
+    // Own structures — weighted by "self" trade credits.
     const selfWeight =
       Number(game.config().frigateCredits("self", 0)) / maxTradeGold;
     for (const unit of player.units(
@@ -798,9 +798,9 @@ export class NationStructureBehavior {
   }
 
   /**
-   * Value function for cities.
+   * Value function for colonies.
    * Inherits interior placement criteria (elevation, border distance, spacing)
-   * and adds cluster-connectivity scoring so cities prefer positions that extend
+   * and adds cluster-connectivity scoring so colonies prefer positions that extend
    * or bridge the existing rail network. Connectivity is difficulty-gated.
    */
   private cityValue(): (tile: TileRef) => number {
@@ -819,7 +819,7 @@ export class NationStructureBehavior {
       : [];
     const minRangeSquared = game.config().tradeHubMinRange() ** 2;
 
-    // Cross-type spacing: prefer to be away from factories.
+    // Cross-type spacing: prefer to be away from foundries.
     const factoryTiles: Set<TileRef> = new Set(
       player.units(UnitType.Foundry).map((u) => u.tile()),
     );
@@ -840,7 +840,7 @@ export class NationStructureBehavior {
         w += Math.min(d, structureSpacing);
       }
 
-      // Prefer to be away from factories (cross-type spacing)
+      // Prefer to be away from foundries (cross-type spacing)
       const closestFactory = closestTwoTiles(game, factoryTiles, [tile]);
       if (closestFactory !== null) {
         const d = game.manhattanDist(closestFactory.x, tile);
@@ -937,11 +937,11 @@ export class NationStructureBehavior {
   }
 
   /**
-   * Value function for SAM launchers.
+   * Value function for point defense arrays.
    * Prefers elevation, distance from border, spacing, and proximity to protectable structures.
-   * On harder difficulties, weights by structure level and considers existing SAM coverage.
+   * On harder difficulties, weights by structure level and considers existing PDA coverage.
    */
-  private samLauncherValue(): (tile: TileRef) => number {
+  private pointDefenseArrayValue(): (tile: TileRef) => number {
     const game = this.game;
     const player = this.player;
     const borderTiles = player.borderTiles();
@@ -971,18 +971,18 @@ export class NationStructureBehavior {
     const useCoverageWeighting =
       difficulty !== Difficulty.Easy && this.random.nextInt(0, 100) < 25;
 
-    // Pre-compute existing SAM coverage for each protectable structure
+    // Pre-compute existing PDA coverage for each protectable structure
     let structureCoverage: Map<TileRef, number> | null = null;
     if (useCoverageWeighting) {
       structureCoverage = new Map<TileRef, number>();
-      const existingSams = player.units(UnitType.PointDefenseArray);
+      const existingPDAs = player.units(UnitType.PointDefenseArray);
       for (const entry of protectEntries) {
         let coverageScore = 0;
-        for (const sam of existingSams) {
-          const samRange = game.config().pointDefenseRange(sam.level());
-          const dist = game.euclideanDistSquared(entry.tile, sam.tile());
-          if (dist <= samRange * samRange) {
-            coverageScore += sam.level();
+        for (const pda of existingPDAs) {
+          const pdaRange = game.config().pointDefenseRange(pda.level());
+          const dist = game.euclideanDistSquared(entry.tile, pda.tile());
+          if (dist <= pdaRange * pdaRange) {
+            coverageScore += pda.level();
           }
         }
         structureCoverage.set(entry.tile, coverageScore);
@@ -1030,7 +1030,7 @@ export class NationStructureBehavior {
     };
   }
 
-  /** Shared spacing constants derived from atom bomb range. */
+  /** Shared spacing constants derived from antimatter torpedo range. */
   private spacingConstants(): {
     borderSpacing: number;
     structureSpacing: number;

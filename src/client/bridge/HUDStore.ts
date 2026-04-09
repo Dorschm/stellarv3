@@ -24,7 +24,7 @@ export interface PlayerSnapshot {
   displayName: string;
   isAlive: boolean;
   troops: number;
-  gold: Credits;
+  credits: Credits;
   numTilesOwned: number;
   allies: number[];
   isMe: boolean;

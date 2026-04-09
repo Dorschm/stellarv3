@@ -3,10 +3,10 @@ import { Execution, Game, Unit } from "../game/Game";
 export class OrbitalStrikePlatformExecution implements Execution {
   private active = true;
   private mg: Game;
-  private silo: Unit;
+  private platform: Unit;
 
-  constructor(silo: Unit) {
-    this.silo = silo;
+  constructor(platform: Unit) {
+    this.platform = platform;
   }
 
   init(mg: Game, ticks: number): void {
@@ -14,12 +14,12 @@ export class OrbitalStrikePlatformExecution implements Execution {
   }
 
   tick(ticks: number): void {
-    if (this.silo.isUnderConstruction()) {
+    if (this.platform.isUnderConstruction()) {
       return;
     }
 
     // frontTime is the time the earliest missile fired.
-    const frontTime = this.silo.missileTimerQueue()[0];
+    const frontTime = this.platform.missileTimerQueue()[0];
     if (frontTime === undefined) {
       return;
     }
@@ -28,7 +28,7 @@ export class OrbitalStrikePlatformExecution implements Execution {
       this.mg.config().orbitalStrikeCooldown() - (this.mg.ticks() - frontTime);
 
     if (cooldown <= 0) {
-      this.silo.reloadMissile();
+      this.platform.reloadMissile();
     }
   }
 

@@ -1,9 +1,16 @@
 import { Billboard, Text } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import React, { useMemo, useRef } from "react";
-import { Color, Mesh, MeshStandardMaterial, SphereGeometry } from "three";
+import {
+  CanvasTexture,
+  Color,
+  Mesh,
+  MeshStandardMaterial,
+  SphereGeometry,
+} from "three";
 import { Nation } from "../../core/game/TerrainMapLoader";
 import { useGameView } from "../bridge/GameViewContext";
+import { getPlanetTexture, hashString } from "./PlanetTextureGenerator";
 import { tileToWorld } from "./UnitRenderer";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -26,8 +33,10 @@ const LABEL_GAP = 2;
 /** Rotation speed (radians per frame) for visual polish. */
 const ROTATION_SPEED = 0.001;
 
-/** Neutral color for unclaimed planets (grey-blue). */
-const NEUTRAL_COLOR = new Color(0.4, 0.45, 0.55);
+/** Emissive colour intensity applied when a planet is owned. The procedural
+ *  texture supplies the base look; emissive adds a subtle player-coloured
+ *  glow without washing out the pattern the way a `color` multiply would. */
+const OWNED_EMISSIVE_INTENSITY = 0.28;
 
 /** Color used for label text. */
 const LABEL_COLOR = "#aabbcc";
@@ -191,11 +200,27 @@ function PlanetSphere({
 
   const geometry = useMemo(() => new SphereGeometry(radius, 24, 16), [radius]);
 
+  // Procedural texture: deterministic per nation. Hashing both the name and
+  // the coordinates means two nations with the same name on different maps
+  // still get different planets, and two coordinates with the same hash are
+  // pushed apart by the name component. Module-level cache in
+  // PlanetTextureGenerator means re-renders of this component are free.
+  const texture: CanvasTexture = useMemo(() => {
+    const seed =
+      (hashString(nation.name) ^
+        Math.imul(nation.coordinates[0], 73856093) ^
+        Math.imul(nation.coordinates[1], 19349663)) >>>
+      0;
+    return getPlanetTexture(seed);
+  }, [nation.name, nation.coordinates]);
+
   // Label offset: below the sphere but above the map plane.
   // world z = planetHeight + labelOffset must be > 0
   const labelOffset = -(radius + LABEL_GAP);
 
-  // Per-frame: slow rotation + ownership color update
+  // Per-frame: slow rotation + emissive ownership tint. The `color` channel
+  // stays white so the procedural texture shows unmodified; ownership is
+  // signalled with a subtle glow via `emissive` instead.
   useFrame(() => {
     if (meshRef.current) {
       meshRef.current.rotation.y += ROTATION_SPEED;
@@ -205,10 +230,11 @@ function PlanetSphere({
       const owner = game.owner(tileRef);
       if (owner.isPlayer() && owner.territoryColor) {
         _planetColor.set(owner.territoryColor(tileRef).toHex());
+        matRef.current.emissive.copy(_planetColor);
+        matRef.current.emissiveIntensity = OWNED_EMISSIVE_INTENSITY;
       } else {
-        _planetColor.copy(NEUTRAL_COLOR);
+        matRef.current.emissiveIntensity = 0;
       }
-      matRef.current.color.copy(_planetColor);
     }
   });
 
@@ -221,9 +247,12 @@ function PlanetSphere({
       >
         <meshStandardMaterial
           ref={matRef}
-          color={NEUTRAL_COLOR}
-          roughness={0.7}
-          metalness={0.2}
+          map={texture}
+          color="white"
+          emissive="#000000"
+          emissiveIntensity={0}
+          roughness={0.85}
+          metalness={0.05}
         />
       </mesh>
 

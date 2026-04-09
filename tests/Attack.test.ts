@@ -12,7 +12,7 @@ import { TileRef } from "../src/core/game/GameMap";
 import { GameID } from "../src/core/Schemas";
 import { setup } from "./util/Setup";
 import { TestConfig } from "./util/TestConfig";
-import { constructionExecution } from "./util/utils";
+import { constructionExecution, giveSpaceport } from "./util/utils";
 
 let game: Game;
 const gameID: GameID = "game_id";
@@ -21,7 +21,7 @@ let defender: Player;
 let defenderSpawn: TileRef;
 let attackerSpawn: TileRef;
 
-function sendBoat(target: TileRef, troops: number) {
+function sendShuttle(target: TileRef, troops: number) {
   game.addExecution(new AssaultShuttleExecution(defender, target, troops));
 }
 
@@ -85,6 +85,10 @@ describe("Attack", () => {
       game.executeNextTick();
     }
 
+    // AssaultShuttle launches now require a ready Spaceport on the sender's
+    // territory — grant one so `sendShuttle` can actually spawn a shuttle.
+    giveSpaceport(game, defender);
+
     (game.config() as TestConfig).setDefaultNukeSpeed(50);
   });
 
@@ -108,11 +112,11 @@ describe("Attack", () => {
     expect(attacker.outgoingAttacks()[0].troops()).toBeLessThan(90);
   });
 
-  test("Nuke reduce attacking boat troop count", async () => {
+  test("Nuke reduce attacking shuttle troop count", async () => {
     constructionExecution(game, defender, 1, 1, UnitType.OrbitalStrikePlatform);
     expect(defender.units(UnitType.OrbitalStrikePlatform)).toHaveLength(1);
 
-    sendBoat(game.ref(15, 8), 100);
+    sendShuttle(game.ref(15, 8), 100);
 
     constructionExecution(game, defender, 0, 15, UnitType.AntimatterTorpedo, 3);
     const nuke = defender.units(UnitType.AntimatterTorpedo)[0];
@@ -129,23 +133,23 @@ describe("Attack", () => {
     );
   });
 
-  test("Boat penalty on retreat Transport Ship arrival", async () => {
+  test("Shuttle penalty on retreat Assault Shuttle arrival", async () => {
     const player_start_troops = defender.troops();
-    const boat_troops = player_start_troops * 0.5;
+    const shuttle_troops = player_start_troops * 0.5;
 
-    sendBoat(game.ref(15, 8), boat_troops);
+    sendShuttle(game.ref(15, 8), shuttle_troops);
 
     game.executeNextTick();
 
     const ship = defender.units(UnitType.AssaultShuttle)[0];
-    expect(ship.troops()).toBe(boat_troops);
+    expect(ship.troops()).toBe(shuttle_troops);
     expect(ship.isActive()).toBe(true);
 
     ship.orderShuttleRetreat();
     game.executeNextTick();
 
     expect(ship.isActive()).toBe(false);
-    expect(boat_troops).toBeLessThan(defender.troops());
+    expect(shuttle_troops).toBeLessThan(defender.troops());
     expect(defender.troops()).toBeLessThan(player_start_troops);
   });
 });
@@ -371,6 +375,10 @@ describe("Transport ship alliance rejection", () => {
     expect(allianceRequest).not.toBeNull();
     expect(playerB.incomingAllianceRequests()).toHaveLength(1);
 
+    // AssaultShuttle launches now require a Spaceport on the sender's
+    // territory.
+    giveSpaceport(game, playerB, game.ref(7, 0));
+
     // Player B sends a transport ship toward Player A's territory
     game.addExecution(new AssaultShuttleExecution(playerB, game.ref(7, 0), 0));
 
@@ -413,6 +421,11 @@ describe("Attack immunity", () => {
     while (game.inSpawnPhase()) {
       game.executeNextTick();
     }
+
+    // AssaultShuttle launches now require a ready Spaceport — grant one
+    // so the shuttle immunity tests exercise the immunity check rather than
+    // falling back to the "no_spaceport" rejection.
+    giveSpaceport(game, playerA, game.ref(7, 15));
   });
 
   test("Should not be able to attack during immunity phase", async () => {
@@ -461,8 +474,8 @@ describe("Attack immunity", () => {
     expect(playerA.outgoingAttacks()).toHaveLength(1);
   });
 
-  test("Should not be able to send a boat during immunity phase", async () => {
-    // Player A sends a boat targeting Player B
+  test("Should not be able to send a shuttle during immunity phase", async () => {
+    // Player A sends a shuttle targeting Player B
     game.addExecution(
       new AssaultShuttleExecution(playerA, game.ref(7, 15), 10),
     );
@@ -470,9 +483,9 @@ describe("Attack immunity", () => {
     expect(playerA.units(UnitType.AssaultShuttle)).toHaveLength(0);
   });
 
-  test("Should be able to send a boat after immunity phase", async () => {
+  test("Should be able to send a shuttle after immunity phase", async () => {
     waitForImmunityToEnd();
-    // Player A sends a boat targeting Player B
+    // Player A sends a shuttle targeting Player B
     game.addExecution(
       new AssaultShuttleExecution(playerA, game.ref(7, 15), 10),
     );

@@ -9,7 +9,7 @@ export class SpaceportExecution implements Execution {
   private port: Unit;
   private random: PseudoRandom;
   private checkOffset: number;
-  private tradeShipSpawnRejections = 0;
+  private tradeFreighterSpawnRejections = 0;
 
   constructor(port: Unit) {
     this.port = port;
@@ -44,7 +44,7 @@ export class SpaceportExecution implements Execution {
       return;
     }
 
-    if (!this.shouldSpawnTradeShip()) {
+    if (!this.shouldSpawnTradeFreighter()) {
       return;
     }
 
@@ -68,17 +68,20 @@ export class SpaceportExecution implements Execution {
     return false;
   }
 
-  shouldSpawnTradeShip(): boolean {
-    const numTradeShips = this.mg.unitCount(UnitType.TradeFreighter);
+  shouldSpawnTradeFreighter(): boolean {
+    const numTradeFreighters = this.mg.unitCount(UnitType.TradeFreighter);
     const spawnRate = this.mg
       .config()
-      .tradeFreighterSpawnRate(this.tradeShipSpawnRejections, numTradeShips);
+      .tradeFreighterSpawnRate(
+        this.tradeFreighterSpawnRejections,
+        numTradeFreighters,
+      );
     for (let i = 0; i < this.port!.level(); i++) {
       if (this.random.chance(spawnRate)) {
-        this.tradeShipSpawnRejections = 0;
+        this.tradeFreighterSpawnRejections = 0;
         return true;
       }
-      this.tradeShipSpawnRejections++;
+      this.tradeFreighterSpawnRejections++;
     }
     return false;
   }

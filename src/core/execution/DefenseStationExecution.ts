@@ -75,7 +75,7 @@ export class DefenseStationExecution implements Execution {
     //     const { unit: unitA, distSquared: distA } = a;
     //     const { unit: unitB, distSquared: distB } = b;
     //
-    //     // Prioritize TransportShip
+    //     // Prioritize AssaultShuttle
     //     if (
     //       unitA.type() === UnitType.AssaultShuttle &&
     //       unitB.type() !== UnitType.AssaultShuttle

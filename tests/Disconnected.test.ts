@@ -15,7 +15,7 @@ import { GameID } from "../src/core/Schemas";
 import { toInt } from "../src/core/Util";
 import { setup } from "./util/Setup";
 import { UseRealAttackLogic } from "./util/TestConfig";
-import { executeTicks } from "./util/utils";
+import { executeTicks, giveSpaceport } from "./util/utils";
 
 let game: Game;
 const gameID: GameID = "game_id";
@@ -226,17 +226,17 @@ describe("Disconnected", () => {
       expect(player1.isOnSameTeam(player2)).toBe(true);
     });
 
-    test("Team Warships should not attack disconnected team mate ships", () => {
-      const warship = player1.buildUnit(
+    test("Team Battlecruisers should not attack disconnected team mate ships", () => {
+      const battlecruiser = player1.buildUnit(
         UnitType.Battlecruiser,
         game.map().ref(coastX + 1, 10),
         {
           patrolTile: game.map().ref(coastX + 1, 10),
         },
       );
-      game.addExecution(new BattlecruiserExecution(warship));
+      game.addExecution(new BattlecruiserExecution(battlecruiser));
 
-      const transportShip = player2.buildUnit(
+      const assaultShuttle = player2.buildUnit(
         UnitType.AssaultShuttle,
         game.map().ref(coastX + 1, 11),
         {
@@ -247,22 +247,22 @@ describe("Disconnected", () => {
       player2.markDisconnected(true);
       executeTicks(game, 10);
 
-      expect(warship.targetUnit()).toBe(undefined);
-      expect(transportShip.isActive()).toBe(true);
-      expect(transportShip.owner()).toBe(player2);
+      expect(battlecruiser.targetUnit()).toBe(undefined);
+      expect(assaultShuttle.isActive()).toBe(true);
+      expect(assaultShuttle.owner()).toBe(player2);
     });
 
-    test("Disconnected player Warship should not attack team members' ships", () => {
-      const warship = player2.buildUnit(
+    test("Disconnected player Battlecruiser should not attack team members' ships", () => {
+      const battlecruiser = player2.buildUnit(
         UnitType.Battlecruiser,
         game.map().ref(coastX + 1, 5),
         {
           patrolTile: game.map().ref(coastX + 1, 10),
         },
       );
-      game.addExecution(new BattlecruiserExecution(warship));
+      game.addExecution(new BattlecruiserExecution(battlecruiser));
 
-      const transportShip = player1.buildUnit(
+      const assaultShuttle = player1.buildUnit(
         UnitType.AssaultShuttle,
         game.map().ref(coastX + 1, 6),
         {
@@ -273,9 +273,9 @@ describe("Disconnected", () => {
       player2.markDisconnected(true);
       executeTicks(game, 10);
 
-      expect(warship.targetUnit()).toBe(undefined);
-      expect(transportShip.isActive()).toBe(true);
-      expect(transportShip.owner()).toBe(player1);
+      expect(battlecruiser.targetUnit()).toBe(undefined);
+      expect(assaultShuttle.isActive()).toBe(true);
+      expect(assaultShuttle.owner()).toBe(player1);
     });
 
     test("Player can attack disconnected team mate without troop loss", () => {
@@ -318,15 +318,15 @@ describe("Disconnected", () => {
       expect(player1.troops()).toBe(expectedFinalTroops);
     });
 
-    test("Conqueror gets conquered disconnected team member's transport- and warships", () => {
-      const warship = player2.buildUnit(
+    test("Conqueror gets conquered disconnected team member's assault shuttles and battlecruisers", () => {
+      const battlecruiser = player2.buildUnit(
         UnitType.Battlecruiser,
         game.map().ref(coastX + 1, 1),
         {
           patrolTile: game.map().ref(coastX + 1, 1),
         },
       );
-      const transportShip = player2.buildUnit(
+      const assaultShuttle = player2.buildUnit(
         UnitType.AssaultShuttle,
         game.map().ref(coastX + 1, 3),
         {
@@ -342,16 +342,20 @@ describe("Disconnected", () => {
       executeTicks(game, 10);
 
       expect(player2.isAlive()).toBe(false);
-      expect(warship.owner()).toBe(player1);
-      expect(transportShip.owner()).toBe(player1);
+      expect(battlecruiser.owner()).toBe(player1);
+      expect(assaultShuttle.owner()).toBe(player1);
     });
 
-    test("Captured transport ship landing attack should be in name of new owner", () => {
+    test("Captured assault shuttle landing attack should be in name of new owner", () => {
       player2.conquer(game.map().ref(coastX, 1));
       player2.conquer(game.map().ref(coastX - 1, 1));
       player2.conquer(game.map().ref(coastX, 2));
 
       const enemyShoreTile = game.map().ref(coastX, 15);
+
+      // AssaultShuttle launches now require a Spaceport on the sender's
+      // territory.
+      giveSpaceport(game, player2, enemyShoreTile);
 
       game.addExecution(
         new AssaultShuttleExecution(player2, enemyShoreTile, 100),
@@ -360,7 +364,7 @@ describe("Disconnected", () => {
       executeTicks(game, 1);
 
       expect(player2.isAlive()).toBe(true);
-      const transportShip = player2.units(UnitType.AssaultShuttle)[0];
+      const assaultShuttle = player2.units(UnitType.AssaultShuttle)[0];
       expect(player2.units(UnitType.AssaultShuttle).length).toBe(1);
 
       player2.markDisconnected(true);
@@ -369,7 +373,7 @@ describe("Disconnected", () => {
       executeTicks(game, 10);
 
       expect(player2.isAlive()).toBe(false);
-      expect(transportShip.owner()).toBe(player1);
+      expect(assaultShuttle.owner()).toBe(player1);
 
       executeTicks(game, 30);
 
@@ -377,57 +381,70 @@ describe("Disconnected", () => {
       expect(game.owner(enemyShoreTile)).toBe(player1);
     });
 
-    test("Captured transport ship should retreat to closest owner shore tile", () => {
+    test("Captured assault shuttle should retreat to closest owner shore tile", () => {
       player1.conquer(game.map().ref(coastX, 4));
       player2.conquer(game.map().ref(coastX, 1));
 
-      // Use a far destination so boat is still in transit after attack completes
+      // Use a far destination so shuttle is still in transit after attack completes
       const enemyShoreTile = game.map().ref(coastX, 15);
+
+      // Both players need a Spaceport: player2 launches the shuttle, and
+      // player1 (the new owner after capture) needs one for the retreat
+      // target, since `bestShuttleSpawn` routes back to a home port.
+      giveSpaceport(game, player2, enemyShoreTile);
+      giveSpaceport(game, player1, enemyShoreTile);
 
       game.addExecution(
         new AssaultShuttleExecution(player2, enemyShoreTile, 100),
       );
       executeTicks(game, 1);
 
-      const transportShip = player2.units(UnitType.AssaultShuttle)[0];
+      const assaultShuttle = player2.units(UnitType.AssaultShuttle)[0];
       expect(player2.units(UnitType.AssaultShuttle).length).toBe(1);
 
-      expect(transportShip.targetTile()).toBe(enemyShoreTile);
+      expect(assaultShuttle.targetTile()).toBe(enemyShoreTile);
 
       player2.markDisconnected(true);
       game.addExecution(new AttackExecution(1000, player1, player2.id(), null));
       executeTicks(game, 10);
 
       expect(player2.isAlive()).toBe(false);
-      expect(transportShip.owner()).toBe(player1);
+      expect(assaultShuttle.owner()).toBe(player1);
 
       const expectedRetreatTile = player1.bestShuttleSpawn(
-        transportShip.tile(),
+        assaultShuttle.tile(),
       );
       expect(expectedRetreatTile).not.toBe(false);
 
-      transportShip.orderShuttleRetreat();
+      assaultShuttle.orderShuttleRetreat();
       executeTicks(game, 2);
 
-      expect(transportShip.targetTile()).toBe(expectedRetreatTile);
-      expect(transportShip.targetTile()).not.toBe(enemyShoreTile);
-      expect(game.owner(transportShip.targetTile()!)).toBe(player1);
+      expect(assaultShuttle.targetTile()).toBe(expectedRetreatTile);
+      expect(assaultShuttle.targetTile()).not.toBe(enemyShoreTile);
+      expect(game.owner(assaultShuttle.targetTile()!)).toBe(player1);
     });
 
-    test("Retreating transport ship is deleted if new owner has no shore tiles", () => {
+    test("Retreating assault shuttle is deleted if new owner has no shore tiles", () => {
       player2.conquer(game.map().ref(coastX, 1));
       player2.conquer(game.map().ref(coastX - 6, 2));
       player1.conquer(game.map().ref(coastX - 6, 3));
 
       const enemyShoreTile = game.map().ref(coastX, 15);
 
-      const boatTroops = 100;
+      // AssaultShuttle launches now require a Spaceport on the sender's
+      // territory — give one to player2 (the launcher). Deliberately do
+      // NOT give one to player1 so `bestShuttleSpawn` still returns null
+      // after capture, keeping the "shuttle deleted on retreat" behavior
+      // this test is asserting.
+      giveSpaceport(game, player2, enemyShoreTile);
+
+      const shuttleTroops = 100;
       game.addExecution(
-        new AssaultShuttleExecution(player2, enemyShoreTile, boatTroops),
+        new AssaultShuttleExecution(player2, enemyShoreTile, shuttleTroops),
       );
       executeTicks(game, 1);
 
-      const transportShip = player2.units(UnitType.AssaultShuttle)[0];
+      const assaultShuttle = player2.units(UnitType.AssaultShuttle)[0];
       expect(player2.units(UnitType.AssaultShuttle).length).toBe(1);
 
       player2.markDisconnected(true);
@@ -435,7 +452,7 @@ describe("Disconnected", () => {
       executeTicks(game, 10);
 
       expect(player2.isAlive()).toBe(false);
-      expect(transportShip.owner()).toBe(player1);
+      expect(assaultShuttle.owner()).toBe(player1);
 
       // Make sure player1 has no shore tiles for the ship to retreat to anymore
       const enemyInfo = new PlayerInfo(
@@ -466,12 +483,12 @@ describe("Disconnected", () => {
         toInt(player1.troops()) + expectedTroopGrowth,
       );
 
-      transportShip.orderShuttleRetreat();
+      assaultShuttle.orderShuttleRetreat();
       executeTicks(game, 1);
 
-      expect(transportShip.isActive()).toBe(false);
-      // Also test if boat troops were returned to player1 as new ship owner
-      expect(player1.troops()).toBe(expectedFinalTroops + boatTroops);
+      expect(assaultShuttle.isActive()).toBe(false);
+      // Also test if shuttle troops were returned to player1 as new ship owner
+      expect(player1.troops()).toBe(expectedFinalTroops + shuttleTroops);
     });
   });
 });

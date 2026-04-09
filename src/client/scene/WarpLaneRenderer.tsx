@@ -43,7 +43,7 @@ const PULSE_SPEED = 1.2;
 // ─── Internal state types ───────────────────────────────────────────────────
 
 interface LaneState {
-  /** Railroad ID. */
+  /** Hyperspace lane ID. */
   id: number;
   /** Tile path for this lane. */
   tiles: TileRef[];
@@ -89,9 +89,7 @@ function buildLaneCurve(points: Vector3[]): CatmullRomCurve3 | null {
   return new CatmullRomCurve3(points, false, "catmullrom", 0.3);
 }
 
-function createLaneMeshes(
-  points: Vector3[],
-): {
+function createLaneMeshes(points: Vector3[]): {
   tubeMesh: Mesh;
   glowLine: Line;
   material: MeshBasicMaterial;
@@ -134,9 +132,9 @@ function createLaneMeshes(
 // ─── Component ──────────────────────────────────────────────────────────────
 
 /**
- * WarpLaneRenderer — renders railroads as glowing animated "warp lanes".
+ * WarpLaneRenderer — renders hyperspace lanes as glowing animated "warp lanes".
  *
- * - Ingests railroad construction/destruction/snap updates from an
+ * - Ingests hyperspace lane construction/destruction/snap updates from an
  *   {@link SceneTickEvent} emitted once per game tick by
  *   {@link ClientGameRunner}. This guarantees every tick is processed
  *   exactly once — polling `GameView.updatesSinceLastTick()` from
@@ -145,7 +143,7 @@ function createLaneMeshes(
  *   lanes can be deterministically rebuilt from scratch on remount or
  *   after an explicit resync.
  * - Renders each lane as a TubeGeometry with emissive pulsing animation.
- * - Cargo freighter (Train) units are positioned along lane paths in
+ * - Cargo freighter (Frigate) units are positioned along lane paths in
  *   UnitRenderer, but this component provides the visual lane infrastructure.
  */
 export function WarpLaneRenderer(): React.JSX.Element {
@@ -269,7 +267,7 @@ export function WarpLaneRenderer(): React.JSX.Element {
         }
       }
 
-      // Snap (split one railroad into two)
+      // Snap (split one hyperspace lane into two)
       const snaps = updates[GameUpdateType.HyperspaceLaneSnapEvent];
       if (snaps) {
         for (const update of snaps) {

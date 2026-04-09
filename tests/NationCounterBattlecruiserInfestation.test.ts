@@ -15,15 +15,15 @@ import { setup } from "./util/Setup";
 // - x=8-15 is ocean
 // Coast is at x=7
 
-describe("Counter Warship Infestation", () => {
-  test("rich nation sends counter-warship in FFA when enemy has too many warships", async () => {
+describe("Counter Battlecruiser Infestation", () => {
+  test("rich nation sends counter-battlecruiser in FFA when enemy has too many battlecruisers", async () => {
     const game = await setup("half_land_half_ocean", {
       infiniteCredits: true,
       instantBuild: true,
-      difficulty: Difficulty.Hard, // Required for counter-warship logic
+      difficulty: Difficulty.Hard, // Required for counter-battlecruiser logic
     });
 
-    // Create players: a rich nation and an enemy with many warships
+    // Create players: a rich nation and an enemy with many battlecruisers
     const nationInfo = new PlayerInfo(
       "defender_nation",
       PlayerType.Nation,
@@ -77,7 +77,7 @@ describe("Counter Warship Infestation", () => {
     nation.addCredits(10_000_000_000n);
 
     // Build 11+ warships for the enemy on ocean tiles (x=8-15)
-    // Each warship needs a unique ocean tile
+    // Each battlecruiser needs a unique deep space tile
     for (let i = 0; i < 12; i++) {
       const oceanX = 8 + (i % 8);
       const oceanY = i < 8 ? 4 : 12;
@@ -100,7 +100,7 @@ describe("Counter Warship Infestation", () => {
     // Track warships before nation counters
     const warshipCountBefore = nation.units(UnitType.Battlecruiser).length;
 
-    // Initialize nation with NationExecution to enable counter-warship logic
+    // Initialize nation with NationExecution to enable counter-battlecruiser logic
     const testExecutionNation = new Nation(new Cell(3, 4), nation.info());
 
     // Try different game IDs to account for randomness in attackRate/attackTick
@@ -119,7 +119,7 @@ describe("Counter Warship Infestation", () => {
         // Allow the game to process executions periodically
         game.executeNextTick();
 
-        // Check if nation built a counter-warship
+        // Check if nation built a counter-battlecruiser
         if (nation.units(UnitType.Battlecruiser).length > warshipCountBefore) {
           counterWarshipBuilt = true;
           break;
@@ -129,16 +129,16 @@ describe("Counter Warship Infestation", () => {
       if (counterWarshipBuilt) break;
     }
 
-    // Assert that counter-warship was built
+    // Assert that counter-battlecruiser was built
     expect(counterWarshipBuilt).toBe(true);
 
-    // Verify nation now has a warship
+    // Verify nation now has a battlecruiser
     expect(nation.units(UnitType.Battlecruiser).length).toBeGreaterThan(
       warshipCountBefore,
     );
   });
 
-  test("rich nation sends counter-warship in Team game when enemy team has too many warships", async () => {
+  test("rich nation sends counter-battlecruiser in Team game when enemy team has too many battlecruisers", async () => {
     // Create players with team setup - use clan tags to group players
     const nationInfo = new PlayerInfo(
       "defender_nation",
@@ -178,7 +178,7 @@ describe("Counter Warship Infestation", () => {
       {
         infiniteCredits: true,
         instantBuild: true,
-        difficulty: Difficulty.Hard, // Required for counter-warship logic
+        difficulty: Difficulty.Hard, // Required for counter-battlecruiser logic
         gameMode: GameMode.Team,
         playerTeams: 2,
       },
@@ -286,7 +286,7 @@ describe("Counter Warship Infestation", () => {
     // Track warships before nation counters
     const warshipCountBefore = nation.units(UnitType.Battlecruiser).length;
 
-    // Initialize nation with NationExecution to enable counter-warship logic
+    // Initialize nation with NationExecution to enable counter-battlecruiser logic
     const testExecutionNation = new Nation(new Cell(2, 4), nation.info());
 
     // Try different game IDs to account for randomness in attackRate/attackTick
@@ -305,7 +305,7 @@ describe("Counter Warship Infestation", () => {
         // Allow the game to process executions periodically
         game.executeNextTick();
 
-        // Check if nation built a counter-warship
+        // Check if nation built a counter-battlecruiser
         if (nation.units(UnitType.Battlecruiser).length > warshipCountBefore) {
           counterWarshipBuilt = true;
           break;
@@ -315,10 +315,10 @@ describe("Counter Warship Infestation", () => {
       if (counterWarshipBuilt) break;
     }
 
-    // Assert that counter-warship was built
+    // Assert that counter-battlecruiser was built
     expect(counterWarshipBuilt).toBe(true);
 
-    // Verify nation now has a warship
+    // Verify nation now has a battlecruiser
     expect(nation.units(UnitType.Battlecruiser).length).toBeGreaterThan(
       warshipCountBefore,
     );

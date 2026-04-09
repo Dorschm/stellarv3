@@ -52,10 +52,20 @@ function fakeUnit(opts: FakeUnitViewOptions): UnitView {
 
 function fakeGame(
   units: UnitView[],
-  opts: { width?: number; height?: number } = {},
+  opts: {
+    width?: number;
+    height?: number;
+    /**
+     * Predicate that mirrors `GameView.isSector`. Defaults to treating
+     * every tile as a sector — individual tests override this to simulate
+     * deep-space traversal (e.g. for the AssaultShuttle bucket swap).
+     */
+    isSector?: (tile: number) => boolean;
+  } = {},
 ): UnitRendererGameView {
   const width = opts.width ?? 100;
   const height = opts.height ?? 100;
+  const isSector = opts.isSector ?? (() => true);
   return {
     width: () => width,
     height: () => height,
@@ -64,7 +74,7 @@ function fakeGame(
     x: (tile: number) => tile % width,
     y: (tile: number) => Math.floor(tile / width),
     units: () => units,
-    isSector: () => true,
+    isSector,
     nations: () => [],
   };
 }
@@ -135,10 +145,10 @@ describe("renderKeyFor", () => {
       isLoaded: true,
     });
 
-    expect(renderKeyFor(engine)).toBe("TrainEngine");
-    expect(renderKeyFor(tailEngine)).toBe("TrainEngine");
-    expect(renderKeyFor(emptyCar)).toBe("TrainCarriage");
-    expect(renderKeyFor(loadedCar)).toBe("TrainLoadedCarriage");
+    expect(renderKeyFor(engine)).toBe("FrigateEngine");
+    expect(renderKeyFor(tailEngine)).toBe("FrigateEngine");
+    expect(renderKeyFor(emptyCar)).toBe("FrigateCarriage");
+    expect(renderKeyFor(loadedCar)).toBe("FrigateLoadedCarriage");
   });
 
   it("covers every render key declared in ALL_RENDER_KEYS", () => {
@@ -147,11 +157,12 @@ describe("renderKeyFor", () => {
     // when new unit types are added to the ticket's shape table.
     const expected: RenderKey[] = [
       UnitType.AssaultShuttle,
+      "DeepSpaceShuttle",
       UnitType.Battlecruiser,
       UnitType.TradeFreighter,
-      "TrainEngine",
-      "TrainCarriage",
-      "TrainLoadedCarriage",
+      "FrigateEngine",
+      "FrigateCarriage",
+      "FrigateLoadedCarriage",
       UnitType.PlasmaBolt,
       UnitType.PointDefenseMissile,
       UnitType.AntimatterTorpedo,
@@ -167,6 +178,34 @@ describe("renderKeyFor", () => {
     ];
     expect(new Set(ALL_RENDER_KEYS)).toEqual(new Set(expected));
     expect(ALL_RENDER_KEYS.length).toBe(expected.length);
+  });
+
+  it("keeps AssaultShuttles on sector tiles in the local-space bucket", () => {
+    const shuttle = fakeUnit({
+      id: 1,
+      type: UnitType.AssaultShuttle,
+      tile: 0,
+    });
+    // Default fakeGame reports every tile as a sector.
+    expect(renderKeyFor(shuttle, fakeGame([shuttle]))).toBe(
+      UnitType.AssaultShuttle,
+    );
+    // Calling without a game still returns the local-space key — preserved
+    // for legacy callers / unit tests that don't care about the split.
+    expect(renderKeyFor(shuttle)).toBe(UnitType.AssaultShuttle);
+  });
+
+  it("switches AssaultShuttles to DeepSpaceShuttle on non-sector tiles", () => {
+    const shuttle = fakeUnit({
+      id: 1,
+      type: UnitType.AssaultShuttle,
+      tile: 42,
+    });
+    const deepSpaceGame: UnitRendererGameView = {
+      ...fakeGame([shuttle]),
+      isSector: () => false,
+    };
+    expect(renderKeyFor(shuttle, deepSpaceGame)).toBe("DeepSpaceShuttle");
   });
 });
 
@@ -185,7 +224,7 @@ describe("createBaseTransform", () => {
     }
   });
 
-  it("stands the City hemisphere and MissileSilo disk upright along +Z", () => {
+  it("stands the Colony hemisphere and OrbitalStrikePlatform disk upright along +Z", () => {
     // The dome primitive and the flat silo disk share the same Y→Z fix.
     expect(createBaseTransform(UnitType.Colony).rotation).toEqual([
       Math.PI / 2,
@@ -197,7 +236,7 @@ describe("createBaseTransform", () => {
     ).toEqual([Math.PI / 2, 0, 0]);
   });
 
-  it("inverts the SAMLauncher cone so its tip points into the map plane", () => {
+  it("inverts the PointDefenseArray cone so its tip points into the map plane", () => {
     // -π/2 around X maps +Y → -Z, giving the funnel/launcher look with the
     // wide base on top.
     expect(createBaseTransform(UnitType.PointDefenseArray).rotation).toEqual([
@@ -241,7 +280,10 @@ describe("UnitRendererEngine instance-count lifecycle", () => {
     group = new Group();
     // Small initial capacity to exercise both the common path and the growth
     // path without allocating a 512-slot buffer per test.
-    engine = new UnitRendererEngine(group, { initialCapacity: 4 });
+    engine = new UnitRendererEngine(group, {
+      initialCapacity: 4,
+      skipGltfLoading: true,
+    });
   });
 
   afterEach(() => {
@@ -335,7 +377,10 @@ describe("UnitRendererEngine mobile-unit interpolation", () => {
 
   beforeEach(() => {
     group = new Group();
-    engine = new UnitRendererEngine(group, { initialCapacity: 4 });
+    engine = new UnitRendererEngine(group, {
+      initialCapacity: 4,
+      skipGltfLoading: true,
+    });
   });
 
   afterEach(() => {
@@ -430,7 +475,10 @@ describe("tile-to-world centering", () => {
 
   beforeEach(() => {
     group = new Group();
-    engine = new UnitRendererEngine(group, { initialCapacity: 4 });
+    engine = new UnitRendererEngine(group, {
+      initialCapacity: 4,
+      skipGltfLoading: true,
+    });
   });
 
   afterEach(() => {
@@ -484,7 +532,10 @@ describe("structure grounding", () => {
 
     for (const key of structureKeys) {
       const g = new Group();
-      const eng = new UnitRendererEngine(g, { initialCapacity: 4 });
+      const eng = new UnitRendererEngine(g, {
+        initialCapacity: 4,
+        skipGltfLoading: true,
+      });
 
       const unit = fakeUnit({ id: 1, type: key, tile });
       eng.update(fakeGame([unit], { width, height }), 0);
@@ -507,7 +558,10 @@ describe("structure grounding", () => {
 
   it("does not use a single shared height for all structures", () => {
     const group = new Group();
-    const engine = new UnitRendererEngine(group, { initialCapacity: 4 });
+    const engine = new UnitRendererEngine(group, {
+      initialCapacity: 4,
+      skipGltfLoading: true,
+    });
 
     // Collect all structure grounding offsets — they should not all be equal
     const offsets = new Set<number>();
@@ -526,5 +580,217 @@ describe("structure grounding", () => {
     expect(offsets.size).toBeGreaterThan(1);
 
     engine.dispose();
+  });
+});
+
+describe("mobile-unit facing / heading", () => {
+  let group: Group;
+  let engine: UnitRendererEngine;
+
+  beforeEach(() => {
+    group = new Group();
+    engine = new UnitRendererEngine(group, {
+      initialCapacity: 4,
+      skipGltfLoading: true,
+    });
+  });
+
+  afterEach(() => {
+    engine.dispose();
+  });
+
+  it("records a world-space heading when a ship moves between two tiles", () => {
+    // Ship moves from (10,10) → (20,10) which is +X in tile coords.
+    // tileToWorld flips the Y axis, so a +X tile delta stays +X in world
+    // space. Expected heading is atan2(0, +dx) = 0.
+    const prev = tileOf(10, 10);
+    const cur = tileOf(20, 10);
+
+    engine.update(
+      fakeGame([
+        fakeUnit({ id: 1, type: UnitType.AssaultShuttle, tile: prev }),
+      ]),
+      0,
+    );
+    // On the first frame the ship has no lastKnownTile yet, so no heading.
+    expect(engine.headings.has(1)).toBe(false);
+
+    engine.update(
+      fakeGame([
+        fakeUnit({
+          id: 1,
+          type: UnitType.AssaultShuttle,
+          tile: cur,
+          lastTile: prev,
+        }),
+      ]),
+      10,
+    );
+    const eastHeading = engine.headings.get(1);
+    expect(eastHeading).toBeDefined();
+    expect(eastHeading!).toBeCloseTo(0);
+  });
+
+  it("records a northward heading for a -tileY (tile grid 'up') move", () => {
+    // tileToWorld flips Y: -tileY maps to +worldY. A move from (10,20) →
+    // (10,10) is "up" on the tile grid, which is +Y in world coords, so
+    // atan2(+1, 0) = +π/2.
+    const prev = tileOf(10, 20);
+    const cur = tileOf(10, 10);
+
+    engine.update(
+      fakeGame([
+        fakeUnit({ id: 2, type: UnitType.TradeFreighter, tile: prev }),
+      ]),
+      0,
+    );
+    engine.update(
+      fakeGame([
+        fakeUnit({
+          id: 2,
+          type: UnitType.TradeFreighter,
+          tile: cur,
+          lastTile: prev,
+        }),
+      ]),
+      10,
+    );
+    const heading = engine.headings.get(2);
+    expect(heading).toBeDefined();
+    expect(heading!).toBeCloseTo(Math.PI / 2);
+  });
+
+  it("keeps the last heading across frames when the ship is not moving", () => {
+    // Move once, then re-submit the same tile on the next frame — heading
+    // should persist so at-rest ships don't snap back to yaw=0.
+    const prev = tileOf(5, 5);
+    const cur = tileOf(15, 5);
+
+    engine.update(
+      fakeGame([fakeUnit({ id: 3, type: UnitType.Battlecruiser, tile: prev })]),
+      0,
+    );
+    engine.update(
+      fakeGame([
+        fakeUnit({
+          id: 3,
+          type: UnitType.Battlecruiser,
+          tile: cur,
+          lastTile: prev,
+        }),
+      ]),
+      10,
+    );
+    const recorded = engine.headings.get(3);
+    expect(recorded).toBeDefined();
+
+    // Ship stays at cur for many subsequent frames (no new movement).
+    for (let t = 20; t < 500; t += 10) {
+      engine.update(
+        fakeGame([
+          fakeUnit({
+            id: 3,
+            type: UnitType.Battlecruiser,
+            tile: cur,
+            lastTile: cur,
+          }),
+        ]),
+        t,
+      );
+    }
+    expect(engine.headings.get(3)).toBeCloseTo(recorded!);
+  });
+
+  it("clears heading state when a unit despawns", () => {
+    const prev = tileOf(5, 5);
+    const cur = tileOf(6, 5);
+    engine.update(
+      fakeGame([
+        fakeUnit({ id: 4, type: UnitType.AssaultShuttle, tile: prev }),
+      ]),
+      0,
+    );
+    engine.update(
+      fakeGame([
+        fakeUnit({
+          id: 4,
+          type: UnitType.AssaultShuttle,
+          tile: cur,
+          lastTile: prev,
+        }),
+      ]),
+      10,
+    );
+    expect(engine.headings.has(4)).toBe(true);
+
+    // Despawn.
+    engine.update(fakeGame([]), 20);
+    expect(engine.headings.has(4)).toBe(false);
+  });
+});
+
+describe("AssaultShuttle local-space ↔ deep-space bucket swap", () => {
+  let group: Group;
+  let engine: UnitRendererEngine;
+
+  beforeEach(() => {
+    group = new Group();
+    engine = new UnitRendererEngine(group, {
+      initialCapacity: 4,
+      skipGltfLoading: true,
+    });
+  });
+
+  afterEach(() => {
+    engine.dispose();
+  });
+
+  it("buckets a shuttle on a sector tile into AssaultShuttle", () => {
+    const shuttle = fakeUnit({
+      id: 11,
+      type: UnitType.AssaultShuttle,
+      tile: tileOf(10, 10),
+    });
+    engine.update(fakeGame([shuttle]), 0);
+    expect(engine.pools.get(UnitType.AssaultShuttle)!.mesh.count).toBe(1);
+    expect(engine.pools.get("DeepSpaceShuttle")!.mesh.count).toBe(0);
+  });
+
+  it("buckets a shuttle on a non-sector tile into DeepSpaceShuttle", () => {
+    const shuttle = fakeUnit({
+      id: 12,
+      type: UnitType.AssaultShuttle,
+      tile: tileOf(50, 50),
+    });
+    engine.update(fakeGame([shuttle], { isSector: () => false }), 0);
+    expect(engine.pools.get(UnitType.AssaultShuttle)!.mesh.count).toBe(0);
+    expect(engine.pools.get("DeepSpaceShuttle")!.mesh.count).toBe(1);
+  });
+
+  it("moves a shuttle between buckets as it crosses into deep space", () => {
+    // Frame 1 — on a sector tile → local-space bucket.
+    const onSector = fakeUnit({
+      id: 13,
+      type: UnitType.AssaultShuttle,
+      tile: tileOf(10, 10),
+    });
+    engine.update(fakeGame([onSector], { isSector: () => true }), 0);
+    expect(engine.pools.get(UnitType.AssaultShuttle)!.mesh.count).toBe(1);
+    expect(engine.pools.get("DeepSpaceShuttle")!.mesh.count).toBe(0);
+
+    // Frame 2 — same unit id, now on a non-sector tile → deep-space bucket.
+    // Interpolation / heading state should carry across because they are
+    // keyed by unit id, not render key.
+    const inSpace = fakeUnit({
+      id: 13,
+      type: UnitType.AssaultShuttle,
+      tile: tileOf(11, 10),
+      lastTile: tileOf(10, 10),
+    });
+    engine.update(fakeGame([inSpace], { isSector: () => false }), 10);
+    expect(engine.pools.get(UnitType.AssaultShuttle)!.mesh.count).toBe(0);
+    expect(engine.pools.get("DeepSpaceShuttle")!.mesh.count).toBe(1);
+    expect(engine.lastKnownTile.get(13)).toBe(tileOf(11, 10));
+    expect(engine.headings.has(13)).toBe(true);
   });
 });

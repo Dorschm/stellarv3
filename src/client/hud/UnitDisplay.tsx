@@ -90,16 +90,16 @@ const UNIT_CONFIG = [
 ];
 
 const KEYBIND_KEYS = {
-  [UnitType.Colony]: "buildCity",
-  [UnitType.Foundry]: "buildFactory",
-  [UnitType.Spaceport]: "buildPort",
-  [UnitType.DefenseStation]: "buildDefensePost",
-  [UnitType.OrbitalStrikePlatform]: "buildMissileSilo",
-  [UnitType.PointDefenseArray]: "buildSamLauncher",
-  [UnitType.Battlecruiser]: "buildWarship",
-  [UnitType.AntimatterTorpedo]: "buildAtomBomb",
-  [UnitType.NovaBomb]: "buildHydrogenBomb",
-  [UnitType.ClusterWarhead]: "buildMIRV",
+  [UnitType.Colony]: "buildColony",
+  [UnitType.Foundry]: "buildFoundry",
+  [UnitType.Spaceport]: "buildSpaceport",
+  [UnitType.DefenseStation]: "buildDefenseStation",
+  [UnitType.OrbitalStrikePlatform]: "buildOrbitalStrikePlatform",
+  [UnitType.PointDefenseArray]: "buildPointDefenseArray",
+  [UnitType.Battlecruiser]: "buildBattlecruiser",
+  [UnitType.AntimatterTorpedo]: "buildAntimatterTorpedo",
+  [UnitType.NovaBomb]: "buildNovaBomb",
+  [UnitType.ClusterWarhead]: "buildClusterWarhead",
 } as Record<PlayerBuildableUnitType, string>;
 
 export function UnitDisplay(): React.JSX.Element {
@@ -111,13 +111,13 @@ export function UnitDisplay(): React.JSX.Element {
     Record<string, { value: string; key: string }>
   >({});
   const [unitCounts, setUnitCounts] = useState({
-    cities: 0,
-    warships: 0,
-    factories: 0,
-    missileSilo: 0,
-    port: 0,
-    defensePost: 0,
-    samLauncher: 0,
+    colonies: 0,
+    battlecruisers: 0,
+    foundries: 0,
+    orbitalStrikePlatform: 0,
+    spaceport: 0,
+    defenseStation: 0,
+    pointDefenseArray: 0,
   });
   const [allDisabled, setAllDisabled] = useState(false);
   const [hoveredUnit, setHoveredUnit] =
@@ -151,13 +151,15 @@ export function UnitDisplay(): React.JSX.Element {
     });
 
     setUnitCounts({
-      cities: player.totalUnitLevels(UnitType.Colony),
-      missileSilo: player.totalUnitLevels(UnitType.OrbitalStrikePlatform),
-      port: player.totalUnitLevels(UnitType.Spaceport),
-      defensePost: player.totalUnitLevels(UnitType.DefenseStation),
-      samLauncher: player.totalUnitLevels(UnitType.PointDefenseArray),
-      factories: player.totalUnitLevels(UnitType.Foundry),
-      warships: player.totalUnitLevels(UnitType.Battlecruiser),
+      colonies: player.totalUnitLevels(UnitType.Colony),
+      orbitalStrikePlatform: player.totalUnitLevels(
+        UnitType.OrbitalStrikePlatform,
+      ),
+      spaceport: player.totalUnitLevels(UnitType.Spaceport),
+      defenseStation: player.totalUnitLevels(UnitType.DefenseStation),
+      pointDefenseArray: player.totalUnitLevels(UnitType.PointDefenseArray),
+      foundries: player.totalUnitLevels(UnitType.Foundry),
+      battlecruisers: player.totalUnitLevels(UnitType.Battlecruiser),
     });
   }, [tick, gameView]);
 
@@ -307,13 +309,13 @@ export function UnitDisplay(): React.JSX.Element {
 
   // Map unit counts to config
   const countMap: Record<UnitType, number | null> = {
-    [UnitType.Colony]: unitCounts.cities,
-    [UnitType.Foundry]: unitCounts.factories,
-    [UnitType.Spaceport]: unitCounts.port,
-    [UnitType.DefenseStation]: unitCounts.defensePost,
-    [UnitType.OrbitalStrikePlatform]: unitCounts.missileSilo,
-    [UnitType.PointDefenseArray]: unitCounts.samLauncher,
-    [UnitType.Battlecruiser]: unitCounts.warships,
+    [UnitType.Colony]: unitCounts.colonies,
+    [UnitType.Foundry]: unitCounts.foundries,
+    [UnitType.Spaceport]: unitCounts.spaceport,
+    [UnitType.DefenseStation]: unitCounts.defenseStation,
+    [UnitType.OrbitalStrikePlatform]: unitCounts.orbitalStrikePlatform,
+    [UnitType.PointDefenseArray]: unitCounts.pointDefenseArray,
+    [UnitType.Battlecruiser]: unitCounts.battlecruisers,
     [UnitType.AntimatterTorpedo]: null,
     [UnitType.NovaBomb]: null,
     [UnitType.ClusterWarhead]: null,

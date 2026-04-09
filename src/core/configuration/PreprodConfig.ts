@@ -12,7 +12,7 @@ export const preprodConfig = new (class extends DefaultServerConfig {
     return "0x4AAAAAAB7QetxHwRCKw-aP";
   }
   jwtAudience(): string {
-    return "openfront.dev";
+    return "dev.stellar.game";
   }
   allowedFlares(): string[] | undefined {
     return undefined;
@@ -20,7 +20,7 @@ export const preprodConfig = new (class extends DefaultServerConfig {
     // Allow access without login for now to test
     // the new login flow.
     // return [
-    //   // "access:openfront.dev"
+    //   // "access:dev.stellar.game"
     // ];
   }
 })();

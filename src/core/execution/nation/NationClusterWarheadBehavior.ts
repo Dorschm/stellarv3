@@ -25,9 +25,9 @@ const MIRV_COOLDOWN_TICKS = 300;
 
 export class NationClusterWarheadBehavior {
   // Shared across all NationClusterWarheadBehavior instances.
-  // Tracks the last tick a MIRV was sent at each player, so multiple nations don't pile-on the same target.
-  // Especially important for games with very high starting gold settings.
-  private static recentMirvTargets = new Map<PlayerID, Tick>();
+  // Tracks the last tick a ClusterWarhead was sent at each player, so multiple nations don't pile-on the same target.
+  // Especially important for games with very high starting credit settings.
+  private static recentClusterWarheadTargets = new Map<PlayerID, Tick>();
 
   constructor(
     private random: PseudoRandom,
@@ -149,11 +149,11 @@ export class NationClusterWarheadBehavior {
     return false;
   }
 
-  // MIRV Strategy Methods
+  // ClusterWarhead Strategy Methods
   private selectCounterMirvTarget(): Player | null {
     if (this.player === null) throw new Error("not initialized");
     const attackers = this.getValidMirvTargetPlayers().filter((p) =>
-      this.isInboundMIRVFrom(p),
+      this.isInboundClusterWarheadFrom(p),
     );
     if (attackers.length === 0) return null;
     attackers.sort((a, b) => b.numTilesOwned() - a.numTilesOwned());
@@ -233,23 +233,22 @@ export class NationClusterWarheadBehavior {
     return null;
   }
 
-  // MIRV Cooldown Methods
+  // ClusterWarhead Cooldown Methods
   private wasRecentlyMirved(target: Player): boolean {
-    const lastTick = NationClusterWarheadBehavior.recentMirvTargets.get(
-      target.id(),
-    );
+    const lastTick =
+      NationClusterWarheadBehavior.recentClusterWarheadTargets.get(target.id());
     if (lastTick === undefined) return false;
     return this.game.ticks() - lastTick < MIRV_COOLDOWN_TICKS;
   }
 
   private recordMirvHit(target: Player): void {
-    NationClusterWarheadBehavior.recentMirvTargets.set(
+    NationClusterWarheadBehavior.recentClusterWarheadTargets.set(
       target.id(),
       this.game.ticks(),
     );
   }
 
-  // MIRV Helper Methods
+  // ClusterWarhead Helper Methods
   private getValidMirvTargetPlayers(): Player[] {
     if (this.player === null) throw new Error("not initialized");
 
@@ -263,11 +262,11 @@ export class NationClusterWarheadBehavior {
     });
   }
 
-  private isInboundMIRVFrom(attacker: Player): boolean {
+  private isInboundClusterWarheadFrom(attacker: Player): boolean {
     if (this.player === null) throw new Error("not initialized");
-    const enemyMirvs = attacker.units(UnitType.ClusterWarhead);
-    for (const mirv of enemyMirvs) {
-      const dst = mirv.targetTile();
+    const enemyWarheads = attacker.units(UnitType.ClusterWarhead);
+    for (const warhead of enemyWarheads) {
+      const dst = warhead.targetTile();
       if (!dst) continue;
       if (!this.game.hasOwner(dst)) continue;
       const owner = this.game.owner(dst);
@@ -278,7 +277,7 @@ export class NationClusterWarheadBehavior {
     return false;
   }
 
-  // MIRV Execution Methods
+  // ClusterWarhead Execution Methods
   private maybeSendMIRV(enemy: Player): void {
     if (this.player === null) throw new Error("not initialized");
 

@@ -10,10 +10,10 @@ export class TradeHubExecution implements Execution {
   private station: TradeHub | null = null;
   private numCars: number = 5;
   private lastSpawnTick: number = 0;
-  private ticksCooldown: number = 10; // Minimum cooldown between two trains
+  private ticksCooldown: number = 10; // Minimum cooldown between two frigates
   constructor(
     private unit: Unit,
-    private spawnTrains?: boolean, // If set, the station will spawn trains
+    private spawnFrigates?: boolean, // If set, the station will spawn frigates
   ) {
     this.unit.setTradeHub(true);
   }
@@ -24,7 +24,7 @@ export class TradeHubExecution implements Execution {
 
   init(mg: Game, ticks: number): void {
     this.mg = mg;
-    if (this.spawnTrains) {
+    if (this.spawnFrigates) {
       this.random = new PseudoRandom(mg.ticks());
     }
   }
@@ -45,12 +45,12 @@ export class TradeHubExecution implements Execution {
       this.active = false;
       return;
     }
-    if (this.spawnTrains) {
-      this.spawnTrain(this.station, ticks);
+    if (this.spawnFrigates) {
+      this.spawnFrigate(this.station, ticks);
     }
   }
 
-  private shouldSpawnTrain(): boolean {
+  private shouldSpawnFrigate(): boolean {
     const spawnRate = this.mg
       .config()
       .frigateSpawnRate(this.unit.owner().unitCount(UnitType.Foundry));
@@ -62,9 +62,9 @@ export class TradeHubExecution implements Execution {
     return false;
   }
 
-  private spawnTrain(station: TradeHub, currentTick: number) {
+  private spawnFrigate(station: TradeHub, currentTick: number) {
     if (this.mg === undefined) throw new Error("Not initialized");
-    if (!this.spawnTrains) return;
+    if (!this.spawnFrigates) return;
     if (this.random === undefined) throw new Error("Not initialized");
     if (currentTick < this.lastSpawnTick + this.ticksCooldown) return;
     const cluster = station.getCluster();
@@ -75,7 +75,7 @@ export class TradeHubExecution implements Execution {
     if (!cluster.hasAnyTradeDestination(owner)) {
       return;
     }
-    if (!this.shouldSpawnTrain()) {
+    if (!this.shouldSpawnFrigate()) {
       return;
     }
 

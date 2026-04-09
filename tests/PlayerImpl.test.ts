@@ -47,16 +47,16 @@ describe("PlayerImpl", () => {
     expect(buCity!.canUpgrade).toBe(city.id());
   });
 
-  test("DefensePost cannot be upgraded", () => {
+  test("DefenseStation cannot be upgraded", () => {
     player.buildUnit(UnitType.DefenseStation, game.ref(0, 0), {});
-    const buDefensePost = player
+    const buDefenseStation = player
       .buildableUnits(game.ref(0, 0))
       .find((bu) => bu.type === UnitType.DefenseStation);
-    expect(buDefensePost).toBeDefined();
-    expect(buDefensePost!.canUpgrade).toBeFalsy();
+    expect(buDefenseStation).toBeDefined();
+    expect(buDefenseStation!.canUpgrade).toBeFalsy();
   });
 
-  test("City can be upgraded from another city", () => {
+  test("Colony can be upgraded from another colony", () => {
     const city = player.buildUnit(UnitType.Colony, game.ref(0, 0), {});
     const cityToUpgrade = player.findUnitToUpgrade(
       UnitType.Colony,

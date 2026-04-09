@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { PlayerType } from "../../core/game/Game";
-import { GameUpdateType, BrokeAllianceUpdate } from "../../core/game/GameUpdates";
+import {
+  BrokeAllianceUpdate,
+  GameUpdateType,
+} from "../../core/game/GameUpdates";
 import { UserSettings } from "../../core/game/UserSettings";
 import { useGameTick } from "./useGameTick";
 
@@ -12,8 +15,8 @@ const ALERT_COOLDOWN_TICKS = 15 * 10; // 15 seconds
 export function AlertFrame(): React.JSX.Element {
   const { gameView, tick } = useGameTick();
   const [isActive, setIsActive] = useState(false);
-  const [alertType, setAlertType] = useState<"betrayal" | "land-attack">(
-    "betrayal"
+  const [alertType, setAlertType] = useState<"betrayal" | "local-attack">(
+    "betrayal",
   );
   const userSettings = new UserSettings();
 
@@ -39,9 +42,11 @@ export function AlertFrame(): React.JSX.Element {
 
     // Track when we attack other players (not terra nullius)
     for (const attack of outgoingAttacks) {
-      // Only track attacks on players (targetID !== 0 means it's a player, not unclaimed land)
+      // Only track attacks on players (targetID !== 0 means it's a player, not unclaimed territory)
       if (attack.targetID !== 0 && !attack.retreating) {
-        const existingTick = outgoingAttackTicksRef.current.get(attack.targetID);
+        const existingTick = outgoingAttackTicksRef.current.get(
+          attack.targetID,
+        );
 
         // Only update timestamp if:
         // 1. This is a new attack (not in map yet), OR
@@ -56,7 +61,10 @@ export function AlertFrame(): React.JSX.Element {
     }
 
     // Clean up old entries (older than retaliation window)
-    for (const [playerID, tickTime] of outgoingAttackTicksRef.current.entries()) {
+    for (const [
+      playerID,
+      tickTime,
+    ] of outgoingAttackTicksRef.current.entries()) {
       if (currentTick - tickTime > RETALIATION_WINDOW_TICKS) {
         outgoingAttackTicksRef.current.delete(playerID);
       }
@@ -96,7 +104,7 @@ export function AlertFrame(): React.JSX.Element {
 
         // Check if this is a retaliation (we attacked them recently)
         const ourAttackTick = outgoingAttackTicksRef.current.get(
-          attack.attackerID
+          attack.attackerID,
         );
         const isRetaliation =
           ourAttackTick !== undefined &&
@@ -111,7 +119,7 @@ export function AlertFrame(): React.JSX.Element {
         // 3. The attack is too small (less than 1/5 of our troops)
         if (!inCooldown && !isRetaliation && !isSmallAttack) {
           seenAttackIdsRef.current.add(attack.id);
-          setAlertType("land-attack");
+          setAlertType("local-attack");
           activateAlert();
         } else {
           // Still mark as seen so we don't alert later

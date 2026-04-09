@@ -89,10 +89,10 @@ describe("Shell Random Damage", () => {
     expect(damages.length).toBeGreaterThan(0);
   });
 
-  test("Warship shell attacks have random damage", () => {
+  test("Battlecruiser plasma bolt attacks have random damage", () => {
     player1.buildUnit(UnitType.Spaceport, game.ref(coastX, 10), {});
 
-    const warship = player1.buildUnit(
+    const battlecruiser = player1.buildUnit(
       UnitType.Battlecruiser,
       game.ref(coastX + 1, 10),
       {
@@ -109,9 +109,9 @@ describe("Shell Random Damage", () => {
     );
     const initialHealth = target.health();
 
-    warship.setTargetUnit(target);
+    battlecruiser.setTargetUnit(target);
 
-    game.addExecution(new BattlecruiserExecution(warship));
+    game.addExecution(new BattlecruiserExecution(battlecruiser));
 
     const damages: number[] = [];
     const maxAttempts = 100;
@@ -155,12 +155,12 @@ describe("Shell Random Damage", () => {
     if (spawn === false) {
       throw new Error("Unable to build defense post for test");
     }
-    const defensePostUnit = player1.buildUnit(
+    const defenseStationUnit = player1.buildUnit(
       UnitType.DefenseStation,
       spawn,
       {},
     );
-    const defensePost = new DefenseStationExecution(defensePostUnit);
+    const defenseStation = new DefenseStationExecution(defenseStationUnit);
 
     const target = player2.buildUnit(
       UnitType.Battlecruiser,
@@ -171,7 +171,7 @@ describe("Shell Random Damage", () => {
     );
     const initialHealth = target.health();
 
-    defensePost.init(game, game.ticks());
+    defenseStation.init(game, game.ticks());
 
     const damages: number[] = [];
     const maxAttempts = 100;
@@ -179,7 +179,7 @@ describe("Shell Random Damage", () => {
 
     while (damages.length < 5 && attempts < maxAttempts) {
       const healthBefore = target.health();
-      defensePost.tick(game.ticks());
+      defenseStation.tick(game.ticks());
       game.executeNextTick();
       const healthAfter = target.health();
 

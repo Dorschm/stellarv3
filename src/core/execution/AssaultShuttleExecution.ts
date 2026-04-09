@@ -32,7 +32,7 @@ export class AssaultShuttleExecution implements Execution {
   private dst: TileRef | null;
   private src: TileRef | null;
   private retreatDst: TileRef | false | null = null;
-  private boat: Unit;
+  private shuttle: Unit;
   private motionPlanId = 1;
   private motionPlanDst: TileRef | null = null;
 
@@ -119,7 +119,7 @@ export class AssaultShuttleExecution implements Execution {
 
     this.src = src;
 
-    this.boat = this.attacker.buildUnit(UnitType.AssaultShuttle, this.src, {
+    this.shuttle = this.attacker.buildUnit(UnitType.AssaultShuttle, this.src, {
       troops: this.troops,
       targetTile: this.dst,
     });
@@ -131,7 +131,7 @@ export class AssaultShuttleExecution implements Execution {
 
     const motionPlan: MotionPlanRecord = {
       kind: "grid",
-      unitId: this.boat.id(),
+      unitId: this.shuttle.id(),
       planId: this.motionPlanId,
       startTick: ticks + this.ticksPerMove,
       ticksPerStep: this.ticksPerMove,
@@ -143,9 +143,9 @@ export class AssaultShuttleExecution implements Execution {
     // Notify the target player about the incoming naval invasion
     if (this.target.id() !== mg.terraNullius().id()) {
       mg.displayIncomingUnit(
-        this.boat.id(),
+        this.shuttle.id(),
         // TODO TranslateText
-        `Naval invasion incoming from ${this.attacker.displayName()} (${renderTroops(this.boat.troops())})`,
+        `Shuttle assault incoming from ${this.attacker.displayName()} (${renderTroops(this.shuttle.troops())})`,
         MessageType.ORBITAL_ASSAULT_INBOUND,
         this.target.id(),
       );
@@ -154,7 +154,7 @@ export class AssaultShuttleExecution implements Execution {
     // Record stats
     this.mg
       .stats()
-      .shuttleSendTroops(this.attacker, this.target, this.boat.troops());
+      .shuttleSendTroops(this.attacker, this.target, this.shuttle.troops());
   }
 
   tick(ticks: number) {
@@ -165,7 +165,7 @@ export class AssaultShuttleExecution implements Execution {
     if (!this.active) {
       return;
     }
-    if (!this.boat.isActive()) {
+    if (!this.shuttle.isActive()) {
       this.active = false;
       return;
     }
@@ -176,45 +176,45 @@ export class AssaultShuttleExecution implements Execution {
 
     // Team mate can conquer disconnected player and get their ships
     // captureUnit has changed the owner of the unit, now update attacker
-    const boatOwner = this.boat.owner();
+    const shuttleOwner = this.shuttle.owner();
     if (
       this.originalOwner.isDisconnected() &&
-      boatOwner !== this.originalOwner &&
-      boatOwner.isOnSameTeam(this.originalOwner)
+      shuttleOwner !== this.originalOwner &&
+      shuttleOwner.isOnSameTeam(this.originalOwner)
     ) {
-      this.attacker = boatOwner;
-      this.originalOwner = boatOwner; // for when this owner disconnects too
+      this.attacker = shuttleOwner;
+      this.originalOwner = shuttleOwner; // for when this owner disconnects too
     }
 
-    if (this.boat.retreating()) {
-      // Resolve retreat destination once, based on current boat location when retreat begins.
-      this.retreatDst ??= this.attacker.bestShuttleSpawn(this.boat.tile());
+    if (this.shuttle.retreating()) {
+      // Resolve retreat destination once, based on current shuttle location when retreat begins.
+      this.retreatDst ??= this.attacker.bestShuttleSpawn(this.shuttle.tile());
 
       if (this.retreatDst === false) {
         console.warn(
           `AssaultShuttleExecution: retreating but no retreat destination found`,
         );
-        this.attacker.addTroops(this.boat.troops());
-        this.boat.delete(false);
+        this.attacker.addTroops(this.shuttle.troops());
+        this.shuttle.delete(false);
         this.active = false;
         return;
       } else {
         this.dst = this.retreatDst;
 
-        if (this.boat.targetTile() !== this.dst) {
-          this.boat.setTargetTile(this.dst);
+        if (this.shuttle.targetTile() !== this.dst) {
+          this.shuttle.setTargetTile(this.dst);
         }
       }
     }
 
-    const result = this.pathFinder.next(this.boat.tile(), this.dst);
+    const result = this.pathFinder.next(this.shuttle.tile(), this.dst);
     switch (result.status) {
       case PathStatus.COMPLETE:
         if (this.mg.owner(this.dst) === this.attacker) {
-          const deaths = this.boat.troops() * (malusForRetreat / 100);
-          const survivors = this.boat.troops() - deaths;
+          const deaths = this.shuttle.troops() * (malusForRetreat / 100);
+          const survivors = this.shuttle.troops() - deaths;
           this.attacker.addTroops(survivors);
-          this.boat.delete(false);
+          this.shuttle.delete(false);
           this.active = false;
 
           // Record stats
@@ -234,11 +234,11 @@ export class AssaultShuttleExecution implements Execution {
         }
         this.attacker.conquer(this.dst);
         if (this.target.isPlayer() && this.attacker.isFriendly(this.target)) {
-          this.attacker.addTroops(this.boat.troops());
+          this.attacker.addTroops(this.shuttle.troops());
         } else {
           this.mg.addExecution(
             new AttackExecution(
-              this.boat.troops(),
+              this.shuttle.troops(),
               this.attacker,
               this.target.id(),
               this.dst,
@@ -246,26 +246,30 @@ export class AssaultShuttleExecution implements Execution {
             ),
           );
         }
-        this.boat.delete(false);
+        this.shuttle.delete(false);
         this.active = false;
 
         // Record stats
         this.mg
           .stats()
-          .shuttleArriveTroops(this.attacker, this.target, this.boat.troops());
+          .shuttleArriveTroops(
+            this.attacker,
+            this.target,
+            this.shuttle.troops(),
+          );
         return;
       case PathStatus.NEXT:
-        this.boat.move(result.node);
+        this.shuttle.move(result.node);
         break;
       case PathStatus.NOT_FOUND: {
         // TODO: add to poisoned port list
         const map = this.mg.map();
-        const boatTile = this.boat.tile();
+        const shuttleTile = this.shuttle.tile();
         console.warn(
-          `TransportShip path not found: boat@(${map.x(boatTile)},${map.y(boatTile)}) -> dst@(${map.x(this.dst)},${map.y(this.dst)}), attacker=${this.attacker.id()}, target=${this.target.id()}`,
+          `AssaultShuttle path not found: shuttle@(${map.x(shuttleTile)},${map.y(shuttleTile)}) -> dst@(${map.x(this.dst)},${map.y(this.dst)}), attacker=${this.attacker.id()}, target=${this.target.id()}`,
         );
-        this.attacker.addTroops(this.boat.troops());
-        this.boat.delete(false);
+        this.attacker.addTroops(this.shuttle.troops());
+        this.shuttle.delete(false);
         this.active = false;
         return;
       }
@@ -273,16 +277,17 @@ export class AssaultShuttleExecution implements Execution {
 
     if (this.dst !== null && this.dst !== this.motionPlanDst) {
       this.motionPlanId++;
-      const fullPath = this.pathFinder.findPath(this.boat.tile(), this.dst) ?? [
-        this.boat.tile(),
-      ];
-      if (fullPath.length === 0 || fullPath[0] !== this.boat.tile()) {
-        fullPath.unshift(this.boat.tile());
+      const fullPath = this.pathFinder.findPath(
+        this.shuttle.tile(),
+        this.dst,
+      ) ?? [this.shuttle.tile()];
+      if (fullPath.length === 0 || fullPath[0] !== this.shuttle.tile()) {
+        fullPath.unshift(this.shuttle.tile());
       }
 
       this.mg.recordMotionPlan({
         kind: "grid",
-        unitId: this.boat.id(),
+        unitId: this.shuttle.id(),
         planId: this.motionPlanId,
         startTick: ticks + this.ticksPerMove,
         ticksPerStep: this.ticksPerMove,

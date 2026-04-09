@@ -22,7 +22,7 @@ export const EMOJI_ASSIST_TARGET_ME = (["🥺", "💀"] as const).map(emojiId);
 export const EMOJI_ASSIST_TARGET_ALLY = (["🕊️", "👎"] as const).map(emojiId);
 export const EMOJI_AGGRESSIVE_ATTACK = (["😈"] as const).map(emojiId);
 export const EMOJI_ATTACK = (["😡"] as const).map(emojiId);
-export const EMOJI_WARSHIP_RETALIATION = (["⛵"] as const).map(emojiId);
+export const EMOJI_BATTLECRUISER_RETALIATION = (["⛵"] as const).map(emojiId);
 export const EMOJI_NUKE = (["☢️", "💥"] as const).map(emojiId);
 export const EMOJI_GOT_INSULTED = (["🖕", "😡", "🤡", "😞", "😭"] as const).map(
   emojiId,

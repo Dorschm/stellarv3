@@ -45,10 +45,10 @@ export class ConstructionExecution implements Execution {
   tick(ticks: number): void {
     if (this.structure === null) {
       const info = this.mg.unitInfo(this.constructionType);
-      // For non-structure units (nukes/warship), charge once and delegate to specialized executions.
+      // For non-structure units (nukes/battlecruiser), charge once and delegate to specialized executions.
       const isStructure = this.isStructure(this.constructionType);
       if (!isStructure) {
-        // Defer validation and gold deduction to the specific execution
+        // Defer validation and credit deduction to the specific execution
         this.completeConstruction();
         this.active = false;
         return;

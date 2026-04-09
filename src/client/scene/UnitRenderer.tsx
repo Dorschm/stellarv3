@@ -18,38 +18,69 @@ import {
   SphereGeometry,
   TorusGeometry,
 } from "three";
+import { assetUrl } from "../../core/AssetUrls";
 import { FrigateType, UnitType } from "../../core/game/Game";
 import { UnitView } from "../../core/game/GameView";
 import { useGameView } from "../bridge/GameViewContext";
+import { loadGltfGeometry } from "./GltfModelLoader";
 
-// ─── Train subtypes for distinct proxy meshes ─────────────────────────────────
+// ─── Frigate subtypes for distinct proxy meshes ─────────────────────────────────
 
-export type TrainSubtype =
-  | "TrainEngine"
-  | "TrainCarriage"
-  | "TrainLoadedCarriage";
+export type FrigateSubtype =
+  | "FrigateEngine"
+  | "FrigateCarriage"
+  | "FrigateLoadedCarriage";
+
+/**
+ * Marker for the AssaultShuttle's deep-space variant. An AssaultShuttle
+ * on a sector tile renders with the local-space AssaultShuttle.glb
+ * mesh; once it crosses onto a non-sector (deep space) tile it moves to
+ * this separate instanced-mesh pool whose geometry is Shuttle.glb,
+ * giving the visible "transform into deep-space shuttle" effect while
+ * transporting troops between planets.
+ */
+export type AssaultShuttleVariant = "DeepSpaceShuttle";
 
 /**
  * A render key identifies a distinct instanced-mesh pool.
- * Most unit types map 1:1; trains split into subtypes.
+ * Most unit types map 1:1; frigates split into subtypes; AssaultShuttles
+ * additionally split between their local-space and deep-space forms.
  */
-export type RenderKey = UnitType | TrainSubtype;
+export type RenderKey = UnitType | FrigateSubtype | AssaultShuttleVariant;
 
-function trainSubtype(unit: UnitView): TrainSubtype {
+function frigateSubtype(unit: UnitView): FrigateSubtype {
   const tt = unit.frigateType();
   if (tt === FrigateType.Engine || tt === FrigateType.TailEngine) {
-    return "TrainEngine";
+    return "FrigateEngine";
   }
-  return unit.isLoaded() ? "TrainLoadedCarriage" : "TrainCarriage";
+  return unit.isLoaded() ? "FrigateLoadedCarriage" : "FrigateCarriage";
 }
 
 /**
  * Maps a live `UnitView` to the render key of the instanced-mesh pool it
  * belongs to. Exported so tests can verify the full mapping (and future GLTF
  * asset registries can reuse the same bucketing).
+ *
+ * The optional `game` argument lets the mapper consult the game view for
+ * state-dependent splits (currently only the AssaultShuttle local-space/
+ * deep-space swap, which requires `isSector()`). Tests that don't care
+ * about tile-state-dependent keys can still call `renderKeyFor(unit)` and
+ * get the local-space behaviour.
  */
-export function renderKeyFor(unit: UnitView): RenderKey {
-  if (unit.type() === UnitType.Frigate) return trainSubtype(unit);
+export function renderKeyFor(
+  unit: UnitView,
+  game?: Pick<UnitRendererGameView, "isSector">,
+): RenderKey {
+  if (unit.type() === UnitType.Frigate) return frigateSubtype(unit);
+  if (
+    unit.type() === UnitType.AssaultShuttle &&
+    game !== undefined &&
+    !game.isSector(unit.tile())
+  ) {
+    // Ship is traversing deep space — switch to the Shuttle.glb variant
+    // so troop transports visibly "launch" off their home planet.
+    return "DeepSpaceShuttle";
+  }
   return unit.type();
 }
 
@@ -59,17 +90,18 @@ function createProxyGeometry(key: RenderKey): BufferGeometry {
   switch (key) {
     // Mobile units
     case UnitType.AssaultShuttle:
+    case "DeepSpaceShuttle":
       return new ConeGeometry(1.5, 4, 8);
     case UnitType.Battlecruiser:
       return new BoxGeometry(2, 6, 2);
     case UnitType.TradeFreighter:
       return new ConeGeometry(2.5, 4, 8);
-    // Train subtypes: engines = cylinder, carriages = box
-    case "TrainEngine":
+    // Frigate subtypes: engines = cylinder, carriages = box
+    case "FrigateEngine":
       return new CylinderGeometry(1.5, 1.5, 5, 8);
-    case "TrainCarriage":
+    case "FrigateCarriage":
       return new BoxGeometry(1.8, 4, 1.8);
-    case "TrainLoadedCarriage":
+    case "FrigateLoadedCarriage":
       return new BoxGeometry(2.2, 4.5, 2.2);
     case UnitType.PlasmaBolt:
       return new SphereGeometry(0.8, 6, 6);
@@ -106,7 +138,7 @@ function createProxyGeometry(key: RenderKey): BufferGeometry {
 // SpaceMapPlane.tsx — unit positions are set as (px, py, pz) with pz being
 // the height above the plane). Three.js primitives (Cylinder/Cone/half-
 // Sphere) orient their axis of symmetry along +Y by default, so without a
-// base rotation cones lie sideways, silo disks stand on edge, and the city
+// base rotation cones lie sideways, platform disks stand on edge, and the colony
 // hemisphere's dome points horizontally. The per-key `baseRotation` below
 // rotates each primitive so its canonical "up" axis aligns with world +Z.
 // `baseScale` / `baseOffset` are reserved for future GLTF swaps where the
@@ -137,7 +169,7 @@ const UPRIGHT_Y_TO_Z: [number, number, number] = [Math.PI / 2, 0, 0];
 /**
  * Rotation around X by -π/2 maps the primitive's default +Y axis to world -Z
  * (into the map plane). Used for proxies that should appear inverted, e.g.
- * SAMLauncher which reads as a funnel-style launcher with the wide base up.
+ * PointDefenseArray which reads as a funnel-style launcher with the wide base up.
  */
 const INVERTED_Y_TO_Z: [number, number, number] = [-Math.PI / 2, 0, 0];
 
@@ -148,11 +180,12 @@ export function createBaseTransform(key: RenderKey): BaseTransform {
   switch (key) {
     // Cone-shaped projectiles / ships: tip should point up out of the plane.
     case UnitType.AssaultShuttle:
+    case "DeepSpaceShuttle":
     case UnitType.TradeFreighter:
     case UnitType.PointDefenseMissile:
       return { ...IDENTITY_TRANSFORM, rotation: UPRIGHT_Y_TO_Z };
 
-    // City hemisphere: default is a dome pointing +Y. Rotate so the dome
+    // Colony hemisphere: default is a dome pointing +Y. Rotate so the dome
     // points +Z with the flat equator cut resting on the XY plane.
     case UnitType.Colony:
       return {
@@ -161,8 +194,8 @@ export function createBaseTransform(key: RenderKey): BaseTransform {
         offset: [0, 0, 0],
       };
 
-    // MissileSilo disk: default is a 1-unit-tall cylinder standing on its
-    // edge (axis along +Y). Rotate so the disk lies flat on the map plane.
+    // OrbitalStrikePlatform disk: default is a 1-unit-tall cylinder standing
+    // on its edge (axis along +Y). Rotate so the disk lies flat on the map plane.
     case UnitType.OrbitalStrikePlatform:
       return {
         rotation: UPRIGHT_Y_TO_Z,
@@ -170,9 +203,9 @@ export function createBaseTransform(key: RenderKey): BaseTransform {
         offset: [0, 0, 0],
       };
 
-    // SAMLauncher: inverted cone with wide base up, narrow tip pointing into
-    // the map plane. Replaces the old ad-hoc rotation.x = π override which
-    // was authored for a Y-up world and read as sideways here.
+    // PointDefenseArray: inverted cone with wide base up, narrow tip pointing
+    // into the map plane. Replaces the old ad-hoc rotation.x = π override
+    // which was authored for a Y-up world and read as sideways here.
     case UnitType.PointDefenseArray:
       return {
         rotation: INVERTED_Y_TO_Z,
@@ -180,18 +213,18 @@ export function createBaseTransform(key: RenderKey): BaseTransform {
         offset: [0, 0, 0],
       };
 
-    // Port torus: default TorusGeometry already lies in the XY plane with
-    // its hole axis along +Z, so it sits flat on the map without rotation.
+    // Spaceport torus: default TorusGeometry already lies in the XY plane
+    // with its hole axis along +Z, so it sits flat on the map without rotation.
     case UnitType.Spaceport:
       return { rotation: [0, 0, 0], scale: uniformScale, offset: [0, 0, 0] };
 
-    // DefensePost / Factory: boxes/octahedrons with structure scaling
+    // DefenseStation / Foundry: boxes/octahedrons with structure scaling
     case UnitType.DefenseStation:
     case UnitType.Foundry:
       return { rotation: [0, 0, 0], scale: uniformScale, offset: [0, 0, 0] };
 
     // Boxes / spheres / dodecahedrons / octahedrons don't have an axial
-    // orientation issue, and mobile carriage/engine boxes already lie flat.
+    // orientation issue, and frigate carriage/engine boxes already lie flat.
     default:
       return IDENTITY_TRANSFORM;
   }
@@ -208,14 +241,15 @@ const STRUCTURE_TYPES: ReadonlySet<UnitType> = new Set([
   UnitType.PointDefenseArray,
 ]);
 
-/** All render keys: unit types (excluding Train which is replaced by subtypes) + train subtypes. */
+/** All render keys: unit types (excluding Frigate which is replaced by subtypes) + frigate subtypes + AssaultShuttle variants. */
 export const ALL_RENDER_KEYS: readonly RenderKey[] = [
   UnitType.AssaultShuttle,
+  "DeepSpaceShuttle",
   UnitType.Battlecruiser,
   UnitType.TradeFreighter,
-  "TrainEngine",
-  "TrainCarriage",
-  "TrainLoadedCarriage",
+  "FrigateEngine",
+  "FrigateCarriage",
+  "FrigateLoadedCarriage",
   UnitType.PlasmaBolt,
   UnitType.PointDefenseMissile,
   UnitType.AntimatterTorpedo,
@@ -253,9 +287,46 @@ const STRUCTURE_SCALES: Partial<Record<UnitType, number>> = {
   [UnitType.PointDefenseArray]: 1.5,
 };
 
-/** Unit types that render as 3D arcs when crossing space (non-land) tiles. */
-const ARC_SHIP_TYPES: ReadonlySet<UnitType> = new Set([
+/**
+ * Angle (radians) added to a unit's movement-derived yaw so the model's
+ * natural "nose" ends up pointing in the direction of travel. All ship
+ * GLBs were authored with their nose 180° off the glTF default after the
+ * Y-up → Z-up bake (see {@link loadGltfGeometry}) — i.e. the nose emerges
+ * along world -X — so adding +π re-aims that nose to +X (yaw=0), after
+ * which a raw `atan2(dy, dx)` heading rotates it wherever the ship is
+ * going. (Tuned empirically against the authored meshes; every asset in
+ * the current set agrees on this orientation.)
+ *
+ * Proxy primitives without a meaningful front (boxes, spheres, upright
+ * cones) default to 0 — they are symmetric around world Z so any yaw is
+ * visually harmless, and GLB swaps overwrite them once loaded.
+ */
+const FORWARD_YAW_OFFSETS: Partial<Record<RenderKey, number>> = {
+  [UnitType.AssaultShuttle]: Math.PI,
+  DeepSpaceShuttle: Math.PI,
+  [UnitType.Battlecruiser]: Math.PI,
+  [UnitType.TradeFreighter]: Math.PI,
+  FrigateEngine: Math.PI,
+  FrigateCarriage: Math.PI,
+  FrigateLoadedCarriage: Math.PI,
+};
+
+function getForwardYawOffset(key: RenderKey): number {
+  return FORWARD_YAW_OFFSETS[key] ?? 0;
+}
+
+/**
+ * Render keys that render as 3D arcs when crossing space (non-sector) tiles.
+ * `DeepSpaceShuttle` is the AssaultShuttle's deep-space variant — it's the
+ * bucket an AssaultShuttle moves into once it leaves a sector tile, so it
+ * is the bucket that actually arcs. The local-space `AssaultShuttle` key
+ * is kept for symmetry: its arc-path would no-op anyway (its instances
+ * only exist on sector tiles, and the arc code's `!isSector` guard filters
+ * them out).
+ */
+const ARC_SHIP_KEYS: ReadonlySet<RenderKey> = new Set<RenderKey>([
   UnitType.AssaultShuttle,
+  "DeepSpaceShuttle",
   UnitType.TradeFreighter,
 ]);
 
@@ -329,6 +400,83 @@ export interface ModelEntry {
    */
   baseTransform: BaseTransform;
 }
+
+/**
+ * Per-render-key GLB asset descriptors. When present, the engine loads the
+ * GLB asynchronously and swaps its geometry into the already-constructed
+ * InstancedMesh for that key (the proxy primitive is rendered until the
+ * async load resolves — typically well under a second). The `targetSize`
+ * picks the longest-axis span the baked geometry should occupy, matching
+ * the footprint of the proxy primitive it replaces.
+ */
+interface GltfModelDescriptor {
+  url: string;
+  targetSize: number;
+}
+
+const GLTF_MODELS: Partial<Record<RenderKey, GltfModelDescriptor>> = {
+  // ── Mobile ships ───────────────────────────────────────────────────
+  [UnitType.AssaultShuttle]: {
+    url: assetUrl("models/AssaultShuttle.glb"),
+    targetSize: 5,
+  },
+  // Deep-space variant: used while the ship is traversing a non-sector
+  // tile between planets. Larger `targetSize` gives the in-transit shuttle
+  // a slightly beefier silhouette compared to its local-space form.
+  DeepSpaceShuttle: {
+    url: assetUrl("models/Shuttle.glb"),
+    targetSize: 6,
+  },
+  [UnitType.Battlecruiser]: {
+    url: assetUrl("models/Battlecruiser.glb"),
+    targetSize: 7,
+  },
+  [UnitType.TradeFreighter]: {
+    url: assetUrl("models/TradeFreighter.glb"),
+    targetSize: 6,
+  },
+  // ── Frigate subtypes ───────────────────────────────────────────────
+  FrigateEngine: {
+    url: assetUrl("models/FrigateEngine.glb"),
+    targetSize: 5,
+  },
+  FrigateCarriage: {
+    url: assetUrl("models/FrigateCarriage.glb"),
+    targetSize: 4,
+  },
+  FrigateLoadedCarriage: {
+    url: assetUrl("models/FrigateLoadedCarriage.glb"),
+    targetSize: 5,
+  },
+  // ── Structures ─────────────────────────────────────────────────────
+  // targetSize roughly matches each proxy's footprint (primitive size ×
+  // STRUCTURE_SCALES multiplier) so the baked mesh lands at a visually
+  // comparable scale when it swaps in.
+  [UnitType.Colony]: {
+    url: assetUrl("models/Colony.glb"),
+    targetSize: 15,
+  },
+  [UnitType.Spaceport]: {
+    url: assetUrl("models/Spaceport.glb"),
+    targetSize: 12,
+  },
+  [UnitType.Foundry]: {
+    url: assetUrl("models/Foundry.glb"),
+    targetSize: 12,
+  },
+  [UnitType.OrbitalStrikePlatform]: {
+    url: assetUrl("models/OrbitalStrikePlatform.glb"),
+    targetSize: 8,
+  },
+  [UnitType.DefenseStation]: {
+    url: assetUrl("models/DefenseStation.glb"),
+    targetSize: 8,
+  },
+  [UnitType.PointDefenseArray]: {
+    url: assetUrl("models/PointDefenseArray.glb"),
+    targetSize: 7,
+  },
+};
 
 /**
  * Compute the Z offset needed so a geometry's lowest point sits on z=0
@@ -462,6 +610,14 @@ export class UnitRendererEngine {
   public readonly interpMap: Map<number, InterpState> = new Map();
   public readonly lastKnownTile: Map<number, number> = new Map();
 
+  /**
+   * Per-unit yaw (radians, world-space rotation around +Z) so ships keep
+   * facing their last direction of travel even across ticks where they did
+   * not actually move. Updated when a new interp state opens or when an
+   * arc ship's stable endpoints resolve; cleaned up on despawn.
+   */
+  public readonly headings: Map<number, number> = new Map();
+
   /** Cached stable arc endpoints for ships traversing space (keyed by unit id). */
   public readonly arcEndpoints: Map<
     number,
@@ -470,6 +626,7 @@ export class UnitRendererEngine {
 
   private readonly group: Group;
   private readonly ownsMaterials: boolean;
+  private disposed = false;
 
   /** Cached nation world positions for arc rendering (computed once per update). */
   private nationPositions: NationWorldPos[] = [];
@@ -480,6 +637,11 @@ export class UnitRendererEngine {
       registry?: Map<RenderKey, ModelEntry>;
       materials?: Map<RenderKey, MeshStandardMaterial>;
       initialCapacity?: number;
+      /**
+       * Skip the asynchronous GLB loader — used by tests that drive the
+       * engine without a real network/fetch stack.
+       */
+      skipGltfLoading?: boolean;
     } = {},
   ) {
     this.group = group;
@@ -494,6 +656,54 @@ export class UnitRendererEngine {
       const mesh = createPoolMesh(entry.geometry, mat, capacity);
       group.add(mesh);
       this.pools.set(key, { mesh, capacity });
+    }
+
+    if (!opts.skipGltfLoading) {
+      this.loadGltfModels();
+    }
+  }
+
+  /**
+   * Kick off asynchronous GLB loads for every render key with a descriptor
+   * in {@link GLTF_MODELS}. When each model resolves, swap its geometry
+   * into the existing InstancedMesh and collapse the proxy's base transform
+   * to identity (the loader bakes rotation / normalization into the
+   * geometry, so no per-frame rotation is needed).
+   */
+  private loadGltfModels(): void {
+    for (const [key, desc] of Object.entries(GLTF_MODELS) as [
+      RenderKey,
+      GltfModelDescriptor,
+    ][]) {
+      loadGltfGeometry(desc.url, desc.targetSize)
+        .then((geometry) => {
+          if (this.disposed) {
+            geometry.dispose();
+            return;
+          }
+          const pool = this.pools.get(key);
+          const entry = this.registry.get(key);
+          if (!pool || !entry) {
+            geometry.dispose();
+            return;
+          }
+          // Dispose the proxy geometry the mesh currently holds.
+          const oldGeometry = pool.mesh.geometry;
+          pool.mesh.geometry = geometry;
+          oldGeometry.dispose();
+          // Baked geometry: no per-instance rotation / scale needed.
+          this.registry.set(key, {
+            geometry,
+            isStructure: entry.isStructure,
+            baseTransform: IDENTITY_TRANSFORM,
+          });
+        })
+        .catch((err) => {
+          console.warn(
+            `[UnitRenderer] Failed to load GLB model for "${key}":`,
+            err,
+          );
+        });
     }
   }
 
@@ -531,7 +741,11 @@ export class UnitRendererEngine {
 
     const activeUnitIds = new Set<number>();
     for (const unit of game.units()) {
-      const key = renderKeyFor(unit);
+      // Pass `game` so the render-key mapper can consult `isSector()` for
+      // the AssaultShuttle → DeepSpaceShuttle split. Without the second
+      // argument, renderKeyFor always returns the local-space key, which
+      // is correct for unit-test mocks that don't care about the split.
+      const key = renderKeyFor(unit, game);
       const arr = buckets.get(key);
       if (arr) arr.push(unit);
       activeUnitIds.add(unit.id());
@@ -543,6 +757,7 @@ export class UnitRendererEngine {
         this.interpMap.delete(id);
         this.lastKnownTile.delete(id);
         this.arcEndpoints.delete(id);
+        this.headings.delete(id);
       }
     }
     for (const id of this.lastKnownTile.keys()) {
@@ -553,6 +768,11 @@ export class UnitRendererEngine {
     for (const id of this.arcEndpoints.keys()) {
       if (!activeUnitIds.has(id)) {
         this.arcEndpoints.delete(id);
+      }
+    }
+    for (const id of this.headings.keys()) {
+      if (!activeUnitIds.has(id)) {
+        this.headings.delete(id);
       }
     }
 
@@ -605,7 +825,7 @@ export class UnitRendererEngine {
         let px: number;
         let py: number;
         let pz: number;
-        const isArcShip = ARC_SHIP_TYPES.has(key as UnitType);
+        const isArcShip = ARC_SHIP_KEYS.has(key);
 
         if (isStructure) {
           pz = STRUCTURE_HEIGHTS[key as UnitType] ?? 0;
@@ -647,6 +867,16 @@ export class UnitRendererEngine {
               startTime: now,
               duration: INTERP_DURATION_MS,
             });
+            // Refresh heading from the move delta so the ship visually
+            // rotates toward its new target on the frame the tile changed.
+            // Skipped for zero-length deltas (shouldn't happen here because
+            // prevTile !== curTile, but the guard keeps us safe if a future
+            // game-view bug produces a duplicate world-space pair).
+            const headingDx = curX - prev.wx;
+            const headingDy = curY - prev.wy;
+            if (headingDx * headingDx + headingDy * headingDy > 1e-8) {
+              this.headings.set(unitId, Math.atan2(headingDy, headingDx));
+            }
           }
           this.lastKnownTile.set(unitId, curTile);
 
@@ -714,6 +944,12 @@ export class UnitRendererEngine {
                 );
 
                 if (totalDist > 1) {
+                  // Arc ships lerp along the src→dst straight line, so the
+                  // visually-correct facing direction is the endpoint
+                  // vector — NOT the per-tick tile delta (which is both
+                  // very small and noisy for ships crossing open space).
+                  this.headings.set(unitId, Math.atan2(totalDy, totalDx));
+
                   // Project current position onto the src→dst line for progress
                   const projDx = px - endpoints.src.wx;
                   const projDy = py - endpoints.src.wy;
@@ -738,7 +974,7 @@ export class UnitRendererEngine {
                 }
               }
             } else {
-              // Ship returned to land — clear cached endpoints
+              // Ship returned to a sector tile — clear cached endpoints
               this.arcEndpoints.delete(unitId);
             }
           }
@@ -753,11 +989,32 @@ export class UnitRendererEngine {
           py + baseTransform.offset[1],
           pz + baseTransform.offset[2],
         );
-        _obj.rotation.set(
-          baseTransform.rotation[0],
-          baseTransform.rotation[1],
-          baseTransform.rotation[2],
-        );
+        if (isStructure) {
+          // Structures have a fixed orientation — they never rotate with
+          // movement, so keep the Euler in its default XYZ order.
+          _obj.rotation.set(
+            baseTransform.rotation[0],
+            baseTransform.rotation[1],
+            baseTransform.rotation[2],
+          );
+        } else {
+          // Mobile units yaw to face their direction of travel. The ZYX
+          // order means the composed matrix is `Rz * Ry * Rx`, so the
+          // base-X rotation (e.g. the stand-up fix that maps a cone's +Y
+          // tip to world +Z) is applied *first* to the mesh, and the
+          // world-Z yaw is applied *last* around the true vertical axis.
+          // Using the default XYZ order here would apply the yaw in the
+          // mesh's pre-stand-up local frame and tilt the ship sideways.
+          const heading = this.headings.get(unitId) ?? 0;
+          const yaw =
+            baseTransform.rotation[2] + heading + getForwardYawOffset(key);
+          _obj.rotation.set(
+            baseTransform.rotation[0],
+            baseTransform.rotation[1],
+            yaw,
+            "ZYX",
+          );
+        }
         _obj.scale.set(
           baseTransform.scale[0],
           baseTransform.scale[1],
@@ -782,6 +1039,7 @@ export class UnitRendererEngine {
 
   /** Release GPU resources and detach meshes from the group. */
   dispose(): void {
+    this.disposed = true;
     for (const pool of this.pools.values()) {
       this.group.remove(pool.mesh);
       pool.mesh.dispose();
@@ -794,6 +1052,7 @@ export class UnitRendererEngine {
     this.interpMap.clear();
     this.lastKnownTile.clear();
     this.arcEndpoints.clear();
+    this.headings.clear();
   }
 }
 
@@ -803,7 +1062,7 @@ export class UnitRendererEngine {
  * Renders all game units and structures as instanced 3D proxy meshes.
  *
  * - One `InstancedMesh` per render key → one draw call per visual type.
- * - Train engines and carriages get distinct meshes.
+ * - Frigate engines and carriages get distinct meshes.
  * - Mobile units interpolate between lastTile and tile for smooth movement.
  * - Pools grow dynamically; no units are silently dropped.
  */

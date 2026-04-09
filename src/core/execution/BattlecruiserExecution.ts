@@ -15,7 +15,7 @@ import { PlasmaBoltExecution } from "./PlasmaBoltExecution";
 
 export class BattlecruiserExecution implements Execution {
   private random: PseudoRandom;
-  private warship: Unit;
+  private battlecruiser: Unit;
   private mg: Game;
   private pathfinder: SteppingPathFinder<TileRef>;
   private lastShellAttack = 0;
@@ -30,7 +30,7 @@ export class BattlecruiserExecution implements Execution {
     this.pathfinder = PathFinding.Water(mg);
     this.random = new PseudoRandom(mg.ticks());
     if (isUnit(this.input)) {
-      this.warship = this.input;
+      this.battlecruiser = this.input;
     } else {
       const spawn = this.input.owner.canBuild(
         UnitType.Battlecruiser,
@@ -38,11 +38,11 @@ export class BattlecruiserExecution implements Execution {
       );
       if (spawn === false) {
         console.warn(
-          `Failed to spawn warship for ${this.input.owner.name()} at ${this.input.patrolTile}`,
+          `Failed to spawn battlecruiser for ${this.input.owner.name()} at ${this.input.patrolTile}`,
         );
         return;
       }
-      this.warship = this.input.owner.buildUnit(
+      this.battlecruiser = this.input.owner.buildUnit(
         UnitType.Battlecruiser,
         spawn,
         this.input,
@@ -51,25 +51,26 @@ export class BattlecruiserExecution implements Execution {
   }
 
   tick(ticks: number): void {
-    if (this.warship.health() <= 0) {
-      this.warship.delete();
+    if (this.battlecruiser.health() <= 0) {
+      this.battlecruiser.delete();
       return;
     }
 
-    const hasPort = this.warship.owner().unitCount(UnitType.Spaceport) > 0;
+    const hasPort =
+      this.battlecruiser.owner().unitCount(UnitType.Spaceport) > 0;
     if (hasPort) {
-      this.warship.modifyHealth(1);
+      this.battlecruiser.modifyHealth(1);
     }
 
-    this.warship.setTargetUnit(this.findTargetUnit());
-    if (this.warship.targetUnit()?.type() === UnitType.TradeFreighter) {
-      this.huntDownTradeShip();
+    this.battlecruiser.setTargetUnit(this.findTargetUnit());
+    if (this.battlecruiser.targetUnit()?.type() === UnitType.TradeFreighter) {
+      this.huntDownTradeFreighter();
       return;
     }
 
     this.patrol();
 
-    if (this.warship.targetUnit() !== undefined) {
+    if (this.battlecruiser.targetUnit() !== undefined) {
       this.shootTarget();
       return;
     }
@@ -78,13 +79,13 @@ export class BattlecruiserExecution implements Execution {
   private findTargetUnit(): Unit | undefined {
     const mg = this.mg;
     const config = mg.config();
-    const owner = this.warship.owner();
+    const owner = this.battlecruiser.owner();
     const hasPort = owner.unitCount(UnitType.Spaceport) > 0;
-    const patrolTile = this.warship.patrolTile()!;
+    const patrolTile = this.battlecruiser.patrolTile()!;
     const patrolRangeSquared = config.battlecruiserPatrolRange() ** 2;
 
     const ships = mg.nearbyUnits(
-      this.warship.tile()!,
+      this.battlecruiser.tile()!,
       config.battlecruiserTargettingRange(),
       [
         UnitType.AssaultShuttle,
@@ -100,7 +101,7 @@ export class BattlecruiserExecution implements Execution {
     for (const { unit, distSquared } of ships) {
       if (
         unit.owner() === owner ||
-        unit === this.warship ||
+        unit === this.battlecruiser ||
         !owner.canAttackPlayer(unit.owner(), true) ||
         this.alreadySentShell.has(unit)
       ) {
@@ -112,16 +113,16 @@ export class BattlecruiserExecution implements Execution {
         if (
           !hasPort ||
           unit.isSafeFromRaiders() ||
-          unit.targetUnit()?.owner() === owner || // trade ship is coming to my port
-          unit.targetUnit()?.owner().isFriendly(owner) // trade ship is coming to my ally
+          unit.targetUnit()?.owner() === owner || // trade freighter heading to my spaceport
+          unit.targetUnit()?.owner().isFriendly(owner) // trade freighter heading to my ally
         ) {
           continue;
         }
         if (
           mg.euclideanDistSquared(patrolTile, unit.tile()) > patrolRangeSquared
         ) {
-          // Prevent warship from chasing trade ship that is too far away from
-          // the patrol tile to prevent warships from wandering around the map.
+          // Prevent battlecruiser from chasing trade freighter that is too far
+          // from the patrol tile to prevent battlecruisers from wandering.
           continue;
         }
       }
@@ -141,7 +142,7 @@ export class BattlecruiserExecution implements Execution {
       }
 
       // Match existing `sort()` semantics:
-      // - Lower priority is better (TransportShip < Warship < TradeShip).
+      // - Lower priority is better (AssaultShuttle < Battlecruiser < TradeFreighter).
       // - For same type, smaller distance is better.
       // - For exact ties, keep the first encountered (stable sort behavior).
       if (
@@ -162,43 +163,45 @@ export class BattlecruiserExecution implements Execution {
       .config()
       .battlecruiserPlasmaBoltAttackRate();
     if (this.mg.ticks() - this.lastShellAttack > shellAttackRate) {
-      if (this.warship.targetUnit()?.type() !== UnitType.AssaultShuttle) {
-        // Warships don't need to reload when attacking transport ships.
+      if (this.battlecruiser.targetUnit()?.type() !== UnitType.AssaultShuttle) {
+        // Battlecruisers don't need to reload when attacking assault shuttles.
         this.lastShellAttack = this.mg.ticks();
       }
       this.mg.addExecution(
         new PlasmaBoltExecution(
-          this.warship.tile(),
-          this.warship.owner(),
-          this.warship,
-          this.warship.targetUnit()!,
+          this.battlecruiser.tile(),
+          this.battlecruiser.owner(),
+          this.battlecruiser,
+          this.battlecruiser.targetUnit()!,
         ),
       );
-      if (!this.warship.targetUnit()!.hasHealth()) {
+      if (!this.battlecruiser.targetUnit()!.hasHealth()) {
         // Don't send multiple shells to target that can be oneshotted
-        this.alreadySentShell.add(this.warship.targetUnit()!);
-        this.warship.setTargetUnit(undefined);
+        this.alreadySentShell.add(this.battlecruiser.targetUnit()!);
+        this.battlecruiser.setTargetUnit(undefined);
         return;
       }
     }
   }
 
-  private huntDownTradeShip() {
+  private huntDownTradeFreighter() {
     for (let i = 0; i < 2; i++) {
-      // target is trade ship so capture it.
+      // target is trade freighter so capture it.
       const result = this.pathfinder.next(
-        this.warship.tile(),
-        this.warship.targetUnit()!.tile(),
+        this.battlecruiser.tile(),
+        this.battlecruiser.targetUnit()!.tile(),
         5,
       );
       switch (result.status) {
         case PathStatus.COMPLETE:
-          this.warship.owner().captureUnit(this.warship.targetUnit()!);
-          this.warship.setTargetUnit(undefined);
-          this.warship.move(this.warship.tile());
+          this.battlecruiser
+            .owner()
+            .captureUnit(this.battlecruiser.targetUnit()!);
+          this.battlecruiser.setTargetUnit(undefined);
+          this.battlecruiser.move(this.battlecruiser.tile());
           return;
         case PathStatus.NEXT:
-          this.warship.move(result.node);
+          this.battlecruiser.move(result.node);
           break;
         case PathStatus.NOT_FOUND: {
           console.log(`path not found to target`);
@@ -209,24 +212,24 @@ export class BattlecruiserExecution implements Execution {
   }
 
   private patrol() {
-    if (this.warship.targetTile() === undefined) {
-      this.warship.setTargetTile(this.randomTile());
-      if (this.warship.targetTile() === undefined) {
+    if (this.battlecruiser.targetTile() === undefined) {
+      this.battlecruiser.setTargetTile(this.randomTile());
+      if (this.battlecruiser.targetTile() === undefined) {
         return;
       }
     }
 
     const result = this.pathfinder.next(
-      this.warship.tile(),
-      this.warship.targetTile()!,
+      this.battlecruiser.tile(),
+      this.battlecruiser.targetTile()!,
     );
     switch (result.status) {
       case PathStatus.COMPLETE:
-        this.warship.setTargetTile(undefined);
-        this.warship.move(result.node);
+        this.battlecruiser.setTargetTile(undefined);
+        this.battlecruiser.move(result.node);
         break;
       case PathStatus.NEXT:
-        this.warship.move(result.node);
+        this.battlecruiser.move(result.node);
         break;
       case PathStatus.NOT_FOUND: {
         console.log(`path not found to target`);
@@ -236,7 +239,7 @@ export class BattlecruiserExecution implements Execution {
   }
 
   isActive(): boolean {
-    return this.warship?.isActive();
+    return this.battlecruiser?.isActive();
   }
 
   activeDuringSpawnPhase(): boolean {
@@ -244,21 +247,29 @@ export class BattlecruiserExecution implements Execution {
   }
 
   randomTile(allowShoreline: boolean = false): TileRef | undefined {
-    let warshipPatrolRange = this.mg.config().battlecruiserPatrolRange();
+    let battlecruiserPatrolRange = this.mg.config().battlecruiserPatrolRange();
     const maxAttemptBeforeExpand: number = 500;
     let attempts: number = 0;
     let expandCount: number = 0;
 
-    // Get warship's water component for connectivity check
-    const warshipComponent = this.mg.getDeepSpaceComponent(this.warship.tile());
+    // Get battlecruiser's deep space component for connectivity check
+    const battlecruiserComponent = this.mg.getDeepSpaceComponent(
+      this.battlecruiser.tile(),
+    );
 
     while (expandCount < 3) {
       const x =
-        this.mg.x(this.warship.patrolTile()!) +
-        this.random.nextInt(-warshipPatrolRange / 2, warshipPatrolRange / 2);
+        this.mg.x(this.battlecruiser.patrolTile()!) +
+        this.random.nextInt(
+          -battlecruiserPatrolRange / 2,
+          battlecruiserPatrolRange / 2,
+        );
       const y =
-        this.mg.y(this.warship.patrolTile()!) +
-        this.random.nextInt(-warshipPatrolRange / 2, warshipPatrolRange / 2);
+        this.mg.y(this.battlecruiser.patrolTile()!) +
+        this.random.nextInt(
+          -battlecruiserPatrolRange / 2,
+          battlecruiserPatrolRange / 2,
+        );
       if (!this.mg.isValidCoord(x, y)) {
         continue;
       }
@@ -271,32 +282,32 @@ export class BattlecruiserExecution implements Execution {
         if (attempts === maxAttemptBeforeExpand) {
           expandCount++;
           attempts = 0;
-          warshipPatrolRange =
-            warshipPatrolRange + Math.floor(warshipPatrolRange / 2);
+          battlecruiserPatrolRange =
+            battlecruiserPatrolRange + Math.floor(battlecruiserPatrolRange / 2);
         }
         continue;
       }
-      // Check water component connectivity
+      // Check deep space component connectivity
       if (
-        warshipComponent !== null &&
-        !this.mg.hasDeepSpaceComponent(tile, warshipComponent)
+        battlecruiserComponent !== null &&
+        !this.mg.hasDeepSpaceComponent(tile, battlecruiserComponent)
       ) {
         attempts++;
         if (attempts === maxAttemptBeforeExpand) {
           expandCount++;
           attempts = 0;
-          warshipPatrolRange =
-            warshipPatrolRange + Math.floor(warshipPatrolRange / 2);
+          battlecruiserPatrolRange =
+            battlecruiserPatrolRange + Math.floor(battlecruiserPatrolRange / 2);
         }
         continue;
       }
       return tile;
     }
     console.warn(
-      `Failed to find random tile for warship for ${this.warship.owner().name()}`,
+      `Failed to find random tile for battlecruiser for ${this.battlecruiser.owner().name()}`,
     );
     if (!allowShoreline) {
-      // If we failed to find a tile on the ocean, try again but allow shoreline
+      // If we failed to find a tile in deep space, try again but allow boundary
       return this.randomTile(true);
     }
     return undefined;

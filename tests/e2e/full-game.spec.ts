@@ -170,8 +170,8 @@ test.describe("Full gameplay (singleplayer)", () => {
       .toBeGreaterThan(baseTiles);
   });
 
-  test("player can build a DefensePost on owned territory", async () => {
-    // Wait for enough gold (DefensePost costs ~50K).
+  test("player can build a DefenseStation on owned territory", async () => {
+    // Wait for enough credits (DefenseStation costs ~50K).
     await expect
       .poll(
         async () =>

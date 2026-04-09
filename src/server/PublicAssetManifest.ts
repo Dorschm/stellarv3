@@ -19,6 +19,7 @@ const HASHED_PUBLIC_ASSET_GLOBS = [
   "images/**/*",
   "lang/**/*",
   "maps/**/*",
+  "models/**/*",
   "sounds/**/*",
   "sprites/**/*",
 ] as const;

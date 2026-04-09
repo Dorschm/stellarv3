@@ -99,7 +99,7 @@ describe("GameView Integration — Unit State", () => {
     player = h.game.player("p1_id");
   });
 
-  test("units() reflects a built MissileSilo", () => {
+  test("units() reflects a built OrbitalStrikePlatform", () => {
     h.game.addExecution(
       new ConstructionExecution(
         player,
@@ -133,7 +133,7 @@ describe("GameView Integration — Unit State", () => {
     expect(silos[0].tile()).toBe(buildTile);
   });
 
-  test("TransportShip appears in units() after launch", () => {
+  test("AssaultShuttle appears in units() after launch", () => {
     // Ocean_and_land map (16×16): land on the left (~x=0-7), ocean on right.
     // Spawn is at (5,10); with radius-4 territory the player already has
     // shore tiles at the land-ocean boundary without extra expansion.
@@ -241,9 +241,9 @@ describe("GameView Integration — Player State", () => {
 });
 
 // ──────────────────────────────────────────────
-// Category 4: HyperspaceLane / Train State
+// Category 4: HyperspaceLane / Frigate State
 // ──────────────────────────────────────────────
-describe("GameView Integration — Railroad State", () => {
+describe("GameView Integration — HyperspaceLane State", () => {
   let h: GameViewTestHarness;
   let player: Player;
 
@@ -264,7 +264,7 @@ describe("GameView Integration — Railroad State", () => {
     // so no expansion is needed when structureMinDist is 0.
   });
 
-  test("Factory appears in GameView units after construction", () => {
+  test("Foundry appears in GameView units after construction", () => {
     // Use ConstructionExecution so the unit update is captured within a tick.
     h.game.addExecution(
       new ConstructionExecution(player, UnitType.Foundry, h.game.ref(50, 50)),
@@ -276,8 +276,8 @@ describe("GameView Integration — Railroad State", () => {
     expect(factories[0].type()).toBe(UnitType.Foundry);
   });
 
-  test("RailroadConstruction update emitted when factory built", () => {
-    // Build two factories to trigger a railroad connection.
+  test("HyperspaceLane construction update emitted when foundry built", () => {
+    // Build two foundries to trigger a hyperspace lane connection.
     // Both tiles are within the initial spawn radius of (50,50); structureMinDist=0
     // so no minimum distance is enforced between them.
     h.game.addExecution(
@@ -290,12 +290,12 @@ describe("GameView Integration — Railroad State", () => {
     );
     h.executeTicks(4);
 
-    // Check for railroad construction updates across recent ticks
+    // Check for hyperspace lane construction updates across recent ticks
     h.gameView.updatesSinceLastTick();
-    // Railroad construction events should have been emitted at some point
-    // (they may have been in an earlier tick, so we just verify factories exist)
-    const factories = h.gameView.units(UnitType.Foundry);
-    expect(factories.length).toBeGreaterThanOrEqual(2);
+    // Hyperspace lane construction events should have been emitted at some point
+    // (they may have been in an earlier tick, so we just verify foundries exist)
+    const foundries = h.gameView.units(UnitType.Foundry);
+    expect(foundries.length).toBeGreaterThanOrEqual(2);
   });
 });
 
@@ -431,7 +431,7 @@ describe("GameView Integration — Updates", () => {
     expect(attackerView!.outgoingAttacks().length).toBeGreaterThan(0);
   });
 
-  test("Nuke creates Unit updates for AtomBomb", () => {
+  test("Nuke creates Unit updates for AntimatterTorpedo", () => {
     const attacker = h.game.player("p1_id");
 
     // Build a missile silo first
@@ -456,7 +456,7 @@ describe("GameView Integration — Updates", () => {
     h.executeTick();
     h.executeTick();
 
-    // AtomBomb should appear in GameView units
+    // AntimatterTorpedo should appear in GameView units
     const nukes = h.gameView.units(UnitType.AntimatterTorpedo);
     expect(nukes.length).toBeGreaterThanOrEqual(1);
     expect(nukes[0].type()).toBe(UnitType.AntimatterTorpedo);

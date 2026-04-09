@@ -15,19 +15,19 @@ export class MoveBattlecruiserExecution implements Execution {
       );
       return;
     }
-    const warship = this.owner
+    const battlecruiser = this.owner
       .units(UnitType.Battlecruiser)
       .find((u) => u.id() === this.unitId);
-    if (!warship) {
-      console.warn("MoveBattlecruiserExecution: warship not found");
+    if (!battlecruiser) {
+      console.warn("MoveBattlecruiserExecution: battlecruiser not found");
       return;
     }
-    if (!warship.isActive()) {
-      console.warn("MoveBattlecruiserExecution: warship is not active");
+    if (!battlecruiser.isActive()) {
+      console.warn("MoveBattlecruiserExecution: battlecruiser is not active");
       return;
     }
-    warship.setPatrolTile(this.position);
-    warship.setTargetTile(undefined);
+    battlecruiser.setPatrolTile(this.position);
+    battlecruiser.setTargetTile(undefined);
   }
 
   tick(ticks: number): void {}

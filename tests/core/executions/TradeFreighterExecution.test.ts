@@ -11,9 +11,9 @@ describe("TradeFreighterExecution", () => {
   let srcPort: Unit;
   let piratePort: Unit;
   let piratePort2: Unit;
-  let tradeShip: Unit;
+  let tradeFreighter: Unit;
   let dstPort: Unit;
-  let tradeShipExecution: TradeFreighterExecution;
+  let tradeFreighterExecution: TradeFreighterExecution;
 
   beforeEach(async () => {
     // Mock Game, Player, Unit, and required methods
@@ -25,7 +25,7 @@ describe("TradeFreighterExecution", () => {
     game.displayMessage = vi.fn();
     origOwner = {
       canBuild: vi.fn(() => true),
-      buildUnit: vi.fn((type, spawn, opts) => tradeShip),
+      buildUnit: vi.fn((type, spawn, opts) => tradeFreighter),
       displayName: vi.fn(() => "Origin"),
       addGold: vi.fn(),
       units: vi.fn(() => [dstPort]),
@@ -86,7 +86,7 @@ describe("TradeFreighterExecution", () => {
       isMarkedForDeletion: vi.fn(() => false),
     } as any;
 
-    tradeShip = {
+    tradeFreighter = {
       isActive: vi.fn(() => true),
       owner: vi.fn(() => origOwner),
       id: vi.fn(() => 123),
@@ -98,51 +98,51 @@ describe("TradeFreighterExecution", () => {
       tile: vi.fn(() => 32),
     } as any;
 
-    tradeShipExecution = new TradeFreighterExecution(
+    tradeFreighterExecution = new TradeFreighterExecution(
       origOwner,
       srcPort,
       dstPort,
     );
-    tradeShipExecution.init(game, 0);
-    tradeShipExecution["pathFinder"] = {
+    tradeFreighterExecution.init(game, 0);
+    tradeFreighterExecution["pathFinder"] = {
       next: vi.fn(() => ({ status: PathStatus.NEXT, node: 32 })),
       findPath: vi.fn((from: number) => [from]),
     } as any;
-    tradeShipExecution["tradeShip"] = tradeShip;
+    tradeFreighterExecution["tradeFreighter"] = tradeFreighter;
   });
 
   it("should initialize and tick without errors", () => {
-    tradeShipExecution.tick(1);
-    expect(tradeShipExecution.isActive()).toBe(true);
+    tradeFreighterExecution.tick(1);
+    expect(tradeFreighterExecution.isActive()).toBe(true);
   });
 
-  it("should deactivate if tradeShip is not active", () => {
-    tradeShip.isActive = vi.fn(() => false);
-    tradeShipExecution.tick(1);
-    expect(tradeShipExecution.isActive()).toBe(false);
+  it("should deactivate if tradeFreighter is not active", () => {
+    tradeFreighter.isActive = vi.fn(() => false);
+    tradeFreighterExecution.tick(1);
+    expect(tradeFreighterExecution.isActive()).toBe(false);
   });
 
   it("should delete ship if port owner changes to current owner", () => {
     dstPort.owner = vi.fn(() => origOwner);
-    tradeShipExecution.tick(1);
-    expect(tradeShip.delete).toHaveBeenCalledWith(false);
-    expect(tradeShipExecution.isActive()).toBe(false);
+    tradeFreighterExecution.tick(1);
+    expect(tradeFreighter.delete).toHaveBeenCalledWith(false);
+    expect(tradeFreighterExecution.isActive()).toBe(false);
   });
 
   it("should pick another port if ship is captured", () => {
-    tradeShip.owner = vi.fn(() => pirate);
-    tradeShipExecution.tick(1);
-    expect(tradeShip.setTargetUnit).toHaveBeenCalledWith(piratePort);
+    tradeFreighter.owner = vi.fn(() => pirate);
+    tradeFreighterExecution.tick(1);
+    expect(tradeFreighter.setTargetUnit).toHaveBeenCalledWith(piratePort);
   });
 
   it("should complete trade and award gold", () => {
-    tradeShipExecution["pathFinder"] = {
+    tradeFreighterExecution["pathFinder"] = {
       next: vi.fn(() => ({ status: PathStatus.COMPLETE, node: 32 })),
       findPath: vi.fn((from: number) => [from]),
     } as any;
-    tradeShipExecution.tick(1);
-    expect(tradeShip.delete).toHaveBeenCalledWith(false);
-    expect(tradeShipExecution.isActive()).toBe(false);
+    tradeFreighterExecution.tick(1);
+    expect(tradeFreighter.delete).toHaveBeenCalledWith(false);
+    expect(tradeFreighterExecution.isActive()).toBe(false);
     expect(game.displayMessage).toHaveBeenCalled();
   });
 });

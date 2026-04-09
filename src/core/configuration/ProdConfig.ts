@@ -9,7 +9,7 @@ export const prodConfig = new (class extends DefaultServerConfig {
     return GameEnv.Prod;
   }
   jwtAudience(): string {
-    return "openfront.io";
+    return "stellar.game";
   }
   turnstileSiteKey(): string {
     return "0x4AAAAAACFLkaecN39lS8sk";

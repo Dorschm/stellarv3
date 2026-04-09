@@ -289,7 +289,7 @@ export class WorkerClient {
 
       this.messageHandlers.set(messageId, (message) => {
         if (
-          message.type === "transport_ship_spawn_result" &&
+          message.type === "assault_shuttle_spawn_result" &&
           message.result !== undefined
         ) {
           resolve(message.result);
@@ -297,7 +297,7 @@ export class WorkerClient {
       });
 
       this.worker.postMessage({
-        type: "transport_ship_spawn",
+        type: "assault_shuttle_spawn",
         id: messageId,
         playerID: playerID,
         targetTile: targetTile,

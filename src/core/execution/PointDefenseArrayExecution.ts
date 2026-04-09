@@ -22,9 +22,9 @@ type InterceptionTile = {
 };
 
 /**
- * Smart SAM targeting system preshoting nukes so its range is strictly enforced
+ * Smart PDA targeting system preshoting nukes so its range is strictly enforced
  */
-class SAMTargetingSystem {
+class PDATargetingSystem {
   // Interception tiles are computed a single time, but it may not be reachable yet.
   // Store the result so it can be intercepted at the proper time, rather than recomputing each tick.
   // Null interception tile means there are no interception tiles in range. Store it to avoid recomputing.
@@ -34,7 +34,7 @@ class SAMTargetingSystem {
 
   constructor(
     private readonly mg: Game,
-    private readonly sam: Unit,
+    private readonly pda: Unit,
   ) {
     this.missileSpeed = this.mg.config().defaultPointDefenseMissileSpeed();
   }
@@ -80,7 +80,7 @@ class SAMTargetingSystem {
 
   private computeInterceptionTile(
     unit: Unit,
-    samTile: TileRef,
+    pdaTile: TileRef,
     rangeSquared: number,
   ): InterceptionTile | undefined {
     const trajectory = unit.trajectory();
@@ -90,13 +90,13 @@ class SAMTargetingSystem {
       const trajectoryTile = trajectory[i];
       if (
         trajectoryTile.targetable &&
-        this.mg.euclideanDistSquared(samTile, trajectoryTile.tile) <=
+        this.mg.euclideanDistSquared(pdaTile, trajectoryTile.tile) <=
           rangeSquared
       ) {
         const nukeTickToReach = i - currentIndex;
-        const samTickToReach = this.tickToReach(samTile, trajectoryTile.tile);
-        const tickBeforeShooting = nukeTickToReach - samTickToReach;
-        if (samTickToReach < explosionTick && tickBeforeShooting >= 0) {
+        const pdaTickToReach = this.tickToReach(pdaTile, trajectoryTile.tile);
+        const tickBeforeShooting = nukeTickToReach - pdaTickToReach;
+        if (pdaTickToReach < explosionTick && tickBeforeShooting >= 0) {
           return { tick: tickBeforeShooting, tile: trajectoryTile.tile };
         }
       }
@@ -105,27 +105,27 @@ class SAMTargetingSystem {
   }
 
   public getSingleTarget(ticks: number): Target | null {
-    const samTile = this.sam.tile();
-    const range = this.mg.config().pointDefenseRange(this.sam.level());
+    const pdaTile = this.pda.tile();
+    const range = this.mg.config().pointDefenseRange(this.pda.level());
     const rangeSquared = range * range;
 
-    // Look beyond the SAM range so it can preshot nukes
+    // Look beyond the PDA range so it can preshot nukes
     const detectionRange = this.mg.config().maxPointDefenseRange() * 2;
     const nukes = this.mg.nearbyUnits(
-      samTile,
+      pdaTile,
       detectionRange,
       [UnitType.AntimatterTorpedo, UnitType.NovaBomb],
       ({ unit }) => {
         if (!isUnit(unit) || unit.targetedByPointDefense()) return false;
-        if (unit.owner() === this.sam.owner()) return false;
+        if (unit.owner() === this.pda.owner()) return false;
 
-        const samOwner = this.sam.owner();
+        const pdaOwner = this.pda.owner();
         const nukeOwner = unit.owner();
 
-        // After game-over in team games, SAMs also target teammate nukes (aftergame fun)
-        if (samOwner.isFriendly(nukeOwner)) {
+        // After game-over in team games, PDAs also target teammate nukes (aftergame fun)
+        if (pdaOwner.isFriendly(nukeOwner)) {
           return (
-            this.mg.getWinner() !== null && samOwner.isOnSameTeam(nukeOwner)
+            this.mg.getWinner() !== null && pdaOwner.isOnSameTeam(nukeOwner)
           );
         }
 
@@ -167,7 +167,7 @@ class SAMTargetingSystem {
       }
       const interceptionTile = this.computeInterceptionTile(
         nuke.unit,
-        samTile,
+        pdaTile,
         rangeSquared,
       );
       if (interceptionTile !== undefined) {
@@ -203,21 +203,21 @@ export class PointDefenseArrayExecution implements Execution {
   private mg: Game;
   private active: boolean = true;
 
-  // As MIRV go very fast we have to detect them very early but we only
-  // shoot the one targeting very close (MIRVWarheadProtectionRadius)
-  private MIRVWarheadSearchRadius = 400;
-  private MIRVWarheadProtectionRadius = 50;
-  private targetingSystem: SAMTargetingSystem;
+  // As cluster warheads go very fast we have to detect them very early but we only
+  // shoot the one targeting very close (clusterWarheadProtectionRadius)
+  private clusterWarheadSearchRadius = 400;
+  private clusterWarheadProtectionRadius = 50;
+  private targetingSystem: PDATargetingSystem;
 
   private pseudoRandom: PseudoRandom | undefined;
 
   constructor(
     private player: Player,
     private tile: TileRef | null,
-    private sam: Unit | null = null,
+    private pda: Unit | null = null,
   ) {
-    if (sam !== null) {
-      this.tile = sam.tile();
+    if (pda !== null) {
+      this.tile = pda.tile();
     }
   }
 
@@ -229,7 +229,7 @@ export class PointDefenseArrayExecution implements Execution {
     if (this.mg === null || this.player === null) {
       throw new Error("Not initialized");
     }
-    if (this.sam === null) {
+    if (this.pda === null) {
       if (this.tile === null) {
         throw new Error("tile is null");
       }
@@ -238,24 +238,24 @@ export class PointDefenseArrayExecution implements Execution {
         this.tile,
       );
       if (spawnTile === false) {
-        console.warn("cannot build SAM Launcher");
+        console.warn("cannot build PDA");
         this.active = false;
         return;
       }
-      this.sam = this.player.buildUnit(
+      this.pda = this.player.buildUnit(
         UnitType.PointDefenseArray,
         spawnTile,
         {},
       );
     }
-    this.targetingSystem ??= new SAMTargetingSystem(this.mg, this.sam);
+    this.targetingSystem ??= new PDATargetingSystem(this.mg, this.pda);
 
-    if (this.sam.isUnderConstruction()) {
+    if (this.pda.isUnderConstruction()) {
       return;
     }
 
-    if (this.sam.isInCooldown()) {
-      const frontTime = this.sam.missileTimerQueue()[0];
+    if (this.pda.isInCooldown()) {
+      const frontTime = this.pda.missileTimerQueue()[0];
       if (frontTime === undefined) {
         return;
       }
@@ -263,31 +263,31 @@ export class PointDefenseArrayExecution implements Execution {
         this.mg.config().pointDefenseCooldown() - (this.mg.ticks() - frontTime);
 
       if (cooldown <= 0) {
-        this.sam.reloadMissile();
+        this.pda.reloadMissile();
       }
       return;
     }
 
-    if (!this.sam.isActive()) {
+    if (!this.pda.isActive()) {
       this.active = false;
       return;
     }
 
-    if (this.player !== this.sam.owner()) {
-      this.player = this.sam.owner();
+    if (this.player !== this.pda.owner()) {
+      this.player = this.pda.owner();
     }
 
-    this.pseudoRandom ??= new PseudoRandom(this.sam.id());
+    this.pseudoRandom ??= new PseudoRandom(this.pda.id());
 
     const mirvWarheadTargets = this.mg.nearbyUnits(
-      this.sam.tile(),
-      this.MIRVWarheadSearchRadius,
+      this.pda.tile(),
+      this.clusterWarheadSearchRadius,
       UnitType.ClusterWarheadSubmunition,
       ({ unit }) => {
         if (!isUnit(unit)) return false;
         if (unit.owner() === this.player) return false;
 
-        // After game-over in team games, SAMs also target teammate MIRVs (aftergame fun)
+        // After game-over in team games, PDAs also target teammate cluster warheads (aftergame fun)
         const nukeOwner = unit.owner();
         if (this.player.isFriendly(nukeOwner)) {
           if (
@@ -300,10 +300,10 @@ export class PointDefenseArrayExecution implements Execution {
 
         const dst = unit.targetTile();
         return (
-          this.sam !== null &&
+          this.pda !== null &&
           dst !== undefined &&
-          this.mg.manhattanDist(dst, this.sam.tile()) <
-            this.MIRVWarheadProtectionRadius
+          this.mg.manhattanDist(dst, this.pda.tile()) <
+            this.clusterWarheadProtectionRadius
         );
       },
     );
@@ -316,22 +316,22 @@ export class PointDefenseArrayExecution implements Execution {
       }
     }
 
-    // target is already filtered to exclude nukes targeted by other SAMs
+    // target is already filtered to exclude nukes targeted by other PDAs
     if (target || mirvWarheadTargets.length > 0) {
-      this.sam.launch();
+      this.pda.launch();
       const type =
         mirvWarheadTargets.length > 0
           ? UnitType.ClusterWarheadSubmunition
           : target?.unit.type();
       if (type === undefined) throw new Error("Unknown unit type");
       if (mirvWarheadTargets.length > 0) {
-        const samOwner = this.sam.owner();
+        const pdaOwner = this.pda.owner();
 
         // Message
         this.mg.displayMessage(
           "events_display.mirv_warheads_intercepted",
           MessageType.POINT_DEFENSE_HIT,
-          samOwner.id(),
+          pdaOwner.id(),
           undefined,
           { count: mirvWarheadTargets.length },
         );
@@ -345,7 +345,7 @@ export class PointDefenseArrayExecution implements Execution {
         this.mg
           .stats()
           .bombIntercept(
-            samOwner,
+            pdaOwner,
             UnitType.ClusterWarheadSubmunition,
             mirvWarheadTargets.length,
           );
@@ -353,9 +353,9 @@ export class PointDefenseArrayExecution implements Execution {
         target.unit.setTargetedByPointDefense(true);
         this.mg.addExecution(
           new PointDefenseMissileExecution(
-            this.sam.tile(),
-            this.sam.owner(),
-            this.sam,
+            this.pda.tile(),
+            this.pda.owner(),
+            this.pda,
             target.unit,
             target.tile,
           ),

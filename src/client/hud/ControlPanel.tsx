@@ -130,7 +130,7 @@ export function ControlPanel(): React.JSX.Element {
       {/* Mobile render */}
       <div className="lg:hidden">
         <div className="flex gap-2 items-center">
-          {/* Gold */}
+          {/* Credits */}
           <div
             className="flex items-center justify-center p-1 gap-0.5 border rounded-md border-yellow-400 font-bold text-yellow-400 text-xs w-1/5 shrink-0"
             translate="no"
@@ -224,7 +224,7 @@ export function ControlPanel(): React.JSX.Element {
 
       {/* Desktop render */}
       <div className="hidden lg:block">
-        {/* Row 1: troop rate | troop bar | gold */}
+        {/* Row 1: troop rate | troop bar | credits */}
         <div className="flex gap-1.5 items-center mb-1">
           {/* Troop rate */}
           <div
@@ -303,7 +303,7 @@ export function ControlPanel(): React.JSX.Element {
               </div>
             </div>
           </div>
-          {/* Gold */}
+          {/* Credits */}
           <div
             className="flex items-center gap-1 shrink-0 border rounded-md border-yellow-400 font-bold text-yellow-400 text-sm py-0.5 px-1 w-[4.5rem]"
             translate="no"

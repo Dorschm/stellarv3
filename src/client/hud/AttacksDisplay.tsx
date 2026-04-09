@@ -33,12 +33,12 @@ export function AttacksDisplay(): React.JSX.Element {
   const [isVisible, setIsVisible] = useState(false);
   const [incomingAttacks, setIncomingAttacks] = useState<AttackUpdate[]>([]);
   const [outgoingAttacks, setOutgoingAttacks] = useState<AttackUpdate[]>([]);
-  const [outgoingLandAttacks, setOutgoingLandAttacks] = useState<
+  const [outgoingLocalAttacks, setOutgoingLocalAttacks] = useState<
     AttackUpdate[]
   >([]);
-  const [outgoingBoats, setOutgoingBoats] = useState<UnitView[]>([]);
-  const [incomingBoats, setIncomingBoats] = useState<UnitView[]>([]);
-  const incomingBoatIDsRef = useRef(new Set<number>());
+  const [outgoingShuttles, setOutgoingShuttles] = useState<UnitView[]>([]);
+  const [incomingShuttles, setIncomingShuttles] = useState<UnitView[]>([]);
+  const incomingShuttleIDsRef = useRef(new Set<number>());
   const spriteDataURLCacheRef = useRef(new Map<string, string>());
   const attackRatio = useHUDStore((state) => state.attackRatio);
 
@@ -57,7 +57,7 @@ export function AttacksDisplay(): React.JSX.Element {
       return;
     }
 
-    // Track incoming boat unit IDs from UnitIncoming events
+    // Track incoming shuttle unit IDs from UnitIncoming events
     const updates = gameView.updatesSinceLastTick();
     if (updates) {
       const unitUpdates = updates[
@@ -69,23 +69,23 @@ export function AttacksDisplay(): React.JSX.Element {
             event.playerID === myPlayer.smallID() &&
             event.messageType === MessageType.ORBITAL_ASSAULT_INBOUND
           ) {
-            incomingBoatIDsRef.current.add(event.unitID);
+            incomingShuttleIDsRef.current.add(event.unitID);
           }
         }
       }
     }
 
-    // Resolve incoming boats from tracked IDs
-    const resolvedIncomingBoats: UnitView[] = [];
-    for (const unitID of incomingBoatIDsRef.current) {
+    // Resolve incoming shuttles from tracked IDs
+    const resolvedIncomingShuttles: UnitView[] = [];
+    for (const unitID of incomingShuttleIDsRef.current) {
       const unit = gameView.unit(unitID);
       if (unit && unit.isActive() && unit.type() === UnitType.AssaultShuttle) {
-        resolvedIncomingBoats.push(unit);
+        resolvedIncomingShuttles.push(unit);
       } else {
-        incomingBoatIDsRef.current.delete(unitID);
+        incomingShuttleIDsRef.current.delete(unitID);
       }
     }
-    setIncomingBoats(resolvedIncomingBoats);
+    setIncomingShuttles(resolvedIncomingShuttles);
 
     const filteredIncoming = myPlayer.incomingAttacks().filter((a) => {
       const t = (gameView.playerBySmallID(a.attackerID) as PlayerView).type();
@@ -95,17 +95,17 @@ export function AttacksDisplay(): React.JSX.Element {
 
     const allOutgoing = myPlayer.outgoingAttacks();
     setOutgoingAttacks(allOutgoing.filter((a) => a.targetID !== 0));
-    setOutgoingLandAttacks(allOutgoing.filter((a) => a.targetID === 0));
+    setOutgoingLocalAttacks(allOutgoing.filter((a) => a.targetID === 0));
 
-    const boats = myPlayer
+    const shuttles = myPlayer
       .units()
       .filter((u) => u.type() === UnitType.AssaultShuttle);
-    setOutgoingBoats(boats);
+    setOutgoingShuttles(shuttles);
   }, [tick, gameView, isVisible]);
 
-  const getBoatSpriteDataURL = (unit: UnitView): string => {
+  const getShuttleSpriteDataURL = (unit: UnitView): string => {
     const owner = unit.owner();
-    const key = `boat-${owner.id()}`;
+    const key = `shuttle-${owner.id()}`;
     const cached = spriteDataURLCacheRef.current.get(key);
     if (cached) return cached;
     try {
@@ -156,12 +156,12 @@ export function AttacksDisplay(): React.JSX.Element {
     eventBus.emit(new CancelAttackIntentEvent(id));
   };
 
-  const emitBoatCancelIntent = (id: number) => {
+  const emitShuttleCancelIntent = (id: number) => {
     eventBus.emit(new CancelShuttleIntentEvent(id));
   };
 
-  const getBoatTargetName = (boat: UnitView): string => {
-    const target = boat.targetTile();
+  const getShuttleTargetName = (shuttle: UnitView): string => {
+    const target = shuttle.targetTile();
     if (target === undefined) return "";
     const ownerID = gameView.ownerID(target);
     if (ownerID === 0) return "";
@@ -314,11 +314,11 @@ export function AttacksDisplay(): React.JSX.Element {
   };
 
   const renderOutgoingLandAttacks = () => {
-    if (outgoingLandAttacks.length === 0) return null;
+    if (outgoingLocalAttacks.length === 0) return null;
 
-    return outgoingLandAttacks.map((landAttack) => (
+    return outgoingLocalAttacks.map((localAttack) => (
       <div
-        key={landAttack.id}
+        key={localAttack.id}
         className="flex items-center gap-0.5 w-full bg-gray-800/92 backdrop-blur-sm sm:rounded-lg px-1.5 py-0.5 overflow-hidden"
       >
         {renderButton({
@@ -336,19 +336,19 @@ export function AttacksDisplay(): React.JSX.Element {
                 />
                 ↑
               </span>
-              <span className="ml-1">{renderTroops(landAttack.troops)}</span>
+              <span className="ml-1">{renderTroops(localAttack.troops)}</span>
               {translateText("help_modal.ui_wilderness")}
             </>
           ),
           className:
             "text-left text-sky-400 inline-flex items-center gap-0.5 lg:gap-1 min-w-0",
         })}
-        {!landAttack.retreating
+        {!localAttack.retreating
           ? renderButton({
               content: "❌",
-              onClick: () => emitCancelAttackIntent(landAttack.id),
+              onClick: () => emitCancelAttackIntent(localAttack.id),
               className: "ml-auto text-left shrink-0",
-              disabled: landAttack.retreating,
+              disabled: localAttack.retreating,
             })
           : renderButton({
               content: (
@@ -362,14 +362,14 @@ export function AttacksDisplay(): React.JSX.Element {
     ));
   };
 
-  const renderBoats = () => {
-    if (outgoingBoats.length === 0) return null;
+  const renderShuttles = () => {
+    if (outgoingShuttles.length === 0) return null;
 
-    return outgoingBoats.map((boat) => {
-      const dataURL = getBoatSpriteDataURL(boat);
+    return outgoingShuttles.map((shuttle) => {
+      const dataURL = getShuttleSpriteDataURL(shuttle);
       return (
         <div
-          key={boat.id()}
+          key={shuttle.id()}
           className="flex items-center gap-0.5 w-full bg-gray-800/92 backdrop-blur-sm sm:rounded-lg px-1.5 py-0.5 overflow-hidden"
         >
           {renderButton({
@@ -384,23 +384,23 @@ export function AttacksDisplay(): React.JSX.Element {
                   />
                 )}
                 <span className="inline-block min-w-[3rem] text-right">
-                  {renderTroops(boat.troops())}
+                  {renderTroops(shuttle.troops())}
                 </span>
                 <span className="truncate text-xs ml-1">
-                  {getBoatTargetName(boat)}
+                  {getShuttleTargetName(shuttle)}
                 </span>
               </>
             ),
-            onClick: () => eventBus.emit(new GoToUnitEvent(boat)),
+            onClick: () => eventBus.emit(new GoToUnitEvent(shuttle)),
             className:
               "text-left text-blue-400 inline-flex items-center gap-0.5 lg:gap-1 min-w-0",
           })}
-          {!boat.retreating()
+          {!shuttle.retreating()
             ? renderButton({
                 content: "❌",
-                onClick: () => emitBoatCancelIntent(boat.id()),
+                onClick: () => emitShuttleCancelIntent(shuttle.id()),
                 className: "ml-auto text-left shrink-0",
-                disabled: boat.retreating(),
+                disabled: shuttle.retreating(),
               })
             : renderButton({
                 content: (
@@ -415,14 +415,14 @@ export function AttacksDisplay(): React.JSX.Element {
     });
   };
 
-  const renderIncomingBoats = () => {
-    if (incomingBoats.length === 0) return null;
+  const renderIncomingShuttles = () => {
+    if (incomingShuttles.length === 0) return null;
 
-    return incomingBoats.map((boat) => {
-      const dataURL = getBoatSpriteDataURL(boat);
+    return incomingShuttles.map((shuttle) => {
+      const dataURL = getShuttleSpriteDataURL(shuttle);
       return (
         <div
-          key={boat.id()}
+          key={shuttle.id()}
           className="flex items-center gap-0.5 w-full bg-gray-800/92 backdrop-blur-sm sm:rounded-lg px-1.5 py-0.5 overflow-hidden"
         >
           {renderButton({
@@ -437,14 +437,14 @@ export function AttacksDisplay(): React.JSX.Element {
                   />
                 )}
                 <span className="inline-block min-w-[3rem] text-right">
-                  {renderTroops(boat.troops())}
+                  {renderTroops(shuttle.troops())}
                 </span>
                 <span className="truncate text-xs ml-1">
-                  {boat.owner()?.displayName()}
+                  {shuttle.owner()?.displayName()}
                 </span>
               </>
             ),
-            onClick: () => eventBus.emit(new GoToUnitEvent(boat)),
+            onClick: () => eventBus.emit(new GoToUnitEvent(shuttle)),
             className:
               "text-left text-red-400 inline-flex items-center gap-0.5 lg:gap-1 min-w-0",
           })}
@@ -459,10 +459,10 @@ export function AttacksDisplay(): React.JSX.Element {
 
   const hasAnything =
     outgoingAttacks.length > 0 ||
-    outgoingLandAttacks.length > 0 ||
-    outgoingBoats.length > 0 ||
+    outgoingLocalAttacks.length > 0 ||
+    outgoingShuttles.length > 0 ||
     incomingAttacks.length > 0 ||
-    incomingBoats.length > 0;
+    incomingShuttles.length > 0;
 
   if (!hasAnything) {
     return <div />;
@@ -472,9 +472,9 @@ export function AttacksDisplay(): React.JSX.Element {
     <div className="w-full mb-1 mt-1 sm:mt-0 pointer-events-auto grid grid-cols-2 gap-1 text-white text-sm lg:text-base max-h-[7rem] overflow-y-auto">
       {renderOutgoingAttacks()}
       {renderOutgoingLandAttacks()}
-      {renderBoats()}
+      {renderShuttles()}
       {renderIncomingAttacks()}
-      {renderIncomingBoats()}
+      {renderIncomingShuttles()}
     </div>
   );
 }

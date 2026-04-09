@@ -27,12 +27,14 @@ export class NationNukeBehavior {
     TileRef,
     UnitType.AntimatterTorpedo | UnitType.NovaBomb,
   ][] = [];
-  private atomBombsLaunched = 0;
-  private atomBombPerceivedCost = this.cost(UnitType.AntimatterTorpedo);
-  private hydrogenBombsLaunched = 0;
-  private hydrogenBombPerceivedCost = this.cost(UnitType.NovaBomb);
-  // Make 1/3 of nations "hydro-nations" that only throw hydrogen bombs (to reduce atom bomb spam)
-  private readonly isHydroNation: boolean = this.random.chance(3);
+  private antimatterTorpedoesLaunched = 0;
+  private antimatterTorpedoPerceivedCost = this.cost(
+    UnitType.AntimatterTorpedo,
+  );
+  private novaBombsLaunched = 0;
+  private novaBombPerceivedCost = this.cost(UnitType.NovaBomb);
+  // Make 1/3 of nations "nova-nations" that only throw nova bombs (to reduce antimatter torpedo spam)
+  private readonly isNovaNation: boolean = this.random.chance(3);
 
   constructor(
     private random: PseudoRandom,
@@ -48,9 +50,9 @@ export class NationNukeBehavior {
       return;
     }
 
-    const silos = this.player.units(UnitType.OrbitalStrikePlatform);
+    const platforms = this.player.units(UnitType.OrbitalStrikePlatform);
     if (
-      silos.length === 0 ||
+      platforms.length === 0 ||
       nukeTarget.type() === PlayerType.Bot || // Don't nuke tribes (as opposed to nations and humans)
       this.player.isOnSameTeam(nukeTarget) ||
       this.attackBehavior.shouldAttack(nukeTarget) === false
@@ -59,7 +61,7 @@ export class NationNukeBehavior {
     }
 
     const hydroCost = this.getPerceivedNukeCost(UnitType.NovaBomb);
-    const atomCost = this.getPerceivedNukeCost(UnitType.AntimatterTorpedo);
+    const torpedoCost = this.getPerceivedNukeCost(UnitType.AntimatterTorpedo);
     let nukeType: UnitType;
     if (
       !this.game.config().isUnitDisabled(UnitType.NovaBomb) &&
@@ -68,8 +70,8 @@ export class NationNukeBehavior {
       nukeType = UnitType.NovaBomb;
     } else if (
       !this.game.config().isUnitDisabled(UnitType.AntimatterTorpedo) &&
-      (!this.isHydroNation || this.isUnderHeavyAttack()) &&
-      this.player.credits() >= atomCost
+      (!this.isNovaNation || this.isUnderHeavyAttack()) &&
+      this.player.credits() >= torpedoCost
     ) {
       nukeType = UnitType.AntimatterTorpedo;
     } else {
@@ -87,7 +89,7 @@ export class NationNukeBehavior {
     );
     const structureTiles = structures.map((u) => u.tile());
     const difficulty = this.game.config().gameConfig().difficulty;
-    // Use more random tiles on Impossible difficulty to improve chances of finding a perfect SAM outranging spot
+    // Use more random tiles on Impossible difficulty to improve chances of finding a perfect PDA outranging spot
     const numRandomTiles = difficulty === Difficulty.Impossible ? 30 : 10;
     const randomTiles = randTerritoryTileArray(
       this.random,
@@ -123,16 +125,16 @@ export class NationNukeBehavior {
         continue;
       }
 
-      // On Hard & Impossible, avoid trajectories that can be intercepted by enemy SAMs
+      // On Hard & Impossible, avoid trajectories that can be intercepted by enemy PDAs
       if (
         (difficulty === Difficulty.Hard ||
           difficulty === Difficulty.Impossible) &&
-        this.isTrajectoryInterceptableBySam(spawnTile, tile)
+        this.isTrajectoryInterceptableByPda(spawnTile, tile)
       ) {
         continue;
       }
 
-      const value = this.nukeTileScore(tile, silos, structures, nukeType);
+      const value = this.nukeTileScore(tile, platforms, structures, nukeType);
       if (value > bestValue) {
         bestTile = tile;
         bestValue = value;
@@ -144,7 +146,7 @@ export class NationNukeBehavior {
     ) {
       this.sendNuke(bestTile, nukeType, nukeTarget);
     } else if (difficulty === Difficulty.Impossible) {
-      this.maybeDestroyEnemySam(nukeTarget);
+      this.maybeDestroyEnemyPda(nukeTarget);
     }
   }
 
@@ -365,9 +367,9 @@ export class NationNukeBehavior {
     }
   }
 
-  // Simulate saving up for a MIRV
+  // Simulate saving up for a ClusterWarhead
   private getPerceivedNukeCost(type: UnitType): Credits {
-    // If only 2 players left, use actual cost (no point saving for MIRV)
+    // If only 2 players left, use actual cost (no point saving for ClusterWarhead)
     if (this.game.players().length === 2) {
       return this.cost(type);
     }
@@ -377,8 +379,8 @@ export class NationNukeBehavior {
       return this.cost(type);
     }
 
-    // Return the actual cost in team games (saving up for a MIRV is not relevant, the game will be finished before that)
-    // or if we already have enough gold to buy both a MIRV and a hydro
+    // Return the actual cost in team games (saving up for a ClusterWarhead is not relevant, the game will be finished before that)
+    // or if we already have enough credits to buy both a ClusterWarhead and a NovaBomb
     if (
       this.game.config().gameConfig().gameMode === GameMode.Team ||
       this.player.credits() >
@@ -399,9 +401,9 @@ export class NationNukeBehavior {
     }
 
     if (type === UnitType.AntimatterTorpedo) {
-      return this.atomBombPerceivedCost;
+      return this.antimatterTorpedoPerceivedCost;
     } else {
-      return this.hydrogenBombPerceivedCost;
+      return this.novaBombPerceivedCost;
     }
   }
 
@@ -475,15 +477,15 @@ export class NationNukeBehavior {
   }
 
   // mirroring NukeTrajectoryPreviewLayer.ts logic a bit
-  private isTrajectoryInterceptableBySam(
+  private isTrajectoryInterceptableByPda(
     spawnTile: TileRef,
     targetTile: TileRef,
-    excludedSamIds?: Set<number>,
+    excludedPdaIds?: Set<number>,
   ): boolean {
     const speed = this.game.config().defaultNukeSpeed();
     const pathFinder = UniversalPathFinding.Parabola(this.game, {
       increment: speed,
-      distanceBasedHeight: true, // Atom/Hydrogen bombs use distance-based height
+      distanceBasedHeight: true, // AntimatterTorpedo/NovaBomb use distance-based height
       directionUp: true, // AI nukes always go "up" for now
     });
 
@@ -533,24 +535,24 @@ export class NationNukeBehavior {
       }
 
       const tile = trajectory[i];
-      const nearbySams = this.game.nearbyUnits(
+      const nearbyPDAs = this.game.nearbyUnits(
         tile,
         this.game.config().maxPointDefenseRange(),
         UnitType.PointDefenseArray,
       );
 
-      for (const sam of nearbySams) {
-        const owner = sam.unit.owner();
+      for (const pda of nearbyPDAs) {
+        const owner = pda.unit.owner();
         if (owner === this.player || this.player.isFriendly(owner)) {
           continue;
         }
-        // Skip SAMs we're intentionally overwhelming
-        if (excludedSamIds?.has(sam.unit.id())) {
+        // Skip PDAs we're intentionally overwhelming
+        if (excludedPdaIds?.has(pda.unit.id())) {
           continue;
         }
         const rangeSquared =
-          this.game.config().pointDefenseRange(sam.unit.level()) ** 2;
-        if (sam.distSquared <= rangeSquared) {
+          this.game.config().pointDefenseRange(pda.unit.level()) ** 2;
+        if (pda.distSquared <= rangeSquared) {
           return true;
         }
       }
@@ -581,7 +583,7 @@ export class NationNukeBehavior {
 
   private nukeTileScore(
     tile: TileRef,
-    silos: Unit[],
+    platforms: Unit[],
     targets: Unit[],
     nukeType: UnitType.AntimatterTorpedo | UnitType.NovaBomb,
   ): number {
@@ -609,20 +611,20 @@ export class NationNukeBehavior {
       .reduce((prev, cur) => prev + cur, 0);
 
     const difficulty = this.game.config().gameConfig().difficulty;
-    // On Easy, ignore SAMs entirely.
-    // On Medium, apply a simple local SAM penalty.
+    // On Easy, ignore PDAs entirely.
+    // On Medium, apply a simple local PDA penalty.
     // On Hard & Impossible we rely on trajectory-based interception checks instead. See maybeSendNuke().
     if (difficulty === Difficulty.Medium) {
       const dist50 = euclDistFN(tile, 50, false);
-      const hasSam = targets.some(
+      const hasPda = targets.some(
         (unit) =>
           unit.type() === UnitType.PointDefenseArray &&
           dist50(this.game, unit.tile()),
       );
-      if (hasSam) return -1;
+      if (hasPda) return -1;
     }
 
-    // On Impossible difficulty and a hydrogen bomb, add value for SAMs that can be outranged
+    // On Impossible difficulty and a nova bomb, add value for PDAs that can be outranged
     if (
       difficulty === Difficulty.Impossible &&
       nukeType === UnitType.NovaBomb
@@ -630,37 +632,40 @@ export class NationNukeBehavior {
       const hydroMagnitude = this.game
         .config()
         .nukeMagnitudes(UnitType.NovaBomb);
-      const nearbySams = this.game.nearbyUnits(
+      const nearbyPDAs = this.game.nearbyUnits(
         tile,
         hydroMagnitude.outer,
         UnitType.PointDefenseArray,
       );
 
-      for (const sam of nearbySams) {
-        const samLevel = sam.unit.level();
-        if (samLevel >= 5) continue; // Can't outrange level 5+ SAMs
+      for (const pda of nearbyPDAs) {
+        const pdaLevel = pda.unit.level();
+        if (pdaLevel >= 5) continue; // Can't outrange level 5+ PDAs
 
-        const samRange = this.game.config().pointDefenseRange(samLevel);
-        const distToSam = Math.sqrt(
-          this.game.euclideanDistSquared(tile, sam.unit.tile()),
+        const pdaRange = this.game.config().pointDefenseRange(pdaLevel);
+        const distToPda = Math.sqrt(
+          this.game.euclideanDistSquared(tile, pda.unit.tile()),
         );
 
-        // Check if we can outrange this SAM
-        if (distToSam > samRange) {
-          // Add significant value for destroying a SAM that we can outrange
-          tileValue += 100_000 * samLevel;
+        // Check if we can outrange this PDA
+        if (distToPda > pdaRange) {
+          // Add significant value for destroying a PDA that we can outrange
+          tileValue += 100_000 * pdaLevel;
         }
       }
     }
 
-    // Prefer tiles that are closer to a silo (but preserve structure value)
-    const siloTiles = silos.map((u) => u.tile());
-    const result = closestTwoTiles(this.game, siloTiles, [tile]);
+    // Prefer tiles that are closer to a platform (but preserve structure value)
+    const platformTiles = platforms.map((u) => u.tile());
+    const result = closestTwoTiles(this.game, platformTiles, [tile]);
     if (result === null) throw new Error("Missing result");
-    const { x: closestSilo } = result;
-    const distanceSquared = this.game.euclideanDistSquared(tile, closestSilo);
-    const distanceToClosestSilo = Math.sqrt(distanceSquared);
-    const distancePenalty = distanceToClosestSilo * 30;
+    const { x: closestPlatform } = result;
+    const distanceSquared = this.game.euclideanDistSquared(
+      tile,
+      closestPlatform,
+    );
+    const distanceToClosestPlatform = Math.sqrt(distanceSquared);
+    const distancePenalty = distanceToClosestPlatform * 30;
     const baseTileValue = tileValue;
     tileValue = Math.max(baseTileValue * 0.2, tileValue - distancePenalty); // Keep at least 20% of structure value
 
@@ -688,14 +693,14 @@ export class NationNukeBehavior {
     const tick = this.game.ticks();
     this.recentlySentNukes.push([tick, tile, nukeType]);
     if (nukeType === UnitType.AntimatterTorpedo) {
-      this.atomBombsLaunched++;
-      // Increase perceived cost by 50% each time to simulate saving up for a MIRV (higher than hydro to make atom bombs less attractive for the lategame)
-      this.atomBombPerceivedCost = (this.atomBombPerceivedCost * 150n) / 100n;
+      this.antimatterTorpedoesLaunched++;
+      // Increase perceived cost by 50% each time to simulate saving up for a ClusterWarhead (higher than nova to make antimatter torpedoes less attractive for the lategame)
+      this.antimatterTorpedoPerceivedCost =
+        (this.antimatterTorpedoPerceivedCost * 150n) / 100n;
     } else if (nukeType === UnitType.NovaBomb) {
-      this.hydrogenBombsLaunched++;
-      // Increase perceived cost by 25% each time to simulate saving up for a MIRV
-      this.hydrogenBombPerceivedCost =
-        (this.hydrogenBombPerceivedCost * 125n) / 100n;
+      this.novaBombsLaunched++;
+      // Increase perceived cost by 25% each time to simulate saving up for a ClusterWarhead
+      this.novaBombPerceivedCost = (this.novaBombPerceivedCost * 125n) / 100n;
     }
     this.game.addExecution(
       new NukeExecution(nukeType, this.player, tile, null, -1, waitTicks),
@@ -705,72 +710,73 @@ export class NationNukeBehavior {
 
   /**
    * On Impossible difficulty, when no good nuke target is available (score <= 0),
-   * attempt to destroy enemy SAMs by overwhelming them with atom bombs.
-   * A SAM of level N can intercept N nukes before going on cooldown,
-   * so we need N+1 bombs to destroy it (accounting for all covering SAMs).
+   * attempt to destroy enemy PDAs by overwhelming them with antimatter torpedoes.
+   * A PDA of level N can intercept N nukes before going on cooldown,
+   * so we need N+1 bombs to destroy it (accounting for all covering PDAs).
    */
-  private maybeDestroyEnemySam(nukeTarget: Player): void {
+  private maybeDestroyEnemyPda(nukeTarget: Player): void {
     if (this.game.config().isUnitDisabled(UnitType.AntimatterTorpedo)) {
       return;
     }
 
-    // Don't launch another salvo if we already have atom bombs in flight
+    // Don't launch another salvo if we already have antimatter torpedoes in flight
     const ourAtomBombs = this.player.units(UnitType.AntimatterTorpedo);
     if (ourAtomBombs.length > 0) {
       return;
     }
 
-    const atomCost = this.cost(UnitType.AntimatterTorpedo);
-    const enemySams = nukeTarget.units(UnitType.PointDefenseArray);
-    if (enemySams.length === 0) {
+    const torpedoCost = this.cost(UnitType.AntimatterTorpedo);
+    const enemyPDAs = nukeTarget.units(UnitType.PointDefenseArray);
+    if (enemyPDAs.length === 0) {
       return;
     }
 
-    const ourSilos = this.player
+    const ourPlatforms = this.player
       .units(UnitType.OrbitalStrikePlatform)
-      .filter((silo) => !silo.isUnderConstruction());
-    if (ourSilos.length === 0) {
+      .filter((platform) => !platform.isUnderConstruction());
+    if (ourPlatforms.length === 0) {
       return;
     }
 
-    // Try each enemy SAM as a target, easiest (lowest level) first
-    const sortedSams = enemySams.slice().sort((a, b) => a.level() - b.level());
-    let needsMoreSilos = false;
+    // Try each enemy PDA as a target, easiest (lowest level) first
+    const sortedPDAs = enemyPDAs.slice().sort((a, b) => a.level() - b.level());
+    let needsMorePlatforms = false;
 
-    for (const targetSam of sortedSams) {
-      const targetTile = targetSam.tile();
+    for (const targetPda of sortedPDAs) {
+      const targetTile = targetPda.tile();
 
-      // Find all enemy SAMs whose range covers the target tile (they will all try to intercept)
-      const coveringSams = this.findEnemySamsCoveringTile(targetTile);
-      const coveringSamIds = new Set(coveringSams.map((s) => s.id()));
+      // Find all enemy PDAs whose range covers the target tile (they will all try to intercept)
+      const coveringPDAs = this.findEnemyPdasCoveringTile(targetTile);
+      const coveringPdaIds = new Set(coveringPDAs.map((s) => s.id()));
 
-      // Total interception capacity = sum of covering SAM levels
-      const totalInterceptions = coveringSams.reduce(
-        (sum, sam) => sum + sam.level(),
+      // Total interception capacity = sum of covering PDA levels
+      const totalInterceptions = coveringPDAs.reduce(
+        (sum, pda) => sum + pda.level(),
         0,
       );
       const bombsNeeded = totalInterceptions + 1;
 
-      // NukeExecution always picks the closest non-cooldown silo by Manhattan
+      // NukeExecution always picks the closest non-cooldown platform by Manhattan
       // distance to target (via nukeSpawn). Our planning must mirror that order.
-      // Silos with interceptable trajectories will still be picked first by
+      // Platforms with interceptable trajectories will still be picked first by
       // NukeExecution — their bombs launch but get intercepted, "wasting" slots.
       const nukeSpeed = this.game.config().defaultNukeSpeed();
-      const allAvailableSilos: {
-        silo: Unit;
+      const allAvailablePlatforms: {
+        platform: Unit;
         slots: number;
         flightTicks: number;
         interceptable: boolean;
       }[] = [];
-      for (const silo of ourSilos) {
-        const availableSlots = silo.level() - silo.missileTimerQueue().length;
+      for (const platform of ourPlatforms) {
+        const availableSlots =
+          platform.level() - platform.missileTimerQueue().length;
         if (availableSlots <= 0) {
           continue;
         }
-        const interceptable = this.isTrajectoryInterceptableBySam(
-          silo.tile(),
+        const interceptable = this.isTrajectoryInterceptableByPda(
+          platform.tile(),
           targetTile,
-          coveringSamIds,
+          coveringPdaIds,
         );
         // Compute actual parabolic flight time in ticks
         const pathFinder = UniversalPathFinding.Parabola(this.game, {
@@ -778,10 +784,11 @@ export class NationNukeBehavior {
           distanceBasedHeight: true,
           directionUp: true,
         });
-        const trajectory = pathFinder.findPath(silo.tile(), targetTile) ?? [];
+        const trajectory =
+          pathFinder.findPath(platform.tile(), targetTile) ?? [];
         if (trajectory.length === 0) continue;
-        allAvailableSilos.push({
-          silo,
+        allAvailablePlatforms.push({
+          platform,
           slots: availableSlots,
           flightTicks: trajectory.length,
           interceptable,
@@ -789,20 +796,20 @@ export class NationNukeBehavior {
       }
 
       // Sort by Manhattan distance to target (matching nukeSpawn's pick order)
-      allAvailableSilos.sort(
+      allAvailablePlatforms.sort(
         (a, b) =>
-          this.game.manhattanDist(a.silo.tile(), targetTile) -
-          this.game.manhattanDist(b.silo.tile(), targetTile),
+          this.game.manhattanDist(a.platform.tile(), targetTile) -
+          this.game.manhattanDist(b.platform.tile(), targetTile),
       );
 
       // Flatten into a per-bomb launch sequence matching NukeExecution's order.
-      // Each silo contributes `slots` consecutive bombs before NukeExecution
-      // moves to the next silo.
+      // Each platform contributes `slots` consecutive bombs before NukeExecution
+      // moves to the next platform.
       const launchSequence: {
         flightTicks: number;
         interceptable: boolean;
       }[] = [];
-      for (const entry of allAvailableSilos) {
+      for (const entry of allAvailablePlatforms) {
         for (let s = 0; s < entry.slots; s++) {
           launchSequence.push({
             flightTicks: entry.flightTicks,
@@ -811,17 +818,17 @@ export class NationNukeBehavior {
         }
       }
 
-      // Use half the SAM cooldown as the max total arrival spread to be safe.
-      const samCooldown = this.game.config().pointDefenseCooldown();
-      const maxTotalArrivalSpread = Math.floor(samCooldown / 2);
+      // Use half the PDA cooldown as the max total arrival spread to be safe.
+      const pdaCooldown = this.game.config().pointDefenseCooldown();
+      const maxTotalArrivalSpread = Math.floor(pdaCooldown / 2);
 
-      // Add extra bombs: 1 for every 5 to account for enemy building more SAMs
+      // Add extra bombs: 1 for every 5 to account for enemy building more PDAs
       // while our bombs are in flight
       const extraBombs = Math.floor(bombsNeeded / 5);
       const totalBombs = bombsNeeded + extraBombs;
 
-      // Collect bombs from silos whose trajectory to the target is NOT blocked
-      // by enemy SAMs other than the covering SAMs we're trying to overwhelm.
+      // Collect bombs from platforms whose trajectory to the target is NOT blocked
+      // by enemy PDAs other than the covering PDAs we're trying to overwhelm.
       const unblockedBombs: { index: number; flightTicks: number }[] = [];
       for (let i = 0; i < launchSequence.length; i++) {
         if (!launchSequence[i].interceptable) {
@@ -833,7 +840,7 @@ export class NationNukeBehavior {
       }
 
       if (unblockedBombs.length < totalBombs) {
-        needsMoreSilos = true;
+        needsMorePlatforms = true;
         continue;
       }
 
@@ -861,12 +868,12 @@ export class NationNukeBehavior {
       }
 
       if (bestWindowCount < totalBombs) {
-        needsMoreSilos = true;
+        needsMorePlatforms = true;
         continue;
       }
 
       // From the window, pick totalBombs with the lowest launch-sequence
-      // indices to minimise how many bombs we need to fire (minimise gold cost).
+      // indices to minimise how many bombs we need to fire (minimise credit cost).
       const windowBombs = sortedByFlight.slice(
         bestWindowStart,
         bestWindowStart + bestWindowCount,
@@ -901,13 +908,13 @@ export class NationNukeBehavior {
         }
       }
 
-      // Check gold for all fired bombs (including wasted ones)
-      const totalCost = atomCost * BigInt(bombsToFire);
+      // Check credits for all fired bombs (including wasted ones)
+      const totalCost = torpedoCost * BigInt(bombsToFire);
       if (this.player.credits() < totalCost) {
         continue;
       }
 
-      // Fire the salvo — NukeExecution will pick silos in the same
+      // Fire the salvo — NukeExecution will pick platforms in the same
       // Manhattan distance order we planned.
       for (let i = 0; i < bombsToFire; i++) {
         this.sendNuke(
@@ -920,73 +927,73 @@ export class NationNukeBehavior {
       return;
     }
 
-    // Couldn't destroy any SAM — upgrade silos only if capacity was the bottleneck.
-    // If we only lack gold, don't waste it upgrading silos — just wait and save.
-    if (needsMoreSilos) {
-      this.maybeUpgradeBestProtectedSilo();
+    // Couldn't destroy any PDA — upgrade platforms only if capacity was the bottleneck.
+    // If we only lack credits, don't waste it upgrading platforms — just wait and save.
+    if (needsMorePlatforms) {
+      this.maybeUpgradeBestProtectedPlatform();
     }
   }
 
   /**
-   * Find all enemy SAMs whose range covers a given tile.
+   * Find all enemy PDAs whose range covers a given tile.
    */
-  private findEnemySamsCoveringTile(tile: TileRef): Unit[] {
-    const nearbySams = this.game.nearbyUnits(
+  private findEnemyPdasCoveringTile(tile: TileRef): Unit[] {
+    const nearbyPDAs = this.game.nearbyUnits(
       tile,
       this.game.config().maxPointDefenseRange(),
       UnitType.PointDefenseArray,
     );
 
     const result: Unit[] = [];
-    for (const sam of nearbySams) {
-      const owner = sam.unit.owner();
+    for (const pda of nearbyPDAs) {
+      const owner = pda.unit.owner();
       if (owner === this.player || this.player.isFriendly(owner)) {
         continue;
       }
-      const range = this.game.config().pointDefenseRange(sam.unit.level());
-      if (sam.distSquared <= range * range) {
-        result.push(sam.unit);
+      const range = this.game.config().pointDefenseRange(pda.unit.level());
+      if (pda.distSquared <= range * range) {
+        result.push(pda.unit);
       }
     }
     return result;
   }
 
   /**
-   * Upgrade the missile silo that is best protected by our own SAMs.
-   * Called when we need more silo capacity to overwhelm enemy SAMs.
+   * Upgrade the orbital strike platform that is best protected by our own PDAs.
+   * Called when we need more platform capacity to overwhelm enemy PDAs.
    */
-  private maybeUpgradeBestProtectedSilo(): void {
-    const silos = this.player.units(UnitType.OrbitalStrikePlatform);
-    if (silos.length === 0) return;
+  private maybeUpgradeBestProtectedPlatform(): void {
+    const platforms = this.player.units(UnitType.OrbitalStrikePlatform);
+    if (platforms.length === 0) return;
 
-    const ourSams = this.player.units(UnitType.PointDefenseArray);
-    let bestSilo: Unit | null = null;
+    const ourPDAs = this.player.units(UnitType.PointDefenseArray);
+    let bestPlatform: Unit | null = null;
     let bestProtection = -1;
 
-    for (const silo of silos) {
-      if (!this.player.canUpgradeUnit(silo)) continue;
+    for (const platform of platforms) {
+      if (!this.player.canUpgradeUnit(platform)) continue;
 
       let protection = 0;
-      for (const sam of ourSams) {
-        const range = this.game.config().pointDefenseRange(sam.level());
+      for (const pda of ourPDAs) {
+        const range = this.game.config().pointDefenseRange(pda.level());
         const distSquared = this.game.euclideanDistSquared(
-          silo.tile(),
-          sam.tile(),
+          platform.tile(),
+          pda.tile(),
         );
         if (distSquared <= range * range) {
-          protection += sam.level();
+          protection += pda.level();
         }
       }
 
       if (protection > bestProtection) {
         bestProtection = protection;
-        bestSilo = silo;
+        bestPlatform = platform;
       }
     }
 
-    if (bestSilo !== null) {
+    if (bestPlatform !== null) {
       this.game.addExecution(
-        new UpgradeStructureExecution(this.player, bestSilo.id()),
+        new UpgradeStructureExecution(this.player, bestPlatform.id()),
       );
     }
   }

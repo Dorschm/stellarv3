@@ -79,7 +79,7 @@ export class NukeExecution implements Execution {
       throw new Error("Not initialized");
     }
     if (this.nuke.type() === UnitType.ClusterWarheadSubmunition) {
-      // MIRV warheads shouldn't break alliances
+      // Cluster warhead submunitions shouldn't break alliances
       return;
     }
 
@@ -149,7 +149,7 @@ export class NukeExecution implements Execution {
           this.mg.displayIncomingUnit(
             this.nuke.id(),
             // TODO TranslateText
-            `${this.player.displayName()} - atom bomb inbound`,
+            `${this.player.displayName()} - antimatter torpedo inbound`,
             MessageType.NUKE_INBOUND,
             target.id(),
           );
@@ -157,7 +157,7 @@ export class NukeExecution implements Execution {
           this.mg.displayIncomingUnit(
             this.nuke.id(),
             // TODO TranslateText
-            `${this.player.displayName()} - hydrogen bomb inbound`,
+            `${this.player.displayName()} - nova bomb inbound`,
             MessageType.NOVA_BOMB_INBOUND,
             target.id(),
           );
@@ -167,12 +167,12 @@ export class NukeExecution implements Execution {
         this.mg.stats().bombLaunch(this.player, target, this.nukeType);
       }
 
-      // after sending a nuke set the missilesilo on cooldown
-      const silo = this.player
+      // after sending a nuke set the orbital strike platform on cooldown
+      const platform = this.player
         .units(UnitType.OrbitalStrikePlatform)
-        .find((silo) => silo.tile() === spawn);
-      if (silo) {
-        silo.launch();
+        .find((platform) => platform.tile() === spawn);
+      if (platform) {
+        platform.launch();
       }
       return;
     }

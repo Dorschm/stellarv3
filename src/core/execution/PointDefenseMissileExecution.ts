@@ -42,7 +42,7 @@ export class PointDefenseMissileExecution implements Execution {
       this.active = false;
       return;
     }
-    // Mirv warheads are too fast, and mirv shouldn't be stopped ever
+    // Cluster warheads are too fast, and cluster warheads shouldn't be stopped ever
     const nukesWhitelist = [UnitType.AntimatterTorpedo, UnitType.NovaBomb];
     if (
       !this.target.isActive() ||

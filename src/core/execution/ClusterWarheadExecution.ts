@@ -72,7 +72,7 @@ export class MirvExecution implements Execution {
     if (this.nuke === null) {
       const spawn = this.player.canBuild(UnitType.ClusterWarhead, this.dst);
       if (spawn === false) {
-        console.warn(`cannot build MIRV`);
+        console.warn(`cannot build ClusterWarhead`);
         this.active = false;
         return;
       }
@@ -92,7 +92,7 @@ export class MirvExecution implements Execution {
       this.mg.displayIncomingUnit(
         this.nuke.id(),
         // TODO TranslateText
-        `⚠️⚠️⚠️ ${this.player.displayName()} - MIRV INBOUND ⚠️⚠️⚠️`,
+        `⚠️⚠️⚠️ ${this.player.displayName()} - CLUSTER WARHEAD INBOUND ⚠️⚠️⚠️`,
         MessageType.CLUSTER_WARHEAD_INBOUND,
         this.targetPlayer.id(),
       );

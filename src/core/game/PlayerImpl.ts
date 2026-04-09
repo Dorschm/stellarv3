@@ -12,6 +12,7 @@ import {
 import {
   bestSectorEdgeDeploymentSource,
   canBuildAssaultShuttle,
+  diagnoseCanBuildAssaultShuttle,
 } from "./AssaultShuttleUtils";
 import { AttackImpl } from "./AttackImpl";
 import {
@@ -1101,6 +1102,22 @@ export class PlayerImpl implements Player {
 
       const buildNew = canBuild !== false && canUpgrade === false;
 
+      // Surface a rejection reason for unit types that support it, so the
+      // client UI can explain *why* a build button is disabled. Only the
+      // AssaultShuttle case exposes structured reasons today — it has the
+      // most non-obvious preconditions (deep-space pathing, shuttle cap,
+      // sector-edge ownership).
+      let rejectReason: string | undefined;
+      if (
+        canBuild === false &&
+        u === UnitType.AssaultShuttle &&
+        tile !== null &&
+        !inSpawnPhase &&
+        this._credits >= cost
+      ) {
+        rejectReason = diagnoseCanBuildAssaultShuttle(mg, this, tile).reason;
+      }
+
       result[i] = {
         type: u,
         canBuild,
@@ -1112,6 +1129,7 @@ export class PlayerImpl implements Player {
         ghostHyperspaceLanePaths: buildNew
           ? rail.computeGhostHyperspaceLanePaths(u, canBuild as TileRef)
           : [],
+        ...(rejectReason !== undefined ? { rejectReason } : {}),
       };
     }
 
@@ -1204,15 +1222,17 @@ export class PlayerImpl implements Player {
       }
     }
 
-    // only get missilesilos that are not on cooldown and not under construction
-    const bestSilo = findClosestBy(
+    // only get orbital strike platforms that are not on cooldown and not under construction
+    const bestPlatform = findClosestBy(
       this.units(UnitType.OrbitalStrikePlatform),
-      (silo) => mg.manhattanDist(silo.tile(), tile),
-      (silo) =>
-        silo.isActive() && !silo.isInCooldown() && !silo.isUnderConstruction(),
+      (platform) => mg.manhattanDist(platform.tile(), tile),
+      (platform) =>
+        platform.isActive() &&
+        !platform.isInCooldown() &&
+        !platform.isUnderConstruction(),
     );
 
-    return bestSilo?.tile() ?? false;
+    return bestPlatform?.tile() ?? false;
   }
 
   portSpawn(tile: TileRef, validTiles: TileRef[] | null): TileRef | false {

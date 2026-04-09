@@ -18,14 +18,14 @@ import { TradeHub } from "../game/TradeHub";
 export class FrigateExecution implements Execution {
   private active = true;
   private mg: Game | null = null;
-  private train: Unit | null = null; // primary unit
+  private engine: Unit | null = null; // primary unit
   private cars: Unit[] = []; // stored back to front
   private hasCargo: boolean = false;
   private currentTile: number = 0;
   private spacing = 2;
   private usedTiles: TileRef[] = []; // used for cars behind
   private stations: TradeHub[] = [];
-  private currentRailroad: OrientedHyperspaceLane | null = null;
+  private currentHyperspaceLane: OrientedHyperspaceLane | null = null;
   private speed: number = 2;
   private _tradeStopsVisited: number = 0;
 
@@ -59,7 +59,7 @@ export class FrigateExecution implements Execution {
     this.stations = stations;
     const lane = getOrientedHyperspaceLane(this.stations[0], this.stations[1]);
     if (lane) {
-      this.currentRailroad = lane;
+      this.currentHyperspaceLane = lane;
     } else {
       this.active = false;
       return;
@@ -70,11 +70,11 @@ export class FrigateExecution implements Execution {
       this.stations[0].tile(),
     );
     if (spawn === false) {
-      console.warn(`cannot build train`);
+      console.warn(`cannot build frigate`);
       this.active = false;
       return;
     }
-    this.train = this.createTrainUnits(spawn);
+    this.engine = this.createFrigateUnits(spawn);
 
     const carUnitIds = this.cars.map((c) => c.id());
     const pathTiles: TileRef[] = [];
@@ -89,14 +89,14 @@ export class FrigateExecution implements Execution {
       }
       pathTiles.push(...segment.getTiles());
     }
-    const startTile = this.train.tile();
+    const startTile = this.engine.tile();
     if (pathTiles.length === 0 || pathTiles[0] !== startTile) {
       pathTiles.unshift(startTile);
     }
 
     const plan: MotionPlanRecord = {
-      kind: "train",
-      engineUnitId: this.train.id(),
+      kind: "frigate",
+      engineUnitId: this.engine.id(),
       carUnitIds,
       planId: 1,
       startTick: ticks + 1,
@@ -108,12 +108,12 @@ export class FrigateExecution implements Execution {
   }
 
   tick(ticks: number): void {
-    if (this.train === null) {
+    if (this.engine === null) {
       throw new Error("Not initialized");
     }
 
-    if (!this.train.isActive() || !this.activeSourceOrDestination()) {
-      this.deleteTrain();
+    if (!this.engine.isActive() || !this.activeSourceOrDestination()) {
+      this.deleteFrigate();
       return;
     }
 
@@ -122,12 +122,12 @@ export class FrigateExecution implements Execution {
       this.updateCarsPositions(tile);
     } else {
       this.targetReached();
-      this.deleteTrain();
+      this.deleteFrigate();
     }
   }
 
   loadCargo() {
-    if (this.hasCargo || this.train === null) {
+    if (this.hasCargo || this.engine === null) {
       return;
     }
     this.hasCargo = true;
@@ -138,17 +138,17 @@ export class FrigateExecution implements Execution {
   }
 
   private targetReached() {
-    if (this.train === null) {
+    if (this.engine === null) {
       return;
     }
-    this.train.setReachedTarget();
+    this.engine.setReachedTarget();
     this.cars.forEach((car: Unit) => {
       car.setReachedTarget();
     });
   }
 
-  private createTrainUnits(tile: TileRef): Unit {
-    const train = this.player.buildUnit(UnitType.Frigate, tile, {
+  private createFrigateUnits(tile: TileRef): Unit {
+    const engine = this.player.buildUnit(UnitType.Frigate, tile, {
       targetUnit: this.destination.unit,
       frigateType: FrigateType.Engine,
     });
@@ -167,13 +167,13 @@ export class FrigateExecution implements Execution {
         }),
       );
     }
-    return train;
+    return engine;
   }
 
-  private deleteTrain() {
+  private deleteFrigate() {
     this.active = false;
-    if (this.train?.isActive()) {
-      this.train.delete(false);
+    if (this.engine?.isActive()) {
+      this.engine.delete(false);
     }
     for (const car of this.cars) {
       if (car.isActive()) {
@@ -191,20 +191,20 @@ export class FrigateExecution implements Execution {
   }
 
   /**
-   * Save the tiles the train go through so the cars can reuse them
-   * Don't simply save the tiles the engine uses, otherwise the spacing will be dictated by the train speed
+   * Save the tiles the frigate goes through so the cars can reuse them
+   * Don't simply save the tiles the engine uses, otherwise the spacing will be dictated by the frigate speed
    */
   private saveTraversedTiles(from: number, speed: number) {
-    if (!this.currentRailroad) {
+    if (!this.currentHyperspaceLane) {
       return;
     }
     let tileToSave: number = from;
     for (
       let i = 0;
-      i < speed && tileToSave < this.currentRailroad.getTiles().length;
+      i < speed && tileToSave < this.currentHyperspaceLane.getTiles().length;
       i++
     ) {
-      this.saveTile(this.currentRailroad.getTiles()[tileToSave]);
+      this.saveTile(this.currentHyperspaceLane.getTiles()[tileToSave]);
       tileToSave = tileToSave + 1;
     }
   }
@@ -225,20 +225,20 @@ export class FrigateExecution implements Execution {
         }
       }
     }
-    if (this.train !== null) {
-      this.train.move(newTile);
+    if (this.engine !== null) {
+      this.engine.move(newTile);
     }
   }
 
   private nextStation() {
     if (this.stations.length > 2) {
       this.stations.shift();
-      const railRoad = getOrientedHyperspaceLane(
+      const lane = getOrientedHyperspaceLane(
         this.stations[0],
         this.stations[1],
       );
-      if (railRoad) {
-        this.currentRailroad = railRoad;
+      if (lane) {
+        this.currentHyperspaceLane = lane;
         return true;
       }
     }
@@ -252,12 +252,16 @@ export class FrigateExecution implements Execution {
   }
 
   private getNextTile(): TileRef | null {
-    if (this.currentRailroad === null || !this.canTradeWithDestination()) {
+    if (
+      this.currentHyperspaceLane === null ||
+      !this.canTradeWithDestination()
+    ) {
       return null;
     }
     this.saveTraversedTiles(this.currentTile, this.speed);
     this.currentTile = this.currentTile + this.speed;
-    const leftOver = this.currentTile - this.currentRailroad.getTiles().length;
+    const leftOver =
+      this.currentTile - this.currentHyperspaceLane.getTiles().length;
     if (leftOver >= 0) {
       // Station reached, pick the next station
       this.stationReached();
@@ -267,14 +271,14 @@ export class FrigateExecution implements Execution {
       this.currentTile = leftOver;
       this.saveTraversedTiles(0, leftOver);
     }
-    return this.currentRailroad.getTiles()[this.currentTile];
+    return this.currentHyperspaceLane.getTiles()[this.currentTile];
   }
 
   private stationReached() {
     if (this.mg === null || this.player === null) {
       throw new Error("Not initialized");
     }
-    this.stations[1].onTrainStop(this);
+    this.stations[1].onFrigateStop(this);
     const stationType = this.stations[1].unit.type();
     if (stationType === UnitType.Colony || stationType === UnitType.Spaceport) {
       this._tradeStopsVisited++;

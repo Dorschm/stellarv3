@@ -1,7 +1,7 @@
 import { GameEvent } from "../../core/EventBus";
 import { PlayerActions } from "../../core/game/Game";
-import { PlayerView, UnitView } from "../../core/game/GameView";
 import { TileRef } from "../../core/game/GameMap";
+import { PlayerView, UnitView } from "../../core/game/GameView";
 
 // -- Navigation events (from Leaderboard.ts, AttacksDisplay.ts) --
 export class GoToPlayerEvent implements GameEvent {
@@ -74,15 +74,15 @@ export class ShowPlayerModerationModalEvent implements GameEvent {
 }
 
 // -- Donate resource modal event (legacy send-resource modal — lets the
-//    player choose an amount of troops or gold to donate to another player).
+//    player choose an amount of troops or credits to donate to another player).
 export class ShowDonateResourceModalEvent implements GameEvent {
   constructor(
     public readonly target: PlayerView,
-    public readonly mode: "troops" | "gold",
+    public readonly mode: "troops" | "credits",
   ) {}
 }
 
-// -- Railroad event (from RailroadLayer.ts) --
+// -- Hyperspace lane event (from WarpLaneRenderer.tsx) --
 export class RailTileChangedEvent implements GameEvent {
   constructor(public tile: TileRef) {}
 }

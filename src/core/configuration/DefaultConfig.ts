@@ -777,7 +777,7 @@ export class DefaultConfig implements Config {
         : 2 * (Math.pow(player.numTilesOwned(), 0.6) * 1000 + 50000) +
           player
             .units(UnitType.Colony)
-            .map((city) => city.level())
+            .map((colony) => colony.level())
             .reduce((a, b) => a + b, 0) *
             this.colonyTroopIncrease();
 

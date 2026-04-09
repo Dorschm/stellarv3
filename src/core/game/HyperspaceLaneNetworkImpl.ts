@@ -183,8 +183,8 @@ export class HyperspaceLaneNetworkImpl implements HyperspaceLaneNetwork {
       }
 
       // Disconnect current rail as it will become invalid
-      from.removeRailroad(rail);
-      to.removeRailroad(rail);
+      from.removeHyperspaceLane(rail);
+      to.removeHyperspaceLane(rail);
       this.hyperspaceLaneGrid.unregister(rail);
 
       const newRailFrom = new HyperspaceLane(
@@ -201,11 +201,11 @@ export class HyperspaceLaneNetworkImpl implements HyperspaceLaneNetwork {
       );
 
       // New station is connected to both new rails
-      station.addRailroad(newRailFrom);
-      station.addRailroad(newRailTo);
+      station.addHyperspaceLane(newRailFrom);
+      station.addHyperspaceLane(newRailTo);
       // From and to are connected to the new segments
-      from.addRailroad(newRailFrom);
-      to.addRailroad(newRailTo);
+      from.addHyperspaceLane(newRailFrom);
+      to.addHyperspaceLane(newRailTo);
 
       this.hyperspaceLaneGrid.register(newRailTo);
       this.hyperspaceLaneGrid.register(newRailFrom);
@@ -348,11 +348,11 @@ export class HyperspaceLaneNetworkImpl implements HyperspaceLaneNetwork {
   }
 
   private disconnectFromNetwork(station: TradeHub) {
-    for (const rail of station.getRailroads()) {
+    for (const rail of station.getHyperspaceLanes()) {
       rail.delete(this.game);
       this.hyperspaceLaneGrid.unregister(rail);
     }
-    station.clearRailroads();
+    station.clearHyperspaceLanes();
   }
 
   private deleteCluster(cluster: Cluster) {
@@ -374,8 +374,8 @@ export class HyperspaceLaneNetworkImpl implements HyperspaceLaneNetwork {
         id: lane.id,
         tiles: lane.tiles,
       });
-      from.addRailroad(lane);
-      to.addRailroad(lane);
+      from.addHyperspaceLane(lane);
+      to.addHyperspaceLane(lane);
       this.hyperspaceLaneGrid.register(lane);
       return true;
     }
