@@ -65,6 +65,7 @@ export class BattlecruiserExecution implements Execution {
     this.battlecruiser.setTargetUnit(this.findTargetUnit());
     if (this.battlecruiser.targetUnit()?.type() === UnitType.TradeFreighter) {
       this.huntDownTradeFreighter();
+      this.syncSlottedStructure();
       return;
     }
 
@@ -72,7 +73,32 @@ export class BattlecruiserExecution implements Execution {
 
     if (this.battlecruiser.targetUnit() !== undefined) {
       this.shootTarget();
+    }
+
+    this.syncSlottedStructure();
+  }
+
+  /**
+   * GDD §14 / Ticket 6 — a Battlecruiser acts as a mobile one-slot planet.
+   * When the cruiser moves, its hosted structure (DefenseStation or
+   * OrbitalStrikePlatform) must follow so it retains line-of-sight to its
+   * patrol tile. We sync after every motion decision rather than hooking
+   * into the generic `move()` path because only Battlecruisers carry a
+   * structure — the cost of an `isActive() + move()` check per tick is
+   * negligible compared to touching every unit's move path.
+   */
+  private syncSlottedStructure(): void {
+    const slotted = this.battlecruiser.slottedStructure();
+    if (slotted === undefined) return;
+    if (!slotted.isActive()) {
+      // Structure was destroyed independently (e.g., nuked) — clear the
+      // slot so a replacement can be built.
+      this.battlecruiser.setSlottedStructure(undefined);
       return;
+    }
+    const cruiserTile = this.battlecruiser.tile();
+    if (slotted.tile() !== cruiserTile) {
+      slotted.move(cruiserTile);
     }
   }
 

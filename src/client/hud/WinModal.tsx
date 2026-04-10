@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { ColorPalette, Pattern } from "../../core/CosmeticSchemas";
-import { RankedType } from "../../core/game/Game";
+import { RankedType, RunScore } from "../../core/game/Game";
 import { GameUpdateType } from "../../core/game/GameUpdates";
 import { getUserMe } from "../Api";
 import {
@@ -37,6 +37,7 @@ export function WinModal(): React.JSX.Element {
   );
   const [hasShownDeathModal, setHasShownDeathModal] = useState(false);
   const [rand] = useState(Math.random());
+  const [runScore, setRunScore] = useState<RunScore | null>(null);
 
   const loadPatternContent = useCallback(async () => {
     try {
@@ -127,6 +128,9 @@ export function WinModal(): React.JSX.Element {
     const updates = gameView.updatesSinceLastTick();
     const winUpdates = updates !== null ? updates[GameUpdateType.Win] : [];
     winUpdates.forEach((wu) => {
+      if (wu.runScore) {
+        setRunScore(wu.runScore);
+      }
       if (wu.winner === undefined) {
         // ...
       } else if (wu.winner[0] === "team") {
@@ -198,6 +202,57 @@ export function WinModal(): React.JSX.Element {
     } else {
       return renderPatternButton();
     }
+  };
+
+  /**
+   * GDD §10 — Scoring panel: planets conquered, systems controlled,
+   * survival time, final ranking. Rendered above the rest of the modal
+   * body whenever the win event carried a {@link RunScore} payload.
+   * Survival is shown in seconds (10 ticks/sec on the standard tick rate)
+   * to match the existing in-game timer formatting.
+   */
+  const renderRunScore = () => {
+    if (!runScore || runScore.players.length === 0) return null;
+    const myClientID = gameView.myPlayer()?.clientID();
+    return (
+      <div className="text-center mb-6 bg-black/30 p-2.5 rounded-sm">
+        <h3 className="text-xl font-semibold text-white mb-3">
+          {translateText("win_modal.run_score") || "Run Score"}
+        </h3>
+        <table className="w-full text-sm text-white">
+          <thead>
+            <tr className="text-left border-b border-white/30">
+              <th className="py-1 pr-2">#</th>
+              <th className="py-1 pr-2">Player</th>
+              <th className="py-1 pr-2 text-right">Planets</th>
+              <th className="py-1 pr-2 text-right">Systems</th>
+              <th className="py-1 text-right">Survived</th>
+            </tr>
+          </thead>
+          <tbody>
+            {runScore.players.map((p) => {
+              const isMe = p.clientID !== null && p.clientID === myClientID;
+              return (
+                <tr
+                  key={`${p.playerID}-${p.eliminationRank}`}
+                  className={isMe ? "bg-white/10" : ""}
+                >
+                  <td className="py-1 pr-2">{p.eliminationRank}</td>
+                  <td className="py-1 pr-2">{p.name}</td>
+                  <td className="py-1 pr-2 text-right">{p.planetsConquered}</td>
+                  <td className="py-1 pr-2 text-right">
+                    {p.systemsControlled}
+                  </td>
+                  <td className="py-1 text-right">
+                    {Math.round(p.survivalTicks / 10)}s
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    );
   };
 
   const renderYoutubeTutorial = () => (
@@ -286,6 +341,7 @@ export function WinModal(): React.JSX.Element {
       }
     >
       <h2 className="m-0 mb-4 text-[26px] text-center text-white">{title}</h2>
+      {renderRunScore()}
       {renderInnerContent()}
       <div className={showButtons ? "flex justify-between gap-2.5" : "hidden"}>
         <button

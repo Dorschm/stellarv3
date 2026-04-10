@@ -14,9 +14,11 @@ import {
   Tick,
   UnitInfo,
   UnitType,
+  WinCondition,
 } from "../game/Game";
 import { TileRef } from "../game/GameMap";
 import { PlayerView } from "../game/GameView";
+import { SectorMap } from "../game/SectorMap";
 import { UserSettings } from "../game/UserSettings";
 import { GameConfig, GameID, TeamCountConfig } from "../Schemas";
 import { NukeType } from "../StatsSchemas";
@@ -29,6 +31,70 @@ import { PastelThemeDark } from "./PastelThemeDark";
 const DEFENSE_DEBUFF_MIDPOINT = 150_000;
 const DEFENSE_DEBUFF_DECAY_RATE = Math.LN2 / 50000;
 const DEFAULT_SPAWN_IMMUNITY_TICKS = 5 * 10;
+
+/**
+ * Tiles-per-AU conversion. The GDD expresses every long-range distance
+ * (LRW projectile speed, scout patrol radius, hyperspace lane reach) in
+ * astronomical units. The Sol System map is 1500x1500 tiles, so at
+ * 100 tiles/AU the map spans ~15 AU across — a plausible scale for a
+ * single star system. Tunable in one place; consumers should always
+ * resolve via `Config.auInTiles()` rather than hard-coding the constant.
+ * See Ticket 5: Structure Alignment — AU Convention.
+ */
+export const AU_IN_TILES = 100;
+
+/**
+ * GDD §5/§8 Long-Range Weapon constants. The OSP's LRW shot fires a fast
+ * projectile that ignores intervening structures, deducts a flat credit
+ * cost on launch, and applies population + habitability damage on hit.
+ * Each shot then locks the platform out for {@link LRW_COOLDOWN_TICKS}.
+ *
+ * Speed is computed at module load from {@link AU_IN_TILES} so the conversion
+ * stays in sync if the AU constant is retuned. With AU=100 this resolves
+ * to 30 tiles/tick (3 AU/s × 100 tiles/AU ÷ 10 ticks/sec).
+ */
+const LRW_PROJECTILE_AU_PER_SECOND = 3;
+const LRW_PROJECTILE_TILES_PER_TICK =
+  (LRW_PROJECTILE_AU_PER_SECOND * AU_IN_TILES) / 10;
+const LRW_SHOT_COST = 100_000n;
+const LRW_COOLDOWN_TICKS = 100;
+const LRW_POPULATION_DAMAGE_RATIO = 0.1;
+const LRW_HABITABILITY_DAMAGE = 0.1;
+
+/**
+ * GDD §4/§6 — Scout Swarm constants.
+ *
+ * `SCOUT_SWARM_COST_FRACTION` is the slice of the player's current credits
+ * deducted at launch (GDD: "10% of total resources"). Expressed as a float
+ * so ScoutSwarmExecution can multiply into bigint safely.
+ *
+ * `SCOUT_SWARM_AU_PER_MINUTE` is the GDD's travel figure ("2 AU/min").
+ * Converted to tiles-per-tick via `AU_IN_TILES` and the fixed 10 ticks/sec
+ * turn rate. With AU=100 and the default 2 AU/min this resolves to a
+ * fractional 1/3 tile per tick — ScoutSwarmExecution accumulates the
+ * remainder across ticks rather than teleporting.
+ *
+ * `SCOUT_SWARM_TERRAFORM_ACCUMULATION` is the amount of swarm "size" that
+ * has to land on a tile before its terrain magnitude steps down (GDD: "10
+ * swarm size/km²"). We treat it as 10 scout-arrivals per tile.
+ *
+ * `SCOUT_SWARM_LIFETIME_TICKS` is a safety cap so stranded swarms
+ * eventually dissolve — 5 minutes at 10 ticks/sec.
+ */
+const SCOUT_SWARM_COST_FRACTION = 0.1;
+const SCOUT_SWARM_AU_PER_MINUTE = 2;
+const SCOUT_SWARM_TILES_PER_TICK =
+  (SCOUT_SWARM_AU_PER_MINUTE * AU_IN_TILES) / 60 / 10;
+const SCOUT_SWARM_TERRAFORM_ACCUMULATION = 10;
+const SCOUT_SWARM_LIFETIME_TICKS = 5 * 60 * 10;
+
+/**
+ * GDD §14 — Battlecruiser structure slot count. A Battlecruiser can host
+ * a single DefenseStation or OrbitalStrikePlatform, acting as a "mobile
+ * one-slot planet" per the GDD. Kept behind a config method so balance
+ * changes don't require touching call sites.
+ */
+const BATTLECRUISER_STRUCTURE_SLOT_COUNT = 1;
 
 const JwksSchema = z.object({
   keys: z
@@ -143,12 +209,43 @@ export class DefaultConfig implements Config {
   private pastelTheme: PastelTheme = new PastelTheme();
   private pastelThemeDark: PastelThemeDark = new PastelThemeDark();
   private unitInfoCache = new Map<UnitType, UnitInfo>();
+  private _sectorMap: SectorMap | null = null;
+
+  /**
+   * Credits awarded per owned-sector-tile per tick (scaled by habitability
+   * and `creditMultiplier()` in the credit formula). See GDD Economy
+   * Alignment Approach §3 — currently unused; wired in by Ticket 3.
+   */
+  private readonly VOLUME_CREDIT_RATE = 0.005;
+
+  /**
+   * Max troop capacity contributed per owned-sector-tile at 100% habitability.
+   * Used as a habitability-derived floor on top of the existing `maxTroops()`
+   * formula. See GDD Economy Alignment Approach §3 — currently unused; wired
+   * in by Ticket 3.
+   */
+  private readonly POP_PER_TILE = 2.0;
+
   constructor(
     private _serverConfig: ServerConfig,
     private _gameConfig: GameConfig,
     private _userSettings: UserSettings | null,
     private _isReplay: boolean,
   ) {}
+
+  /**
+   * Stores the {@link SectorMap} reference computed during game init.
+   * Called by `GameImpl` after constructing the SectorMap. The economy
+   * formulas will read this in Ticket 3.
+   */
+  setSectorMap(sm: SectorMap): void {
+    this._sectorMap = sm;
+  }
+
+  /** Test/Ticket-3 hook for the stored SectorMap reference. */
+  sectorMap(): SectorMap | null {
+    return this._sectorMap;
+  }
 
   stripePublishableKey(): string {
     return Env.STRIPE_PUBLISHABLE_KEY ?? "";
@@ -207,7 +304,52 @@ export class DefaultConfig implements Config {
     return 120;
   }
   orbitalStrikeCooldown(): number {
-    return 75;
+    // GDD §5 — LRW cooldown is 10 seconds (100 ticks at 100ms/tick).
+    // Was 75 ticks pre-Ticket 5; bumping to 100 puts the OSP back in
+    // line with the GDD's stated 10-second LRW cycle.
+    return LRW_COOLDOWN_TICKS;
+  }
+  auInTiles(): number {
+    return AU_IN_TILES;
+  }
+  longRangeWeaponShotCost(): bigint {
+    return LRW_SHOT_COST;
+  }
+  longRangeWeaponProjectileSpeed(): number {
+    return LRW_PROJECTILE_TILES_PER_TICK;
+  }
+  longRangeWeaponMaxRange(): number {
+    // Bound the LRW envelope by the existing nuke targeting range so it
+    // never reaches further than an antimatter torpedo would. The GDD
+    // wording ("any tile within range") is intentionally fuzzy; reusing
+    // the nuke envelope keeps the design coherent without introducing
+    // a new tunable.
+    return this.defaultNukeTargetableRange();
+  }
+  longRangeWeaponPopulationDamageRatio(): number {
+    return LRW_POPULATION_DAMAGE_RATIO;
+  }
+  longRangeWeaponHabitabilityDamage(): number {
+    return LRW_HABITABILITY_DAMAGE;
+  }
+
+  // ---- Ticket 6: Scout Swarm ---------------------------------------------
+  scoutSwarmCostFraction(): number {
+    return SCOUT_SWARM_COST_FRACTION;
+  }
+  scoutSwarmTilesPerTick(): number {
+    return SCOUT_SWARM_TILES_PER_TICK;
+  }
+  scoutSwarmLifetimeTicks(): Tick {
+    return SCOUT_SWARM_LIFETIME_TICKS;
+  }
+  scoutSwarmTerraformAccumulation(): number {
+    return SCOUT_SWARM_TERRAFORM_ACCUMULATION;
+  }
+
+  // ---- Ticket 6: Battlecruiser structure slot -----------------------------
+  battlecruiserStructureSlotCount(): number {
+    return BATTLECRUISER_STRUCTURE_SLOT_COUNT;
   }
 
   defenseStationRange(): number {
@@ -473,6 +615,31 @@ export class DefaultConfig implements Config {
           cost: () => 0n,
         };
         break;
+      case UnitType.JumpGate:
+        // GDD §5 — Jump Gate. Same exponential cost curve as Spaceport so
+        // each successive gate doubles in price (125k → 250k → 500k → ...).
+        // Construction time matches Spaceport so it can co-exist on the
+        // same Foundry/Spaceport stacking constraint.
+        info = {
+          cost: this.costWrapper(
+            (numUnits: number) =>
+              Math.min(2_000_000, Math.pow(2, numUnits) * 125_000),
+            UnitType.JumpGate,
+          ),
+          constructionDuration: this.instantBuild() ? 0 : 2 * 10,
+          upgradable: false,
+        };
+        break;
+      case UnitType.ScoutSwarm:
+        // GDD §4/§6 — Scout Swarm. Launch cost is a percentage of the
+        // player's current credits (see {@link Config.scoutSwarmCost}); the
+        // static `unitInfo()` cost stays zero so buildable/construction
+        // plumbing treats the swarm as "free" — the real percentage cost is
+        // deducted by ScoutSwarmExecution at launch time.
+        info = {
+          cost: () => 0n,
+        };
+        break;
       default:
         assertNever(type);
     }
@@ -548,6 +715,23 @@ export class DefaultConfig implements Config {
       return 95;
     }
     return 80;
+  }
+
+  winCondition(): WinCondition {
+    // GDD §1, §12 — Stellar mode opts into last-faction-standing
+    // elimination via the explicit `gameConfig.winCondition` field on the
+    // lobby payload. The fallback default stays `Domination` so legacy
+    // tests, replays, and public lobbies that pre-date this field continue
+    // to behave exactly as they did. The fallback resolution lives in
+    // `WinCheckExecution.timerExpired()`.
+    return this._gameConfig.winCondition ?? WinCondition.Domination;
+  }
+
+  permadeath(): boolean {
+    // GDD §12 — eliminated factions cannot rejoin when permadeath is set.
+    // Defaults to `false` so existing public lobbies preserve their
+    // current reconnection behavior.
+    return this._gameConfig.permadeath ?? false;
   }
   shuttleMaxNumber(): number {
     if (this.isUnitDisabled(UnitType.AssaultShuttle)) {
@@ -771,7 +955,7 @@ export class DefaultConfig implements Config {
   }
 
   maxTroops(player: Player | PlayerView): number {
-    const maxTroops =
+    const baseMaxTroops =
       player.type() === PlayerType.Human && this.infiniteTroops()
         ? 1_000_000_000
         : 2 * (Math.pow(player.numTilesOwned(), 0.6) * 1000 + 50000) +
@@ -781,26 +965,40 @@ export class DefaultConfig implements Config {
             .reduce((a, b) => a + b, 0) *
             this.colonyTroopIncrease();
 
+    let maxTroops: number;
     if (player.type() === PlayerType.Bot) {
-      return maxTroops / 3;
+      maxTroops = baseMaxTroops / 3;
+    } else if (player.type() === PlayerType.Human) {
+      maxTroops = baseMaxTroops;
+    } else {
+      switch (this._gameConfig.difficulty) {
+        case Difficulty.Easy:
+          maxTroops = baseMaxTroops * 0.5;
+          break;
+        case Difficulty.Medium:
+          maxTroops = baseMaxTroops * 0.75;
+          break;
+        case Difficulty.Hard:
+          maxTroops = baseMaxTroops * 1; // Like humans
+          break;
+        case Difficulty.Impossible:
+          maxTroops = baseMaxTroops * 1.25;
+          break;
+        default:
+          assertNever(this._gameConfig.difficulty);
+      }
     }
 
-    if (player.type() === PlayerType.Human) {
-      return maxTroops;
-    }
-
-    switch (this._gameConfig.difficulty) {
-      case Difficulty.Easy:
-        return maxTroops * 0.5;
-      case Difficulty.Medium:
-        return maxTroops * 0.75;
-      case Difficulty.Hard:
-        return maxTroops * 1; // Like humans
-      case Difficulty.Impossible:
-        return maxTroops * 1.25;
-      default:
-        assertNever(this._gameConfig.difficulty);
-    }
+    // GDD Economy Alignment Approach §1 — habitability cap floor.
+    // The hab-based capacity uses `max()` so it can only ever lift the
+    // existing cap, never reduce it. When `_sectorMap` is null (e.g., some
+    // unit-test setups never wire one in) the floor collapses to 0 and the
+    // base formula is preserved exactly.
+    const ownedSectorTiles =
+      this._sectorMap?.playerOwnedSectorTiles(player) ?? 0;
+    const avgHab = this._sectorMap?.playerAverageHabitability(player) ?? 1.0;
+    const habCap = ownedSectorTiles * this.POP_PER_TILE * avgHab;
+    return Math.max(maxTroops, habCap);
   }
 
   troopIncreaseRate(player: Player): number {
@@ -834,6 +1032,14 @@ export class DefaultConfig implements Config {
       }
     }
 
+    // GDD Economy Alignment Approach §1 — habitability multiplier.
+    // Players in 100% OpenSpace (avgHab = 1.0) see identical growth to the
+    // pre-refactor formula. Mixed/harsh terrain players grow proportionally
+    // slower. Falls back to 1.0 when no SectorMap is wired in (test harness
+    // edge cases) and never increases growth above the base.
+    const avgHab = this._sectorMap?.playerAverageHabitability(player) ?? 1.0;
+    toAdd *= avgHab;
+
     return Math.min(player.troops() + toAdd, max) - player.troops();
   }
 
@@ -845,7 +1051,20 @@ export class DefaultConfig implements Config {
     } else {
       baseRate = 100n;
     }
-    return BigInt(Math.floor(Number(baseRate) * multiplier));
+    const flatRate = BigInt(Math.floor(Number(baseRate) * multiplier));
+
+    // GDD Economy Alignment Approach §1 — volume credit bonus.
+    // Adds intrinsic credit income proportional to controlled sector area,
+    // scaled by habitability so harsh territory pays less. Both sector-tile
+    // and habitability lookups fall back to no-op values when no SectorMap
+    // is wired in, leaving the flat rate unchanged.
+    const ownedSectorTiles =
+      this._sectorMap?.playerOwnedSectorTiles(player) ?? 0;
+    const avgHab = this._sectorMap?.playerAverageHabitability(player) ?? 1.0;
+    const volumeBonus = Math.floor(
+      ownedSectorTiles * this.VOLUME_CREDIT_RATE * avgHab * multiplier,
+    );
+    return flatRate + BigInt(volumeBonus);
   }
 
   nukeMagnitudes(unitType: UnitType): NukeMagnitude {

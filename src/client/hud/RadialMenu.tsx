@@ -25,6 +25,9 @@ const shuttleIcon = assetUrl("images/ShuttleIconWhite.svg");
 const buildIcon = assetUrl("images/BuildIconWhite.svg");
 const emojiIcon = assetUrl("images/EmojiIconWhite.svg");
 const infoIcon = assetUrl("images/InfoIcon.svg");
+// Jump Gate (GDD §5) — shares the anchor glyph used in BuildMenu so the
+// "Jump to gate" radial entry visually matches the build option.
+const jumpGateIcon = assetUrl("images/AnchorIcon.svg");
 
 /**
  * Radial-style context menu for the migrated R3F HUD.
@@ -237,6 +240,35 @@ export function RadialMenu(): React.JSX.Element | null {
   const canOpenPlayerPanel = ownerIsPlayer && actions !== null;
   const canBuild = !gameView.inSpawnPhase();
 
+  // GDD §5 Jump Gate — collect the player's available gates so the "Jump to
+  // gate" entry can show a count and be greyed out when the player has fewer
+  // than two ready endpoints. Gates that are still under construction are
+  // excluded so a partially-built gate isn't counted as a usable destination.
+  const myGates =
+    myPlayer
+      ?.units(UnitType.JumpGate)
+      .filter((u) => u.isActive() && !u.isUnderConstruction()) ?? [];
+  const canJumpGate = myGates.length >= 2;
+  const jumpGateTooltip = !myPlayer
+    ? undefined
+    : myGates.length === 0
+      ? "Build a Jump Gate first"
+      : myGates.length === 1
+        ? "Need at least two Jump Gates"
+        : `${myGates.length} gates available`;
+
+  const handleJumpGate = () => {
+    if (!canJumpGate) return;
+    // Surface the available gates in a toast. Full intent wiring (select
+    // unit + source/destination gates over the network) is left to a
+    // follow-up — JumpGateTravel.teleport already handles the server-side
+    // logic, so the next step is just plumbing through Transport.
+    showJumpGateInfo(
+      `Jump Gate: ${myGates.length} ready endpoints. Right-click a unit on a gate to jump.`,
+    );
+    hide();
+  };
+
   // -- Render ----------------------------------------------------------------
   return (
     <div
@@ -308,6 +340,14 @@ export function RadialMenu(): React.JSX.Element | null {
           label={translateText("radial_menu.player_info") || "Player info"}
           disabled={!canOpenPlayerPanel}
           onClick={handlePlayerPanel}
+        />
+
+        <RadialButton
+          icon={jumpGateIcon}
+          label={translateText("radial_menu.jump_gate") || "Jump to gate"}
+          disabled={!canJumpGate}
+          onClick={handleJumpGate}
+          tooltip={jumpGateTooltip}
         />
       </div>
     </div>
@@ -398,6 +438,19 @@ function showShuttleError(message: string): void {
   window.dispatchEvent(
     new CustomEvent("show-message", {
       detail: { message, color: "red", duration: 4000 },
+    }),
+  );
+}
+
+/**
+ * Show a neutral toast for Jump Gate informational messages. Uses the same
+ * `show-message` channel as the shuttle errors but with a non-error colour
+ * so the message reads as a status notification rather than a failure.
+ */
+function showJumpGateInfo(message: string): void {
+  window.dispatchEvent(
+    new CustomEvent("show-message", {
+      detail: { message, color: "blue", duration: 4000 },
     }),
   );
 }

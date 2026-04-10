@@ -31,7 +31,16 @@ import {
   unitTypeToBombUnit,
   unitTypeToOtherUnit,
 } from "../StatsSchemas";
-import { Player, PlayerType, TerraNullius, UnitType } from "./Game";
+import {
+  Player,
+  PlayerType,
+  RunPlayerScore,
+  RunScore,
+  TerraNullius,
+  UnitType,
+  WinCondition,
+} from "./Game";
+import { SectorMap } from "./SectorMap";
 import { Stats } from "./Stats";
 
 type BigIntLike = bigint | number;
@@ -54,6 +63,101 @@ export class StatsImpl implements Stats {
   private readonly data: AllPlayersStats = {};
 
   private _numClusterWarheadLaunched: bigint = 0n;
+
+  // GDD §10 scoring book-keeping. Indexed by `player.smallID()` so we can
+  // serve queries without iterating the player set on every tick.
+  // - sectorsEverOwned: distinct sector IDs the player has ever owned
+  // - eliminationOrder: rank assigned at first kill (1 = first eliminated)
+  // - eliminationTick: tick of the first kill, used for survivalTicks
+  private readonly sectorsEverOwned: Map<number, Set<number>> = new Map();
+  private readonly eliminationOrder: Map<number, number> = new Map();
+  private readonly eliminationTick: Map<number, number> = new Map();
+  private nextEliminationRank = 1;
+  private sectorMap: SectorMap | null = null;
+
+  setSectorMap(sectorMap: SectorMap): void {
+    this.sectorMap = sectorMap;
+  }
+
+  recordSectorConquest(player: Player, sectorId: number): void {
+    if (sectorId <= 0) return;
+    const id = player.smallID();
+    let set = this.sectorsEverOwned.get(id);
+    if (set === undefined) {
+      set = new Set<number>();
+      this.sectorsEverOwned.set(id, set);
+    }
+    set.add(sectorId);
+  }
+
+  recordEliminationOrder(player: Player): number {
+    const id = player.smallID();
+    const existing = this.eliminationOrder.get(id);
+    if (existing !== undefined) return existing;
+    const rank = this.nextEliminationRank++;
+    this.eliminationOrder.set(id, rank);
+    return rank;
+  }
+
+  runScore(
+    players: Player[],
+    tick: number,
+    winCondition: WinCondition,
+  ): RunScore | null {
+    const sectorMap = this.sectorMap;
+    if (sectorMap === null) return null;
+
+    // Survivors get ranks above all eliminated players, ordered by current
+    // tile count so that "last to lose territory" stays the highest rank
+    // (matches GDD §12 — "last eliminated = highest rank").
+    const survivors = players
+      .filter((p) => !this.eliminationOrder.has(p.smallID()))
+      .slice()
+      .sort((a, b) => a.numTilesOwned() - b.numTilesOwned());
+
+    let survivorRank = this.nextEliminationRank;
+    const survivorRankBy = new Map<number, number>();
+    for (const p of survivors) {
+      survivorRankBy.set(p.smallID(), survivorRank++);
+    }
+
+    const playerScores: RunPlayerScore[] = players.map((p) => {
+      const id = p.smallID();
+      const eliminated = this.eliminationOrder.get(id);
+      const survivorRankValue = survivorRankBy.get(id);
+      const eliminationRank =
+        eliminated ?? survivorRankValue ?? this.nextEliminationRank;
+      const killedAt = this.eliminationTick.get(id);
+      const survivalTicks = killedAt ?? tick;
+      // Currently-controlled sectors: any sector containing at least one
+      // tile this player owns.
+      const currentSectors = new Set<number>();
+      for (const tile of p.tiles()) {
+        const sid = sectorMap.sectorOf(tile);
+        if (sid > 0) currentSectors.add(sid);
+      }
+      const planetsConquered = (this.sectorsEverOwned.get(id) ?? new Set())
+        .size;
+      return {
+        clientID: p.clientID(),
+        playerID: p.id(),
+        name: p.name(),
+        planetsConquered,
+        systemsControlled: currentSectors.size,
+        survivalTicks,
+        eliminationRank,
+      };
+    });
+
+    // Sort by elimination rank desc so winners appear first.
+    playerScores.sort((a, b) => b.eliminationRank - a.eliminationRank);
+
+    return {
+      totalTicks: tick,
+      winCondition,
+      players: playerScores,
+    };
+  }
 
   numClusterWarheadsLaunched(): bigint {
     return this._numClusterWarheadLaunched;
@@ -296,6 +400,13 @@ export class StatsImpl implements Stats {
 
   playerKilled(player: Player, tick: number): void {
     this._addPlayerKilled(player, tick);
+    // Track elimination ordering for the GDD scoring breakdown. Use
+    // recordEliminationOrder() so the call is idempotent if PlayerExecution
+    // re-fires after the player has already been recorded.
+    if (!this.eliminationOrder.has(player.smallID())) {
+      this.recordEliminationOrder(player);
+      this.eliminationTick.set(player.smallID(), tick);
+    }
   }
 
   frigateSelfTrade(player: Player, credits: BigIntLike): void {

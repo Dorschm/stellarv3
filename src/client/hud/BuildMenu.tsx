@@ -34,6 +34,13 @@ const atomBombIcon = assetUrl("images/NukeIconWhite.svg");
 const portIcon = assetUrl("images/PortIcon.svg");
 const samlauncherIcon = assetUrl("images/SamLauncherIconWhite.svg");
 const shieldIcon = assetUrl("images/ShieldIconWhite.svg");
+// Jump Gate (GDD §5) reuses the anchor glyph as a stand-in for a "jump
+// anchor point". A dedicated gate icon can be swapped in here later.
+const jumpGateIcon = assetUrl("images/AnchorIcon.svg");
+// Scout Swarm (GDD §4, Ticket 6) — a temporary explorer/terraformer unit.
+// Reuses the info glyph so the button is visually distinct from the other
+// combat/structure icons without requiring a new asset.
+const scoutSwarmIcon = assetUrl("images/InfoIcon.svg");
 
 export interface BuildItemDisplay {
   unitType: PlayerBuildableUnitType;
@@ -114,6 +121,20 @@ export const buildTable: BuildItemDisplay[][] = [
       description: "build_menu.desc.foundry",
       key: "unit_type.foundry",
       countable: true,
+    },
+    {
+      unitType: UnitType.JumpGate,
+      icon: jumpGateIcon,
+      description: "build_menu.desc.jump_gate",
+      key: "unit_type.jump_gate",
+      countable: true,
+    },
+    {
+      unitType: UnitType.ScoutSwarm,
+      icon: scoutSwarmIcon,
+      description: "build_menu.desc.scout_swarm",
+      key: "unit_type.scout_swarm",
+      countable: false,
     },
   ],
 ];

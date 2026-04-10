@@ -1,10 +1,53 @@
 import { AllPlayersStats } from "../Schemas";
 import { NukeType, OtherUnitType, PlayerStats } from "../StatsSchemas";
-import { Player, TerraNullius } from "./Game";
+import { Player, RunScore, TerraNullius, WinCondition } from "./Game";
+import { SectorMap } from "./SectorMap";
 
 export interface Stats {
   getPlayerStats(player: Player): PlayerStats | null;
   stats(): AllPlayersStats;
+
+  /**
+   * Records that `player` is now known to own at least one tile in
+   * `sectorId`. Idempotent — repeat calls for the same (player, sector)
+   * pair are no-ops. Used by `runScore()` to compute the GDD `Planets
+   * Conquered` metric (distinct sectors ever owned).
+   *
+   * Sector ID `0` represents "no sector" and is ignored. See
+   * {@link SectorMap.sectorOf}.
+   */
+  recordSectorConquest(player: Player, sectorId: number): void;
+
+  /**
+   * Records the absolute tick at which a player was first eliminated, in
+   * call order. The first call assigns rank 1, the second rank 2, etc.,
+   * matching the GDD requirement that "last eliminated = highest rank".
+   * Idempotent on `player`. Wired in via {@link playerKilled}.
+   */
+  recordEliminationOrder(player: Player): number;
+
+  /**
+   * Builds a per-run score snapshot suitable for serializing into the win
+   * event. `tick` is the current game tick (used to compute survival time
+   * for survivors). Survivors are assigned an elimination rank above all
+   * eliminated players in the order they appear in `players`.
+   *
+   * Returns `null` if a SectorMap has not been registered (e.g., in unit
+   * tests that bypass `GameImpl`); callers should treat that as "no score".
+   */
+  runScore(
+    players: Player[],
+    tick: number,
+    winCondition: WinCondition,
+  ): RunScore | null;
+
+  /**
+   * Wires the SectorMap into the stats tracker. Called once from
+   * GameImpl during construction. Stats methods that need to map a
+   * `TileRef` -> sector go through this reference rather than re-deriving
+   * the partition.
+   */
+  setSectorMap(sectorMap: SectorMap): void;
 
   numClusterWarheadsLaunched(): bigint;
 

@@ -12,6 +12,7 @@ import {
 } from "./GameUpdates";
 import { HyperspaceLaneNetwork } from "./HyperspaceLaneNetwork";
 import { MotionPlanRecord } from "./MotionPlans";
+import { SectorMap } from "./SectorMap";
 import { Stats } from "./Stats";
 import { UnitPredicate } from "./UnitGrid";
 
@@ -113,6 +114,62 @@ export enum RankedType {
   OneVOne = "1v1",
 }
 
+/**
+ * Determines how a game ends.
+ *
+ * - `Elimination`: Last player/team standing wins. Triggered as soon as
+ *   only one faction has any owned tiles left, with the existing 170-min
+ *   hard timer falling back to "most tiles wins". This is the GDD-aligned
+ *   Stellar default. See GDD §1, §10, §12.
+ * - `Domination`: Legacy OpenFront behavior — first faction to reach the
+ *   `percentageTilesOwnedToWin()` threshold (80% FFA / 95% Team) wins. Kept
+ *   selectable so existing modes still work.
+ *
+ * Routed by `WinCheckExecution` based on `GameConfig.winCondition`.
+ */
+export enum WinCondition {
+  Elimination = "elimination",
+  Domination = "domination",
+}
+
+export const isWinCondition = (value: unknown): value is WinCondition =>
+  isEnumValue(WinCondition, value);
+
+/**
+ * Per-player snapshot of GDD-aligned scoring metrics. Used by
+ * `WinCheckExecution` to populate the win event so the client can show a
+ * score breakdown on game end. See GDD §10 — Scoring.
+ *
+ * - `planetsConquered`: distinct sectors the player has owned at any point
+ *   during the run (counted via `SectorMap.sectorOf` on first conquest).
+ * - `systemsControlled`: sectors currently owned at the time of the
+ *   snapshot (any tile of the sector owned counts as controlled).
+ * - `survivalTicks`: total ticks the player was alive — `killedAt` for
+ *   eliminated players, the current tick for survivors.
+ * - `eliminationRank`: 1 = first eliminated, ..., highest = winner. Equal
+ *   to `players().length` for the last player standing.
+ */
+export interface RunPlayerScore {
+  clientID: ClientID | null;
+  playerID: PlayerID;
+  name: string;
+  planetsConquered: number;
+  systemsControlled: number;
+  survivalTicks: number;
+  eliminationRank: number;
+}
+
+/**
+ * Aggregate score payload for a single run. Serialized into the
+ * {@link GameUpdateType.Win} update so the client can render the legacy
+ * roguelike score screen on game end.
+ */
+export interface RunScore {
+  totalTicks: number;
+  winCondition: WinCondition;
+  players: RunPlayerScore[];
+}
+
 export const isGameMode = (value: unknown): value is GameMode =>
   isEnumValue(GameMode, value);
 
@@ -169,6 +226,14 @@ export enum UnitType {
   ClusterWarheadSubmunition = "Cluster Warhead Submunition",
   Frigate = "Frigate",
   Foundry = "Foundry",
+  // GDD §5 — Jump Gate: instant intra-faction (and allied) travel between
+  // two paired gates. See Ticket 5: Structure Alignment.
+  JumpGate = "Jump Gate",
+  // GDD §4/§6 — Scout Swarm: temporary explorer unit launched for a fixed
+  // percentage of the player's current credits. Travels toward a target
+  // sector tile at 2 AU/min and terraforms it one magnitude step at a time
+  // (AsteroidField → Nebula → OpenSpace). See Ticket 6: Fleet Systems.
+  ScoutSwarm = "Scout Swarm",
 }
 
 export enum FrigateType {
@@ -198,16 +263,24 @@ export const Structures = unitTypeGroup([
   UnitType.OrbitalStrikePlatform,
   UnitType.Spaceport,
   UnitType.Foundry,
+  UnitType.JumpGate,
 ] as const);
 
 export const BuildMenus = unitTypeGroup([
   ...Structures.types,
   ...BuildableAttacks.types,
+  // GDD §4/§6 — Scout Swarm shows up in the build menu even though it is
+  // a temporary unit (not a structure and not a BuildableAttack). Keeping
+  // it here means the build menu's `.buildables(tile, BuildMenus.types)`
+  // call includes scout swarm cost/buildability without the callsite
+  // needing to know about the PlayerBuildable union.
+  UnitType.ScoutSwarm,
 ] as const);
 
 export const PlayerBuildable = unitTypeGroup([
   ...BuildMenus.types,
   UnitType.AssaultShuttle,
+  UnitType.ScoutSwarm,
 ] as const);
 
 export type PlayerBuildableUnitType = (typeof PlayerBuildable.types)[number];
@@ -266,6 +339,12 @@ export interface UnitParamsMap {
   [UnitType.PointDefenseArray]: Record<string, never>;
 
   [UnitType.Colony]: Record<string, never>;
+
+  [UnitType.JumpGate]: Record<string, never>;
+
+  [UnitType.ScoutSwarm]: {
+    targetTile: TileRef;
+  };
 
   [UnitType.ClusterWarhead]: {
     targetTile?: number;
@@ -497,6 +576,14 @@ export interface Unit {
   // Battlecruisers
   setPatrolTile(tile: TileRef): void;
   patrolTile(): TileRef | undefined;
+  /**
+   * GDD §14 / Ticket 6 — Battlecruiser structure slot. A Battlecruiser can
+   * host a single DefenseStation or OrbitalStrikePlatform that travels with
+   * it and is destroyed when the ship dies. The setter throws when the slot
+   * is already occupied; pass `undefined` to clear it.
+   */
+  setSlottedStructure(structure: Unit | undefined): void;
+  slottedStructure(): Unit | undefined;
 }
 
 export interface TerraNullius {
@@ -714,6 +801,20 @@ export interface Game extends GameMap {
   config(): Config;
   isPaused(): boolean;
   setPaused(paused: boolean): void;
+  /**
+   * GDD §10 scoring snapshot — planets conquered, systems controlled,
+   * survival time, elimination ranks. Built on demand by `WinCheckExecution`
+   * just before {@link setWinner}; returns `null` if the Stats tracker has
+   * not been wired with a SectorMap (test-only path).
+   */
+  runScore(): RunScore | null;
+  /**
+   * GDD §12 — permadeath gate. Returns `false` if the run is in permadeath
+   * mode and the player has already been eliminated, so the rejoin path
+   * can refuse the connection. Returns `true` for everyone in non-permadeath
+   * runs.
+   */
+  canPlayerRejoin(player: Player): boolean;
 
   // Units
   units(...types: UnitType[]): Unit[];
@@ -768,6 +869,21 @@ export interface Game extends GameMap {
 
   // Nations
   nations(): Nation[];
+
+  // Sector partitioning derived from manifest nations at game init.
+  // See SectorMap and GDD Economy Alignment Approach §3.
+  sectorMap(): SectorMap;
+
+  // GDD §4 / Ticket 6 — Scout Swarm terraform accumulation. Multiple scout
+  // swarms can stack on the same target to terraform it faster; the
+  // shared per-tile counter lives on `Game` so every ScoutSwarmExecution
+  // sees the same accumulator. `recordScoutSwarmTerraformProgress`
+  // increments and returns the new value; `resetScoutSwarmTerraformProgress`
+  // clears the counter once a terraform step is applied;
+  // `scoutSwarmTerraformProgress` is a read-only accessor used by tests.
+  recordScoutSwarmTerraformProgress(tile: TileRef): number;
+  resetScoutSwarmTerraformProgress(tile: TileRef): void;
+  scoutSwarmTerraformProgress(tile: TileRef): number;
 
   numTilesWithFallout(): number;
   stats(): Stats;

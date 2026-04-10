@@ -5,6 +5,7 @@ import {
   PlayerInfo,
   PlayerType,
   RankedType,
+  WinCondition,
 } from "../../../src/core/game/Game";
 import { playerInfo, setup } from "../../util/Setup";
 
@@ -523,6 +524,255 @@ describe("WinCheckExecution - 1v1 Ranked Mode", () => {
     // Verify no winner declared (no connected humans)
     expect(setWinnerSpy).not.toHaveBeenCalled();
     expect(winCheck.isActive()).toBe(true);
+  });
+
+  test("should not declare a winner under domination thresholds when winCondition is elimination", async () => {
+    // GDD §1 — elimination mode ignores the percentage threshold path. Even
+    // a player above the legacy 80% mark should not win until everyone else
+    // has been eliminated.
+    const game = await setup("big_plains", {
+      infiniteCredits: true,
+      gameMode: GameMode.FFA,
+      instantBuild: true,
+      winCondition: WinCondition.Elimination,
+    });
+
+    const player1 = new PlayerInfo("P1", PlayerType.Human, null, "p1");
+    game.addPlayer(player1);
+    const p1 = game.player("p1");
+
+    const player2 = new PlayerInfo("P2", PlayerType.Human, null, "p2");
+    game.addPlayer(player2);
+    const p2 = game.player("p2");
+
+    while (game.inSpawnPhase()) game.executeNextTick();
+
+    const totalLand = game.numSectorTiles();
+    const p1Tiles = Math.ceil(totalLand * 0.85);
+    let p1Assigned = 0;
+    let p2Assigned = 0;
+    game.map().forEachTile((tile) => {
+      if (!game.map().isSector(tile)) return;
+      if (p1Assigned < p1Tiles) {
+        p1.conquer(tile);
+        p1Assigned++;
+      } else if (p2Assigned < 5) {
+        p2.conquer(tile);
+        p2Assigned++;
+      }
+    });
+
+    expect(p1.numTilesOwned() / totalLand).toBeGreaterThan(0.8);
+    expect(p2.numTilesOwned()).toBeGreaterThan(0);
+
+    const setWinnerSpy = vi.fn();
+    game.setWinner = setWinnerSpy;
+    const winCheck = new WinCheckExecution();
+    winCheck.init(game, 0);
+    winCheck.checkWinnerFFA();
+
+    expect(setWinnerSpy).not.toHaveBeenCalled();
+    expect(winCheck.isActive()).toBe(true);
+  });
+
+  test("should declare last-player-standing winner in elimination mode (2-player)", async () => {
+    // GDD §1 — last faction standing wins. Two human players, only one
+    // owns any tiles, so the survivor should immediately win.
+    const game = await setup(
+      "big_plains",
+      {
+        infiniteCredits: true,
+        gameMode: GameMode.FFA,
+        instantBuild: true,
+        winCondition: WinCondition.Elimination,
+      },
+      [
+        playerInfo("Survivor", PlayerType.Human),
+        playerInfo("Eliminated", PlayerType.Human),
+      ],
+    );
+
+    const survivor = game.player("Survivor");
+    // Note: "Eliminated" exists in the player set but never owns a tile,
+    // simulating an elimination event before this win check fires.
+
+    while (game.inSpawnPhase()) game.executeNextTick();
+
+    let assigned = 0;
+    game.map().forEachTile((tile) => {
+      if (!game.map().isSector(tile)) return;
+      if (assigned < 5) {
+        survivor.conquer(tile);
+        assigned++;
+      }
+    });
+
+    expect(survivor.numTilesOwned()).toBeGreaterThan(0);
+
+    const setWinnerSpy = vi.fn();
+    game.setWinner = setWinnerSpy;
+    const winCheck = new WinCheckExecution();
+    winCheck.init(game, 0);
+    winCheck.checkWinnerFFA();
+
+    expect(setWinnerSpy).toHaveBeenCalledWith(survivor, expect.anything());
+    expect(winCheck.isActive()).toBe(false);
+  });
+
+  test("should not declare a winner with multiple alive factions in elimination mode", async () => {
+    // GDD §1 — three players each holding tiles → no winner yet, no fall
+    // through to the percentage threshold.
+    const game = await setup("big_plains", {
+      infiniteCredits: true,
+      gameMode: GameMode.FFA,
+      instantBuild: true,
+      winCondition: WinCondition.Elimination,
+    });
+
+    const players = ["A", "B", "C"].map((name) => {
+      const info = new PlayerInfo(name, PlayerType.Human, null, name);
+      game.addPlayer(info);
+      return game.player(name);
+    });
+
+    while (game.inSpawnPhase()) game.executeNextTick();
+
+    let nextPlayer = 0;
+    let assignedTotal = 0;
+    game.map().forEachTile((tile) => {
+      if (!game.map().isSector(tile)) return;
+      if (assignedTotal >= 30) return;
+      players[nextPlayer % players.length].conquer(tile);
+      nextPlayer++;
+      assignedTotal++;
+    });
+
+    for (const p of players) expect(p.numTilesOwned()).toBeGreaterThan(0);
+
+    const setWinnerSpy = vi.fn();
+    game.setWinner = setWinnerSpy;
+    const winCheck = new WinCheckExecution();
+    winCheck.init(game, 0);
+    winCheck.checkWinnerFFA();
+
+    expect(setWinnerSpy).not.toHaveBeenCalled();
+    expect(winCheck.isActive()).toBe(true);
+  });
+
+  test("should fall back to most-tiles winner when timer expires in elimination mode", async () => {
+    // GDD §1, §12 — the 170-min/explicit timer is the safety net for
+    // elimination mode. When it fires with multiple survivors, the player
+    // with the most tiles wins.
+    const game = await setup("big_plains", {
+      infiniteCredits: true,
+      gameMode: GameMode.FFA,
+      instantBuild: true,
+      maxTimerValue: 5,
+      winCondition: WinCondition.Elimination,
+    });
+
+    const leaderInfo = new PlayerInfo("Leader", PlayerType.Human, null, "L");
+    game.addPlayer(leaderInfo);
+    const leader = game.player("L");
+    const followerInfo = new PlayerInfo(
+      "Follower",
+      PlayerType.Human,
+      null,
+      "F",
+    );
+    game.addPlayer(followerInfo);
+    const follower = game.player("F");
+
+    while (game.inSpawnPhase()) game.executeNextTick();
+
+    let leaderAssigned = 0;
+    let followerAssigned = 0;
+    game.map().forEachTile((tile) => {
+      if (!game.map().isSector(tile)) return;
+      if (leaderAssigned < 50) {
+        leader.conquer(tile);
+        leaderAssigned++;
+      } else if (followerAssigned < 5) {
+        follower.conquer(tile);
+        followerAssigned++;
+      }
+    });
+
+    expect(leader.numTilesOwned()).toBeGreaterThan(follower.numTilesOwned());
+
+    // Advance ticks past the per-game timer cap.
+    const threshold =
+      game.config().numSpawnPhaseTurns() +
+      (game.config().gameConfig().maxTimerValue ?? 0) * 600;
+    while (game.ticks() < threshold) game.executeNextTick();
+
+    const setWinnerSpy = vi.fn();
+    game.setWinner = setWinnerSpy;
+    const winCheck = new WinCheckExecution();
+    winCheck.init(game, game.ticks());
+    winCheck.checkWinnerFFA();
+
+    expect(setWinnerSpy).toHaveBeenCalledWith(leader, expect.anything());
+    expect(winCheck.isActive()).toBe(false);
+  });
+
+  test("should declare team winner via elimination when only one non-bot team holds tiles", async () => {
+    // GDD §1 — team elimination: a team wins as soon as all other non-bot
+    // teams have zero tiles. Bots are excluded from the candidate set.
+    const game = await setup("big_plains", {
+      infiniteCredits: true,
+      gameMode: GameMode.Team,
+      instantBuild: true,
+      playerTeams: 2,
+      winCondition: WinCondition.Elimination,
+    });
+
+    // Auto-team assignment alternates colors; for the test we just give all
+    // tiles to one of them via the player API.
+    const player1 = new PlayerInfo(
+      "TeamerA",
+      PlayerType.Human,
+      null,
+      "teamerA",
+    );
+    game.addPlayer(player1);
+    const player2 = new PlayerInfo(
+      "TeamerB",
+      PlayerType.Human,
+      null,
+      "teamerB",
+    );
+    game.addPlayer(player2);
+
+    const a = game.player("teamerA");
+    const b = game.player("teamerB");
+
+    // Skip the spawn phase BEFORE assigning territory so PlayerExecution
+    // doesn't reap the unowned player on the same tick.
+    while (game.inSpawnPhase()) game.executeNextTick();
+
+    let assigned = 0;
+    game.map().forEachTile((tile) => {
+      if (!game.map().isSector(tile)) return;
+      if (assigned < 10) {
+        a.conquer(tile);
+        assigned++;
+      }
+    });
+
+    // Sanity: A holds tiles, B does not, and they are on different teams.
+    expect(a.numTilesOwned()).toBeGreaterThan(0);
+    expect(b.numTilesOwned()).toBe(0);
+    expect(a.team()).not.toBe(b.team());
+
+    const setWinnerSpy = vi.fn();
+    game.setWinner = setWinnerSpy;
+    const winCheck = new WinCheckExecution();
+    winCheck.init(game, 0);
+    winCheck.checkWinnerTeam();
+
+    expect(setWinnerSpy).toHaveBeenCalledWith(a.team(), expect.anything());
+    expect(winCheck.isActive()).toBe(false);
   });
 
   test("should ignore bots and nations in 1v1 ranked mode", async () => {

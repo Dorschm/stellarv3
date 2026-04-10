@@ -27,8 +27,8 @@ const RADIUS_SCALE = 0.12;
 /** Vertical clearance above the sphere bottom to the map plane. */
 const PLANET_CLEARANCE = 3;
 
-/** Gap between sphere bottom and the label (world units). */
-const LABEL_GAP = 2;
+/** Gap between sphere top and the label baseline (world units). */
+const LABEL_GAP = 20;
 
 /** Rotation speed (radians per frame) for visual polish. */
 const ROTATION_SPEED = 0.001;
@@ -214,9 +214,12 @@ function PlanetSphere({
     return getPlanetTexture(seed);
   }, [nation.name, nation.coordinates]);
 
-  // Label offset: below the sphere but above the map plane.
-  // world z = planetHeight + labelOffset must be > 0
-  const labelOffset = -(radius + LABEL_GAP);
+  // Label offset: ABOVE the sphere top so the label hangs in empty space.
+  // Labels placed below the planet at z<0 get alpha-blended away by the
+  // back-to-front transparent sort against the (also transparent) map plane,
+  // so we anchor above the planet where the dark-space background makes the
+  // text legible.
+  const labelOffset = radius + LABEL_GAP;
 
   // Per-frame: slow rotation + emissive ownership tint. The `color` channel
   // stays white so the procedural texture shows unmodified; ownership is
@@ -256,14 +259,16 @@ function PlanetSphere({
         />
       </mesh>
 
-      {/* Billboard name label below the sphere, above the map plane */}
+      {/* Billboard name label ABOVE the sphere. fontSize is in WORLD units;
+          at the default camera distance (~960wu) a value of ~16 renders to
+          about 10 screen pixels which is the smallest readable text. */}
       <Billboard position={[0, 0, labelOffset]}>
         <Text
-          fontSize={6}
+          fontSize={16}
           color={LABEL_COLOR}
           anchorX="center"
-          anchorY="top"
-          outlineWidth={0.3}
+          anchorY="bottom"
+          outlineWidth={0.8}
           outlineColor="#000000"
           raycast={() => {}} // No pointer events — clicks pass through to map
         >

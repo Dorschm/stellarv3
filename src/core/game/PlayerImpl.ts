@@ -1182,7 +1182,15 @@ export class PlayerImpl implements Player {
       case UnitType.PointDefenseArray:
       case UnitType.Colony:
       case UnitType.Foundry:
+      case UnitType.JumpGate:
         return this.landBasedStructureSpawn(targetTile, validTiles);
+      case UnitType.ScoutSwarm:
+        // Scout swarms launch from any tile the player owns — the real
+        // spawn point is determined by the ScoutSwarmExecution (it picks
+        // the closest owned sector tile to the target). Returning the
+        // target tile here satisfies the "can we build it?" query without
+        // running an expensive pathfind in the hot build-button loop.
+        return targetTile;
       default:
         assertNever(unitType);
     }

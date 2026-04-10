@@ -10,6 +10,7 @@ import {
   Tick,
   UnitInfo,
   UnitType,
+  WinCondition,
 } from "../game/Game";
 import { GameMap, TileRef } from "../game/GameMap";
 import { PlayerView } from "../game/GameView";
@@ -64,6 +65,20 @@ export interface Config {
   gameConfig(): GameConfig;
   theme(): Theme;
   percentageTilesOwnedToWin(): number;
+  /**
+   * Active win-condition mode (elimination vs domination). Routed by
+   * `WinCheckExecution`. Defaults to `Domination` for legacy public lobbies;
+   * GDD-aligned Stellar mode opts in to `Elimination` via the game config.
+   * See {@link WinCondition}.
+   */
+  winCondition(): WinCondition;
+  /**
+   * Permadeath flag. When `true`, eliminated players cannot rejoin a run
+   * once their territory is gone. Wired into `RejoinService` via
+   * `Game.canPlayerRejoin()` so the meta-layer can later log a final
+   * legacy score. See GDD §12.
+   */
+  permadeath(): boolean;
   numBots(): number;
   spawnNations(): boolean;
   isUnitDisabled(unitType: UnitType): boolean;
@@ -177,6 +192,79 @@ export interface Config {
   structureMinDist(): number;
   isReplay(): boolean;
   allianceExtensionPromptOffset(): number;
+
+  // ---- Ticket 5: AU Convention --------------------------------------------
+  /**
+   * Tiles-per-AU conversion. Used everywhere the GDD speaks in astronomical
+   * units (LRW projectile speed, scout swarm travel speed, hyperspace lane
+   * reach). Implementation returns a constant — see `AU_IN_TILES` in
+   * DefaultConfig.ts for the tuning rationale.
+   */
+  auInTiles(): number;
+
+  // ---- Ticket 5: Long-Range Weapon ----------------------------------------
+  /**
+   * Credit cost to fire one LRW shot from an Orbital Strike Platform.
+   * Deducted from the platform owner when the shot is scheduled.
+   */
+  longRangeWeaponShotCost(): bigint;
+  /**
+   * LRW projectile travel speed in tiles-per-tick. Derived from the GDD's
+   * "3 AU/s" figure via `auInTiles()`, rounded to an integer tile count so
+   * the impact scheduling arithmetic stays in fixed-point land.
+   */
+  longRangeWeaponProjectileSpeed(): number;
+  /**
+   * Maximum tile radius the LRW targeting scan sweeps when looking for an
+   * enemy-owned tile. Bounded by `defaultNukeTargetableRange()` so the LRW
+   * never out-reaches the existing nuke envelope.
+   */
+  longRangeWeaponMaxRange(): number;
+  /**
+   * Fraction (0..1) of the target player's current troops that the LRW
+   * impact subtracts. GDD §5 calls for 10% population damage.
+   */
+  longRangeWeaponPopulationDamageRatio(): number;
+  /**
+   * Flat habitability damage (0..1) applied to the impacted tile on the
+   * SectorMap overlay. GDD §5 calls for 10% habitability damage.
+   */
+  longRangeWeaponHabitabilityDamage(): number;
+
+  // ---- Ticket 6: Fleet Systems — Scout Swarm ------------------------------
+  /**
+   * Launch cost for a single Scout Swarm as a *fraction* (0..1) of the
+   * player's current credits. GDD §4 specifies "10% of total resources".
+   * ScoutSwarmExecution reads this at launch time and deducts
+   * `player.credits() * scoutSwarmCostFraction()` rounded to bigint.
+   */
+  scoutSwarmCostFraction(): number;
+  /**
+   * Scout Swarm travel speed in tiles per tick. Derived from the GDD's
+   * "2 AU/min" figure via `auInTiles()` — kept behind a method so balance
+   * changes to either the AU constant or the scout speed stay in one place.
+   */
+  scoutSwarmTilesPerTick(): number;
+  /**
+   * Maximum lifetime of a scout swarm in ticks, after which the swarm
+   * auto-dissolves even if it never reached its target. Prevents stranded
+   * swarms from hanging around forever when the target becomes unreachable.
+   */
+  scoutSwarmLifetimeTicks(): Tick;
+  /**
+   * Amount of swarm "accumulation" that must build up on a single target
+   * tile before its terrain steps down one level (AsteroidField → Nebula,
+   * Nebula → OpenSpace). GDD §4 quotes "10 swarm size/km²"; we use 10
+   * scout-arrivals per tile in the absence of a physical km² conversion.
+   */
+  scoutSwarmTerraformAccumulation(): number;
+
+  // ---- Ticket 6: Battlecruiser structure slot -----------------------------
+  /**
+   * Number of structures a single Battlecruiser can host (GDD §14 — "mobile
+   * one-slot planet"). Currently fixed at 1.
+   */
+  battlecruiserStructureSlotCount(): number;
 }
 
 export interface Theme {

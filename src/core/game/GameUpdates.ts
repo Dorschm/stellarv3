@@ -8,6 +8,7 @@ import {
   NameViewData,
   PlayerID,
   PlayerType,
+  RunScore,
   Team,
   Tick,
   UnitType,
@@ -264,6 +265,12 @@ export interface WinUpdate {
   type: GameUpdateType.Win;
   allPlayersStats: AllPlayersStats;
   winner: Winner;
+  /**
+   * GDD §10 scoring breakdown for the run, populated by `WinCheckExecution`
+   * via `Game.runScore()`. Optional so legacy callers (and tests that mock
+   * `setWinner`) can omit it.
+   */
+  runScore?: RunScore;
 }
 
 export interface HashUpdate {

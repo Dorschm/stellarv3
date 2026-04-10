@@ -34,6 +34,12 @@ export class UnitImpl implements Unit {
   private _missileTimerQueue: number[] = [];
   private _hasTradeHub: boolean = false;
   private _patrolTile: TileRef | undefined;
+  // GDD §14 / Ticket 6 — Battlecruiser structure slot. Only populated on
+  // Battlecruiser units. Holds the single hosted structure (currently
+  // DefenseStation or OrbitalStrikePlatform). Setter/getter live further
+  // down; BattlecruiserExecution keeps the hosted structure glued to the
+  // cruiser's tile on each tick.
+  private _slottedStructure: Unit | undefined;
   private _level: number = 1;
   private _targetable: boolean = true;
   private _loaded: boolean | undefined;
@@ -99,6 +105,24 @@ export class UnitImpl implements Unit {
 
   patrolTile(): TileRef | undefined {
     return this._patrolTile;
+  }
+
+  /**
+   * Attach `structure` to this Battlecruiser's one-slot structure mount.
+   * Throws if the slot is already occupied — callers are expected to check
+   * {@link slottedStructure} first. See {@link Unit.setSlottedStructure}.
+   */
+  setSlottedStructure(structure: Unit | undefined): void {
+    if (structure !== undefined && this._slottedStructure !== undefined) {
+      throw new Error(
+        `Battlecruiser slot already occupied by ${this._slottedStructure.type()}`,
+      );
+    }
+    this._slottedStructure = structure;
+  }
+
+  slottedStructure(): Unit | undefined {
+    return this._slottedStructure;
   }
 
   isUnit(): this is Unit {
@@ -269,6 +293,19 @@ export class UnitImpl implements Unit {
     this._active = false;
     this.mg.addUpdate(this.toUpdate());
     this.mg.removeUnit(this);
+
+    // GDD §14 / Ticket 6 — a Battlecruiser's slotted structure is
+    // physically part of the ship; destroying the cruiser destroys the
+    // structure too. Guard with isActive() so we don't double-delete if
+    // the structure was already removed independently.
+    if (
+      this._slottedStructure !== undefined &&
+      this._slottedStructure.isActive()
+    ) {
+      const hosted = this._slottedStructure;
+      this._slottedStructure = undefined;
+      hosted.delete(false, destroyer);
+    }
 
     if (displayMessage !== false) {
       this.displayMessageOnDeleted();

@@ -325,6 +325,8 @@ export function UnitDisplay(): React.JSX.Element {
     [UnitType.TradeFreighter]: null,
     [UnitType.ClusterWarheadSubmunition]: null,
     [UnitType.Frigate]: null,
+    [UnitType.JumpGate]: null,
+    [UnitType.ScoutSwarm]: null,
   };
 
   return (

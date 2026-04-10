@@ -34,6 +34,24 @@ export interface GameMap {
   isSectorEdge(ref: TileRef): boolean;
   cost(ref: TileRef): number;
   terrainType(ref: TileRef): TerrainType;
+  /**
+   * Runtime terrain mutation — overwrites the magnitude bits of a sector
+   * tile so `terrainType()` reports the new terrain class. Only valid for
+   * tiles that are already `isSector()`; calling on deep-space or debris
+   * tiles is a no-op (the IS_LAND bit is not flipped on, so the tile
+   * remains non-sector).
+   *
+   * Used by Scout Swarm terraforming (GDD §4 / Ticket 6): scouts step an
+   * asteroid field up to a nebula, or a nebula up to open space, by
+   * accumulating on a target tile. The magnitude bands implemented in
+   * {@link GameMapImpl.terrainType} are:
+   *   - magnitude < 10  → OpenSpace
+   *   - magnitude < 20  → Nebula
+   *   - magnitude >= 20 → AsteroidField
+   * so this method clamps the magnitude to the midpoint of each band to
+   * keep rendering in sync with the classification.
+   */
+  setTerrainType(ref: TileRef, type: TerrainType): void;
   forEachTile(fn: (tile: TileRef) => void): void;
 
   manhattanDist(c1: TileRef, c2: TileRef): number;
@@ -275,6 +293,47 @@ export class GameMapImpl implements GameMap {
       return TerrainType.AsteroidField;
     }
     return this.isVoid(ref) ? TerrainType.DeepSpace : TerrainType.DebrisField;
+  }
+
+  /**
+   * Runtime terrain override. See {@link GameMap.setTerrainType}. Only
+   * affects sector tiles — non-sector tiles (DeepSpace / DebrisField) are
+   * classified from flag bits rather than magnitude, so mutating their
+   * magnitude would desync their rendering from their type and is treated
+   * as a no-op here.
+   *
+   * The mutation picks the midpoint of each magnitude band so there is
+   * margin on either side before the band boundary is crossed again — this
+   * keeps subsequent re-reads of `terrainType()` stable and predictable.
+   */
+  setTerrainType(ref: TileRef, type: TerrainType): void {
+    if (!this.isSector(ref)) return;
+    let newMagnitude: number;
+    switch (type) {
+      case TerrainType.OpenSpace:
+        newMagnitude = 5;
+        break;
+      case TerrainType.Nebula:
+        newMagnitude = 15;
+        break;
+      case TerrainType.AsteroidField:
+        newMagnitude = 25;
+        break;
+      // DeepSpace / DebrisField cannot be expressed via magnitude alone —
+      // they require the IS_LAND bit to be cleared. Out of scope for scout
+      // terraforming, so we skip without touching the buffer.
+      case TerrainType.DeepSpace:
+      case TerrainType.DebrisField:
+        return;
+      default:
+        return;
+    }
+    // Clamp to the 5-bit magnitude field (MAGNITUDE_MASK = 0x1f = 31).
+    newMagnitude = newMagnitude & GameMapImpl.MAGNITUDE_MASK;
+    // Preserve the non-magnitude bits (IS_LAND, SHORELINE, VOID) and
+    // overwrite the magnitude bits in place.
+    const preserved = this.terrain[ref] & ~GameMapImpl.MAGNITUDE_MASK;
+    this.terrain[ref] = preserved | newMagnitude;
   }
 
   neighbors(ref: TileRef): TileRef[] {

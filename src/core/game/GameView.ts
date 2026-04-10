@@ -37,6 +37,7 @@ import {
   UnitUpdate,
 } from "./GameUpdates";
 import { MotionPlanRecord, unpackMotionPlans } from "./MotionPlans";
+import { SectorMap } from "./SectorMap";
 import { Nation, TerrainMapData } from "./TerrainMapLoader";
 import { TerraNulliusImpl } from "./TerraNulliusImpl";
 import { UnitGrid, UnitPredicate } from "./UnitGrid";
@@ -654,6 +655,7 @@ export class GameView implements GameMap {
   private _cosmetics: Map<string, PlayerCosmetics> = new Map();
 
   private _map: GameMap;
+  private _sectorMap: SectorMap;
 
   constructor(
     public worker: WorkerClient,
@@ -668,6 +670,16 @@ export class GameView implements GameMap {
     this._map = this._mapData.gameMap;
     this.lastUpdate = null;
     this.unitGrid = new UnitGrid(this._map);
+    // Reconstruct the SectorMap client-side from the same map binary +
+    // manifest nations the server uses. This produces an identical sector
+    // partitioning without shipping any extra payload over the wire.
+    this._sectorMap = new SectorMap(
+      this._map,
+      this._mapData.nations.map((n) => ({
+        x: n.coordinates[0],
+        y: n.coordinates[1],
+      })),
+    );
     this._cosmetics = new Map(
       humans.map((h) => [h.clientID, h.cosmetics ?? {}]),
     );
@@ -677,6 +689,26 @@ export class GameView implements GameMap {
         flag: nation.flag ? `/flags/${nation.flag}.svg` : undefined,
       } satisfies PlayerCosmetics);
     }
+  }
+
+  sectorMap(): SectorMap {
+    return this._sectorMap;
+  }
+
+  // Scout Swarm terraform progress is tracked server-side only. On the
+  // client (`GameView`) the methods are stubs so any read-only rendering
+  // or HUD hover can still call them without blowing up — the authoritative
+  // game tick runs on the worker.
+  recordScoutSwarmTerraformProgress(_tile: TileRef): number {
+    return 0;
+  }
+
+  resetScoutSwarmTerraformProgress(_tile: TileRef): void {
+    // no-op on the view side
+  }
+
+  scoutSwarmTerraformProgress(_tile: TileRef): number {
+    return 0;
   }
 
   isOnEdgeOfMap(ref: TileRef): boolean {

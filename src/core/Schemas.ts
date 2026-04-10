@@ -19,6 +19,7 @@ import {
   RankedType,
   Trios,
   UnitType,
+  WinCondition,
 } from "./game/Game";
 import { PlayerStatsSchema } from "./StatsSchemas";
 import { flattenedEmojiTable } from "./Util";
@@ -258,6 +259,12 @@ export const GameConfigSchema = z.object({
   playerTeams: TeamCountConfigSchema.optional(),
   creditMultiplier: z.number().min(0.1).max(1000).optional(),
   startingCredits: z.number().int().min(0).max(1000000000).optional(),
+  // GDD §1, §12 — last-faction-standing win mode and roguelike permadeath.
+  // Both default to elimination/false at the Config layer (see DefaultConfig)
+  // so older lobby payloads without these keys retain pre-GDD behavior on
+  // round-trip.
+  winCondition: z.enum(WinCondition).optional(),
+  permadeath: z.boolean().optional(),
 });
 
 export const TeamSchema = z.string();

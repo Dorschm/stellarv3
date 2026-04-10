@@ -6,6 +6,7 @@ import {
 } from "../pathfinding/algorithms/AbstractGraph";
 import { AStarDeepSpaceHierarchical } from "../pathfinding/algorithms/AStar.DeepSpaceHierarchical";
 import { PathFinder } from "../pathfinding/types";
+import { perfBegin, perfEnd, perfIsEnabled, perfRecord } from "../PerfCounter";
 import { AllPlayersStats, ClientID, Winner } from "../Schemas";
 import { ATTACK_INDEX_SENT } from "../StatsSchemas";
 import { simpleHash } from "../Util";
@@ -31,6 +32,7 @@ import {
   PlayerInfo,
   PlayerType,
   Quads,
+  RunScore,
   SpawnArea,
   Team,
   TeamGameSpawnAreas,
@@ -47,11 +49,21 @@ import { HyperspaceLaneNetwork } from "./HyperspaceLaneNetwork";
 import { createHyperspaceLaneNetwork } from "./HyperspaceLaneNetworkImpl";
 import { MotionPlanRecord, packMotionPlans } from "./MotionPlans";
 import { PlayerImpl } from "./PlayerImpl";
+import { SectorMap } from "./SectorMap";
 import { Stats } from "./Stats";
 import { StatsImpl } from "./StatsImpl";
 import { assignTeams } from "./TeamAssignment";
 import { TerraNulliusImpl } from "./TerraNulliusImpl";
 import { UnitGrid, UnitPredicate } from "./UnitGrid";
+
+/**
+ * Structural type for the optional `setSectorMap` hook on `DefaultConfig`.
+ * Kept local to avoid a hard import of `DefaultConfig` from this layer
+ * (which would invert the configuration → game dependency direction).
+ */
+interface DefaultConfigLike {
+  setSectorMap(sm: SectorMap): void;
+}
 
 export function createGame(
   humans: PlayerInfo[],
@@ -113,6 +125,7 @@ export class GameImpl implements Game {
   private _miniDeepSpaceGraph: AbstractGraph | null = null;
   private _miniDeepSpaceHPA: AStarDeepSpaceHierarchical | null = null;
   private _teamGameSpawnAreas: TeamGameSpawnAreas | undefined;
+  private _sectorMap: SectorMap;
 
   constructor(
     private _humans: PlayerInfo[],
@@ -130,6 +143,23 @@ export class GameImpl implements Game {
     this._width = _map.width();
     this._height = _map.height();
     this.unitGrid = new UnitGrid(this._map);
+
+    // Build the SectorMap from manifest nation seeds. With an empty
+    // nations[] (e.g., the `plains` test maps), every sector ID is 0 and
+    // the (forthcoming) economy bonuses fall back to the existing formulas.
+    this._sectorMap = new SectorMap(
+      this._map,
+      this._nations.map((n) =>
+        n.spawnCell ? { x: n.spawnCell.x, y: n.spawnCell.y } : undefined,
+      ),
+    );
+    const maybeDefaultConfig = _config as unknown as Partial<DefaultConfigLike>;
+    if (typeof maybeDefaultConfig.setSectorMap === "function") {
+      maybeDefaultConfig.setSectorMap(this._sectorMap);
+    }
+    // Hand the SectorMap to the Stats tracker so RunScore can resolve
+    // tile -> sector for the GDD §10 scoring breakdown.
+    this._stats.setSectorMap(this._sectorMap);
 
     if (_config.gameConfig().gameMode === GameMode.Team) {
       this.populateTeams();
@@ -290,6 +320,30 @@ export class GameImpl implements Game {
     return this._nations;
   }
 
+  sectorMap(): SectorMap {
+    return this._sectorMap;
+  }
+
+  // GDD §4 / Ticket 6 — shared per-tile scout swarm terraform accumulator.
+  // Stored as a sparse Map because terraforming is a rare event relative to
+  // the tile count; instantiating a dense array sized to the whole map would
+  // waste memory for the handful of tiles that ever accumulate progress.
+  private _scoutSwarmProgress: Map<TileRef, number> = new Map();
+
+  recordScoutSwarmTerraformProgress(tile: TileRef): number {
+    const next = (this._scoutSwarmProgress.get(tile) ?? 0) + 1;
+    this._scoutSwarmProgress.set(tile, next);
+    return next;
+  }
+
+  resetScoutSwarmTerraformProgress(tile: TileRef): void {
+    this._scoutSwarmProgress.delete(tile);
+  }
+
+  scoutSwarmTerraformProgress(tile: TileRef): number {
+    return this._scoutSwarmProgress.get(tile) ?? 0;
+  }
+
   createAllianceRequest(
     requestor: Player,
     recipient: Player,
@@ -394,16 +448,36 @@ export class GameImpl implements Game {
   }
 
   executeNextTick(): GameUpdates {
+    const _perfTick = perfBegin("tick.total");
     this.updates = createGameUpdatesMap();
     this.tileUpdatePairs.length = 0;
-    this.execs.forEach((e) => {
-      if (
-        (!this.inSpawnPhase() || e.activeDuringSpawnPhase()) &&
-        e.isActive()
-      ) {
-        e.tick(this._ticks);
-      }
-    });
+    const _perfExecs = perfBegin("tick.execs");
+    if (perfIsEnabled()) {
+      // Per-execution-class measurement: only enabled when the perf
+      // overlay is open so we don't pay performance.now() per exec in
+      // production. Class names are stable identifiers (NukeExecution,
+      // BattlecruiserExecution, etc.) so the registry stays bounded.
+      this.execs.forEach((e) => {
+        if (
+          (!this.inSpawnPhase() || e.activeDuringSpawnPhase()) &&
+          e.isActive()
+        ) {
+          const t0 = performance.now();
+          e.tick(this._ticks);
+          perfRecord(`exec.${e.constructor.name}`, performance.now() - t0);
+        }
+      });
+    } else {
+      this.execs.forEach((e) => {
+        if (
+          (!this.inSpawnPhase() || e.activeDuringSpawnPhase()) &&
+          e.isActive()
+        ) {
+          e.tick(this._ticks);
+        }
+      });
+    }
+    perfEnd("tick.execs", _perfExecs);
     const inited: Execution[] = [];
     const unInited: Execution[] = [];
     this.unInitExecs.forEach((e) => {
@@ -415,14 +489,18 @@ export class GameImpl implements Game {
       }
     });
 
+    const _perfPrune = perfBegin("tick.removeInactive");
     this.removeInactiveExecutions();
+    perfEnd("tick.removeInactive", _perfPrune);
 
     this.execs.push(...inited);
     this.unInitExecs = unInited;
+    const _perfPlayerUpdates = perfBegin("tick.playerUpdates");
     for (const player of this._players.values()) {
       // Players change each to so always add them
       this.addUpdate(player.toUpdate());
     }
+    perfEnd("tick.playerUpdates", _perfPlayerUpdates);
     if (this.ticks() % 10 === 0) {
       this.addUpdate({
         type: GameUpdateType.Hash,
@@ -431,6 +509,7 @@ export class GameImpl implements Game {
       });
     }
     this._ticks++;
+    perfEnd("tick.total", _perfTick);
     return this.updates;
   }
 
@@ -653,10 +732,19 @@ export class GameImpl implements Game {
       previousOwner._lastTileChange = this._ticks;
       previousOwner._tiles.delete(tile);
       previousOwner._borderTiles.delete(tile);
+      this._sectorMap.recordTileLost(previousOwner.smallID(), tile);
     }
     this._map.setOwnerID(tile, owner.smallID());
     owner._tiles.add(tile);
     owner._lastTileChange = this._ticks;
+    this._sectorMap.recordTileGained(owner.smallID(), tile);
+    // GDD §10 scoring — book-keep the first time a player owns a tile in
+    // each sector. The Stats set is keyed by sector ID, so re-conquests
+    // collapse to the same entry. Cheap: O(1) lookup + Set.add().
+    const conqueredSectorId = this._sectorMap.sectorOf(tile);
+    if (conqueredSectorId > 0) {
+      this._stats.recordSectorConquest(owner, conqueredSectorId);
+    }
     this.updateBorders(tile);
     this._map.setFallout(tile, false);
     this.recordTileUpdate(tile);
@@ -674,6 +762,7 @@ export class GameImpl implements Game {
     previousOwner._lastTileChange = this._ticks;
     previousOwner._tiles.delete(tile);
     previousOwner._borderTiles.delete(tile);
+    this._sectorMap.recordTileLost(previousOwner.smallID(), tile);
 
     this._map.setOwnerID(tile, 0);
     this.updateBorders(tile);
@@ -813,11 +902,32 @@ export class GameImpl implements Game {
       type: GameUpdateType.Win,
       winner: this.makeWinner(winner),
       allPlayersStats,
+      runScore: this.runScore() ?? undefined,
     });
   }
 
   getWinner(): Player | Team | null {
     return this._winner;
+  }
+
+  runScore(): RunScore | null {
+    return this._stats.runScore(
+      this.players(),
+      this._ticks,
+      this._config.winCondition(),
+    );
+  }
+
+  canPlayerRejoin(player: Player): boolean {
+    if (!this._config.permadeath()) return true;
+    // GDD §12 — once a faction has been eliminated in a permadeath run, they
+    // cannot rejoin. We treat both "currently dead" and "previously
+    // recorded as killed by Stats" as eliminated, since `isAlive()` flickers
+    // back to true if PlayerExecution stops running before stats fire.
+    if (!player.isAlive()) return false;
+    const killedAt = this._stats.getPlayerStats(player)?.killedAt;
+    if (killedAt !== undefined && killedAt !== null) return false;
+    return true;
   }
 
   private makeWinner(winner: string | Player): Winner | undefined {
