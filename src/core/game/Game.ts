@@ -85,6 +85,7 @@ export enum GameMapType {
   AsteroidBelt = "Asteroid Belt",
   SolSystem = "Sol System",
   OrionSector = "Orion Sector",
+  Random = "Random",
 }
 
 export type GameMapName = keyof typeof GameMapType;
@@ -94,6 +95,7 @@ export const mapCategories: Record<string, GameMapType[]> = {
     GameMapType.AsteroidBelt,
     GameMapType.SolSystem,
     GameMapType.OrionSector,
+    GameMapType.Random,
   ],
 };
 
@@ -168,6 +170,17 @@ export interface RunScore {
   totalTicks: number;
   winCondition: WinCondition;
   players: RunPlayerScore[];
+}
+
+/**
+ * GDD §10 — Persisted run score with metadata for the legacy screen.
+ * Serialized to localStorage as a JSON array after each game end.
+ */
+export interface PersistedRunScore extends RunScore {
+  date: string;
+  mapSeed: number | null;
+  mapName: string;
+  result: "win" | "loss";
 }
 
 export const isGameMode = (value: unknown): value is GameMode =>

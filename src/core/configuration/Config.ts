@@ -193,6 +193,22 @@ export interface Config {
   isReplay(): boolean;
   allianceExtensionPromptOffset(): number;
 
+  // ---- Ticket 7: Dynamic tick-rate scaling --------------------------------
+  /**
+   * Minimum tick interval in ms (max game speed). GDD §10 — game speeds up
+   * as players expand, floored at 50ms (20 tps) to prevent client desync.
+   */
+  minTurnIntervalMs(): number;
+  /**
+   * Maximum tick interval in ms (base game speed). Defaults to 100ms (10 tps).
+   */
+  maxTurnIntervalMs(): number;
+  /**
+   * Calculate the current dynamic tick interval based on leading player
+   * expansion. Returns a value in [minTurnIntervalMs, maxTurnIntervalMs].
+   */
+  dynamicTurnIntervalMs(leadingPlayerTileRatio: number): number;
+
   // ---- Ticket 5: AU Convention --------------------------------------------
   /**
    * Tiles-per-AU conversion. Used everywhere the GDD speaks in astronomical

@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { Player, TerrainType } from "../../../src/core/game/Game";
 import { GameMapImpl, TileRef } from "../../../src/core/game/GameMap";
+import type { PlayerView } from "../../../src/core/game/GameView";
 import {
   HABITABILITY_ASTEROID,
   HABITABILITY_NEBULA,
@@ -98,6 +99,20 @@ function fakePlayerWithTiles(sm: SectorMap, tiles: Iterable<TileRef>): Player {
     tiles: () => set as ReadonlySet<TileRef>,
     smallID: () => smallID,
   } as unknown as Player;
+}
+
+/**
+ * Minimal PlayerView stand-in. Unlike {@link fakePlayerWithTiles}, this does
+ * NOT expose a `tiles()` method — it only carries the `smallID()` accessor
+ * the SectorMap query path actually needs for a client-side view. Used by
+ * the "PlayerView integration" test block below to lock in that
+ * `playerOwnedSectorTiles` / `playerAverageHabitability` resolve by
+ * `smallID()` for both `Player` and `PlayerView`.
+ */
+function fakePlayerViewWithSmallID(smallID: number): PlayerView {
+  return {
+    smallID: () => smallID,
+  } as unknown as PlayerView;
 }
 
 describe("habitabilityForTerrain", () => {
@@ -387,6 +402,42 @@ describe("SectorMap player queries", () => {
     sm.recordTileLost(player.smallID(), map.ref(1, 0));
     expect(sm.playerOwnedSectorTiles(player)).toBe(1);
     expect(sm.playerAverageHabitability(player)).toBe(1.0);
+  });
+
+  test("PlayerView resolves to real running totals by smallID", () => {
+    // Regression: previously `playerSmallIDOrNull` returned `null` for any
+    // player lacking a `tiles()` method, so PlayerView queries always fell
+    // back to 0 / 1.0 even on real maps with populated sectors. Now that
+    // GameView mirrors packed tile diffs into SectorMap, HUD consumers must
+    // read the authoritative values by smallID.
+    const map = buildMap(3, 1, [OPEN, NEBULA, ASTEROID]);
+    const sm = new SectorMap(map, [{ x: 0, y: 0 }]);
+
+    // Drive the running totals via the same smallID the view references.
+    const sharedSmallID = _nextFakePlayerSmallID++;
+    sm.recordTileGained(sharedSmallID, map.ref(0, 0));
+    sm.recordTileGained(sharedSmallID, map.ref(1, 0));
+
+    const view = fakePlayerViewWithSmallID(sharedSmallID);
+    expect(sm.playerOwnedSectorTiles(view)).toBe(2);
+    expect(sm.playerAverageHabitability(view)).toBeCloseTo((1.0 + 0.6) / 2);
+
+    // Losing a tile should also be reflected in the PlayerView queries.
+    sm.recordTileLost(sharedSmallID, map.ref(1, 0));
+    expect(sm.playerOwnedSectorTiles(view)).toBe(1);
+    expect(sm.playerAverageHabitability(view)).toBe(1.0);
+  });
+
+  test("PlayerView with no recorded tiles returns the no-op fallbacks", () => {
+    // A PlayerView whose smallID has no running totals should still
+    // collapse to the 0 / 1.0 identities that leave the economy formulas
+    // unchanged — nothing should throw when the lookup misses.
+    const map = buildMap(3, 1, [OPEN, OPEN, OPEN]);
+    const sm = new SectorMap(map, [{ x: 0, y: 0 }]);
+
+    const unknownView = fakePlayerViewWithSmallID(999);
+    expect(sm.playerOwnedSectorTiles(unknownView)).toBe(0);
+    expect(sm.playerAverageHabitability(unknownView)).toBe(1.0);
   });
 });
 

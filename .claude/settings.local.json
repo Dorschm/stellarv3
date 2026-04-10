@@ -1,5 +1,10 @@
 {
   "permissions": {
-    "allow": ["Bash(*)", "WebSearch", "WebFetch(domain:support.claude.com)"]
+    "allow": [
+      "Bash(*)",
+      "WebSearch",
+      "WebFetch(domain:support.claude.com)",
+      "WebFetch(domain:vscode.dev)"
+    ]
   }
 }

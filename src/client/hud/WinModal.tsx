@@ -10,6 +10,7 @@ import {
 } from "../Cosmetics";
 import { crazyGamesSDK } from "../CrazyGamesSDK";
 import { Platform } from "../Platform";
+import { saveRunScore } from "../RunHistory";
 import { SendWinnerEvent } from "../Transport";
 import {
   getGamesPlayed,
@@ -130,6 +131,15 @@ export function WinModal(): React.JSX.Element {
     winUpdates.forEach((wu) => {
       if (wu.runScore) {
         setRunScore(wu.runScore);
+        // GDD §10 — persist run score to localStorage
+        const mapName = gameView.config().gameConfig().gameMap ?? "Unknown";
+        const isWinner =
+          wu.winner !== undefined &&
+          ((wu.winner[0] === "player" &&
+            wu.winner[1] === gameView.myPlayer()?.clientID()) ||
+            (wu.winner[0] === "team" &&
+              wu.winner[1] === gameView.myPlayer()?.team()));
+        saveRunScore(wu.runScore, mapName, null, isWinner ? "win" : "loss");
       }
       if (wu.winner === undefined) {
         // ...

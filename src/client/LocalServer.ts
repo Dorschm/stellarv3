@@ -58,6 +58,7 @@ export class LocalServer {
 
   private turnsExecuted = 0;
   private turnStartTime = 0;
+  private _dynamicTurnIntervalMs: number | null = null;
 
   private turnCheckInterval: NodeJS.Timeout;
   private clientConnect: () => void;
@@ -80,9 +81,10 @@ export class LocalServer {
   start() {
     console.log("local server starting");
     this.turnCheckInterval = setInterval(() => {
-      const turnIntervalMs =
-        this.lobbyConfig.serverConfig.turnIntervalMs() *
-        this.replaySpeedMultiplier;
+      const baseTurnInterval =
+        this._dynamicTurnIntervalMs ??
+        this.lobbyConfig.serverConfig.turnIntervalMs();
+      const turnIntervalMs = baseTurnInterval * this.replaySpeedMultiplier;
       const backlog = Math.max(0, this.turns.length - this.turnsExecuted);
       const allowReplayBacklog =
         this.replaySpeedMultiplier === ReplaySpeedMultiplier.fastest &&
@@ -230,6 +232,14 @@ export class LocalServer {
       this.winner = clientMsg;
       this.allPlayersStats = clientMsg.allPlayersStats;
     }
+  }
+
+  /**
+   * GDD §10 — dynamic tick-rate scaling. Called by the client game runner
+   * after each tick with the worker-computed desired interval.
+   */
+  public setDynamicTurnIntervalMs(ms: number): void {
+    this._dynamicTurnIntervalMs = ms;
   }
 
   // This is so the client can tell us when it finished processing the turn.

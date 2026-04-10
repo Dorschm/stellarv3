@@ -2,7 +2,7 @@ import { GameMapType } from "./Game";
 import { MapManifest } from "./TerrainMapLoader";
 
 export interface GameMapLoader {
-  getMapData(map: GameMapType): MapData;
+  getMapData(map: GameMapType, seed?: number): MapData;
 }
 
 export interface MapData {

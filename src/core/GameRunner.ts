@@ -183,6 +183,7 @@ export class GameRunner {
       playerNameViewData: this.playerViewData,
       tickExecutionDuration: tickExecutionDuration,
       pendingTurns: pendingTurns ?? 0,
+      currentTurnIntervalMs: this.currentTurnIntervalMs(),
     });
     this.isExecuting = false;
     return true;
@@ -190,6 +191,24 @@ export class GameRunner {
 
   public pendingTurns(): number {
     return Math.max(0, this.turns.length - this.currTurn);
+  }
+
+  /**
+   * GDD §10 — dynamic tick-rate scaling. Returns the desired turn interval
+   * in ms based on the leading player's expansion relative to the map's
+   * total sector tiles. Used by LocalServer (singleplayer) to adjust its
+   * polling interval, and by the server to reconfigure its endTurn timer.
+   */
+  public currentTurnIntervalMs(): number {
+    const players = this.game.players();
+    if (players.length === 0) return this.game.config().maxTurnIntervalMs();
+
+    const maxTiles = Math.max(...players.map((p) => p.numTilesOwned()));
+    const totalSectorTiles = this.game.map().numSectorTiles();
+    if (totalSectorTiles === 0) return this.game.config().maxTurnIntervalMs();
+
+    const ratio = maxTiles / totalSectorTiles;
+    return this.game.config().dynamicTurnIntervalMs(ratio);
   }
 
   public playerBuildables(

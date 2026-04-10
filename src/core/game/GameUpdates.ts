@@ -35,6 +35,8 @@ export interface GameUpdateViewData {
   playerNameViewData: Record<string, NameViewData>;
   tickExecutionDuration?: number;
   pendingTurns?: number;
+  /** GDD §10 — current dynamic tick interval for tick-rate scaling. */
+  currentTurnIntervalMs?: number;
 }
 
 export interface ErrorUpdate {

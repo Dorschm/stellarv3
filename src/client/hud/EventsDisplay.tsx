@@ -43,6 +43,7 @@ interface GameEvent {
   unitView?: UnitView;
   shouldDelete?: (game: GameView) => boolean;
   allianceID?: number;
+  count?: number;
 }
 
 export function EventsDisplay(): React.JSX.Element {
@@ -198,7 +199,25 @@ export function EventsDisplay(): React.JSX.Element {
   }, [tick, gameView, events, isVisible, eventBus]);
 
   const addEvent = (event: GameEvent) => {
-    setEvents((prev) => [...prev, event]);
+    setEvents((prev) => {
+      const last = prev[prev.length - 1];
+      if (
+        last &&
+        last.description === event.description &&
+        last.type === event.type &&
+        !last.buttons &&
+        !event.buttons
+      ) {
+        const updated = [...prev];
+        updated[updated.length - 1] = {
+          ...last,
+          count: (last.count ?? 1) + 1,
+          createdAt: event.createdAt,
+        };
+        return updated;
+      }
+      return [...prev, event];
+    });
     if (hidden === true) {
       setNewEvents((prev) => prev + 1);
     }
@@ -364,11 +383,18 @@ export function EventsDisplay(): React.JSX.Element {
                   alt=""
                 />
                 <div className="flex-1 min-w-0">
-                  {event.unsafeDescription ? (
-                    <div dangerouslySetInnerHTML={{ __html: sanitized }} />
-                  ) : (
-                    <div>{event.description}</div>
-                  )}
+                  <div className="flex items-center gap-1.5">
+                    {event.unsafeDescription ? (
+                      <span dangerouslySetInnerHTML={{ __html: sanitized }} />
+                    ) : (
+                      <span>{event.description}</span>
+                    )}
+                    {(event.count ?? 1) > 1 && (
+                      <span className="shrink-0 px-1.5 py-0.5 bg-yellow-500/80 text-black font-bold rounded text-[10px] leading-none">
+                        {event.count}x
+                      </span>
+                    )}
+                  </div>
                   {event.buttons && event.buttons.length > 0 && (
                     <div className="flex gap-1 mt-1 flex-wrap">
                       {event.buttons.map((btn, bidx) => (

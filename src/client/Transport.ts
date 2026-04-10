@@ -417,9 +417,12 @@ export class Transport {
     this.connect(this.onconnect, this.onmessage);
   }
 
-  public turnComplete() {
+  public turnComplete(currentTurnIntervalMs?: number) {
     if (this.isLocal) {
       this.localServer.turnComplete();
+      if (currentTurnIntervalMs !== undefined) {
+        this.localServer.setDynamicTurnIntervalMs(currentTurnIntervalMs);
+      }
     }
   }
 

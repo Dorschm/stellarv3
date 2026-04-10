@@ -60,6 +60,7 @@ export class GameServer {
   private hasReachedMaxPlayerCount: boolean = false;
 
   private endTurnIntervalID: ReturnType<typeof setInterval> | undefined;
+  private currentTurnIntervalMs: number | undefined;
 
   private lastPingUpdate = 0;
 
@@ -719,6 +720,7 @@ export class GameServer {
     }
     this.gameStartInfo = result.data satisfies GameStartInfo;
 
+    this.currentTurnIntervalMs = this.config.turnIntervalMs();
     this.endTurnIntervalID = setInterval(
       () => this.endTurn(),
       this.config.turnIntervalMs(),
@@ -770,11 +772,39 @@ export class GameServer {
     }
   }
 
+  /**
+   * GDD §10 — server-side time-based tick-rate ramp. Adjusts the turn
+   * interval from 100ms→50ms over 30 minutes of game time. Re-creates the
+   * setInterval only when the desired interval changes by ≥5ms.
+   */
+  private maybeAdjustTickRate(): void {
+    if (!this._startTime || !this.endTurnIntervalID) return;
+    const elapsedMs = Date.now() - this._startTime;
+    const rampDurationMs = 30 * 60 * 1000; // 30 minutes
+    const minInterval = 50;
+    const maxInterval = this.config.turnIntervalMs();
+    const t = Math.min(1, elapsedMs / rampDurationMs);
+    const desired = Math.round(maxInterval - (maxInterval - minInterval) * t);
+    if (
+      this.currentTurnIntervalMs !== undefined &&
+      Math.abs(this.currentTurnIntervalMs - desired) >= 5
+    ) {
+      this.currentTurnIntervalMs = desired;
+      clearInterval(this.endTurnIntervalID);
+      this.endTurnIntervalID = setInterval(
+        () => this.endTurn(),
+        this.currentTurnIntervalMs,
+      );
+    }
+  }
+
   private endTurn() {
     // Skip turn execution if game is paused
     if (this.isPaused) {
       return;
     }
+
+    this.maybeAdjustTickRate();
 
     const pastTurn: Turn = {
       turnNumber: this.turns.length,

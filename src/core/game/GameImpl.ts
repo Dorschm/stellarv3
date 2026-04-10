@@ -1187,6 +1187,9 @@ export class GameImpl implements Game {
   terrainType(ref: TileRef): TerrainType {
     return this._map.terrainType(ref);
   }
+  setTerrainType(ref: TileRef, type: TerrainType): void {
+    this._map.setTerrainType(ref, type);
+  }
   forEachTile(fn: (tile: TileRef) => void): void {
     return this._map.forEachTile(fn);
   }

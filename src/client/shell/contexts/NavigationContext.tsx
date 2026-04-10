@@ -15,6 +15,7 @@ export type PageId =
   | "page-troubleshooting"
   | "page-language"
   | "page-ranked"
+  | "page-legacy"
   | "flag-input-modal"
   | "territory-patterns-modal";
 

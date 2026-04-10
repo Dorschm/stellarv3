@@ -333,6 +333,47 @@ const ARC_SHIP_KEYS: ReadonlySet<RenderKey> = new Set<RenderKey>([
 /** Arc apex height as a fraction of inter-planet distance. */
 const ARC_HEIGHT_FACTOR = 0.15;
 
+/**
+ * Render keys for ships whose positions are smoothed via an EMA filter so a
+ * grid-quantised path renders as a continuous curve instead of snapping at
+ * each tile boundary. Projectiles (missiles, bombs, plasma bolts) are
+ * deliberately excluded — they should hit their target tile exactly with no
+ * visual lag.
+ */
+const SMOOTHED_SHIP_KEYS: ReadonlySet<RenderKey> = new Set<RenderKey>([
+  UnitType.AssaultShuttle,
+  "DeepSpaceShuttle",
+  UnitType.Battlecruiser,
+  UnitType.TradeFreighter,
+  "FrigateEngine",
+  "FrigateCarriage",
+  "FrigateLoadedCarriage",
+]);
+
+/**
+ * EMA time constant (ms) for ship position smoothing. The smoothed position
+ * lags the true tile-interpolated position by ~one tau, which rounds the
+ * corners of grid-quantised paths into a continuous arc. Tuned at 150ms —
+ * about 1.5 game ticks — to round corners visibly without the ship feeling
+ * sluggish.
+ */
+const SHIP_POSITION_SMOOTH_TAU_MS = 150;
+
+/**
+ * Distance squared (world units²) above which the smoothed position snaps to
+ * the true position instead of lerping toward it. Prevents a long visual
+ * trail if a unit id is ever reused across an unrelated tile (the despawn
+ * cleanup normally handles that, this is a belt-and-braces guard).
+ */
+const SHIP_POSITION_SNAP_THRESHOLD_SQ = 400; // 20² world units
+
+/**
+ * Minimum smoothed-velocity squared magnitude before the rendered heading is
+ * derived from velocity direction. Below this threshold the previously
+ * recorded heading sticks, so at-rest ships keep their last facing.
+ */
+const SHIP_HEADING_VELOCITY_EPSILON_SQ = 1e-4;
+
 interface NationWorldPos {
   wx: number;
   wy: number;
@@ -624,12 +665,27 @@ export class UnitRendererEngine {
     { src: NationWorldPos; dst: NationWorldPos }
   > = new Map();
 
+  /**
+   * Smoothed render position + velocity per ship. Lags the true tile-
+   * interpolated position by ~{@link SHIP_POSITION_SMOOTH_TAU_MS} so the
+   * rendered path traces a continuous curve through the grid path's corners
+   * instead of zigzagging at each tile centre. Velocity is also EMA-smoothed
+   * so the derived heading rotates gradually across turns.
+   */
+  public readonly smoothPos: Map<
+    number,
+    { x: number; y: number; vx: number; vy: number }
+  > = new Map();
+
   private readonly group: Group;
   private readonly ownsMaterials: boolean;
   private disposed = false;
 
   /** Cached nation world positions for arc rendering (computed once per update). */
   private nationPositions: NationWorldPos[] = [];
+
+  /** Wall-clock time (ms) of the previous update() call, for EMA dt. */
+  private lastUpdateTimeMs: number = -1;
 
   constructor(
     group: Group,
@@ -721,6 +777,15 @@ export class UnitRendererEngine {
     const halfW = mapWidth / 2;
     const halfH = mapHeight / 2;
 
+    // EMA blend factor for ship position smoothing. Computed once per update
+    // (not per unit) since dt is global. On the first frame dt is unknown so
+    // alpha=0 and the smoother just initialises to the current position.
+    const dtMs =
+      this.lastUpdateTimeMs >= 0 ? Math.max(0, now - this.lastUpdateTimeMs) : 0;
+    this.lastUpdateTimeMs = now;
+    const positionSmoothAlpha =
+      dtMs > 0 ? 1 - Math.exp(-dtMs / SHIP_POSITION_SMOOTH_TAU_MS) : 0;
+
     // Cache nation world positions for arc rendering (lightweight — ~6-10 nations)
     if (this.nationPositions.length === 0) {
       const nations = game.nations();
@@ -775,6 +840,11 @@ export class UnitRendererEngine {
         this.headings.delete(id);
       }
     }
+    for (const id of this.smoothPos.keys()) {
+      if (!activeUnitIds.has(id)) {
+        this.smoothPos.delete(id);
+      }
+    }
 
     for (const key of ALL_RENDER_KEYS) {
       const pool = this.pools.get(key);
@@ -826,6 +896,11 @@ export class UnitRendererEngine {
         let py: number;
         let pz: number;
         const isArcShip = ARC_SHIP_KEYS.has(key);
+        // Tracks whether the arc lerp owns position+heading for this frame.
+        // The position smoother below skips arc-active ships because the arc
+        // path is already a smooth straight line — applying another EMA on
+        // top would only add lag.
+        let arcActive = false;
 
         if (isStructure) {
           pz = STRUCTURE_HEIGHTS[key as UnitType] ?? 0;
@@ -971,12 +1046,61 @@ export class UnitRendererEngine {
                   pz =
                     UNIT_HOVER_HEIGHT +
                     Math.sin(progress * Math.PI) * maxArcHeight;
+                  arcActive = true;
                 }
               }
             } else {
               // Ship returned to a sector tile — clear cached endpoints
               this.arcEndpoints.delete(unitId);
             }
+          }
+
+          // ── Position smoothing for ships ──
+          // Round the grid path's per-tile zigzag into a continuous curve by
+          // EMA-lerping a render position toward the true tile-interpolated
+          // position. Heading is then derived from the smoothed velocity so
+          // turns rotate gradually instead of snapping. Skipped while the
+          // arc lerp is active (already a smooth straight line) and for
+          // non-ship mobile units like missiles (must hit precisely).
+          if (SMOOTHED_SHIP_KEYS.has(key) && !arcActive) {
+            const sp = this.smoothPos.get(unitId);
+            if (sp === undefined) {
+              this.smoothPos.set(unitId, { x: px, y: py, vx: 0, vy: 0 });
+            } else {
+              const dx = px - sp.x;
+              const dy = py - sp.y;
+              if (dx * dx + dy * dy > SHIP_POSITION_SNAP_THRESHOLD_SQ) {
+                // Big jump (teleport / id reuse) — snap with no lag.
+                this.smoothPos.set(unitId, { x: px, y: py, vx: 0, vy: 0 });
+              } else {
+                const newX = sp.x + dx * positionSmoothAlpha;
+                const newY = sp.y + dy * positionSmoothAlpha;
+                const stepVx = newX - sp.x;
+                const stepVy = newY - sp.y;
+                // EMA the velocity too so the heading derived from it is
+                // stable across frames instead of jittering with each step.
+                const newVx = sp.vx + (stepVx - sp.vx) * positionSmoothAlpha;
+                const newVy = sp.vy + (stepVy - sp.vy) * positionSmoothAlpha;
+                this.smoothPos.set(unitId, {
+                  x: newX,
+                  y: newY,
+                  vx: newVx,
+                  vy: newVy,
+                });
+                px = newX;
+                py = newY;
+                if (
+                  newVx * newVx + newVy * newVy >
+                  SHIP_HEADING_VELOCITY_EPSILON_SQ
+                ) {
+                  this.headings.set(unitId, Math.atan2(newVy, newVx));
+                }
+              }
+            }
+          } else if (arcActive) {
+            // Reset smoother so a ship returning from arc transit doesn't
+            // resume from a stale lagged position when it hits sector space.
+            this.smoothPos.delete(unitId);
           }
         }
 
@@ -1053,6 +1177,7 @@ export class UnitRendererEngine {
     this.lastKnownTile.clear();
     this.arcEndpoints.clear();
     this.headings.clear();
+    this.smoothPos.clear();
   }
 }
 

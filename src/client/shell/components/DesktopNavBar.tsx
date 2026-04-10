@@ -110,6 +110,16 @@ export function DesktopNavBar() {
         onClick={() => showPage("page-leaderboard")}
       />
 
+      <button
+        className={`nav-menu-item ${
+          currentPage === "page-legacy" ? "active" : ""
+        } text-white/70 hover:text-cyan-400 font-medium tracking-wider uppercase cursor-pointer transition-colors [&.active]:text-cyan-400`}
+        data-page="page-legacy"
+        onClick={() => showPage("page-legacy")}
+      >
+        Legacy
+      </button>
+
       <NavButton
         pageId="page-help"
         i18nKey="main.help"

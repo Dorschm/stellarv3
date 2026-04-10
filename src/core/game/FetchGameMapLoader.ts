@@ -1,5 +1,6 @@
 import { GameMapType } from "./Game";
 import { GameMapLoader, MapData } from "./GameMapLoader";
+import { generateProceduralMapData } from "./ProceduralMapGen";
 
 export class FetchGameMapLoader implements GameMapLoader {
   private maps: Map<GameMapType, MapData>;
@@ -10,7 +11,15 @@ export class FetchGameMapLoader implements GameMapLoader {
     this.maps = new Map<GameMapType, MapData>();
   }
 
-  public getMapData(map: GameMapType): MapData {
+  public getMapData(map: GameMapType, seed?: number): MapData {
+    // Procedural maps bypass the file-based pipeline entirely.
+    if (map === GameMapType.Random) {
+      const mapData = generateProceduralMapData({
+        seed: seed ?? Date.now(),
+      });
+      return mapData;
+    }
+
     const cachedMap = this.maps.get(map);
     if (cachedMap) {
       return cachedMap;

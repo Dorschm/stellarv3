@@ -48,6 +48,16 @@ const userSettings: UserSettings = new UserSettings();
 /** Shared TerraNullius instance returned for every unowned tile query. */
 const TERRA_NULLIUS_SINGLETON = new TerraNulliusImpl();
 
+/**
+ * Structural type for the optional `setSectorMap` hook on `DefaultConfig`.
+ * Mirrors the server-side hook used in `GameImpl` — keeps the configuration
+ * layer decoupled from this view class while still letting the HUD economy
+ * formulas read from the same SectorMap the client reconstructs.
+ */
+interface DefaultConfigLike {
+  setSectorMap(sm: SectorMap): void;
+}
+
 const FRIENDLY_TINT_TARGET = { r: 0, g: 255, b: 0, a: 1 };
 const EMBARGO_TINT_TARGET = { r: 255, g: 0, b: 0, a: 1 };
 const BORDER_TINT_RATIO = 0.35;
@@ -680,6 +690,18 @@ export class GameView implements GameMap {
         y: n.coordinates[1],
       })),
     );
+    // Wire the client-side SectorMap into the shared `DefaultConfig` the
+    // HUD consults for troop/max/credit rates. Without this the HUD would
+    // keep reading `_sectorMap === null` and fall back to the pre-economy
+    // formulas, diverging from the authoritative server tick once any
+    // sector/habitability effects are active. Mirrors the server-side
+    // pattern in `GameImpl` — same structural check so tests using a
+    // bare config stub still pass through untouched.
+    const maybeDefaultConfig = this
+      ._config as unknown as Partial<DefaultConfigLike>;
+    if (typeof maybeDefaultConfig.setSectorMap === "function") {
+      maybeDefaultConfig.setSectorMap(this._sectorMap);
+    }
     this._cosmetics = new Map(
       humans.map((h) => [h.clientID, h.cosmetics ?? {}]),
     );
@@ -779,6 +801,12 @@ export class GameView implements GameMap {
     for (let i = 0; i + 1 < packed.length; i += 2) {
       const tile = packed[i];
       const state = packed[i + 1];
+      // updateTile() handles SectorMap owner-transition bookkeeping
+      // internally — see its body. GameImpl drives these counters on the
+      // server via conquer/relinquish; on the client, packed tile updates
+      // are the only ownership signal, so we funnel them through the same
+      // updateTile hook to keep HUD consumers (ControlPanel, Leaderboard)
+      // in sync with the authoritative server habitability formulas.
       this.updateTile(tile, state);
       this.updatedTiles.push(tile);
     }
@@ -1320,6 +1348,9 @@ export class GameView implements GameMap {
   terrainType(ref: TileRef): TerrainType {
     return this._map.terrainType(ref);
   }
+  setTerrainType(ref: TileRef, type: TerrainType): void {
+    this._map.setTerrainType(ref, type);
+  }
   forEachTile(fn: (tile: TileRef) => void): void {
     return this._map.forEachTile(fn);
   }
@@ -1346,7 +1377,23 @@ export class GameView implements GameMap {
     return this._map.tileState(tile);
   }
   updateTile(tile: TileRef, state: number): void {
+    // Snapshot the previous owner before the state is rewritten so we can
+    // drive SectorMap's running per-player counters on the client. Without
+    // this, `_sectorMap.perPlayer*` would stay zeroed on the view side and
+    // any habitability-based HUD rate (`troopIncreaseRate`, `maxTroops`,
+    // `creditAdditionRate`) would diverge from the authoritative server
+    // tick once the sector/habitability formulas are active.
+    const prevOwnerID = this._map.ownerID(tile);
     this._map.updateTile(tile, state);
+    const newOwnerID = this._map.ownerID(tile);
+    if (prevOwnerID !== newOwnerID) {
+      if (prevOwnerID !== 0) {
+        this._sectorMap.recordTileLost(prevOwnerID, tile);
+      }
+      if (newOwnerID !== 0) {
+        this._sectorMap.recordTileGained(newOwnerID, tile);
+      }
+    }
   }
   numTilesWithFallout(): number {
     return this._map.numTilesWithFallout();

@@ -19,6 +19,7 @@ const MAPS: { type: GameMapType; label: string }[] = [
   { type: GameMapType.SolSystem, label: "Sol System" },
   { type: GameMapType.AsteroidBelt, label: "Asteroid Belt" },
   { type: GameMapType.OrionSector, label: "Orion Sector" },
+  { type: GameMapType.Random, label: "Random" },
 ];
 
 const DIFFICULTIES: { type: Difficulty; label: string }[] = [

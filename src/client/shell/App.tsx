@@ -16,6 +16,7 @@ import { HostLobbyModal } from "./modals/HostLobbyModal";
 import { JoinLobbyModal } from "./modals/JoinLobbyModal";
 import { LanguageModal } from "./modals/LanguageModal";
 import { LeaderboardModal } from "./modals/LeaderboardModal";
+import { LegacyScreen } from "./modals/LegacyScreen";
 import { MatchmakingModal } from "./modals/MatchmakingModal";
 import { NewsModal } from "./modals/NewsModal";
 import { RankedModal } from "./modals/RankedModal";
@@ -67,45 +68,46 @@ export function App() {
     <LangProvider>
       <NavigationProvider>
         <ClientProvider>
-        {/* Mobile sidebar + backdrop */}
-        <MobileNavBar />
+          {/* Mobile sidebar + backdrop */}
+          <MobileNavBar />
 
-        {/* Main content area — hidden when in-game */}
-        <div className="in-[.in-game]:hidden flex-1 relative overflow-hidden h-full transition-[margin] duration-500 ease-out will-change-[margin-left] flex flex-col">
-          {/* Desktop top bar */}
-          <DesktopNavBar />
+          {/* Main content area — hidden when in-game */}
+          <div className="in-[.in-game]:hidden flex-1 relative overflow-hidden h-full transition-[margin] duration-500 ease-out will-change-[margin-left] flex flex-col">
+            {/* Desktop top bar */}
+            <DesktopNavBar />
 
-          {/* Turnstile container */}
-          <div
-            id="turnstile-container"
-            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-99999"
-          />
+            {/* Turnstile container */}
+            <div
+              id="turnstile-container"
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-99999"
+            />
 
-          {/* Main content */}
-          <MainLayout>
-            <PlayPage />
-            <MatchmakingModal />
-            <NewsModal />
-            <SinglePlayerModal />
-            <HostLobbyModal />
-            <JoinLobbyModal />
-            <StoreModal />
-            <UserSettingModal />
-            <LeaderboardModal />
-            <TroubleshootingModal />
-            <AccountModal />
-            <HelpModal />
-            <LanguageModal />
-            <FlagInputModal />
-            <TerritoryPatternsModal />
-            <RankedModal />
-          </MainLayout>
+            {/* Main content */}
+            <MainLayout>
+              <PlayPage />
+              <MatchmakingModal />
+              <NewsModal />
+              <SinglePlayerModal />
+              <HostLobbyModal />
+              <JoinLobbyModal />
+              <StoreModal />
+              <UserSettingModal />
+              <LeaderboardModal />
+              <TroubleshootingModal />
+              <AccountModal />
+              <HelpModal />
+              <LanguageModal />
+              <FlagInputModal />
+              <TerritoryPatternsModal />
+              <RankedModal />
+              <LegacyScreen />
+            </MainLayout>
 
-          {/* Footer */}
-          <div className="[.in-game_&]:hidden mt-auto flex flex-col shrink-0">
-            <Footer />
+            {/* Footer */}
+            <div className="[.in-game_&]:hidden mt-auto flex flex-col shrink-0">
+              <Footer />
+            </div>
           </div>
-        </div>
 
           {/* Token login (floating, not page-based) */}
           <TokenLoginModal />

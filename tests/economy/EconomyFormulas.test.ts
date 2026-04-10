@@ -638,3 +638,238 @@ describe("Economy formulas (habitability + volume)", () => {
     });
   });
 });
+
+/**
+ * Regression guard for the client-side HUD integration. The HUD
+ * (ControlPanel, Leaderboard) invokes the same three formulas with a
+ * `PlayerView` instead of a server-side `Player`. Before the Ticket-3
+ * wire-up, `SectorMap.playerSmallIDOrNull` keyed off the presence of a
+ * `tiles()` method and returned `null` for every `PlayerView`, so the
+ * queries collapsed to 0 / 1.0 no-op values even on real maps with
+ * populated sectors — and the habitability multiplier, volume bonus, and
+ * hab cap floor silently disappeared from the UI.
+ *
+ * These tests lock in that the formulas now resolve PlayerView queries
+ * through `smallID()` so the client HUD reads the same authoritative
+ * values the server tick does.
+ */
+describe("Economy formulas (PlayerView integration)", () => {
+  const POP_PER_TILE = 2.0;
+  const VOLUME_CREDIT_RATE = 0.005;
+
+  /**
+   * Minimal PlayerView-shaped stub carrying only the accessors the three
+   * economy formulas call against a player. Everything else on
+   * `PlayerView` is unused by `maxTroops` / `troopIncreaseRate` /
+   * `creditAdditionRate`, so we cast through `unknown` rather than
+   * mocking the rest of the view surface.
+   */
+  function playerViewStub(opts: {
+    smallID: number;
+    type: PlayerType;
+    troops: number;
+    numTilesOwned: number;
+  }) {
+    return {
+      smallID: () => opts.smallID,
+      type: () => opts.type,
+      troops: () => opts.troops,
+      numTilesOwned: () => opts.numTilesOwned,
+      // `maxTroops` multiplies colony levels by `colonyTroopIncrease()`;
+      // a view with no colonies collapses that contribution to 0.
+      units: () => [],
+    };
+  }
+
+  /**
+   * Mock SectorMap that returns the given sector stats **only** for the
+   * specified `targetSmallID`. Any other player-shaped argument receives
+   * the no-op 0 / 1.0 fallback. This ensures the formula test fails
+   * loudly if the code path ever bypasses the per-player smallID lookup
+   * (e.g. by reverting to the old `tiles()`-based exclusion).
+   */
+  function perSmallIDSectorMap(
+    targetSmallID: number,
+    ownedSectorTiles: number,
+    avgHabitability: number,
+  ): SectorMap {
+    return {
+      playerOwnedSectorTiles: (p: { smallID: () => number }) =>
+        p.smallID() === targetSmallID ? ownedSectorTiles : 0,
+      playerAverageHabitability: (p: { smallID: () => number }) =>
+        p.smallID() === targetSmallID ? avgHabitability : 1.0,
+    } as unknown as SectorMap;
+  }
+
+  describe("maxTroops", () => {
+    let game: Game;
+    let player: Player;
+
+    beforeEach(async () => {
+      game = await setup(
+        "big_plains",
+        {
+          infiniteCredits: false,
+          infiniteTroops: false,
+          difficulty: Difficulty.Medium,
+        },
+        [humanInfo],
+      );
+      player = game.player(HUMAN_ID);
+      conquerTiles(game, player, 1000);
+    });
+
+    test("PlayerView with matching smallID receives the hab cap floor", () => {
+      // 200k sector tiles × POP_PER_TILE × 1.0 = 400k — well above the
+      // ~226k legacy human cap → the hab cap floor dominates.
+      const config = game.config() as DefaultConfig;
+      config.setSectorMap(perSmallIDSectorMap(player.smallID(), 200_000, 1.0));
+
+      const view = playerViewStub({
+        smallID: player.smallID(),
+        type: PlayerType.Human,
+        troops: 25_000,
+        numTilesOwned: 1000,
+      });
+
+      const legacyMax = 2 * (Math.pow(1000, 0.6) * 1000 + 50000);
+      const habCap = 200_000 * POP_PER_TILE * 1.0;
+      expect(habCap).toBeGreaterThan(legacyMax);
+      expect(config.maxTroops(view as never)).toBeCloseTo(habCap, 6);
+    });
+
+    test("PlayerView with mismatched smallID falls back to legacy cap", () => {
+      // Regression guard: the formula must route PlayerView through
+      // `smallID()` — a DIFFERENT smallID cleanly misses the per-player
+      // totals and collapses to the legacy max, while the target smallID
+      // (covered by the previous test) receives the hab cap floor.
+      const config = game.config() as DefaultConfig;
+      config.setSectorMap(perSmallIDSectorMap(player.smallID(), 200_000, 1.0));
+
+      const otherView = playerViewStub({
+        smallID: player.smallID() + 1, // deliberately not the target
+        type: PlayerType.Human,
+        troops: 25_000,
+        numTilesOwned: 1000,
+      });
+
+      const legacyMax = 2 * (Math.pow(1000, 0.6) * 1000 + 50000);
+      expect(config.maxTroops(otherView as never)).toBeCloseTo(legacyMax, 6);
+    });
+
+    test("PlayerView returns the same value as the matching server Player", () => {
+      // Cross-check: the HUD and the server tick must agree on maxTroops
+      // when they see the same smallID.
+      const config = game.config() as DefaultConfig;
+      config.setSectorMap(perSmallIDSectorMap(player.smallID(), 50_000, 0.6));
+
+      const view = playerViewStub({
+        smallID: player.smallID(),
+        type: PlayerType.Human,
+        troops: player.troops(),
+        numTilesOwned: player.numTilesOwned(),
+      });
+
+      const serverMax = config.maxTroops(player);
+      const viewMax = config.maxTroops(view as never);
+      expect(viewMax).toBeCloseTo(serverMax, 6);
+    });
+  });
+
+  describe("troopIncreaseRate", () => {
+    let game: Game;
+    let player: Player;
+
+    beforeEach(async () => {
+      game = await setup(
+        "big_plains",
+        {
+          infiniteCredits: false,
+          infiniteTroops: false,
+          difficulty: Difficulty.Medium,
+        },
+        [humanInfo],
+      );
+      player = game.player(HUMAN_ID);
+      conquerTiles(game, player, 1000);
+      player.setTroops(25_000);
+    });
+
+    test("PlayerView sees the habitability multiplier through smallID", () => {
+      // 0.6 habitability → growth scales to 0.6× the OpenSpace rate.
+      const config = game.config() as DefaultConfig;
+      config.setSectorMap(perSmallIDSectorMap(player.smallID(), 5_000, 0.6));
+
+      const view = playerViewStub({
+        smallID: player.smallID(),
+        type: PlayerType.Human,
+        troops: 25_000,
+        numTilesOwned: 1000,
+      });
+
+      const max = config.maxTroops(view as never);
+      const base = 10 + Math.pow(25_000, 0.73) / 4;
+      const ratio = 1 - 25_000 / max;
+      const rawToAdd = base * ratio * 0.6;
+      const expected = Math.min(25_000 + rawToAdd, max) - 25_000;
+
+      expect(config.troopIncreaseRate(view as never)).toBeCloseTo(expected, 6);
+    });
+
+    test("PlayerView with mismatched smallID collapses to the legacy rate", () => {
+      // Guard: a view whose smallID is not tracked in SectorMap must
+      // fall back to the pre-Ticket-3 growth formula (avgHab = 1.0).
+      const config = game.config() as DefaultConfig;
+      config.setSectorMap(perSmallIDSectorMap(player.smallID(), 5_000, 0.6));
+
+      const otherView = playerViewStub({
+        smallID: player.smallID() + 1,
+        type: PlayerType.Human,
+        troops: 25_000,
+        numTilesOwned: 1000,
+      });
+
+      // With the fallback avgHab = 1.0 and ownedSectorTiles = 0, the
+      // hab cap floor is 0 so only the legacy max applies.
+      const legacyMax = 2 * (Math.pow(1000, 0.6) * 1000 + 50000);
+      const base = 10 + Math.pow(25_000, 0.73) / 4;
+      const ratio = 1 - 25_000 / legacyMax;
+      const rawToAdd = base * ratio * 1.0;
+      const expected = Math.min(25_000 + rawToAdd, legacyMax) - 25_000;
+
+      expect(config.troopIncreaseRate(otherView as never)).toBeCloseTo(
+        expected,
+        6,
+      );
+    });
+  });
+
+  describe("creditAdditionRate", () => {
+    test("PlayerView receives the volume credit bonus routed by smallID", async () => {
+      // Complements the maxTroops/troopIncreaseRate regressions: the
+      // volume bonus in creditAdditionRate is the third consumer of
+      // per-player SectorMap queries, and must also resolve by smallID
+      // for a PlayerView.
+      const game = await setup(
+        "big_plains",
+        { infiniteCredits: false, infiniteTroops: false },
+        [humanInfo],
+      );
+      const player = game.player(HUMAN_ID);
+      const config = game.config() as DefaultConfig;
+      config.setSectorMap(perSmallIDSectorMap(player.smallID(), 10_000, 1.0));
+
+      const view = playerViewStub({
+        smallID: player.smallID(),
+        type: PlayerType.Human,
+        troops: 0,
+        numTilesOwned: 0,
+      });
+
+      const expectedBonus = Math.floor(10_000 * VOLUME_CREDIT_RATE * 1.0 * 1);
+      expect(config.creditAdditionRate(view as never)).toBe(
+        100n + BigInt(expectedBonus),
+      );
+    });
+  });
+});

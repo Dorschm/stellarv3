@@ -202,18 +202,18 @@ export class SectorMap {
    *
    * Reads from a running total maintained by
    * {@link recordTileGained} / {@link recordTileLost}, which are driven
-   * from GameImpl.conquer/relinquish. See the field doc on
-   * {@link perPlayerSectorTileCount} for context.
+   * from GameImpl.conquer/relinquish on the server and from
+   * GameView.update's packed tile diff on the client. See the field doc
+   * on {@link perPlayerSectorTileCount} for context.
    *
-   * Accepts both server-side `Player` (which has a stable `smallID()`) and
-   * client-side `PlayerView` (which does not run the server tick). For
-   * `PlayerView` we return `0` so the volume bonus collapses to its no-op
-   * value — the HUD shows the existing flat rate and the authoritative
-   * server tick still computes the real bonus.
+   * Accepts both server-side `Player` and client-side `PlayerView` —
+   * both expose a stable `smallID()`, and the client mirrors ownership
+   * changes into the same per-player counters so HUD consumers
+   * (ControlPanel, Leaderboard) see the authoritative value rather than
+   * a forced fallback.
    */
   playerOwnedSectorTiles(player: Player | PlayerView): number {
-    const id = playerSmallIDOrNull(player);
-    if (id === null) return 0;
+    const id = player.smallID();
     return this.perPlayerSectorTileCount[id] ?? 0;
   }
 
@@ -223,13 +223,12 @@ export class SectorMap {
    * Non-sector tiles (DebrisField / DeepSpace, never normally owned) do
    * not contribute — only tiles with a non-zero sector ID are tracked in
    * {@link perPlayerHabitabilitySum}. Returns `1.0` when the player owns
-   * no sector tiles (or when called on a `PlayerView`), which is the
-   * no-op identity for the troop-growth multiplier and the volume credit
-   * bonus.
+   * no sector tiles, which is the no-op identity for the troop-growth
+   * multiplier and the volume credit bonus. Accepts both `Player` and
+   * `PlayerView`; see {@link playerOwnedSectorTiles}.
    */
   playerAverageHabitability(player: Player | PlayerView): number {
-    const id = playerSmallIDOrNull(player);
-    if (id === null) return 1.0;
+    const id = player.smallID();
     const count = this.perPlayerSectorTileCount[id] ?? 0;
     if (count === 0) return 1.0;
     return (this.perPlayerHabitabilitySum[id] ?? 0) / count;
@@ -366,18 +365,4 @@ export class SectorMap {
       );
     }
   }
-}
-
-/**
- * Returns the `smallID` for a server-side `Player`, or `null` for a
- * `PlayerView` that does not participate in the authoritative tile bookkeeping.
- * Used by the SectorMap O(1) query methods to index into the running totals.
- *
- * The distinction mirrors the previous behaviour of `playerTilesOrNull`: only
- * server-side players have tile-ownership tracked by this class.
- */
-function playerSmallIDOrNull(player: Player | PlayerView): number | null {
-  const maybeTiles = (player as { tiles?: () => Iterable<TileRef> }).tiles;
-  if (typeof maybeTiles !== "function") return null;
-  return player.smallID();
 }

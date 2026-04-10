@@ -352,6 +352,23 @@ export class DefaultConfig implements Config {
     return BATTLECRUISER_STRUCTURE_SLOT_COUNT;
   }
 
+  // ---- Ticket 7: Dynamic tick-rate scaling --------------------------------
+  minTurnIntervalMs(): number {
+    return 50;
+  }
+  maxTurnIntervalMs(): number {
+    return 100;
+  }
+  dynamicTurnIntervalMs(leadingPlayerTileRatio: number): number {
+    // GDD §10 — game speeds up as players expand.
+    // ratio: leading player's tiles / total sector tiles (0..1)
+    // At 0% expansion: 100ms. At 100%: 50ms. Linear interpolation.
+    const min = this.minTurnIntervalMs();
+    const max = this.maxTurnIntervalMs();
+    const clamped = Math.max(0, Math.min(1, leadingPlayerTileRatio));
+    return Math.round(max - (max - min) * clamped);
+  }
+
   defenseStationRange(): number {
     return 30;
   }

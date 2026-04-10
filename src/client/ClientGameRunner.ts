@@ -422,7 +422,7 @@ export class ClientGameRunner {
         this.stop();
         return;
       }
-      this.transport.turnComplete();
+      this.transport.turnComplete(gu.currentTurnIntervalMs);
       gu.updates[GameUpdateType.Hash].forEach((hu: HashUpdate) => {
         this.eventBus.emit(new SendHashEvent(hu.tick, hu.hash));
       });

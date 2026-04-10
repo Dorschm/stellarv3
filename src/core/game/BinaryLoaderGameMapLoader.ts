@@ -1,6 +1,7 @@
 import { assetUrl } from "../AssetUrls";
 import { GameMapType } from "./Game";
 import { GameMapLoader, MapData } from "./GameMapLoader";
+import { generateProceduralMapData } from "./ProceduralMapGen";
 import { MapManifest } from "./TerrainMapLoader";
 
 export class BinaryLoaderGameMapLoader implements GameMapLoader {
@@ -18,7 +19,11 @@ export class BinaryLoaderGameMapLoader implements GameMapLoader {
     };
   }
 
-  getMapData(map: GameMapType): MapData {
+  getMapData(map: GameMapType, seed?: number): MapData {
+    if (map === GameMapType.Random) {
+      return generateProceduralMapData({ seed: seed ?? Date.now() });
+    }
+
     const cachedMap = this.maps.get(map);
     if (cachedMap) {
       return cachedMap;
