@@ -14,7 +14,7 @@ import {
   EMOJI_LOVE,
 } from "./nation/NationEmojiBehavior";
 
-export class DonateTroopsExecution implements Execution {
+export class DonatePopulationExecution implements Execution {
   private recipient: Player;
 
   private random: PseudoRandom;
@@ -25,7 +25,7 @@ export class DonateTroopsExecution implements Execution {
   constructor(
     private sender: Player,
     private recipientID: PlayerID,
-    private troops: number | null,
+    private population: number | null,
   ) {}
 
   init(mg: Game, ticks: number): void {
@@ -34,30 +34,30 @@ export class DonateTroopsExecution implements Execution {
 
     if (!mg.hasPlayer(this.recipientID)) {
       console.warn(
-        `DonateTroopExecution recipient ${this.recipientID} not found`,
+        `DonatePopulationExecution recipient ${this.recipientID} not found`,
       );
       this.active = false;
       return;
     }
 
     this.recipient = mg.player(this.recipientID);
-    this.troops ??= mg.config().defaultDonationAmount(this.sender);
+    this.population ??= mg.config().defaultDonationAmount(this.sender);
     const maxDonation =
-      mg.config().maxTroops(this.recipient) - this.recipient.troops();
-    this.troops = Math.min(this.troops, maxDonation);
+      mg.config().maxPopulation(this.recipient) - this.recipient.population();
+    this.population = Math.min(this.population, maxDonation);
   }
 
   tick(ticks: number): void {
-    if (this.troops === null) throw new Error("not initialized");
+    if (this.population === null) throw new Error("not initialized");
 
-    const minTroops = this.getMinTroopsForRelationUpdate();
+    const minPopulation = this.getMinPopulationForRelationUpdate();
 
     if (
-      this.sender.canDonateTroops(this.recipient) &&
-      this.sender.donateTroops(this.recipient, this.troops)
+      this.sender.canDonatePopulation(this.recipient) &&
+      this.sender.donatePopulation(this.recipient, this.population)
     ) {
-      // Prevent players from just buying a good relation by sending 1% troops. Instead, a minimum is needed, and it's random.
-      if (this.troops >= minTroops) {
+      // Prevent players from just buying a good relation by sending 1% population. Instead, a minimum is needed, and it's random.
+      if (this.population >= minPopulation) {
         this.recipient.updateRelation(this.sender, 50);
       }
 
@@ -71,47 +71,51 @@ export class DonateTroopsExecution implements Execution {
             this.recipient,
             this.sender.id(),
             this.random.randElement(
-              this.troops >= minTroops ? EMOJI_LOVE : EMOJI_DONATION_TOO_SMALL,
+              this.population >= minPopulation
+                ? EMOJI_LOVE
+                : EMOJI_DONATION_TOO_SMALL,
             ),
           ),
         );
       }
     } else {
       console.warn(
-        `cannot send troops from ${this.sender} to ${this.recipient}`,
+        `cannot send population from ${this.sender} to ${this.recipient}`,
       );
     }
     this.active = false;
   }
 
-  private getMinTroopsForRelationUpdate(): number {
+  private getMinPopulationForRelationUpdate(): number {
     const { difficulty } = this.mg.config().gameConfig();
-    const recipientMaxTroops = this.mg.config().maxTroops(this.recipient);
+    const recipientMaxPopulation = this.mg
+      .config()
+      .maxPopulation(this.recipient);
 
     switch (difficulty) {
-      // ~7.7k - ~9.1k troops (for 100k troops)
+      // ~7.7k - ~9.1k population (for 100k population)
       case Difficulty.Easy:
         return this.random.nextInt(
-          recipientMaxTroops / 13,
-          recipientMaxTroops / 11,
+          recipientMaxPopulation / 13,
+          recipientMaxPopulation / 11,
         );
-      // ~9.1k - ~11.1k troops (for 100k troops)
+      // ~9.1k - ~11.1k population (for 100k population)
       case Difficulty.Medium:
         return this.random.nextInt(
-          recipientMaxTroops / 11,
-          recipientMaxTroops / 9,
+          recipientMaxPopulation / 11,
+          recipientMaxPopulation / 9,
         );
-      // ~11.1k - ~14.3k troops (for 100k troops)
+      // ~11.1k - ~14.3k population (for 100k population)
       case Difficulty.Hard:
         return this.random.nextInt(
-          recipientMaxTroops / 9,
-          recipientMaxTroops / 7,
+          recipientMaxPopulation / 9,
+          recipientMaxPopulation / 7,
         );
-      // ~14.3k - ~20k troops (for 100k troops)
+      // ~14.3k - ~20k population (for 100k population)
       case Difficulty.Impossible:
         return this.random.nextInt(
-          recipientMaxTroops / 7,
-          recipientMaxTroops / 5,
+          recipientMaxPopulation / 7,
+          recipientMaxPopulation / 5,
         );
       default:
         assertNever(difficulty);

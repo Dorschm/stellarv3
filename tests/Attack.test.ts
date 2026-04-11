@@ -21,8 +21,8 @@ let defender: Player;
 let defenderSpawn: TileRef;
 let attackerSpawn: TileRef;
 
-function sendShuttle(target: TileRef, troops: number) {
-  game.addExecution(new AssaultShuttleExecution(defender, target, troops));
+function sendShuttle(target: TileRef, population: number) {
+  game.addExecution(new AssaultShuttleExecution(defender, target, population));
 }
 
 const immunityPhaseTicks = 10;
@@ -37,7 +37,7 @@ describe("Attack", () => {
     game = await setup("ocean_and_land", {
       infiniteCredits: true,
       instantBuild: true,
-      infiniteTroops: true,
+      infinitePopulation: true,
     });
     const attackerInfo = new PlayerInfo(
       "attacker dude",
@@ -92,7 +92,7 @@ describe("Attack", () => {
     (game.config() as TestConfig).setDefaultNukeSpeed(50);
   });
 
-  test("Nuke reduce attacking troop counts", async () => {
+  test("Nuke reduce attacking population counts", async () => {
     // Not building exactly spawn to it's better protected from attacks (but still
     // on defender territory)
     constructionExecution(game, defender, 1, 1, UnitType.OrbitalStrikePlatform);
@@ -103,16 +103,16 @@ describe("Attack", () => {
     expect(nuke.isActive()).toBe(true);
 
     expect(attacker.outgoingAttacks()).toHaveLength(1);
-    expect(attacker.outgoingAttacks()[0].troops()).toBe(98);
+    expect(attacker.outgoingAttacks()[0].population()).toBe(98);
 
     // Make the nuke go kaboom
     game.executeNextTick();
     expect(nuke.isActive()).toBe(false);
-    expect(attacker.outgoingAttacks()[0].troops()).not.toBe(97);
-    expect(attacker.outgoingAttacks()[0].troops()).toBeLessThan(90);
+    expect(attacker.outgoingAttacks()[0].population()).not.toBe(97);
+    expect(attacker.outgoingAttacks()[0].population()).toBeLessThan(90);
   });
 
-  test("Nuke reduce attacking shuttle troop count", async () => {
+  test("Nuke reduce attacking shuttle population count", async () => {
     constructionExecution(game, defender, 1, 1, UnitType.OrbitalStrikePlatform);
     expect(defender.units(UnitType.OrbitalStrikePlatform)).toHaveLength(1);
 
@@ -123,34 +123,34 @@ describe("Attack", () => {
     expect(nuke.isActive()).toBe(true);
 
     const ship = defender.units(UnitType.AssaultShuttle)[0];
-    expect(ship.troops()).toBe(100);
+    expect(ship.population()).toBe(100);
 
     game.executeNextTick();
 
     expect(nuke.isActive()).toBe(false);
-    expect(defender.units(UnitType.AssaultShuttle)[0].troops()).toBeLessThan(
-      90,
-    );
+    expect(
+      defender.units(UnitType.AssaultShuttle)[0].population(),
+    ).toBeLessThan(90);
   });
 
   test("Shuttle penalty on retreat Assault Shuttle arrival", async () => {
-    const player_start_troops = defender.troops();
-    const shuttle_troops = player_start_troops * 0.5;
+    const player_start_population = defender.population();
+    const shuttle_population = player_start_population * 0.5;
 
-    sendShuttle(game.ref(15, 8), shuttle_troops);
+    sendShuttle(game.ref(15, 8), shuttle_population);
 
     game.executeNextTick();
 
     const ship = defender.units(UnitType.AssaultShuttle)[0];
-    expect(ship.troops()).toBe(shuttle_troops);
+    expect(ship.population()).toBe(shuttle_population);
     expect(ship.isActive()).toBe(true);
 
     ship.orderShuttleRetreat();
     game.executeNextTick();
 
     expect(ship.isActive()).toBe(false);
-    expect(shuttle_troops).toBeLessThan(defender.troops());
-    expect(defender.troops()).toBeLessThan(player_start_troops);
+    expect(shuttle_population).toBeLessThan(defender.population());
+    expect(defender.population()).toBeLessThan(player_start_population);
   });
 });
 
@@ -172,7 +172,7 @@ describe("Attack race condition with alliance requests", () => {
     game = await setup("ocean_and_land", {
       infiniteCredits: true,
       instantBuild: true,
-      infiniteTroops: true,
+      infinitePopulation: true,
     });
 
     const playerAInfo = new PlayerInfo(
@@ -344,7 +344,7 @@ describe("Transport ship alliance rejection", () => {
     game = await setup("ocean_and_land", {
       infiniteCredits: true,
       instantBuild: true,
-      infiniteTroops: true,
+      infinitePopulation: true,
     });
 
     const playerAInfo = new PlayerInfo(
@@ -396,7 +396,7 @@ describe("Attack immunity", () => {
     game = await setup("ocean_and_land", {
       infiniteCredits: true,
       instantBuild: true,
-      infiniteTroops: true,
+      infinitePopulation: true,
     });
 
     (game.config() as TestConfig).setSpawnImmunityDuration(immunityPhaseTicks);

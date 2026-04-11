@@ -96,6 +96,23 @@ export class SectorMap {
    */
   private readonly perPlayerHabitabilitySum: number[] = [];
   /**
+   * Per-player count of owned sector tiles bucketed by their *effective*
+   * habitability — full (>= ~1.0, OpenSpace), partial (~0.6, Nebula),
+   * uninhabitable (~0.3, AsteroidField). Maintained alongside the
+   * habitability sum so the GDD §3 economy formulas can read O(1) bucket
+   * counts (`maxPopulation = 100 * full + 25 * partial`,
+   * `troopGrowth = +3%/s on full only`,
+   * `creditGen = +1 per (full + partial) per tick`).
+   *
+   * Tracked by *effective* habitability (not base terrain) so a Long-Range
+   * Weapon damage hit that drops a tile from full → partial is correctly
+   * reflected in the buckets via {@link applyHabitabilityDamage} and
+   * {@link recomputeHabitabilityForTile}.
+   */
+  private readonly perPlayerFullHabTileCount: number[] = [];
+  private readonly perPlayerPartialHabTileCount: number[] = [];
+  private readonly perPlayerUninhabTileCount: number[] = [];
+  /**
    * Sparse per-tile habitability damage overlay. Indexed by `TileRef`
    * (the same flat tile index used by `sectorIds`). Values represent the
    * cumulative habitability *reduction* (0..1) inflicted on a tile by
@@ -218,12 +235,86 @@ export class SectorMap {
   }
 
   /**
+   * Bucket an effective habitability score into one of the three GDD habitability
+   * states: -1 = uninhabitable, 0 = partial, +1 = full. Thresholds are picked at
+   * the midpoints between the canonical habitability constants so a tile sitting
+   * exactly at a constant lands in the bucket the constant names. Effective hab
+   * of 0 (e.g., a tile damaged below floor) maps to "uninhabitable", since the
+   * GDD treats it as ungrowable and unproductive.
+   */
+  private bucketForHab(effectiveHab: number): -1 | 0 | 1 {
+    if (effectiveHab >= (HABITABILITY_NEBULA + HABITABILITY_OPEN_SPACE) / 2) {
+      return 1;
+    }
+    if (effectiveHab >= (HABITABILITY_ASTEROID + HABITABILITY_NEBULA) / 2) {
+      return 0;
+    }
+    return -1;
+  }
+
+  /**
+   * Apply a +/- delta to one of the three per-player habitability bucket
+   * counters. Pulled out of the larger record/recompute methods so the bucket
+   * bookkeeping stays trivially auditable.
+   */
+  private adjustBucket(
+    playerSmallID: number,
+    bucket: -1 | 0 | 1,
+    delta: number,
+  ): void {
+    if (bucket === 1) {
+      this.perPlayerFullHabTileCount[playerSmallID] = Math.max(
+        0,
+        (this.perPlayerFullHabTileCount[playerSmallID] ?? 0) + delta,
+      );
+    } else if (bucket === 0) {
+      this.perPlayerPartialHabTileCount[playerSmallID] = Math.max(
+        0,
+        (this.perPlayerPartialHabTileCount[playerSmallID] ?? 0) + delta,
+      );
+    } else {
+      this.perPlayerUninhabTileCount[playerSmallID] = Math.max(
+        0,
+        (this.perPlayerUninhabTileCount[playerSmallID] ?? 0) + delta,
+      );
+    }
+  }
+
+  /**
+   * O(1) count of owned sector tiles classified as **fully habitable**
+   * (effective habitability ≥ ~OpenSpace). Used by GDD §3 economy formulas.
+   */
+  playerFullHabTiles(player: Player | PlayerView): number {
+    const id = player.smallID();
+    return this.perPlayerFullHabTileCount[id] ?? 0;
+  }
+
+  /**
+   * O(1) count of owned sector tiles classified as **partially habitable**
+   * (effective habitability ≈ Nebula). Used by GDD §3 economy formulas.
+   */
+  playerPartialHabTiles(player: Player | PlayerView): number {
+    const id = player.smallID();
+    return this.perPlayerPartialHabTileCount[id] ?? 0;
+  }
+
+  /**
+   * O(1) count of owned sector tiles classified as **uninhabitable**
+   * (effective habitability ≤ AsteroidField). Exposed for symmetry / UI use;
+   * the economy formulas treat these tiles as zero-yield.
+   */
+  playerUninhabTiles(player: Player | PlayerView): number {
+    const id = player.smallID();
+    return this.perPlayerUninhabTileCount[id] ?? 0;
+  }
+
+  /**
    * O(1) average habitability across the player's owned **sector** tiles.
    *
    * Non-sector tiles (DebrisField / DeepSpace, never normally owned) do
    * not contribute — only tiles with a non-zero sector ID are tracked in
    * {@link perPlayerHabitabilitySum}. Returns `1.0` when the player owns
-   * no sector tiles, which is the no-op identity for the troop-growth
+   * no sector tiles, which is the no-op identity for the population-growth
    * multiplier and the volume credit bonus. Accepts both `Player` and
    * `PlayerView`; see {@link playerOwnedSectorTiles}.
    */
@@ -283,6 +374,18 @@ export class SectorMap {
         0,
         (this.perPlayerHabitabilitySum[ownerSmallID] ?? 0) - delta,
       );
+      // Bucket transition: prevDamage gave one effective hab, newDamage gives
+      // another. If the bucket changed, swap the per-player tile from the old
+      // bucket to the new one. (No-op when the damage is small enough that
+      // the tile stays inside the same bucket.)
+      const prevEffective = Math.max(0, base - prevDamage);
+      const newEffective = Math.max(0, base - newDamage);
+      const prevBucket = this.bucketForHab(prevEffective);
+      const newBucket = this.bucketForHab(newEffective);
+      if (prevBucket !== newBucket) {
+        this.adjustBucket(ownerSmallID, prevBucket, -1);
+        this.adjustBucket(ownerSmallID, newBucket, +1);
+      }
     }
   }
 
@@ -304,6 +407,7 @@ export class SectorMap {
       (this.perPlayerSectorTileCount[playerSmallID] ?? 0) + 1;
     this.perPlayerHabitabilitySum[playerSmallID] =
       (this.perPlayerHabitabilitySum[playerSmallID] ?? 0) + hab;
+    this.adjustBucket(playerSmallID, this.bucketForHab(hab), +1);
   }
 
   /**
@@ -342,6 +446,12 @@ export class SectorMap {
       0,
       (this.perPlayerHabitabilitySum[ownerSmallID] ?? 0) + delta,
     );
+    const prevBucket = this.bucketForHab(previousHabitability);
+    const newBucket = this.bucketForHab(newHab);
+    if (prevBucket !== newBucket) {
+      this.adjustBucket(ownerSmallID, prevBucket, -1);
+      this.adjustBucket(ownerSmallID, newBucket, +1);
+    }
   }
 
   /**
@@ -357,12 +467,16 @@ export class SectorMap {
     if (count <= 1) {
       this.perPlayerSectorTileCount[playerSmallID] = 0;
       this.perPlayerHabitabilitySum[playerSmallID] = 0;
+      this.perPlayerFullHabTileCount[playerSmallID] = 0;
+      this.perPlayerPartialHabTileCount[playerSmallID] = 0;
+      this.perPlayerUninhabTileCount[playerSmallID] = 0;
     } else {
       this.perPlayerSectorTileCount[playerSmallID] = count - 1;
       this.perPlayerHabitabilitySum[playerSmallID] = Math.max(
         0,
         (this.perPlayerHabitabilitySum[playerSmallID] ?? 0) - hab,
       );
+      this.adjustBucket(playerSmallID, this.bucketForHab(hab), -1);
     }
   }
 }

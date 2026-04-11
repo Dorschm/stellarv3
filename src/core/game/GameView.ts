@@ -37,6 +37,7 @@ import {
   UnitUpdate,
 } from "./GameUpdates";
 import { MotionPlanRecord, unpackMotionPlans } from "./MotionPlans";
+import { buildPlanets, Planet } from "./Planet";
 import { SectorMap } from "./SectorMap";
 import { Nation, TerrainMapData } from "./TerrainMapLoader";
 import { TerraNulliusImpl } from "./TerraNulliusImpl";
@@ -126,8 +127,8 @@ export class UnitView {
   type(): UnitType {
     return this.data.unitType;
   }
-  troops(): number {
-    return this.data.troops;
+  population(): number {
+    return this.data.population;
   }
   retreating(): boolean {
     if (this.type() !== UnitType.AssaultShuttle) {
@@ -533,8 +534,8 @@ export class PlayerView {
     return this.data.credits;
   }
 
-  troops(): number {
-    return this.data.troops;
+  population(): number {
+    return this.data.population;
   }
 
   totalUnitLevels(type: UnitType): number {
@@ -691,7 +692,7 @@ export class GameView implements GameMap {
       })),
     );
     // Wire the client-side SectorMap into the shared `DefaultConfig` the
-    // HUD consults for troop/max/credit rates. Without this the HUD would
+    // HUD consults for population/max/credit rates. Without this the HUD would
     // keep reading `_sectorMap === null` and fall back to the pre-economy
     // formulas, diverging from the authoritative server tick once any
     // sector/habitability effects are active. Mirrors the server-side
@@ -717,6 +718,36 @@ export class GameView implements GameMap {
     return this._sectorMap;
   }
 
+  /**
+   * GDD §2 — client-side mirror of {@link Game.planets}. Built lazily
+   * from the same `SectorMap` + manifest-nation pair the server uses,
+   * so both sides resolve the same `id`/`sectorId`/`name` values
+   * without any network traffic. Cached on first access for stable
+   * object identity (HUD components store references by index).
+   */
+  private _planets: readonly Planet[] | null = null;
+  planets(): readonly Planet[] {
+    this._planets ??= buildPlanets(
+      this._sectorMap,
+      this._map,
+      this._mapData.nations.map((n) => ({
+        name: n.name,
+        coordinates: [n.coordinates[0], n.coordinates[1]] as const,
+      })),
+    );
+    return this._planets;
+  }
+
+  planetByTile(tile: TileRef): Planet | null {
+    const sectorId = this._sectorMap.sectorOf(tile);
+    if (sectorId === 0) return null;
+    const list = this.planets();
+    for (const p of list) {
+      if (p.sectorId === sectorId) return p;
+    }
+    return null;
+  }
+
   // Scout Swarm terraform progress is tracked server-side only. On the
   // client (`GameView`) the methods are stubs so any read-only rendering
   // or HUD hover can still call them without blowing up — the authoritative
@@ -731,6 +762,44 @@ export class GameView implements GameMap {
 
   scoutSwarmTerraformProgress(_tile: TileRef): number {
     return 0;
+  }
+
+  // LRW intercept registry is server-authoritative; on the client these
+  // are inert stubs so any read-only path that touches Game still type-
+  // checks. Tokens issued here are throwaway and never collide with the
+  // server registry — the client never schedules its own LRW impacts.
+  registerPendingLrwImpact(
+    _ownerSmallID: number,
+    _fireTile: TileRef,
+    _targetTile: TileRef,
+    _impactTick: number,
+  ): number {
+    return 0;
+  }
+
+  unregisterPendingLrwImpact(_token: number): void {
+    // no-op on the view side
+  }
+
+  isPendingLrwImpactActive(_token: number): boolean {
+    return false;
+  }
+
+  pendingLrwImpactsNear(
+    _tile: TileRef,
+    _range: number,
+    _excludeOwnerSmallID?: number,
+  ): Array<{
+    token: number;
+    targetTile: TileRef;
+    ownerSmallID: number;
+    distSquared: number;
+  }> {
+    return [];
+  }
+
+  interceptPendingLrwImpact(_token: number): boolean {
+    return false;
   }
 
   isOnEdgeOfMap(ref: TileRef): boolean {
@@ -809,6 +878,23 @@ export class GameView implements GameMap {
       // in sync with the authoritative server habitability formulas.
       this.updateTile(tile, state);
       this.updatedTiles.push(tile);
+    }
+
+    // Ticket 6 — apply terrain mutations streamed from the server for this
+    // tick. These are rare (Scout Swarm terraforming), so the buffer is
+    // usually empty. Each pair is `[tileRef, terrainType]`. We funnel the
+    // mutation through `setTerrainType` (which knows how to rewrite the
+    // underlying magnitude bits) and then re-run the habitability delta so
+    // derived UI (habitability overlay, HUD income rates) stays coherent
+    // with the server-side SectorMap counters.
+    const terrainPacked = this.lastUpdate.packedTerrainUpdates;
+    if (terrainPacked && terrainPacked.length > 0) {
+      for (let i = 0; i + 1 < terrainPacked.length; i += 2) {
+        const tile = terrainPacked[i];
+        const nextTerrain = terrainPacked[i + 1] as TerrainType;
+        this.setTerrainType(tile, nextTerrain);
+        this.updatedTiles.push(tile);
+      }
     }
 
     if (gu.packedMotionPlans) {
@@ -1349,7 +1435,23 @@ export class GameView implements GameMap {
     return this._map.terrainType(ref);
   }
   setTerrainType(ref: TileRef, type: TerrainType): void {
+    // Mirror GameImpl/ScoutSwarmExecution on the client: snapshot the
+    // owner + pre-mutation habitability, rewrite the terrain, and then
+    // feed the delta back into the local SectorMap so derived habitability
+    // UI (overlays, HUD income rates) stays in sync after a terraform.
+    const ownerIdBefore = this._map.hasOwner(ref)
+      ? this._map.ownerID(ref)
+      : null;
+    const previousHab =
+      ownerIdBefore !== null ? this._sectorMap.effectiveHabitability(ref) : 0;
     this._map.setTerrainType(ref, type);
+    if (ownerIdBefore !== null) {
+      this._sectorMap.recomputeHabitabilityForTile(
+        ref,
+        ownerIdBefore,
+        previousHab,
+      );
+    }
   }
   forEachTile(fn: (tile: TileRef) => void): void {
     return this._map.forEachTile(fn);
@@ -1380,7 +1482,7 @@ export class GameView implements GameMap {
     // Snapshot the previous owner before the state is rewritten so we can
     // drive SectorMap's running per-player counters on the client. Without
     // this, `_sectorMap.perPlayer*` would stay zeroed on the view side and
-    // any habitability-based HUD rate (`troopIncreaseRate`, `maxTroops`,
+    // any habitability-based HUD rate (`troopIncreaseRate`, `maxPopulation`,
     // `creditAdditionRate`) would diverge from the authoritative server
     // tick once the sector/habitability formulas are active.
     const prevOwnerID = this._map.ownerID(tile);

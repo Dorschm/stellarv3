@@ -13,7 +13,7 @@ import {
   CancelShuttleIntentEvent,
   SendAttackIntentEvent,
 } from "../Transport";
-import { renderTroops, translateText } from "../Utils";
+import { renderPopulation, translateText } from "../Utils";
 import { GoToPlayerEvent, GoToPositionEvent, GoToUnitEvent } from "./events";
 import { useGameTick } from "./useGameTick";
 // TODO(T7): SpriteLoader was removed with the old Canvas renderer.
@@ -145,11 +145,11 @@ export function AttacksDisplay(): React.JSX.Element {
     const myPlayer = gameView.myPlayer();
     if (!myPlayer) return;
 
-    const counterTroops = Math.min(
-      attack.troops,
-      (attackRatio / 100) * myPlayer.troops(),
+    const counterPopulation = Math.min(
+      attack.population,
+      (attackRatio / 100) * myPlayer.population(),
     );
-    eventBus.emit(new SendAttackIntentEvent(attacker.id(), counterTroops));
+    eventBus.emit(new SendAttackIntentEvent(attacker.id(), counterPopulation));
   };
 
   const emitCancelAttackIntent = (id: string) => {
@@ -223,7 +223,9 @@ export function AttacksDisplay(): React.JSX.Element {
                 />
                 ↓
               </span>
-              <span className="ml-1">{renderTroops(attack.troops)}</span>
+              <span className="ml-1">
+                {renderPopulation(attack.population)}
+              </span>
               <span className="truncate ml-1">
                 {(
                   gameView.playerBySmallID(attack.attackerID) as PlayerView
@@ -282,7 +284,9 @@ export function AttacksDisplay(): React.JSX.Element {
                 />
                 ↑
               </span>
-              <span className="ml-1">{renderTroops(attack.troops)}</span>
+              <span className="ml-1">
+                {renderPopulation(attack.population)}
+              </span>
               <span className="truncate ml-1">
                 {(
                   gameView.playerBySmallID(attack.targetID) as PlayerView
@@ -336,7 +340,9 @@ export function AttacksDisplay(): React.JSX.Element {
                 />
                 ↑
               </span>
-              <span className="ml-1">{renderTroops(localAttack.troops)}</span>
+              <span className="ml-1">
+                {renderPopulation(localAttack.population)}
+              </span>
               {translateText("help_modal.ui_wilderness")}
             </>
           ),
@@ -384,7 +390,7 @@ export function AttacksDisplay(): React.JSX.Element {
                   />
                 )}
                 <span className="inline-block min-w-[3rem] text-right">
-                  {renderTroops(shuttle.troops())}
+                  {renderPopulation(shuttle.population())}
                 </span>
                 <span className="truncate text-xs ml-1">
                   {getShuttleTargetName(shuttle)}
@@ -437,7 +443,7 @@ export function AttacksDisplay(): React.JSX.Element {
                   />
                 )}
                 <span className="inline-block min-w-[3rem] text-right">
-                  {renderTroops(shuttle.troops())}
+                  {renderPopulation(shuttle.population())}
                 </span>
                 <span className="truncate text-xs ml-1">
                   {shuttle.owner()?.displayName()}

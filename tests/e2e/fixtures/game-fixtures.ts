@@ -15,7 +15,11 @@ import { Browser, ConsoleMessage, expect, Page } from "@playwright/test";
  * mounted asynchronously after the server confirms `game_start`, so we wait
  * for it explicitly rather than assuming it lands by the next tick.
  */
-const IN_GAME_TIMEOUT_MS = 30_000;
+// 60s gives the game-start handshake plenty of room when the dev server
+// is under load from a long serial spec chain — 30s used to be enough but
+// the procedural map generator + sector-map habitability bake-in added
+// real wall-clock to game start (see commits 8da59a6 and b95f4a4).
+const IN_GAME_TIMEOUT_MS = 60_000;
 
 /**
  * Wait until the shell has transitioned into an active game session.
@@ -708,6 +712,14 @@ export async function findEnemyTile(
  * Poll until an attackable enemy tile (sharing a border with the player)
  * is found. Territory expands every tick, so the player will eventually
  * border an enemy. Returns the tile or throws on timeout.
+ *
+ * Bails out early — within seconds, not the full timeout — if the local
+ * player has been eliminated (isAlive=false or numTilesOwned=0). Without
+ * this, callers waste minutes polling for a border tile that can never
+ * exist because the player has no territory left to border anything.
+ * This commonly happens in multiplayer with procedural maps: nation
+ * factions can wipe out a small player in the middle game even when
+ * bots=0, since `nations: "default"` is hardcoded in HostLobbyModal.
  */
 export async function waitForBorderEnemyTile(
   page: Page,
@@ -715,6 +727,36 @@ export async function waitForBorderEnemyTile(
 ): Promise<{ tileX: number; tileY: number; ownerId: string | null }> {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
+    const playerStatus = await page.evaluate(() => {
+      const gv = (
+        window as unknown as {
+          __gameView?: {
+            myPlayer(): {
+              isAlive(): boolean;
+              numTilesOwned(): number;
+            } | null;
+          };
+        }
+      ).__gameView;
+      const mp = gv?.myPlayer();
+      if (!mp) return { exists: false, alive: false, tiles: 0 };
+      return {
+        exists: true,
+        alive: mp.isAlive(),
+        tiles: mp.numTilesOwned(),
+      };
+    });
+    if (
+      playerStatus.exists &&
+      (!playerStatus.alive || playerStatus.tiles === 0)
+    ) {
+      throw new Error(
+        `waitForBorderEnemyTile: local player has no territory ` +
+          `(alive=${playerStatus.alive}, tiles=${playerStatus.tiles}) — ` +
+          `cannot border any enemy. This usually means nation pressure ` +
+          `eliminated the player earlier in the test sequence.`,
+      );
+    }
     const tile = await findEnemyTile(page);
     if (tile) return tile;
     await page.waitForTimeout(1_000);
@@ -778,7 +820,7 @@ const pageErrors = new WeakMap<Page, string[]>();
  * Start collecting console errors on a page. Call once per page (idempotent).
  * Ignored messages:
  * - Vite HMR / dev-server noise
- * - Third-party resource load failures (fonts, analytics)
+ * - Third-party credit load failures (fonts, analytics)
  * - React StrictMode double-render warnings
  */
 export function trackConsoleErrors(page: Page): void {
@@ -791,7 +833,7 @@ export function trackConsoleErrors(page: Page): void {
     const text = msg.text();
     // Filter out known dev-environment noise
     if (/\[vite\]|hmr|hot.update/i.test(text)) return;
-    if (/failed to load resource|net::ERR_/i.test(text)) return;
+    if (/failed to load credit|net::ERR_/i.test(text)) return;
     if (/react.*strict mode|deprecated/i.test(text)) return;
     if (/turnstile/i.test(text)) return;
     // Auth/cosmetics APIs unavailable in local dev

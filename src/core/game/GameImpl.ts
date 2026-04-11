@@ -48,6 +48,7 @@ import { GameUpdate, GameUpdateType } from "./GameUpdates";
 import { HyperspaceLaneNetwork } from "./HyperspaceLaneNetwork";
 import { createHyperspaceLaneNetwork } from "./HyperspaceLaneNetworkImpl";
 import { MotionPlanRecord, packMotionPlans } from "./MotionPlans";
+import { buildPlanets, Planet } from "./Planet";
 import { PlayerImpl } from "./PlayerImpl";
 import { SectorMap } from "./SectorMap";
 import { Stats } from "./Stats";
@@ -108,6 +109,15 @@ export class GameImpl implements Game {
 
   private updates: GameUpdates = createGameUpdatesMap();
   private tileUpdatePairs: number[] = [];
+  /**
+   * Per-tick staging for runtime terrain mutations. Each entry is a
+   * `[tileRef, terrainType]` pair drained into `packedTerrainUpdates` at
+   * the end of the tick so clients can reapply them via
+   * `GameMap.setTerrainType`. Tracked separately from
+   * `tileUpdatePairs` because terrain lives in a different backing
+   * buffer (magnitude bits) from packed tile state.
+   */
+  private terrainUpdatePairs: number[] = [];
   private motionPlanRecords: MotionPlanRecord[] = [];
   private planDrivenUnitIds = new Set<number>();
   private unitGrid: UnitGrid;
@@ -324,6 +334,45 @@ export class GameImpl implements Game {
     return this._sectorMap;
   }
 
+  /**
+   * GDD §2 — discrete planet list built on first access from the
+   * {@link SectorMap} and the manifest nations. Cached thereafter so
+   * callers (scoring, HUD, structure placement) see a stable object
+   * identity for the lifetime of the game.
+   *
+   * Built lazily rather than in the constructor because the underlying
+   * `SectorMap` is finalized there but `buildPlanets` iterates every
+   * tile for the habitability-state query, and we don't want that cost
+   * at init for callers that never read `planets()`.
+   */
+  private _planets: readonly Planet[] | null = null;
+  planets(): readonly Planet[] {
+    this._planets ??= buildPlanets(
+      this._sectorMap,
+      this._map,
+      this._nations.map((n) => ({
+        name: n.playerInfo.name,
+        coordinates: n.spawnCell
+          ? ([n.spawnCell.x, n.spawnCell.y] as const)
+          : ([0, 0] as const),
+      })),
+    );
+    return this._planets;
+  }
+
+  planetByTile(tile: TileRef): Planet | null {
+    const sectorId = this._sectorMap.sectorOf(tile);
+    if (sectorId === 0) return null;
+    const list = this.planets();
+    // `planets()` is ordered ascending by sectorId (see buildPlanets) and
+    // the count is ~nations (low dozens), so a linear scan is cheaper
+    // than a Map and avoids a separate index structure to keep in sync.
+    for (const p of list) {
+      if (p.sectorId === sectorId) return p;
+    }
+    return null;
+  }
+
   // GDD §4 / Ticket 6 — shared per-tile scout swarm terraform accumulator.
   // Stored as a sparse Map because terraforming is a rare event relative to
   // the tile count; instantiating a dense array sized to the whole map would
@@ -342,6 +391,96 @@ export class GameImpl implements Game {
 
   scoutSwarmTerraformProgress(tile: TileRef): number {
     return this._scoutSwarmProgress.get(tile) ?? 0;
+  }
+
+  // GDD §8 / Ticket 8 — pending Long-Range Weapon impact registry. Backing
+  // storage for the LRW intercept duel loop: see the docs on the matching
+  // methods in `Game` for the contract. The registry is a sparse Map keyed
+  // on a monotonically increasing token because impacts are rare relative
+  // to total game state and intercepts are O(N) over a small N (range-
+  // limited query). The DefenseStation pulls candidate impacts via
+  // `pendingLrwImpactsNear` and cancels them with `interceptPendingLrwImpact`,
+  // while the OSP execution registers entries at fire time and removes
+  // them either when the impact resolves naturally or when an intercept
+  // wins the race.
+  private _pendingLrwImpacts: Map<
+    number,
+    {
+      ownerSmallID: number;
+      fireTile: TileRef;
+      targetTile: TileRef;
+      impactTick: number;
+    }
+  > = new Map();
+  private _nextLrwImpactToken: number = 1;
+
+  registerPendingLrwImpact(
+    ownerSmallID: number,
+    fireTile: TileRef,
+    targetTile: TileRef,
+    impactTick: number,
+  ): number {
+    const token = this._nextLrwImpactToken++;
+    this._pendingLrwImpacts.set(token, {
+      ownerSmallID,
+      fireTile,
+      targetTile,
+      impactTick,
+    });
+    return token;
+  }
+
+  unregisterPendingLrwImpact(token: number): void {
+    this._pendingLrwImpacts.delete(token);
+  }
+
+  isPendingLrwImpactActive(token: number): boolean {
+    return this._pendingLrwImpacts.has(token);
+  }
+
+  pendingLrwImpactsNear(
+    tile: TileRef,
+    range: number,
+    excludeOwnerSmallID?: number,
+  ): Array<{
+    token: number;
+    targetTile: TileRef;
+    ownerSmallID: number;
+    distSquared: number;
+  }> {
+    const result: Array<{
+      token: number;
+      targetTile: TileRef;
+      ownerSmallID: number;
+      distSquared: number;
+    }> = [];
+    if (this._pendingLrwImpacts.size === 0) return result;
+    const ox = this._map.x(tile);
+    const oy = this._map.y(tile);
+    const rangeSquared = range * range;
+    for (const [token, impact] of this._pendingLrwImpacts) {
+      if (
+        excludeOwnerSmallID !== undefined &&
+        impact.ownerSmallID === excludeOwnerSmallID
+      ) {
+        continue;
+      }
+      const dx = this._map.x(impact.targetTile) - ox;
+      const dy = this._map.y(impact.targetTile) - oy;
+      const distSquared = dx * dx + dy * dy;
+      if (distSquared > rangeSquared) continue;
+      result.push({
+        token,
+        targetTile: impact.targetTile,
+        ownerSmallID: impact.ownerSmallID,
+        distSquared,
+      });
+    }
+    return result;
+  }
+
+  interceptPendingLrwImpact(token: number): boolean {
+    return this._pendingLrwImpacts.delete(token);
   }
 
   createAllianceRequest(
@@ -451,6 +590,7 @@ export class GameImpl implements Game {
     const _perfTick = perfBegin("tick.total");
     this.updates = createGameUpdatesMap();
     this.tileUpdatePairs.length = 0;
+    this.terrainUpdatePairs.length = 0;
     const _perfExecs = perfBegin("tick.execs");
     if (perfIsEnabled()) {
       // Per-execution-class measurement: only enabled when the perf
@@ -519,6 +659,16 @@ export class GameImpl implements Game {
 
   drainPackedTileUpdates(): Uint32Array {
     const pairs = this.tileUpdatePairs;
+    const packed = new Uint32Array(pairs.length);
+    for (let i = 0; i < pairs.length; i++) {
+      packed[i] = pairs[i];
+    }
+    pairs.length = 0;
+    return packed;
+  }
+
+  drainPackedTerrainUpdates(): Uint32Array {
+    const pairs = this.terrainUpdatePairs;
     const packed = new Uint32Array(pairs.length);
     for (let i = 0; i < pairs.length; i++) {
       packed[i] = pairs[i];
@@ -631,7 +781,7 @@ export class GameImpl implements Game {
       this,
       this.nextPlayerID,
       playerInfo,
-      this.config().startManpower(playerInfo),
+      this.config().startPopulation(playerInfo),
       team ?? this.maybeAssignTeam(playerInfo),
     );
     this._playersBySmallID.push(player);
@@ -1189,6 +1339,11 @@ export class GameImpl implements Game {
   }
   setTerrainType(ref: TileRef, type: TerrainType): void {
     this._map.setTerrainType(ref, type);
+    // Ticket 6 — record terrain mutations for the client sync channel.
+    // `packedTileUpdates` only carries packed per-tile state, not terrain,
+    // so without this the client's GameMap would keep serving the stale
+    // terrain classification after terraforming.
+    this.terrainUpdatePairs.push(ref, type);
   }
   forEachTile(fn: (tile: TileRef) => void): void {
     return this._map.forEachTile(fn);

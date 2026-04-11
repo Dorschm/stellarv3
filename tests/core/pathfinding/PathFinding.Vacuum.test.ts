@@ -5,11 +5,11 @@ import { PathFinding } from "../../../src/core/pathfinding/PathFinder";
 import { SteppingPathFinder } from "../../../src/core/pathfinding/types";
 import { setup } from "../../util/Setup";
 
-describe("PathFinding.Air", () => {
+describe("PathFinding.Vacuum", () => {
   let game: Game;
 
   function createPathFinder(): SteppingPathFinder<TileRef> {
-    return PathFinding.Air(game);
+    return PathFinding.Vacuum(game);
   }
 
   beforeAll(async () => {

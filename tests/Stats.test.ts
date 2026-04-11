@@ -107,8 +107,8 @@ describe("Stats", () => {
     });
   });
 
-  test("shuttleSendTroops", () => {
-    stats.shuttleSendTroops(player1, player2, 1);
+  test("shuttleSendPopulation", () => {
+    stats.shuttleSendPopulation(player1, player2, 1);
     expect(stats.stats()).toStrictEqual({
       client1: {
         shuttles: {
@@ -118,8 +118,8 @@ describe("Stats", () => {
     });
   });
 
-  test("shuttleArriveTroops", () => {
-    stats.shuttleArriveTroops(player1, player2, 1);
+  test("shuttleArrivePopulation", () => {
+    stats.shuttleArrivePopulation(player1, player2, 1);
     expect(stats.stats()).toStrictEqual({
       client1: {
         shuttles: { ashuttle: [0n, 1n] },
@@ -127,8 +127,8 @@ describe("Stats", () => {
     });
   });
 
-  test("shuttleDestroyTroops", () => {
-    stats.shuttleDestroyTroops(player1, player2, 1);
+  test("shuttleDestroyPopulation", () => {
+    stats.shuttleDestroyPopulation(player1, player2, 1);
     expect(stats.stats()).toStrictEqual({
       client1: {
         shuttles: { ashuttle: [0n, 0n, 0n, 1n] },

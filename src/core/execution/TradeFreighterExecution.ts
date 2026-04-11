@@ -1,4 +1,4 @@
-import { renderNumber } from "../../client/Utils";
+import { renderNumber, renderPopulation } from "../../client/Utils";
 import {
   Execution,
   Game,
@@ -21,6 +21,9 @@ export class TradeFreighterExecution implements Execution {
   private tilesTraveled = 0;
   private motionPlanId = 1;
   private motionPlanDst: TileRef | null = null;
+  // GDD §7: trade routes carry both credits and a small population payload.
+  // Captured at launch via removePopulation() and delivered on arrival via addPopulation().
+  private populationCarried = 0;
 
   constructor(
     private origOwner: Player,
@@ -30,7 +33,7 @@ export class TradeFreighterExecution implements Execution {
 
   init(mg: Game, ticks: number): void {
     this.mg = mg;
-    this.pathFinder = PathFinding.Water(mg);
+    this.pathFinder = PathFinding.DeepSpace(mg);
   }
 
   tick(ticks: number): void {
@@ -52,10 +55,20 @@ export class TradeFreighterExecution implements Execution {
           lastSetSafeFromRaiders: ticks,
         },
       );
+      // GDD §7: pick up a slice of source population and ferry them to the destination.
+      const fraction = this.mg.config().tradePopulationFraction();
+      const requested = Math.floor(this.origOwner.population() * fraction);
+      this.populationCarried =
+        requested > 0 ? this.origOwner.removePopulation(requested) : 0;
       this.mg.stats().freighterSendTrade(this.origOwner, this._dstPort.owner());
     }
 
     if (!this.tradeFreighter.isActive()) {
+      // GDD §7: ship was destroyed externally (e.g., by raiders). Treat the
+      // carried population as explicit casualties so populationCarried is never
+      // silently retained, but don't refund — the population went down with the
+      // ship.
+      this.discardTroopPayloadAsCasualty();
       this.active = false;
       return;
     }
@@ -70,6 +83,7 @@ export class TradeFreighterExecution implements Execution {
     // If a player captures another player's port while trading we should delete
     // the ship.
     if (dstPortOwner.id() === this.srcPort.owner().id()) {
+      this.refundTroopPayload();
       this.tradeFreighter.delete(false);
       this.active = false;
       return;
@@ -79,6 +93,7 @@ export class TradeFreighterExecution implements Execution {
       !this.wasCaptured &&
       (!this._dstPort.isActive() || !tradeFreighterOwner.canTrade(dstPortOwner))
     ) {
+      this.refundTroopPayload();
       this.tradeFreighter.delete(false);
       this.active = false;
       return;
@@ -99,6 +114,7 @@ export class TradeFreighterExecution implements Execution {
           !port.isUnderConstruction(),
       );
       if (nearestPort === null) {
+        this.refundTroopPayload();
         this.tradeFreighter.delete(false);
         this.active = false;
         return;
@@ -153,6 +169,7 @@ export class TradeFreighterExecution implements Execution {
         return;
       case PathStatus.NOT_FOUND:
         console.warn("captured trade freighter cannot find route");
+        this.refundTroopPayload();
         if (this.tradeFreighter.isActive()) {
           this.tradeFreighter.delete(false);
         }
@@ -161,22 +178,53 @@ export class TradeFreighterExecution implements Execution {
     }
   }
 
+  /**
+   * GDD §7: administrative cancellation path (invalid destination, no
+   * reroute port, path not found, etc.). Returns the in-flight population
+   * payload to the original sender so the population is never silently
+   * leaked, then clears populationCarried.
+   *
+   * We always refund to origOwner because origOwner is the player who paid
+   * for the payload via removePopulation() at launch — regardless of whether
+   * the ship has since been captured.
+   */
+  private refundTroopPayload(): void {
+    if (this.populationCarried > 0) {
+      this.origOwner.addPopulation(this.populationCarried);
+    }
+    this.populationCarried = 0;
+  }
+
+  /**
+   * GDD §7: explicit casualty path. When the freighter is destroyed in
+   * flight (e.g., raiders), the carried population is considered lost with
+   * the ship rather than refunded. We still zero out populationCarried so the
+   * payload is never retained silently in the execution's internal state.
+   */
+  private discardTroopPayloadAsCasualty(): void {
+    this.populationCarried = 0;
+  }
+
   private complete() {
     this.active = false;
     this.tradeFreighter!.delete(false);
     const creditAmount = this.mg
       .config()
       .tradeFreighterCredits(this.tilesTraveled);
+    const populationDelivered = this.populationCarried;
+    this.populationCarried = 0;
 
     if (this.wasCaptured) {
-      this.tradeFreighter!.owner().addCredits(
-        creditAmount,
-        this._dstPort.tile(),
-      );
+      const capturer = this.tradeFreighter!.owner();
+      capturer.addCredits(creditAmount, this._dstPort.tile());
+      // GDD §7: captured trade ships ferry their population payload to the capturer.
+      if (populationDelivered > 0) {
+        capturer.addPopulation(populationDelivered);
+      }
       this.mg.displayMessage(
         "events_display.received_credits_from_captured_ship",
         MessageType.CAPTURED_ENEMY_UNIT,
-        this.tradeFreighter!.owner().id(),
+        capturer.id(),
         creditAmount,
         {
           credits: renderNumber(creditAmount),
@@ -186,14 +234,16 @@ export class TradeFreighterExecution implements Execution {
       // Record stats
       this.mg
         .stats()
-        .freighterCapturedTrade(
-          this.tradeFreighter!.owner(),
-          this.origOwner,
-          creditAmount,
-        );
+        .freighterCapturedTrade(capturer, this.origOwner, creditAmount);
     } else {
       this.srcPort.owner().addCredits(creditAmount);
       this._dstPort.owner().addCredits(creditAmount, this._dstPort.tile());
+      // GDD §7: deliver the population payload to the destination port owner.
+      if (populationDelivered > 0) {
+        this._dstPort.owner().addPopulation(populationDelivered);
+      }
+      // `gold` is a backward-compat alias for locales that still reference
+      // the legacy {gold} placeholder. New locales should use {credits}.
       this.mg.displayMessage(
         "events_display.received_credits_from_trade",
         MessageType.RECEIVED_CREDITS_FROM_TRADE,
@@ -201,6 +251,8 @@ export class TradeFreighterExecution implements Execution {
         creditAmount,
         {
           credits: renderNumber(creditAmount),
+          gold: renderNumber(creditAmount),
+          population: renderPopulation(populationDelivered),
           name: this.srcPort.owner().displayName(),
         },
       );
@@ -211,6 +263,8 @@ export class TradeFreighterExecution implements Execution {
         creditAmount,
         {
           credits: renderNumber(creditAmount),
+          gold: renderNumber(creditAmount),
+          population: renderPopulation(populationDelivered),
           name: this._dstPort.owner().displayName(),
         },
       );

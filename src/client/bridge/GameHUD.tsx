@@ -35,7 +35,7 @@ export function GameHUD() {
       {myPlayer && (
         <>
           <div>
-            {myPlayer.displayName} — Troops: {myPlayer.troops}
+            {myPlayer.displayName} — Population: {myPlayer.population}
           </div>
           <div>Tiles: {myPlayer.numTilesOwned}</div>
         </>

@@ -58,9 +58,9 @@ export const unitTypeToOtherUnit = {
 } as const satisfies Record<OtherUnitType, OtherUnit>;
 
 // Attacks
-export const ATTACK_INDEX_SENT = 0; // Outgoing attack troops
-export const ATTACK_INDEX_RECV = 1; // Incmoing attack troops
-export const ATTACK_INDEX_CANCEL = 2; // Cancelled attack troops
+export const ATTACK_INDEX_SENT = 0; // Outgoing attack population
+export const ATTACK_INDEX_RECV = 1; // Incmoing attack population
+export const ATTACK_INDEX_CANCEL = 2; // Cancelled attack population
 
 // Player types
 export const PLAYER_INDEX_HUMAN = 0;

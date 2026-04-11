@@ -20,7 +20,7 @@ export class PlasmaBoltExecution implements Execution {
   ) {}
 
   init(mg: Game, ticks: number): void {
-    this.pathFinder = PathFinding.Air(mg);
+    this.pathFinder = PathFinding.Vacuum(mg);
     this.mg = mg;
     this.random = new PseudoRandom(mg.ticks());
   }

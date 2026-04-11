@@ -684,7 +684,7 @@ export class ClientGameRunner {
         this.eventBus.emit(
           new SendAttackIntentEvent(
             this.gameView.owner(tile).id(),
-            this.myPlayer!.troops() * this.bridge.attackRatio,
+            this.myPlayer!.population() * this.bridge.attackRatio,
           ),
         );
         return;
@@ -819,7 +819,7 @@ export class ClientGameRunner {
         this.eventBus.emit(
           new SendAttackIntentEvent(
             this.gameView.owner(tile).id(),
-            this.myPlayer!.troops() * this.bridge.attackRatio,
+            this.myPlayer!.population() * this.bridge.attackRatio,
           ),
         );
       }
@@ -854,7 +854,7 @@ export class ClientGameRunner {
     this.eventBus.emit(
       new SendShuttleAttackIntentEvent(
         tile,
-        this.myPlayer.troops() * this.bridge.attackRatio,
+        this.myPlayer.population() * this.bridge.attackRatio,
       ),
     );
   }

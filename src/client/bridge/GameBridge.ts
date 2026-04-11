@@ -103,7 +103,7 @@ export class GameBridge {
         name: p.name(),
         displayName: p.displayName(),
         isAlive: p.isAlive(),
-        troops: p.troops(),
+        population: p.population(),
         credits: p.credits(),
         numTilesOwned: p.numTilesOwned(),
         allies: p.allies().map((a) => a.smallID()),
@@ -127,7 +127,7 @@ export class GameBridge {
         type: u.type(),
         ownerSmallID: u.owner().smallID(),
         tile: u.tile(),
-        troops: u.troops(),
+        population: u.population(),
         level: u.level(),
         isActive: u.isActive(),
         health: u.hasHealth() ? u.health() : undefined,
@@ -166,7 +166,7 @@ export class GameBridge {
    *
    * The HUDStore stores the ratio as a percent integer (0..100) to match the
    * ControlPanel slider's native range. Consumers that need to multiply by a
-   * troop count (e.g. SendAttackIntentEvent, SendShuttleAttackIntentEvent) want a
+   * population count (e.g. SendAttackIntentEvent, SendShuttleAttackIntentEvent) want a
    * normalized 0..1 value, so convert here. The store value is clamped to
    * [0, 100] before normalizing to guard against out-of-range writes.
    */

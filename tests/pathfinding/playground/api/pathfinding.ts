@@ -90,7 +90,7 @@ function extractTimings(span: {
 }
 
 /**
- * Compute primary path using PathFinding.Water with debug info
+ * Compute primary path using PathFinding.DeepSpace with debug info
  */
 function computePrimaryPath(
   game: any,
@@ -99,8 +99,8 @@ function computePrimaryPath(
 ): PrimaryResult {
   const miniMap = game.miniMap();
 
-  // Use standard PathFinding.Water
-  const pf = PathFinding.Water(game);
+  // Use standard PathFinding.DeepSpace
+  const pf = PathFinding.DeepSpace(game);
 
   // Enable DebugSpan to capture internal state
   DebugSpan.enable();
@@ -199,7 +199,7 @@ export async function computePath(
     throw new Error(`End point (${to[0]}, ${to[1]}) is not water`);
   }
 
-  // Compute primary path (PathFinding.Water with debug)
+  // Compute primary path (PathFinding.DeepSpace with debug)
   const primary = computePrimaryPath(game, fromRef, toRef);
 
   // Compute comparison paths

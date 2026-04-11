@@ -98,7 +98,7 @@ describe("Long-Range Weapon (Ticket 5)", () => {
     expect(cfg.longRangeWeaponHabitabilityDamage()).toBeCloseTo(0.1, 10);
   });
 
-  test("OSP autonomously fires LRW at the closest enemy and reduces defender troops", () => {
+  test("OSP autonomously fires LRW at the closest enemy and reduces defender population", () => {
     // `infiniteCredits` only makes unit purchases cost 0 — it does NOT
     // give the player a bottomless credit balance. Stockpile enough to
     // cover at least one LRW shot (100k) so the cost check passes.
@@ -109,7 +109,7 @@ describe("Long-Range Weapon (Ticket 5)", () => {
     const { exec: osp } = spawnActiveOsp(game, attacker, game.ref(1, 1));
 
     // Capture state before the LRW resolves.
-    const defenderTroopsBefore = defender.troops();
+    const defenderPopulationBefore = defender.population();
 
     // Wait long enough for the OSP to fire AND for the projectile to
     // travel to the target. Distance is roughly 14 tiles → flight time
@@ -122,11 +122,11 @@ describe("Long-Range Weapon (Ticket 5)", () => {
     expect(osp.lrwReadyAt()).toBeGreaterThan(0);
 
     // Observable side-effect: defender lost a meaningful chunk of pop.
-    // The 10% LRW hit lands as a single subtraction of current troops;
-    // growth over 5 ticks is much smaller than 10% of starting troops.
-    const lossFromLrw = Math.floor(defenderTroopsBefore * 0.1);
-    expect(defender.troops()).toBeLessThanOrEqual(
-      defenderTroopsBefore - lossFromLrw + 2000,
+    // The 10% LRW hit lands as a single subtraction of current population;
+    // growth over 5 ticks is much smaller than 10% of starting population.
+    const lossFromLrw = Math.floor(defenderPopulationBefore * 0.1);
+    expect(defender.population()).toBeLessThanOrEqual(
+      defenderPopulationBefore - lossFromLrw + 2000,
     );
   });
 
@@ -191,14 +191,14 @@ describe("Long-Range Weapon (Ticket 5)", () => {
 
     spawnActiveOsp(pennilessGame, aPlayer, pennilessGame.ref(1, 1));
 
-    const dTroopsBefore = dPlayer.troops();
+    const dPopulationBefore = dPlayer.population();
     executeTicks(pennilessGame, 10);
 
-    // No shot fired → defender troops unchanged by the LRW path.
-    // (Other systems might still fluctuate troops slightly, so we just
+    // No shot fired → defender population unchanged by the LRW path.
+    // (Other systems might still fluctuate population slightly, so we just
     // assert the defender did not take the 10% LRW hit.)
-    expect(dPlayer.troops()).toBeGreaterThanOrEqual(
-      Math.floor(dTroopsBefore * 0.95),
+    expect(dPlayer.population()).toBeGreaterThanOrEqual(
+      Math.floor(dPopulationBefore * 0.95),
     );
   });
 

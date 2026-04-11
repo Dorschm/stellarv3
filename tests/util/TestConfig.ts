@@ -82,7 +82,7 @@ export class TestConfig extends DefaultConfig {
 
   attackLogic(
     gm: Game,
-    attackTroops: number,
+    attackPopulation: number,
     attacker: Player,
     defender: Player | TerraNullius,
     tileToConquer: TileRef,
@@ -95,7 +95,7 @@ export class TestConfig extends DefaultConfig {
   }
 
   attackTilesPerTick(
-    attackTroops: number,
+    attackPopulation: number,
     attacker: Player,
     defender: Player | TerraNullius,
     numAdjacentTilesWithEnemy: number,
@@ -107,7 +107,7 @@ export class UseRealAttackLogic extends TestConfig {
   // Override to use DefaultConfig's real attackLogic
   attackLogic(
     gm: Game,
-    attackTroops: number,
+    attackPopulation: number,
     attacker: Player,
     defender: Player | TerraNullius,
     tileToConquer: TileRef,
@@ -119,7 +119,7 @@ export class UseRealAttackLogic extends TestConfig {
     return DefaultConfig.prototype.attackLogic.call(
       this,
       gm,
-      attackTroops,
+      attackPopulation,
       attacker,
       defender,
       tileToConquer,

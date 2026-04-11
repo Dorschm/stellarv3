@@ -37,7 +37,7 @@ export type FrigateSubtype =
  * mesh; once it crosses onto a non-sector (deep space) tile it moves to
  * this separate instanced-mesh pool whose geometry is Shuttle.glb,
  * giving the visible "transform into deep-space shuttle" effect while
- * transporting troops between planets.
+ * transporting population between planets.
  */
 export type AssaultShuttleVariant = "DeepSpaceShuttle";
 
@@ -78,7 +78,7 @@ export function renderKeyFor(
     !game.isSector(unit.tile())
   ) {
     // Ship is traversing deep space — switch to the Shuttle.glb variant
-    // so troop transports visibly "launch" off their home planet.
+    // so population transports visibly "launch" off their home planet.
     return "DeepSpaceShuttle";
   }
   return unit.type();
@@ -96,6 +96,11 @@ function createProxyGeometry(key: RenderKey): BufferGeometry {
       return new BoxGeometry(2, 6, 2);
     case UnitType.TradeFreighter:
       return new ConeGeometry(2.5, 4, 8);
+    // Ticket 6 — Scout Swarm: tiny probe cluster. Proxy is a small
+    // octahedron so the swarm reads as a compact, non-ship marker while
+    // it traverses toward its terraform target.
+    case UnitType.ScoutSwarm:
+      return new OctahedronGeometry(1.2);
     // Frigate subtypes: engines = cylinder, carriages = box
     case "FrigateEngine":
       return new CylinderGeometry(1.5, 1.5, 5, 8);
@@ -256,6 +261,11 @@ export const ALL_RENDER_KEYS: readonly RenderKey[] = [
   UnitType.NovaBomb,
   UnitType.ClusterWarhead,
   UnitType.ClusterWarheadSubmunition,
+  // Ticket 6 — Scout Swarm render pool so active swarms are visible while
+  // traveling to their terraform target. Without this entry renderKeyFor()
+  // returns a key that has no pool and the unit is silently dropped during
+  // bucket rendering.
+  UnitType.ScoutSwarm,
   UnitType.Colony,
   UnitType.Spaceport,
   UnitType.Foundry,

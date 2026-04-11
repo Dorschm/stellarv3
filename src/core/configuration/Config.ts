@@ -28,6 +28,18 @@ export interface ServerConfig {
   turnstileSiteKey(): string;
   turnstileSecretKey(): string;
   turnIntervalMs(): number;
+  /**
+   * GDD §10 — server-side dynamic tick-rate. Maps a 0..1 progress signal
+   * (typically wall-clock elapsed-time fraction; the simulation lives
+   * client-side so the server can't read player tile counts directly) onto
+   * the desired turn interval in ms, interpolated between
+   * {@link maxTurnIntervalMs} (slow start) and {@link minTurnIntervalMs}
+   * (fast end). Mirrors the same-named method on the game {@link Config}
+   * so balance lives in one place.
+   */
+  dynamicTurnIntervalMs(progress: number): number;
+  minTurnIntervalMs(): number;
+  maxTurnIntervalMs(): number;
   gameCreationRate(): number;
   numWorkers(): number;
   workerIndex(gameID: GameID): number;
@@ -85,8 +97,8 @@ export interface Config {
   bots(): number;
   infiniteCredits(): boolean;
   donateCredits(): boolean;
-  infiniteTroops(): boolean;
-  donateTroops(): boolean;
+  infinitePopulation(): boolean;
+  donatePopulation(): boolean;
   instantBuild(): boolean;
   disableNavMesh(): boolean;
   disableAlliances(): boolean;
@@ -97,18 +109,18 @@ export interface Config {
   creditMultiplier(): number;
   startingCredits(playerInfo: PlayerInfo): Credits;
 
-  startManpower(playerInfo: PlayerInfo): number;
+  startPopulation(playerInfo: PlayerInfo): number;
   troopIncreaseRate(player: Player | PlayerView): number;
   creditAdditionRate(player: Player | PlayerView): Credits;
   attackTilesPerTick(
-    attckTroops: number,
+    attckPopulation: number,
     attacker: Player,
     defender: Player | TerraNullius,
     numAdjacentTilesWithEnemy: number,
   ): number;
   attackLogic(
     gm: Game,
-    attackTroops: number,
+    attackPopulation: number,
     attacker: Player,
     defender: Player | TerraNullius,
     tileToConquer: TileRef,
@@ -122,7 +134,7 @@ export interface Config {
   // When computing likelihood of trading for any given spaceport, the X closest spaceport
   // are twice more likely to be selected. X is determined below.
   proximityBonusSpaceportsNb(totalSpaceports: number): number;
-  maxTroops(player: Player | PlayerView): number;
+  maxPopulation(player: Player | PlayerView): number;
   colonyTroopIncrease(): number;
   shuttleAttackAmount(
     attacker: Player,
@@ -130,6 +142,13 @@ export interface Config {
   ): number;
   plasmaBoltLifetime(): number;
   shuttleMaxNumber(): number;
+  /**
+   * GDD §6 — Assault Fleet travel speed expressed as the integer number of
+   * ticks needed to traverse a single tile. With AU=100 and 1 AU/min this
+   * resolves to 6 ticks/tile, slowing the shuttle's pathfinder roughly 6x
+   * relative to the legacy 1-tile/tick pace.
+   */
+  assaultShuttleTicksPerTile(): number;
   allianceDuration(): Tick;
   allianceRequestDuration(): Tick;
   allianceRequestCooldown(): Tick;
@@ -146,6 +165,7 @@ export interface Config {
   unitInfo(type: UnitType): UnitInfo;
   tradeFreighterShortRangeDebuff(): number;
   tradeFreighterCredits(dist: number): Credits;
+  tradePopulationFraction(): number;
   tradeFreighterSpawnRate(
     tradeFreighterSpawnRejections: number,
     numTradeFreighters: number,
@@ -187,7 +207,7 @@ export interface Config {
     nukeType: NukeType,
     humans: number,
     tilesOwned: number,
-    maxTroops: number,
+    maxPopulation: number,
   ): number;
   structureMinDist(): number;
   isReplay(): boolean;
@@ -237,7 +257,7 @@ export interface Config {
    */
   longRangeWeaponMaxRange(): number;
   /**
-   * Fraction (0..1) of the target player's current troops that the LRW
+   * Fraction (0..1) of the target player's current population that the LRW
    * impact subtracts. GDD §5 calls for 10% population damage.
    */
   longRangeWeaponPopulationDamageRatio(): number;
@@ -250,7 +270,7 @@ export interface Config {
   // ---- Ticket 6: Fleet Systems — Scout Swarm ------------------------------
   /**
    * Launch cost for a single Scout Swarm as a *fraction* (0..1) of the
-   * player's current credits. GDD §4 specifies "10% of total resources".
+   * player's current credits. GDD §4 specifies "10% of total credits".
    * ScoutSwarmExecution reads this at launch time and deducts
    * `player.credits() * scoutSwarmCostFraction()` rounded to bigint.
    */
@@ -281,6 +301,18 @@ export interface Config {
    * one-slot planet"). Currently fixed at 1.
    */
   battlecruiserStructureSlotCount(): number;
+
+  // ---- Ticket 8: Habitability-gated structure slot limits -----------------
+  /**
+   * Maximum number of player structures a sector can host given the
+   * placement tile's *effective* habitability (post any LRW damage). The
+   * GDD §4 mapping is:
+   *   - hab ≤ 0.3 (AsteroidField): 0 — must terraform first.
+   *   - hab ≤ 0.6 (Nebula):        1 structure per sector.
+   *   - hab > 0.6 (OpenSpace):     2 structures per sector.
+   * Returns 0 for negative or NaN inputs.
+   */
+  maxStructuresForHabitability(habitability: number): number;
 }
 
 export interface Theme {

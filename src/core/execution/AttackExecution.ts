@@ -1,4 +1,4 @@
-import { renderTroops } from "../../client/Utils";
+import { renderPopulation } from "../../client/Utils";
 import {
   Attack,
   Difficulty,
@@ -30,11 +30,11 @@ export class AttackExecution implements Execution {
   private attack: Attack | null = null;
 
   constructor(
-    private startTroops: number | null = null,
+    private startPopulation: number | null = null,
     private _owner: Player,
     private _targetID: PlayerID | null,
     private sourceTile: TileRef | null = null,
-    private removeTroops: boolean = true,
+    private removePopulation: boolean = true,
   ) {}
 
   public targetID(): PlayerID | null {
@@ -97,16 +97,19 @@ export class AttackExecution implements Execution {
       return;
     }
 
-    this.startTroops ??= this.mg
+    this.startPopulation ??= this.mg
       .config()
       .attackAmount(this._owner, this.target);
-    if (this.removeTroops) {
-      this.startTroops = Math.min(this._owner.troops(), this.startTroops);
-      this._owner.removeTroops(this.startTroops);
+    if (this.removePopulation) {
+      this.startPopulation = Math.min(
+        this._owner.population(),
+        this.startPopulation,
+      );
+      this._owner.removePopulation(this.startPopulation);
     }
     this.attack = this._owner.createAttack(
       this.target,
-      this.startTroops,
+      this.startPopulation,
       this.sourceTile,
       new Set<TileRef>(),
     );
@@ -118,18 +121,22 @@ export class AttackExecution implements Execution {
     }
 
     // Record stats
-    this.mg.stats().attack(this._owner, this.target, this.startTroops);
+    this.mg.stats().attack(this._owner, this.target, this.startPopulation);
 
     for (const incoming of this._owner.incomingAttacks()) {
       if (incoming.attacker() === this.target) {
         // Target has opposing attack, cancel them out
-        if (incoming.troops() > this.attack.troops()) {
-          incoming.setTroops(incoming.troops() - this.attack.troops());
+        if (incoming.population() > this.attack.population()) {
+          incoming.setPopulation(
+            incoming.population() - this.attack.population(),
+          );
           this.attack.delete();
           this.active = false;
           return;
         } else {
-          this.attack.setTroops(this.attack.troops() - incoming.troops());
+          this.attack.setPopulation(
+            this.attack.population() - incoming.population(),
+          );
           incoming.delete();
         }
       }
@@ -141,7 +148,9 @@ export class AttackExecution implements Execution {
         // Shuttle attacks (sourceTile is not null) are not combined with other attacks
         this.attack.sourceTile() === null
       ) {
-        this.attack.setTroops(this.attack.troops() + outgoing.troops());
+        this.attack.setPopulation(
+          this.attack.population() + outgoing.population(),
+        );
         outgoing.delete();
       }
     }
@@ -186,25 +195,27 @@ export class AttackExecution implements Execution {
       throw new Error("Attack not initialized");
     }
 
-    const deaths = this.attack.troops() * (malusPercent / 100);
+    const deaths = this.attack.population() * (malusPercent / 100);
     if (deaths) {
       this.mg.displayMessage(
         "events_display.attack_cancelled_retreat",
         MessageType.ATTACK_CANCELLED,
         this._owner.id(),
         undefined,
-        { troops: renderTroops(deaths) },
+        { population: renderPopulation(deaths) },
       );
     }
-    if (this.removeTroops === false && this.sourceTile === null) {
-      // startTroops are always added to attack troops at init but not always removed from owner troops
-      // subtract startTroops from attack troops so we don't give back startTroops to owner that were never removed
-      // shuttle attacks (sourceTile !== null) are the exception: troops were removed at departure and must be returned after attack still
-      this.attack.setTroops(this.attack.troops() - (this.startTroops ?? 0));
+    if (this.removePopulation === false && this.sourceTile === null) {
+      // startPopulation are always added to attack population at init but not always removed from owner population
+      // subtract startPopulation from attack population so we don't give back startPopulation to owner that were never removed
+      // shuttle attacks (sourceTile !== null) are the exception: population were removed at departure and must be returned after attack still
+      this.attack.setPopulation(
+        this.attack.population() - (this.startPopulation ?? 0),
+      );
     }
 
-    const survivors = this.attack.troops() - deaths;
-    this._owner.addTroops(survivors);
+    const survivors = this.attack.population() - deaths;
+    this._owner.addPopulation(survivors);
     this.attack.delete();
     this.active = false;
 
@@ -219,7 +230,7 @@ export class AttackExecution implements Execution {
     if (this.attack === null) {
       throw new Error("Attack not initialized");
     }
-    let troopCount = this.attack.troops(); // cache troop count
+    let troopCount = this.attack.population(); // cache population count
     const targetIsPlayer = this.target.isPlayer(); // cache target type
     const targetPlayer = targetIsPlayer ? (this.target as Player) : null; // cache target player
 
@@ -295,9 +306,9 @@ export class AttackExecution implements Execution {
         );
       numTilesPerTick -= tilesPerTickUsed;
       troopCount -= attackerTroopLoss;
-      this.attack.setTroops(troopCount);
+      this.attack.setPopulation(troopCount);
       if (targetPlayer) {
-        targetPlayer.removeTroops(defenderTroopLoss);
+        targetPlayer.removePopulation(defenderTroopLoss);
       }
       this._owner.conquer(tileToConquer);
       this.handleDeadDefender();

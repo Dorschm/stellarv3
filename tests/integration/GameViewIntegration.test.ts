@@ -23,7 +23,7 @@ describe("GameView Integration — Tile State", () => {
     h = await setupGameViewTest("plains", {
       infiniteCredits: true,
       instantBuild: true,
-      infiniteTroops: true,
+      infinitePopulation: true,
     });
 
     const p1 = new PlayerInfo("player1", PlayerType.Human, null, "p1_id");
@@ -87,7 +87,7 @@ describe("GameView Integration — Unit State", () => {
     h = await setupGameViewTest("ocean_and_land", {
       infiniteCredits: true,
       instantBuild: true,
-      infiniteTroops: true,
+      infinitePopulation: true,
     });
 
     const p1 = new PlayerInfo("player1", PlayerType.Human, null, "p1_id");
@@ -208,10 +208,10 @@ describe("GameView Integration — Player State", () => {
     );
   });
 
-  test("troops() reflects troop count", () => {
-    const troops = h.gameView.myPlayer()!.troops();
-    expect(typeof troops).toBe("number");
-    expect(troops).toBeGreaterThan(0);
+  test("population() reflects population count", () => {
+    const population = h.gameView.myPlayer()!.population();
+    expect(typeof population).toBe("number");
+    expect(population).toBeGreaterThan(0);
   });
 
   test("gold() returns a bigint value", () => {
@@ -223,11 +223,11 @@ describe("GameView Integration — Player State", () => {
     expect(h.gameView.myPlayer()!.isAlive()).toBe(true);
   });
 
-  test("player troop count changes after combat", () => {
+  test("player population count changes after combat", () => {
     const attacker = h.game.player("p1_id");
     const defender = h.game.player("p2_id");
 
-    const initialTroops = h.gameView.myPlayer()!.troops();
+    const initialPopulation = h.gameView.myPlayer()!.population();
 
     // Attack the defender's territory
     h.game.addExecution(
@@ -235,8 +235,8 @@ describe("GameView Integration — Player State", () => {
     );
     h.executeTicks(10);
 
-    // Troops should have changed (decreased due to combat losses)
-    expect(h.gameView.myPlayer()!.troops()).not.toBe(initialTroops);
+    // Population should have changed (decreased due to combat losses)
+    expect(h.gameView.myPlayer()!.population()).not.toBe(initialPopulation);
   });
 });
 
@@ -251,7 +251,7 @@ describe("GameView Integration — HyperspaceLane State", () => {
     h = await setupGameViewTest("plains", {
       infiniteCredits: true,
       instantBuild: true,
-      infiniteTroops: true,
+      infinitePopulation: true,
     });
 
     const p1 = new PlayerInfo("player1", PlayerType.Human, null, "p1_id");
@@ -362,7 +362,7 @@ describe("GameView Integration — Updates", () => {
     h = await setupGameViewTest("plains", {
       infiniteCredits: true,
       instantBuild: true,
-      infiniteTroops: true,
+      infinitePopulation: true,
     });
 
     const p1 = new PlayerInfo("player1", PlayerType.Human, null, "p1_id");

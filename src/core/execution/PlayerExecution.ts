@@ -74,7 +74,7 @@ export class PlayerExecution implements Execution {
     }
 
     const troopInc = this.config.troopIncreaseRate(this.player);
-    this.player.addTroops(troopInc);
+    this.player.addPopulation(troopInc);
     const creditsFromWorkers = this.config.creditAdditionRate(this.player);
     this.player.addCredits(creditsFromWorkers);
 
@@ -302,8 +302,8 @@ export class PlayerExecution implements Execution {
     for (const [neighbor] of neighbors) {
       for (const attack of neighbor.outgoingAttacks()) {
         if (attack.target() === this.player) {
-          if (attack.troops() > largestTroopCount) {
-            largestTroopCount = attack.troops();
+          if (attack.population() > largestTroopCount) {
+            largestTroopCount = attack.population();
             largestNeighborAttack = neighbor;
           }
         }

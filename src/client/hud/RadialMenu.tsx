@@ -14,6 +14,7 @@ import {
   ShowEmojiMenuEvent,
 } from "../InputHandler";
 import {
+  BuildUnitIntentEvent,
   SendAttackIntentEvent,
   SendShuttleAttackIntentEvent,
 } from "../Transport";
@@ -28,6 +29,10 @@ const infoIcon = assetUrl("images/InfoIcon.svg");
 // Jump Gate (GDD §5) — shares the anchor glyph used in BuildMenu so the
 // "Jump to gate" radial entry visually matches the build option.
 const jumpGateIcon = assetUrl("images/AnchorIcon.svg");
+// Ticket 6 — Scout Swarm (launch) and Battlecruiser (build on ship) glyphs.
+// Reuses existing assets so the radial menu additions don't require new art.
+const scoutSwarmIcon = assetUrl("images/InfoIcon.svg");
+const battlecruiserIcon = assetUrl("images/BattleshipIconWhite.svg");
 
 /**
  * Radial-style context menu for the migrated R3F HUD.
@@ -46,8 +51,8 @@ const jumpGateIcon = assetUrl("images/AnchorIcon.svg");
  *       - Build    → `ShowBuildMenuEvent(tileX, tileY)`
  *       - Emoji    → `ShowEmojiMenuEvent(tileX, tileY)`
  *       - Player   → `ShowPlayerPanelEvent(actions, tile)`
- *       - Attack   → `SendAttackIntentEvent(targetID, troops)`
- *       - Shuttle  → `SendShuttleAttackIntentEvent(tile, troops)`
+ *       - Attack   → `SendAttackIntentEvent(targetID, population)`
+ *       - Shuttle  → `SendShuttleAttackIntentEvent(tile, population)`
  *
  * The menu closes automatically when the player clicks the map again,
  * presses Escape, or picks any action.
@@ -164,7 +169,7 @@ export function RadialMenu(): React.JSX.Element | null {
     eventBus.emit(
       new SendAttackIntentEvent(
         ownerPlayer ? ownerPlayer.id() : null,
-        myPlayer.troops() * ratio,
+        myPlayer.population() * ratio,
       ),
     );
     hide();
@@ -223,7 +228,7 @@ export function RadialMenu(): React.JSX.Element | null {
     const percent = useHUDStore.getState().attackRatio;
     const ratio = Math.max(0, Math.min(100, percent)) / 100;
     eventBus.emit(
-      new SendShuttleAttackIntentEvent(tile, myPlayer.troops() * ratio),
+      new SendShuttleAttackIntentEvent(tile, myPlayer.population() * ratio),
     );
     hide();
   };
@@ -256,6 +261,47 @@ export function RadialMenu(): React.JSX.Element | null {
       : myGates.length === 1
         ? "Need at least two Jump Gates"
         : `${myGates.length} gates available`;
+
+  // Ticket 6 — Scout Swarm launch. Launches a temporary swarm from the
+  // player's nearest owned tile toward the clicked tile. The ScoutSwarm
+  // BuildUnitIntent is wired straight to ConstructionExecution, which
+  // delegates to ScoutSwarmExecution for spawn + cost + travel. We gate
+  // the entry on "player exists and is out of the spawn phase" — the
+  // affordability / target-validity checks are server-authoritative.
+  const canLaunchScout = !!myPlayer && !gameView.inSpawnPhase();
+  const handleLaunchScout = () => {
+    if (!canLaunchScout) return;
+    eventBus.emit(new BuildUnitIntentEvent(UnitType.ScoutSwarm, tile));
+    hide();
+  };
+
+  // Ticket 6 — Build on Capital Ship. Opens the build menu anchored to a
+  // nearby player-owned Battlecruiser's tile, so the ensuing
+  // BuildUnitIntent targets coordinates the server's
+  // `findHostBattlecruiser()` lookup will match. Only shown when such a
+  // cruiser actually exists near the clicked tile — otherwise the entry
+  // is a dead button.
+  const hostCruiser =
+    myPlayer === null
+      ? null
+      : (gameView
+          .nearbyUnits(tile, 2, [UnitType.Battlecruiser])
+          .find(({ unit }) => unit.owner() === myPlayer && unit.isActive())
+          ?.unit ?? null);
+  const canBuildOnCapitalShip =
+    hostCruiser !== null && !gameView.inSpawnPhase();
+  const handleBuildOnCapitalShip = () => {
+    if (!canBuildOnCapitalShip || hostCruiser === null) return;
+    // Re-anchor the build menu on the cruiser's tile so the subsequent
+    // BuildUnitIntent's target coordinates are within range of
+    // ConstructionExecution.findHostBattlecruiser(), which scans a
+    // 2-tile radius around the intent tile.
+    const cruiserTile = hostCruiser.tile();
+    eventBus.emit(
+      new ShowBuildMenuEvent(gameView.x(cruiserTile), gameView.y(cruiserTile)),
+    );
+    hide();
+  };
 
   const handleJumpGate = () => {
     if (!canJumpGate) return;
@@ -303,6 +349,37 @@ export function RadialMenu(): React.JSX.Element | null {
           disabled={!canBuild}
           onClick={handleBuild}
         />
+
+        {/*
+         * Ticket 6 — Scout Swarm launch. Shown unconditionally so players
+         * can discover it during a regular right-click; disabled in the
+         * spawn phase where the intent would be rejected anyway.
+         */}
+        <RadialButton
+          icon={scoutSwarmIcon}
+          label={translateText("radial_menu.launch_scout") || "Launch Scout"}
+          disabled={!canLaunchScout}
+          onClick={handleLaunchScout}
+        />
+
+        {/*
+         * Ticket 6 — Build on Capital Ship. Only rendered when a
+         * player-owned Battlecruiser is within range of the clicked tile
+         * (within the same 2-tile radius used by
+         * ConstructionExecution.findHostBattlecruiser), so the entry is
+         * discoverable exactly in the context where it applies.
+         */}
+        {hostCruiser !== null && (
+          <RadialButton
+            icon={battlecruiserIcon}
+            label={
+              translateText("radial_menu.build_on_capital_ship") ||
+              "Build on Capital Ship"
+            }
+            disabled={!canBuildOnCapitalShip}
+            onClick={handleBuildOnCapitalShip}
+          />
+        )}
 
         <RadialButton
           icon={attackIcon}

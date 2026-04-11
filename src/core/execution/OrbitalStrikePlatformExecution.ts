@@ -14,6 +14,9 @@ interface PendingLrwImpact {
   targetTile: TileRef;
   targetSmallID: number;
   impactTick: number;
+  // GDD §8 / Ticket 8 — handle into the Game-level LRW impact registry,
+  // used by DefenseStation intercepts to cancel a pending impact mid-flight.
+  registryToken: number;
 }
 
 export class OrbitalStrikePlatformExecution implements Execution {
@@ -43,12 +46,18 @@ export class OrbitalStrikePlatformExecution implements Execution {
     // Resolve any pending LRW impacts whose flight time has elapsed. We
     // pop in-place from the head of the queue because impacts are scheduled
     // in tick order — anything past `impactTick` is ready, anything earlier
-    // shouldn't exist.
+    // shouldn't exist. An impact whose registry token has already been
+    // cleared was intercepted mid-flight by a DefenseStation (GDD §8) and
+    // is silently dropped without applying any effects.
     while (
       this.pendingImpacts.length > 0 &&
       this.pendingImpacts[0].impactTick <= ticks
     ) {
       const impact = this.pendingImpacts.shift()!;
+      if (!this.mg.isPendingLrwImpactActive(impact.registryToken)) {
+        continue;
+      }
+      this.mg.unregisterPendingLrwImpact(impact.registryToken);
       this.applyLrwImpact(impact);
     }
 
@@ -67,6 +76,15 @@ export class OrbitalStrikePlatformExecution implements Execution {
     }
 
     if (!this.platform.isActive()) {
+      // GDD §8 / Ticket 8 — when the firing platform is destroyed
+      // mid-flight, any LRW impacts still queued must be deterministically
+      // cancelled, not silently abandoned. Leaving them in the registry
+      // produces ghost impacts: a DefenseStation could spend its cooldown
+      // intercepting a phantom shot that would never have landed, and the
+      // pending-impact map would leak entries forever. We unregister and
+      // drop every remaining queued impact before deactivating execution
+      // so the registry is fully consistent with platform liveness.
+      this.cancelPendingImpactsOnTeardown();
       this.active = false;
       return;
     }
@@ -80,6 +98,23 @@ export class OrbitalStrikePlatformExecution implements Execution {
     if (ticks >= this.lrwReadyTick) {
       this.maybeFireLongRangeWeapon(ticks);
     }
+  }
+
+  /**
+   * Drain the local pending-impact queue and unregister every remaining
+   * registry token. Called from {@link tick} when the platform has just
+   * become inactive (typically because the OSP unit was destroyed). After
+   * this returns, the queue is empty and no Game-level intercept handle
+   * still references this execution — DefenseStations will no longer see
+   * any of the cancelled impacts as candidates.
+   */
+  private cancelPendingImpactsOnTeardown(): void {
+    for (const impact of this.pendingImpacts) {
+      if (this.mg.isPendingLrwImpactActive(impact.registryToken)) {
+        this.mg.unregisterPendingLrwImpact(impact.registryToken);
+      }
+    }
+    this.pendingImpacts.length = 0;
   }
 
   /**
@@ -114,16 +149,27 @@ export class OrbitalStrikePlatformExecution implements Execution {
     // At least 1 tick of travel so the impact never resolves on the same
     // tick the shot was fired (gives the cooldown a sane lower bound).
     const flightTicks = Math.max(1, Math.ceil(distance / Math.max(1, speed)));
+    const impactTick = currentTick + flightTicks;
+    // Register the impact in the Game-level registry so DefenseStations
+    // can find and intercept it mid-flight (GDD §8 / Ticket 8). The token
+    // is the cancellation handle.
+    const registryToken = this.mg.registerPendingLrwImpact(
+      owner.smallID(),
+      this.platform.tile(),
+      target.tile,
+      impactTick,
+    );
     this.pendingImpacts.push({
       targetTile: target.tile,
       targetSmallID: target.smallID,
-      impactTick: currentTick + flightTicks,
+      impactTick,
+      registryToken,
     });
   }
 
   /**
    * Apply LRW impact effects: 10% population damage to the target player
-   * (subtracted from current troops) and 10% habitability damage to the
+   * (subtracted from current population) and 10% habitability damage to the
    * impacted tile via the SectorMap overlay. Both ratios are configured
    * by `Config.longRangeWeapon*` so they can be tuned in one place.
    */
@@ -135,13 +181,13 @@ export class OrbitalStrikePlatformExecution implements Execution {
     }
     const targetPlayer = target as Player;
 
-    // 10% population damage — pulled from current troop count to keep the
-    // damage scale meaningful even after troop growth/decay since launch.
+    // 10% population damage — pulled from current population count to keep the
+    // damage scale meaningful even after population growth/decay since launch.
     const popLoss = Math.floor(
-      targetPlayer.troops() * config.longRangeWeaponPopulationDamageRatio(),
+      targetPlayer.population() * config.longRangeWeaponPopulationDamageRatio(),
     );
     if (popLoss > 0) {
-      targetPlayer.removeTroops(popLoss);
+      targetPlayer.removePopulation(popLoss);
     }
 
     // 10% habitability damage to the impact tile. The SectorMap is the

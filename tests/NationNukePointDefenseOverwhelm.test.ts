@@ -84,8 +84,8 @@ describe("NationNukeBehavior - maybeDestroyEnemySam", () => {
 
     // infiniteGold only applies to Human players, so the nation needs gold
     nation.addCredits(1_000_000_000n);
-    nation.addTroops(100_000);
-    human.addTroops(100_000);
+    nation.addPopulation(100_000);
+    human.addPopulation(100_000);
 
     expect(nation.units(UnitType.OrbitalStrikePlatform)).toHaveLength(3);
     expect(human.units(UnitType.PointDefenseArray)).toHaveLength(1);

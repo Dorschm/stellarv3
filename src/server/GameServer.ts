@@ -135,11 +135,11 @@ export class GameServer {
     if (gameConfig.donateCredits !== undefined) {
       this.gameConfig.donateCredits = gameConfig.donateCredits;
     }
-    if (gameConfig.infiniteTroops !== undefined) {
-      this.gameConfig.infiniteTroops = gameConfig.infiniteTroops;
+    if (gameConfig.infinitePopulation !== undefined) {
+      this.gameConfig.infinitePopulation = gameConfig.infinitePopulation;
     }
-    if (gameConfig.donateTroops !== undefined) {
-      this.gameConfig.donateTroops = gameConfig.donateTroops;
+    if (gameConfig.donatePopulation !== undefined) {
+      this.gameConfig.donatePopulation = gameConfig.donatePopulation;
     }
     if (gameConfig.maxTimerValue !== undefined) {
       this.gameConfig.maxTimerValue = gameConfig.maxTimerValue;
@@ -170,6 +170,12 @@ export class GameServer {
     }
     if (gameConfig.disableAlliances !== undefined) {
       this.gameConfig.disableAlliances = gameConfig.disableAlliances;
+    }
+    if (gameConfig.winCondition !== undefined) {
+      this.gameConfig.winCondition = gameConfig.winCondition;
+    }
+    if (gameConfig.permadeath !== undefined) {
+      this.gameConfig.permadeath = gameConfig.permadeath;
     }
   }
 
@@ -289,7 +295,7 @@ export class GameServer {
     this.websockets.add(ws);
     this.log.info("client rejoining", { clientID, lastTurn });
 
-    // Close old WebSocket to prevent resource leaks
+    // Close old WebSocket to prevent credit leaks
     if (client.ws !== ws) {
       client.ws.removeAllListeners();
       client.ws.close();
@@ -720,10 +726,13 @@ export class GameServer {
     }
     this.gameStartInfo = result.data satisfies GameStartInfo;
 
-    this.currentTurnIntervalMs = this.config.turnIntervalMs();
+    // GDD §10 — start at the slow end of the dynamic range; the
+    // {@link maybeAdjustTickRate} call inside each {@link endTurn} will ramp
+    // it down toward `minTurnIntervalMs` over the configured ramp duration.
+    this.currentTurnIntervalMs = this.config.dynamicTurnIntervalMs(0);
     this.endTurnIntervalID = setInterval(
       () => this.endTurn(),
-      this.config.turnIntervalMs(),
+      this.currentTurnIntervalMs,
     );
     this.activeClients.forEach((c) => {
       this.log.info("sending start message", {
@@ -773,18 +782,60 @@ export class GameServer {
   }
 
   /**
-   * GDD §10 — server-side time-based tick-rate ramp. Adjusts the turn
-   * interval from 100ms→50ms over 30 minutes of game time. Re-creates the
-   * setInterval only when the desired interval changes by ≥5ms.
+   * GDD §10 — server-side tick-rate ramp. The authoritative game state lives
+   * client-side (lockstep), so the server doesn't know per-player tile counts
+   * directly. We approximate "game progress" with elapsed wall-clock time and
+   * feed that 0..1 fraction to {@link Config.dynamicTurnIntervalMs}, which
+   * keeps the min/max bounds and interpolation in one canonical place. The
+   * setInterval is only reconfigured when the desired interval drifts by
+   * ≥5ms to avoid timer churn.
+   *
+   * **Design decision — deliberate deviation from GDD §10:** the GDD phrases
+   * the ramp in terms of the leading player's *expansion*, not elapsed time.
+   * We could piggyback a `leadingTileRatio` float on the client→server
+   * hash/ping message and prefer it here (falling back to wall-clock when no
+   * client has pinged yet), matching what {@link GameRunner} already does
+   * client-side via `dynamicTurnIntervalMs(ratio)`. We chose the wall-clock
+   * approximation instead:
+   *
+   * 1. **Authoritative-state isolation.** The server deliberately holds no
+   *    tile state — it only relays intents. Re-introducing a per-client
+   *    `leadingTileRatio` field would be the server's first dependency on a
+   *    client-computed authoritative value, and the moment one client lies
+   *    about its ratio the whole room's tick rate drifts. Wall-clock keeps
+   *    the server's ramp tamper-proof.
+   * 2. **Resync behaviour.** Wall-clock gives every rejoining client the
+   *    same ramp curve deterministically from `_startTime`. A ratio-based
+   *    ramp would need to be recomputed on disconnect/reconnect and
+   *    buffered turns would replay under a different tick interval than
+   *    they were produced at.
+   * 3. **Multiplayer consistency.** In a ratio-based scheme the server's
+   *    ramp is pinned to *whichever* client is leading. In asymmetric games
+   *    (one human + bots) that turns the entire room into the leader's
+   *    personal speedometer — great in SP, unpredictable in MP.
+   *
+   * **Trade-off:** a 30-minute wall-clock ramp under-approximates fast
+   *  expansion runs (a player who hits 80% of the map in 10 minutes still
+   *  gets the "early game" slow tick for another 20 minutes) and
+   *  over-approximates slow exploration runs. Acceptable: the client-side
+   *  {@link GameRunner.dynamicTurnIntervalMs} already fires at the
+   *  authoritative ratio for local simulation responsiveness, so the player
+   *  *feels* the ramp correctly. This server-side ramp only controls the
+   *  inter-turn interval of the authoritative turn broadcaster, and 5-10
+   *  minutes of "too slow" vs "too fast" there is a minor pacing artifact,
+   *  not a correctness bug.
+   *
+   * If player feedback ever asks for tighter ramp tracking, the alternative
+   * above (piggyback a `leadingTileRatio` on the ping) is the implementation
+   * path; `GameRunner.dynamicTurnIntervalMs(ratio)` is already the canonical
+   * callsite and the plumbing is a single float on the ping message.
    */
   private maybeAdjustTickRate(): void {
     if (!this._startTime || !this.endTurnIntervalID) return;
     const elapsedMs = Date.now() - this._startTime;
     const rampDurationMs = 30 * 60 * 1000; // 30 minutes
-    const minInterval = 50;
-    const maxInterval = this.config.turnIntervalMs();
-    const t = Math.min(1, elapsedMs / rampDurationMs);
-    const desired = Math.round(maxInterval - (maxInterval - minInterval) * t);
+    const progress = Math.max(0, Math.min(1, elapsedMs / rampDurationMs));
+    const desired = this.config.dynamicTurnIntervalMs(progress);
     if (
       this.currentTurnIntervalMs !== undefined &&
       Math.abs(this.currentTurnIntervalMs - desired) >= 5

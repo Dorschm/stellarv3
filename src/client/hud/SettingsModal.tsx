@@ -1,18 +1,18 @@
-import React, { useState, useCallback, useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { assetUrl } from "../../core/AssetUrls";
 import { crazyGamesSDK } from "../CrazyGamesSDK";
-import { PauseGameIntentEvent } from "../Transport";
 import {
   AlternateViewEvent,
   CloseViewEvent,
   RefreshGraphicsEvent,
 } from "../InputHandler";
+import { PauseGameIntentEvent } from "../Transport";
 import { translateText } from "../Utils";
-import SoundManager from "../sound/SoundManager";
-import { useGameTick } from "./useGameTick";
 import { useEventBus } from "../bridge/useEventBus";
+import SoundManager from "../sound/SoundManager";
 import { useTransform } from "./TransformContext";
 import { ShowSettingsModalEvent } from "./events";
+import { useGameTick } from "./useGameTick";
 
 const structureIcon = assetUrl("images/CityIconWhite.svg");
 const cursorPriceIcon = assetUrl("images/CursorPriceIconWhite.svg");
@@ -29,7 +29,7 @@ const treeIcon = assetUrl("images/TreeIconWhite.svg");
 const musicIcon = assetUrl("images/music.svg");
 
 export function SettingsModal(): React.JSX.Element {
-  const { gameView, eventBus } = useGameTick(100);
+  const { eventBus } = useGameTick(100);
   const transformCtx = useTransform();
   const userSettings = transformCtx?.userSettings ?? null;
   const modalOverlayRef = useRef<HTMLDivElement>(null);
@@ -42,9 +42,7 @@ export function SettingsModal(): React.JSX.Element {
   // Initialize sound volumes on mount
   useEffect(() => {
     if (!userSettings) return;
-    SoundManager.setBackgroundMusicVolume(
-      userSettings.backgroundMusicVolume(),
-    );
+    SoundManager.setBackgroundMusicVolume(userSettings.backgroundMusicVolume());
     SoundManager.setSoundEffectsVolume(userSettings.soundEffectsVolume());
   }, [userSettings]);
 
@@ -185,9 +183,9 @@ export function SettingsModal(): React.JSX.Element {
     setIsVisible((prev) => !prev);
   }, [userSettings]);
 
-  const onToggleAttackingTroopsOverlayButtonClick = useCallback(() => {
+  const onToggleAttackingPopulationOverlayButtonClick = useCallback(() => {
     if (!userSettings) return;
-    userSettings.toggleAttackingTroopsOverlay();
+    userSettings.toggleAttackingPopulationOverlay();
     setIsVisible((prev) => !prev);
   }, [userSettings]);
 
@@ -375,14 +373,18 @@ export function SettingsModal(): React.JSX.Element {
 
           <SettingButton
             icon={swordIcon}
-            label={translateText("user_setting.attacking_troops_overlay_label")}
-            description={translateText("user_setting.attacking_troops_overlay_desc")}
+            label={translateText(
+              "user_setting.attacking_population_overlay_label",
+            )}
+            description={translateText(
+              "user_setting.attacking_population_overlay_desc",
+            )}
             value={
-              userSettings.attackingTroopsOverlay()
+              userSettings.attackingPopulationOverlay()
                 ? translateText("user_setting.on")
                 : translateText("user_setting.off")
             }
-            onClick={onToggleAttackingTroopsOverlayButtonClick}
+            onClick={onToggleAttackingPopulationOverlayButtonClick}
           />
 
           <SettingButton

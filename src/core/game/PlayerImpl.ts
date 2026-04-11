@@ -1,4 +1,4 @@
-import { renderNumber, renderTroops } from "../../client/Utils";
+import { renderNumber, renderPopulation } from "../../client/Utils";
 import { PseudoRandom } from "../PseudoRandom";
 import { ClientID } from "../Schemas";
 import {
@@ -54,6 +54,7 @@ import {
   GameUpdateType,
   PlayerUpdate,
 } from "./GameUpdates";
+import { Planet } from "./Planet";
 import { UnitImpl } from "./UnitImpl";
 
 interface Target {
@@ -73,7 +74,7 @@ export class PlayerImpl implements Player {
   public _pseudo_random: PseudoRandom;
 
   private _credits: bigint;
-  private _troops: bigint;
+  private _population: bigint;
 
   markedTraitorTick = -1;
   private _betrayalCount: number = 0;
@@ -110,10 +111,10 @@ export class PlayerImpl implements Player {
     private mg: GameImpl,
     private _smallID: number,
     private readonly playerInfo: PlayerInfo,
-    startTroops: number,
+    startPopulation: number,
     private readonly _team: Team | null,
   ) {
-    this._troops = toInt(startTroops);
+    this._population = toInt(startPopulation);
     this._credits = mg.config().startingCredits(playerInfo);
     this._pseudo_random = new PseudoRandom(simpleHash(this.playerInfo.id));
   }
@@ -138,7 +139,7 @@ export class PlayerImpl implements Player {
       isDisconnected: this.isDisconnected(),
       tilesOwned: this.numTilesOwned(),
       credits: this._credits,
-      troops: this.troops(),
+      population: this.population(),
       allies: this.alliances().map((a) => a.other(this).smallID()),
       embargoes: new Set([...this.embargoes.keys()].map((p) => p.toString())),
       isTraitor: this.isTraitor(),
@@ -149,7 +150,7 @@ export class PlayerImpl implements Player {
         return {
           attackerID: a.attacker().smallID(),
           targetID: a.target().smallID(),
-          troops: a.troops(),
+          population: a.population(),
           id: a.id(),
           retreating: a.retreating(),
         } satisfies AttackUpdate;
@@ -158,7 +159,7 @@ export class PlayerImpl implements Player {
         return {
           attackerID: a.attacker().smallID(),
           targetID: a.target().smallID(),
-          troops: a.troops(),
+          population: a.population(),
           id: a.id(),
           retreating: a.retreating(),
         } satisfies AttackUpdate;
@@ -352,8 +353,8 @@ export class PlayerImpl implements Player {
   isPlayer(): this is Player {
     return true as const;
   }
-  setTroops(troops: number) {
-    this._troops = toInt(troops);
+  setPopulation(population: number) {
+    this._population = toInt(population);
   }
   conquer(tile: TileRef) {
     this.mg.conquer(this, tile);
@@ -713,7 +714,7 @@ export class PlayerImpl implements Player {
     return true;
   }
 
-  canDonateTroops(recipient: Player): boolean {
+  canDonatePopulation(recipient: Player): boolean {
     if (
       !this.isAlive() ||
       !recipient.isAlive() ||
@@ -723,7 +724,7 @@ export class PlayerImpl implements Player {
     }
     if (
       recipient.type() === PlayerType.Human &&
-      this.mg.config().donateTroops() === false
+      this.mg.config().donatePopulation() === false
     ) {
       return false;
     }
@@ -740,26 +741,29 @@ export class PlayerImpl implements Player {
     return true;
   }
 
-  donateTroops(recipient: Player, troops: number): boolean {
-    if (troops <= 0) return false;
-    const removed = this.removeTroops(troops);
+  donatePopulation(recipient: Player, population: number): boolean {
+    if (population <= 0) return false;
+    const removed = this.removePopulation(population);
     if (removed === 0) return false;
-    recipient.addTroops(removed);
+    recipient.addPopulation(removed);
 
     this.sentDonations.push(new Donation(recipient, this.mg.ticks()));
     this.mg.displayMessage(
-      "events_display.sent_troops_to_player",
+      "events_display.sent_population_to_player",
       MessageType.SENT_TROOPS_TO_PLAYER,
       this.id(),
       undefined,
-      { troops: renderTroops(troops), name: recipient.displayName() },
+      {
+        population: renderPopulation(population),
+        name: recipient.displayName(),
+      },
     );
     this.mg.displayMessage(
-      "events_display.received_troops_from_player",
+      "events_display.received_population_from_player",
       MessageType.RECEIVED_TROOPS_FROM_PLAYER,
       recipient.id(),
       undefined,
-      { troops: renderTroops(troops), name: this.displayName() },
+      { population: renderPopulation(population), name: this.displayName() },
     );
     return true;
   }
@@ -912,7 +916,7 @@ export class PlayerImpl implements Player {
         player: this.id(),
         tile,
         credits: Number(toAdd),
-        troops: 0,
+        population: 0,
       });
     }
   }
@@ -926,23 +930,23 @@ export class PlayerImpl implements Player {
     return actualRemoved;
   }
 
-  troops(): number {
-    return Number(this._troops);
+  population(): number {
+    return Number(this._population);
   }
 
-  addTroops(troops: number): void {
-    if (troops < 0) {
-      this.removeTroops(-1 * troops);
+  addPopulation(population: number): void {
+    if (population < 0) {
+      this.removePopulation(-1 * population);
       return;
     }
-    this._troops += toInt(troops);
+    this._population += toInt(population);
   }
-  removeTroops(troops: number): number {
-    if (troops <= 0) {
+  removePopulation(population: number): number {
+    if (population <= 0) {
       return 0;
     }
-    const toRemove = minInt(this._troops, toInt(troops));
-    this._troops -= toRemove;
+    const toRemove = minInt(this._population, toInt(population));
+    this._population -= toRemove;
     return Number(toRemove);
   }
 
@@ -976,7 +980,9 @@ export class PlayerImpl implements Player {
     this._units.push(b);
     this.recordUnitConstructed(type);
     this.removeCredits(cost);
-    this.removeTroops("troops" in params ? (params.troops ?? 0) : 0);
+    this.removePopulation(
+      "population" in params ? (params.population ?? 0) : 0,
+    );
     this.mg.addUpdate(b.toUpdate());
     this.mg.addUnit(b);
 
@@ -1098,6 +1104,12 @@ export class PlayerImpl implements Player {
           }
         }
         canBuild = this.canSpawnUnitType(u, tile, validTiles);
+        // GDD §4 / Ticket 8 — also gate the build menu on the per-sector
+        // structure slot limit so the HUD greys out structures that the
+        // server would refuse anyway. Mirrors the canBuild() call above.
+        if (canBuild !== false && !this.isStructureSlotAvailable(u, canBuild)) {
+          canBuild = false;
+        }
       }
 
       const buildNew = canBuild !== false && canUpgrade === false;
@@ -1145,7 +1157,90 @@ export class PlayerImpl implements Player {
       return false;
     }
 
-    return this.canSpawnUnitType(unitType, targetTile, validTiles);
+    const spawnTile = this.canSpawnUnitType(unitType, targetTile, validTiles);
+    if (spawnTile === false) return false;
+    if (!this.isStructureSlotAvailable(unitType, spawnTile)) {
+      return false;
+    }
+    return spawnTile;
+  }
+
+  /**
+   * GDD §4 / Ticket 8 — habitability-gated structure slot limits.
+   *
+   * A {@link Planet} can host at most N player-owned structures, where
+   * N comes from `Config.maxStructuresForHabitability()` evaluated against
+   * the *effective* habitability of the actual placement tile (which
+   * `canSpawnUnitType` may have shifted away from `targetTile` for spacing
+   * reasons, and which `SectorMap.effectiveHabitability` reports
+   * post-LRW-damage). Returns `true` for non-structure unit types so the
+   * gate is opt-in. `planetByTile` returns `null` for tiles outside every
+   * nation sector — that happens on test maps with no nation seeds, where
+   * the limit is silently disabled so legacy tests stay green. The check
+   * stacks ON TOP of the existing `structureMinDist()` spacing rule rather
+   * than replacing it; both `canBuild` and the `buildableUnits` build-menu
+   * loop call through here so the HUD reflects the same gate the server
+   * enforces.
+   *
+   * GDD §2 — routed through `Game.planetByTile` instead of a raw
+   * `sectorMap.sectorOf` call so the slot-limit code reads in terms of
+   * Planet entities. The per-tile habitability read is still sourced
+   * from `SectorMap` because LRW damage is tile-granular and the Planet
+   * object only exposes an *aggregate* habitability state.
+   */
+  private isStructureSlotAvailable(
+    unitType: UnitType,
+    spawnTile: TileRef,
+  ): boolean {
+    if (!Structures.has(unitType)) return true;
+    const planet = this.mg.planetByTile(spawnTile);
+    if (planet === null) return true;
+    const hab = this.mg.sectorMap().effectiveHabitability(spawnTile);
+    const slotLimit = this.mg.config().maxStructuresForHabitability(hab);
+    if (slotLimit <= 0) return false;
+    return this.countStructuresOnPlanet(planet) < slotLimit;
+  }
+
+  /**
+   * Count this player's existing structures sitting on the given
+   * {@link Planet}. Used by the GDD §4 slot-limit gate in {@link canBuild}.
+   * Iterates the player's units once and short-circuits on the structure
+   * type filter — the per-player unit list is small (low-tens at most),
+   * so this stays cheap relative to the surrounding canBuild path.
+   *
+   * GDD §14 / Ticket 6 — Battlecruiser-hosted structures are excluded
+   * from this count. A hosted DefenseStation / OrbitalStrikePlatform is
+   * mobile: it follows its cruiser between sectors, so counting it as
+   * a planet occupant would dynamically block ground construction in
+   * any sector the cruiser happens to enter. Slot caps are intended
+   * for stationary, planet-anchored structures only — the hosted
+   * structures are accounted for through the cruiser's one-slot rule
+   * (`UnitImpl.setSlottedStructure`).
+   */
+  private countStructuresOnPlanet(planet: Planet): number {
+    const sectorMap = this.mg.sectorMap();
+    const sectorId = planet.sectorId;
+
+    // Collect Battlecruiser-hosted structures up front so the count loop
+    // can skip them. The per-player unit list is small (low-tens), so a
+    // single extra pass is cheaper than checking host-membership per
+    // structure.
+    let hostedStructures: Set<Unit> | null = null;
+    for (const u of this._units) {
+      if (u.type() !== UnitType.Battlecruiser) continue;
+      const hosted = u.slottedStructure();
+      if (hosted === undefined) continue;
+      hostedStructures ??= new Set<Unit>();
+      hostedStructures.add(hosted);
+    }
+
+    let count = 0;
+    for (const u of this._units) {
+      if (!Structures.has(u.type())) continue;
+      if (hostedStructures !== null && hostedStructures.has(u)) continue;
+      if (sectorMap.sectorOf(u.tile()) === sectorId) count++;
+    }
+    return count;
   }
 
   private canSpawnUnitType(
@@ -1354,15 +1449,15 @@ export class PlayerImpl implements Player {
 
   hash(): number {
     return (
-      simpleHash(this.id()) * (this.troops() + this.numTilesOwned()) +
+      simpleHash(this.id()) * (this.population() + this.numTilesOwned()) +
       this._units.reduce((acc, unit) => acc + unit.hash(), 0)
     );
   }
   toString(): string {
     return `Player:{name:${this.info().name},clientID:${
       this.info().clientID
-    },isAlive:${this.isAlive()},troops:${
-      this._troops
+    },isAlive:${this.isAlive()},population:${
+      this._population
     },numTileOwned:${this.numTilesOwned()}}]`;
   }
 
@@ -1381,7 +1476,7 @@ export class PlayerImpl implements Player {
 
   createAttack(
     target: Player | TerraNullius,
-    troops: number,
+    population: number,
     sourceTile: TileRef | null,
     border: Set<number>,
   ): Attack {
@@ -1389,7 +1484,7 @@ export class PlayerImpl implements Player {
       this._pseudo_random.nextID(),
       target,
       this,
-      troops,
+      population,
       sourceTile,
       border,
       this.mg,

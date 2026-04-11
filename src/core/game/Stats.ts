@@ -55,14 +55,14 @@ export interface Stats {
   attack(
     player: Player,
     target: Player | TerraNullius,
-    troops: number | bigint,
+    population: number | bigint,
   ): void;
 
   // Player cancels attack on target
   attackCancel(
     player: Player,
     target: Player | TerraNullius,
-    troops: number | bigint,
+    population: number | bigint,
   ): void;
 
   // Player betrays another player
@@ -91,25 +91,25 @@ export interface Stats {
   // Player destroys target's trade freighter
   freighterDestroyTrade(player: Player, target: Player): void;
 
-  // Player sends an assault shuttle to target with troops
-  shuttleSendTroops(
+  // Player sends an assault shuttle to target with population
+  shuttleSendPopulation(
     player: Player,
     target: Player | TerraNullius,
-    troops: number | bigint,
+    population: number | bigint,
   ): void;
 
-  // Player's assault shuttle arrives at target with troops
-  shuttleArriveTroops(
+  // Player's assault shuttle arrives at target with population
+  shuttleArrivePopulation(
     player: Player,
     target: Player | TerraNullius,
-    troops: number | bigint,
+    population: number | bigint,
   ): void;
 
-  // Player destroys target's assault shuttle with troops
-  shuttleDestroyTroops(
+  // Player destroys target's assault shuttle with population
+  shuttleDestroyPopulation(
     player: Player,
     target: Player,
-    troops: number | bigint,
+    population: number | bigint,
   ): void;
 
   // Player launches bomb at target

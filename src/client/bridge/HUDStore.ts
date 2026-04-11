@@ -23,7 +23,7 @@ export interface PlayerSnapshot {
   name: string;
   displayName: string;
   isAlive: boolean;
-  troops: number;
+  population: number;
   credits: Credits;
   numTilesOwned: number;
   allies: number[];
@@ -38,7 +38,7 @@ export interface UnitSnapshot {
   type: UnitType;
   ownerSmallID: number;
   tile: TileRef;
-  troops: number;
+  population: number;
   level: number;
   isActive: boolean;
   health: number | undefined;
@@ -76,7 +76,7 @@ export interface HUDState {
   // -- UI interaction --
   /** Currently selected tile (for context menus, build UI, etc.). */
   selectedTile: TileRef | null;
-  /** Troop-split slider ratio (0–100). */
+  /** Population-split slider ratio (0–100). */
   attackRatio: number;
   /** Currently selected ghost structure for placement. */
   ghostStructure: UnitType | null;

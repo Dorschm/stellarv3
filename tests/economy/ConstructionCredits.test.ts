@@ -30,7 +30,7 @@ describe("Construction economy", () => {
       {
         infiniteCredits: false,
         instantBuild: false,
-        infiniteTroops: true,
+        infinitePopulation: true,
       },
       [builderInfo, otherInfo],
     );

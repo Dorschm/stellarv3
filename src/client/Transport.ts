@@ -70,14 +70,14 @@ export class SendSpawnIntentEvent implements GameEvent {
 export class SendAttackIntentEvent implements GameEvent {
   constructor(
     public readonly targetID: PlayerID | null,
-    public readonly troops: number,
+    public readonly population: number,
   ) {}
 }
 
 export class SendShuttleAttackIntentEvent implements GameEvent {
   constructor(
     public readonly dst: TileRef,
-    public readonly troops: number,
+    public readonly population: number,
   ) {}
 }
 
@@ -107,10 +107,10 @@ export class SendDonateCreditsIntentEvent implements GameEvent {
   ) {}
 }
 
-export class SendDonateTroopsIntentEvent implements GameEvent {
+export class SendDonatePopulationIntentEvent implements GameEvent {
   constructor(
     public readonly recipient: PlayerView,
-    public readonly troops: number | null,
+    public readonly population: number | null,
   ) {}
 }
 
@@ -225,7 +225,7 @@ export class Transport {
     this.eventBus.on(SendDonateCreditsIntentEvent, (e) =>
       this.onSendDonateCreditsIntent(e),
     );
-    this.eventBus.on(SendDonateTroopsIntentEvent, (e) =>
+    this.eventBus.on(SendDonatePopulationIntentEvent, (e) =>
       this.onSendDonateTroopIntent(e),
     );
     this.eventBus.on(SendQuickChatEvent, (e) => this.onSendQuickChatIntent(e));
@@ -510,14 +510,14 @@ export class Transport {
     this.sendIntent({
       type: "attack",
       targetID: event.targetID,
-      troops: event.troops,
+      population: event.population,
     });
   }
 
   private onSendShuttleAttackIntent(event: SendShuttleAttackIntentEvent) {
     this.sendIntent({
       type: "shuttle",
-      troops: event.troops,
+      population: event.population,
       dst: event.dst,
     });
   }
@@ -554,11 +554,11 @@ export class Transport {
     });
   }
 
-  private onSendDonateTroopIntent(event: SendDonateTroopsIntentEvent) {
+  private onSendDonateTroopIntent(event: SendDonatePopulationIntentEvent) {
     this.sendIntent({
-      type: "donate_troops",
+      type: "donate_population",
       recipient: event.recipient.id(),
-      troops: event.troops,
+      population: event.population,
     });
   }
 

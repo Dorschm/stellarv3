@@ -252,11 +252,12 @@ export async function buildPreview(
         gameOptions.push(`${gc.gameMapSize} Map`);
       }
       if (gc?.infiniteCredits) gameOptions.push("Infinite Gold");
-      if (gc?.infiniteTroops) gameOptions.push("Infinite Troops");
+      if (gc?.infinitePopulation) gameOptions.push("Infinite Population");
       if (gc?.instantBuild) gameOptions.push("Instant Build");
       if (gc?.randomSpawn) gameOptions.push("Random Spawn");
       if (gc?.nations === "disabled") gameOptions.push("Nations Disabled");
-      if (gc?.donateTroops) gameOptions.push("Troop Donations Enabled");
+      if (gc?.donatePopulation)
+        gameOptions.push("Population Donations Enabled");
 
       if (gameOptions.length > 0) {
         sections.push(`Game Options: ${gameOptions.join(" | ")}`);

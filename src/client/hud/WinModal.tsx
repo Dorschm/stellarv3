@@ -131,7 +131,13 @@ export function WinModal(): React.JSX.Element {
     winUpdates.forEach((wu) => {
       if (wu.runScore) {
         setRunScore(wu.runScore);
-        // GDD §10 — persist run score to localStorage
+        // GDD §10 — persist run score to localStorage. Note: when
+        // `wu.winner[0] === "nation"` no human can be the winner, so
+        // `isWinner` deliberately remains `false` and the run is recorded
+        // as a "loss" for every connected human client. This is
+        // intentional, not a bug — nation wins are not human wins, and
+        // counting them as such would inflate `aiDifficultyForWinCount()`
+        // in `RunHistory` past the player's actual skill level.
         const mapName = gameView.config().gameConfig().gameMap ?? "Unknown";
         const isWinner =
           wu.winner !== undefined &&
@@ -232,11 +238,21 @@ export function WinModal(): React.JSX.Element {
         <table className="w-full text-sm text-white">
           <thead>
             <tr className="text-left border-b border-white/30">
-              <th className="py-1 pr-2">#</th>
-              <th className="py-1 pr-2">Player</th>
-              <th className="py-1 pr-2 text-right">Planets</th>
-              <th className="py-1 pr-2 text-right">Systems</th>
-              <th className="py-1 text-right">Survived</th>
+              <th className="py-1 pr-2">
+                {translateText("win_modal.run_score_rank")}
+              </th>
+              <th className="py-1 pr-2">
+                {translateText("win_modal.run_score_player")}
+              </th>
+              <th className="py-1 pr-2 text-right">
+                {translateText("win_modal.run_score_planets")}
+              </th>
+              <th className="py-1 pr-2 text-right">
+                {translateText("win_modal.run_score_systems")}
+              </th>
+              <th className="py-1 text-right">
+                {translateText("win_modal.run_score_survived")}
+              </th>
             </tr>
           </thead>
           <tbody>

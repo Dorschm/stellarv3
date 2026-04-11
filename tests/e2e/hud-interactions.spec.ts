@@ -69,7 +69,9 @@ test.describe("HUD interactions (singleplayer)", () => {
     // the viewport and Playwright's default hit-test sees it on top,
     // even though the sidebar <aside z-900> is above it in the stacking
     // context.
-    const leaderboardHeader = page.getByText(/^(Owned|Max troops)$/).first();
+    const leaderboardHeader = page
+      .getByText(/^(Owned|Max population)$/)
+      .first();
     const leaderboardToggle = page
       .getByRole("button", { name: /player leaderboard/i })
       .first();
@@ -83,7 +85,7 @@ test.describe("HUD interactions (singleplayer)", () => {
     }
   });
 
-  test("control panel displays troops, gold, and attack ratio", async () => {
+  test("control panel displays population, gold, and attack ratio", async () => {
     // Control panel is only visible once the local player is alive (past
     // spawn phase). The attack ratio slider is a <input type="range">
     // scoped to the HUD overlay. ControlPanel renders both mobile (`lg:hidden`)
@@ -181,7 +183,10 @@ test.describe("HUD interactions (singleplayer)", () => {
   test("chat modal opens via player panel and send completes", async () => {
     // Open the chat modal through the visible UI path:
     // right-click enemy tile → RadialMenu → "Player info" → PlayerPanel → Chat.
-    const enemyTile = await waitForBorderEnemyTile(page, 60_000);
+    // 180s window: under headless throttling + the new procedural map
+    // generator, the player and bots can spawn far apart, so it takes
+    // longer for borders to meet than the original 60s allowed for.
+    const enemyTile = await waitForBorderEnemyTile(page, 180_000);
 
     // Right-click the enemy tile to open the RadialMenu.
     await rightClickOnGameTile(page, enemyTile!.tileX, enemyTile!.tileY);

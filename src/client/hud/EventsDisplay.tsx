@@ -44,7 +44,22 @@ interface GameEvent {
   shouldDelete?: (game: GameView) => boolean;
   allianceID?: number;
   count?: number;
+  /**
+   * Stable identifier used to collapse repeating events into a single row
+   * with a count badge. Two events bundle when their `(type, bundleKey)`
+   * pair matches. Derived in {@link onDisplayMessageEvent} from the
+   * translation key plus the partner-name parameter, so trade/credit
+   * messages whose numeric content (credits, population) varies between
+   * occurrences still collapse. Falls back to description equality when
+   * absent (e.g. internal alliance-renewal events).
+   */
+  bundleKey?: string;
 }
+
+// How many recent events back the bundler scans for a match. Lets
+// repeating messages collapse even when an unrelated event briefly
+// interleaves them (e.g. a chat line between two trades).
+const BUNDLE_LOOKBACK = 5;
 
 export function EventsDisplay(): React.JSX.Element {
   const { gameView, eventBus, tick } = useGameTick(0);
@@ -200,21 +215,37 @@ export function EventsDisplay(): React.JSX.Element {
 
   const addEvent = (event: GameEvent) => {
     setEvents((prev) => {
-      const last = prev[prev.length - 1];
-      if (
-        last &&
-        last.description === event.description &&
-        last.type === event.type &&
-        !last.buttons &&
-        !event.buttons
-      ) {
-        const updated = [...prev];
-        updated[updated.length - 1] = {
-          ...last,
-          count: (last.count ?? 1) + 1,
-          createdAt: event.createdAt,
-        };
-        return updated;
+      // Scan the last few events for a bundle match. We look further back
+      // than just `prev[prev.length - 1]` so a single interleaved unrelated
+      // event doesn't break a streak of repeats. The match prefers the
+      // explicit `bundleKey` (which ignores varying numeric content like
+      // credit/population amounts) and falls back to description equality for
+      // legacy events that don't carry a key.
+      if (!event.buttons) {
+        const start = Math.max(0, prev.length - BUNDLE_LOOKBACK);
+        for (let i = prev.length - 1; i >= start; i--) {
+          const candidate = prev[i];
+          if (candidate.type !== event.type) continue;
+          if (candidate.buttons) continue;
+          const matches = event.bundleKey
+            ? candidate.bundleKey === event.bundleKey
+            : candidate.description === event.description;
+          if (!matches) continue;
+          // Bundle: pop the matched candidate, replace its description with
+          // the latest one (so the visible amount tracks the most recent
+          // occurrence), bump the count, and re-append it at the end so the
+          // freshest activity stays at the bottom of the feed.
+          const updated = prev.slice();
+          updated.splice(i, 1);
+          updated.push({
+            ...candidate,
+            description: event.description,
+            unsafeDescription: event.unsafeDescription,
+            count: (candidate.count ?? 1) + 1,
+            createdAt: event.createdAt,
+          });
+          return updated;
+        }
       }
       return [...prev, event];
     });
@@ -236,12 +267,24 @@ export function EventsDisplay(): React.JSX.Element {
       return;
     }
 
+    // Bundle key = translation template + the partner-name parameter when
+    // present. Trade messages embed varying credit/population amounts in their
+    // description, so the legacy "description equality" check could never
+    // collapse them; matching on the (template, partner) pair instead lets
+    // a long string of identical-looking trades show up as one row with a
+    // count badge.
+    const partner = event.params?.name;
+    const bundleKey = `${event.message}::${
+      typeof partner === "string" ? partner : ""
+    }`;
+
     addEvent({
       description: translateText(event.message, event.params),
       type: event.messageType,
       highlight: true,
       createdAt: gameView.ticks(),
       unsafeDescription: true,
+      bundleKey,
     });
   };
 

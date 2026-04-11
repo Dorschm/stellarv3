@@ -107,10 +107,10 @@ export function getAdapter(
         { cachePaths: false },
       );
 
-      return PathFinding.Water(clonedGame);
+      return PathFinding.DeepSpace(clonedGame);
     }
     case "hpa.cached":
-      return PathFinding.Water(game);
+      return PathFinding.DeepSpace(game);
     default:
       throw new Error(`Unknown pathfinding adapter: ${name}`);
   }
@@ -265,10 +265,10 @@ export async function setupFromPath(
       difficulty: Difficulty.Medium,
       nations: "default",
       donateCredits: false,
-      donateTroops: false,
+      donatePopulation: false,
       bots: 0,
       infiniteCredits: false,
-      infiniteTroops: false,
+      infinitePopulation: false,
       instantBuild: false,
       randomSpawn: false,
       ...gameConfig,

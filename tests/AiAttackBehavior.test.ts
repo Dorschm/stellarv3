@@ -14,7 +14,7 @@ describe("Ai Attack Behavior", () => {
     const testGame = await setup("big_plains", {
       infiniteCredits: true,
       instantBuild: true,
-      infiniteTroops: true,
+      infinitePopulation: true,
     });
 
     // Add players
@@ -43,9 +43,9 @@ describe("Ai Attack Behavior", () => {
       (landTileCount++ % 2 === 0 ? testBot : testHuman).conquer(tile);
     });
 
-    // Add troops
-    testBot.addTroops(5000);
-    testHuman.addTroops(5000);
+    // Add population
+    testBot.addPopulation(5000);
+    testHuman.addPopulation(5000);
 
     // Skip spawn phase
     while (testGame.inSpawnPhase()) {
@@ -126,7 +126,7 @@ describe("Ai Attack Behavior", () => {
     // Use helper for tile assignment
     assignAlternatingLandTiles(game, [bot, human, nation], 21); // 21 to ensure each gets 7 tiles
 
-    nation.addTroops(1000);
+    nation.addPopulation(1000);
 
     const nationBehavior = new AiAttackBehavior(
       new PseudoRandom(42),
@@ -144,7 +144,7 @@ describe("Ai Attack Behavior", () => {
     expect(nation.isAlliedWith(human)).toBe(true);
 
     const attacksBefore = nation.outgoingAttacks().length;
-    nation.addTroops(50_000);
+    nation.addPopulation(50_000);
 
     // Nation tries to attack ally (should be blocked)
     nationBehavior.sendAttack(human);

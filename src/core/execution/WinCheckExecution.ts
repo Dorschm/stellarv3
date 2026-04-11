@@ -1,4 +1,3 @@
-import { GameEvent } from "../EventBus";
 import {
   ColoredTeams,
   Execution,
@@ -10,10 +9,6 @@ import {
   Team,
   WinCondition,
 } from "../game/Game";
-
-export class WinEvent implements GameEvent {
-  constructor(public readonly winner: Player) {}
-}
 
 export class WinCheckExecution implements Execution {
   private active = true;
@@ -45,9 +40,10 @@ export class WinCheckExecution implements Execution {
 
   /**
    * Returns true when the configured `winCondition` for this run is
-   * `Elimination`. The default in {@link DefaultConfig} is `Elimination`,
-   * matching the GDD-aligned Stellar mode; legacy public lobbies that opt
-   * into `Domination` keep the old percentage-threshold path.
+   * `Elimination`. The default in {@link DefaultConfig} is `Domination`
+   * so that existing public lobbies and replays that pre-date the
+   * `winCondition` field are not affected; GDD-aligned Stellar mode opts
+   * into `Elimination` via the explicit `gameConfig.winCondition` field.
    */
   private isEliminationMode(): boolean {
     if (this.mg === null) throw new Error("Not initialized");
@@ -129,6 +125,15 @@ export class WinCheckExecution implements Execution {
    */
   private checkWinnerEliminationFFA(players: Player[]): void {
     if (this.mg === null) throw new Error("Not initialized");
+    // Guard against the spawn-phase race: WinCheck first fires shortly
+    // after `numSpawnPhaseTurns`, while some registered players may still
+    // be resolving their `SpawnExecution`. If we ran the elimination check
+    // here we could declare the first player to land on the board as the
+    // winner against opponents who simply haven't been placed yet. Skip
+    // the entire tick until every registered player has spawned.
+    if (players.some((p) => !p.hasSpawned())) {
+      return;
+    }
     // Only consider factions still on the board. A player with 0 tiles is
     // either dead or hasn't spawned yet — neither counts as "alive in the
     // run" for elimination.
@@ -212,6 +217,13 @@ export class WinCheckExecution implements Execution {
    */
   private checkWinnerEliminationTeam(teamToTiles: Map<Team, number>): void {
     if (this.mg === null) throw new Error("Not initialized");
+    // Symmetric guard with `checkWinnerEliminationFFA`: hold off declaring
+    // a team-elimination win while any registered player is still mid-
+    // spawn, otherwise teams whose members haven't yet been placed could
+    // be wrongly eliminated.
+    if (this.mg.players().some((p) => !p.hasSpawned())) {
+      return;
+    }
     const aliveNonBot: Team[] = [];
     for (const [team, tiles] of teamToTiles.entries()) {
       if (tiles <= 0) continue;

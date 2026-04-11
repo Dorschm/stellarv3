@@ -12,6 +12,7 @@ import {
 } from "./GameUpdates";
 import { HyperspaceLaneNetwork } from "./HyperspaceLaneNetwork";
 import { MotionPlanRecord } from "./MotionPlans";
+import { Planet } from "./Planet";
 import { SectorMap } from "./SectorMap";
 import { Stats } from "./Stats";
 import { UnitPredicate } from "./UnitGrid";
@@ -308,7 +309,7 @@ export type TrajectoryTile = {
 };
 export interface UnitParamsMap {
   [UnitType.AssaultShuttle]: {
-    troops?: number;
+    population?: number;
     targetTile?: TileRef;
   };
 
@@ -440,8 +441,8 @@ export interface Attack {
   executeRetreat(): void;
   target(): Player | TerraNullius;
   attacker(): Player;
-  troops(): number;
-  setTroops(troops: number): void;
+  population(): number;
+  setPopulation(population: number): void;
   isActive(): boolean;
   delete(): void;
   // The tile the attack originated from, mostly used for shuttle attacks.
@@ -561,9 +562,9 @@ export interface Unit {
   health(): number;
   modifyHealth(delta: number, attacker?: Player): void;
 
-  // Troops
-  setTroops(troops: number): void;
-  troops(): number;
+  // Population
+  setPopulation(population: number): void;
+  population(): number;
 
   // --- UNIT SPECIFIC ---
 
@@ -646,14 +647,14 @@ export interface Player {
   conquer(tile: TileRef): void;
   relinquish(tile: TileRef): void;
 
-  // Resources & Troops
+  // Credits & Population
   credits(): Credits;
   addCredits(toAdd: Credits, tile?: TileRef): void;
   removeCredits(toRemove: Credits): Credits;
-  troops(): number;
-  setTroops(troops: number): void;
-  addTroops(troops: number): void;
-  removeTroops(troops: number): number;
+  population(): number;
+  setPopulation(population: number): void;
+  addPopulation(population: number): void;
+  removePopulation(population: number): number;
 
   // Units
   units(...types: UnitType[]): Unit[];
@@ -722,8 +723,8 @@ export interface Player {
 
   // Donation
   canDonateCredits(recipient: Player): boolean;
-  canDonateTroops(recipient: Player): boolean;
-  donateTroops(recipient: Player, troops: number): boolean;
+  canDonatePopulation(recipient: Player): boolean;
+  donatePopulation(recipient: Player, population: number): boolean;
   donateCredits(recipient: Player, credits: Credits): boolean;
   canDeleteUnit(): boolean;
   recordDeleteUnit(): void;
@@ -746,7 +747,7 @@ export interface Player {
 
   createAttack(
     target: Player | TerraNullius,
-    troops: number,
+    population: number,
     sourceTile: TileRef | null,
     border: Set<number>,
   ): Attack;
@@ -807,6 +808,13 @@ export interface Game extends GameMap {
   inSpawnPhase(): boolean;
   executeNextTick(): GameUpdates;
   drainPackedTileUpdates(): Uint32Array;
+  /**
+   * Drains any terrain mutations recorded this tick as packed
+   * `[tileRef, terrainType]` uint32 pairs. Empty array when no terrain
+   * was mutated — terrain changes are rare (primarily Scout Swarm
+   * terraforming) so the common case is a zero-length buffer.
+   */
+  drainPackedTerrainUpdates(): Uint32Array;
   recordMotionPlan(record: MotionPlanRecord): void;
   drainPackedMotionPlans(): Uint32Array | null;
   setWinner(winner: Player | Team, allPlayersStats: AllPlayersStats): void;
@@ -887,6 +895,26 @@ export interface Game extends GameMap {
   // See SectorMap and GDD Economy Alignment Approach §3.
   sectorMap(): SectorMap;
 
+  /**
+   * GDD §2 — discrete `Planet` entities wrapping each non-empty
+   * sector. The same array reference is returned on repeated calls
+   * during a single game (built once at GameImpl construction time)
+   * so holding a snapshot is safe.
+   *
+   * Ordered by ascending sector id — which for a manifest-authored
+   * map matches the order nations appear in the map manifest.
+   */
+  planets(): readonly Planet[];
+
+  /**
+   * GDD §2 — convenience lookup that returns the {@link Planet} whose
+   * sector contains `tile`, or `null` if the tile lies outside every
+   * nation sector (sector id 0). Used by slot-limit checks and any
+   * other call site that needs to route "this tile's planet" decisions
+   * through the Planet abstraction instead of poking at raw sector IDs.
+   */
+  planetByTile(tile: TileRef): Planet | null;
+
   // GDD §4 / Ticket 6 — Scout Swarm terraform accumulation. Multiple scout
   // swarms can stack on the same target to terraform it faster; the
   // shared per-tile counter lives on `Game` so every ScoutSwarmExecution
@@ -897,6 +925,36 @@ export interface Game extends GameMap {
   recordScoutSwarmTerraformProgress(tile: TileRef): number;
   resetScoutSwarmTerraformProgress(tile: TileRef): void;
   scoutSwarmTerraformProgress(tile: TileRef): number;
+
+  // GDD §8 / Ticket 8 — Defense Satellite vs LRW duel loop. The Long-Range
+  // Weapon (OrbitalStrikePlatform) projectile is intentionally NOT a Unit
+  // — see the design comment in OrbitalStrikePlatformExecution. To still
+  // give DefenseStations something to intercept, GameImpl maintains a
+  // small registry of pending LRW impacts: the OSP execution registers
+  // each scheduled impact at fire time and unregisters it when applied,
+  // and DefenseStationExecution queries `pendingLrwImpactsNear` plus
+  // `interceptPendingLrwImpact` to swat them down inside its targetting
+  // envelope. Tokens are opaque integers; callers should treat them as
+  // identity handles.
+  registerPendingLrwImpact(
+    ownerSmallID: number,
+    fireTile: TileRef,
+    targetTile: TileRef,
+    impactTick: number,
+  ): number;
+  unregisterPendingLrwImpact(token: number): void;
+  isPendingLrwImpactActive(token: number): boolean;
+  pendingLrwImpactsNear(
+    tile: TileRef,
+    range: number,
+    excludeOwnerSmallID?: number,
+  ): Array<{
+    token: number;
+    targetTile: TileRef;
+    ownerSmallID: number;
+    distSquared: number;
+  }>;
+  interceptPendingLrwImpact(token: number): boolean;
 
   numTilesWithFallout(): number;
   stats(): Stats;
@@ -959,7 +1017,7 @@ export interface PlayerInteraction {
   canBreakAlliance: boolean;
   canTarget: boolean;
   canDonateCredits: boolean;
-  canDonateTroops: boolean;
+  canDonatePopulation: boolean;
   canEmbargo: boolean;
   allianceInfo?: AllianceInfo;
 }

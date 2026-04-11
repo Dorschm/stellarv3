@@ -3,7 +3,7 @@ import { PlayerView } from "../../core/game/GameView";
 import {
   formatPercentage,
   renderNumber,
-  renderTroops,
+  renderPopulation,
   translateText,
 } from "../Utils";
 import { GoToPlayerEvent } from "./events";
@@ -14,7 +14,7 @@ interface Entry {
   position: number;
   score: string;
   credits: string;
-  maxTroops: string;
+  maxPopulation: string;
   isMyPlayer: boolean;
   isOnSameTeam: boolean;
   player: PlayerView;
@@ -27,7 +27,7 @@ interface LeaderboardProps {
 function Leaderboard({ visible }: LeaderboardProps): React.JSX.Element {
   const { gameView, eventBus, tick } = useGameTick(1000);
   const [players, setPlayers] = useState<Entry[]>([]);
-  const [sortKey, setSortKey] = useState<"tiles" | "credits" | "maxtroops">(
+  const [sortKey, setSortKey] = useState<"tiles" | "credits" | "maxpopulation">(
     "tiles",
   );
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
@@ -47,7 +47,7 @@ function Leaderboard({ visible }: LeaderboardProps): React.JSX.Element {
     const compare = (a: number, b: number) =>
       sortOrder === "asc" ? a - b : b - a;
 
-    const maxTroops = (p: PlayerView) => gameView.config().maxTroops(p);
+    const maxPopulation = (p: PlayerView) => gameView.config().maxPopulation(p);
 
     switch (sortKey) {
       case "credits":
@@ -55,8 +55,10 @@ function Leaderboard({ visible }: LeaderboardProps): React.JSX.Element {
           compare(Number(a.credits()), Number(b.credits())),
         );
         break;
-      case "maxtroops":
-        sorted = sorted.sort((a, b) => compare(maxTroops(a), maxTroops(b)));
+      case "maxpopulation":
+        sorted = sorted.sort((a, b) =>
+          compare(maxPopulation(a), maxPopulation(b)),
+        );
         break;
       default:
         sorted = sorted.sort((a, b) =>
@@ -71,7 +73,7 @@ function Leaderboard({ visible }: LeaderboardProps): React.JSX.Element {
     const playersToShow = showTopFive ? alivePlayers.slice(0, 5) : alivePlayers;
 
     const entriesData = playersToShow.map((player, index) => {
-      const maxTroopsVal = gameView.config().maxTroops(player);
+      const maxPopulationVal = gameView.config().maxPopulation(player);
       return {
         name: player.displayName(),
         position: index + 1,
@@ -79,7 +81,7 @@ function Leaderboard({ visible }: LeaderboardProps): React.JSX.Element {
           player.numTilesOwned() / numTilesWithoutFallout,
         ),
         credits: renderNumber(player.credits()),
-        maxTroops: renderTroops(maxTroopsVal),
+        maxPopulation: renderPopulation(maxPopulationVal),
         isMyPlayer: player === myPlayer,
         isOnSameTeam:
           myPlayer !== null &&
@@ -102,7 +104,7 @@ function Leaderboard({ visible }: LeaderboardProps): React.JSX.Element {
       }
 
       if (myPlayer.isAlive()) {
-        const myPlayerMaxTroops = gameView.config().maxTroops(myPlayer);
+        const myPlayerMaxPopulation = gameView.config().maxPopulation(myPlayer);
         entriesData.pop();
         entriesData.push({
           name: myPlayer.displayName(),
@@ -111,7 +113,7 @@ function Leaderboard({ visible }: LeaderboardProps): React.JSX.Element {
             myPlayer.numTilesOwned() / gameView.numSectorTiles(),
           ),
           credits: renderNumber(myPlayer.credits()),
-          maxTroops: renderTroops(myPlayerMaxTroops),
+          maxPopulation: renderPopulation(myPlayerMaxPopulation),
           isMyPlayer: true,
           isOnSameTeam: true,
           player: myPlayer,
@@ -122,7 +124,7 @@ function Leaderboard({ visible }: LeaderboardProps): React.JSX.Element {
     setPlayers(entriesData);
   };
 
-  const handleSetSort = (key: "tiles" | "credits" | "maxtroops") => {
+  const handleSetSort = (key: "tiles" | "credits" | "maxpopulation") => {
     if (sortKey === key) {
       setSortOrder(sortOrder === "asc" ? "desc" : "asc");
     } else {
@@ -175,10 +177,14 @@ function Leaderboard({ visible }: LeaderboardProps): React.JSX.Element {
           </div>
           <div
             className="py-1 md:py-2 text-center border-b border-slate-500 cursor-pointer whitespace-nowrap truncate"
-            onClick={() => handleSetSort("maxtroops")}
+            onClick={() => handleSetSort("maxpopulation")}
           >
-            {translateText("leaderboard.maxtroops")}
-            {sortKey === "maxtroops" ? (sortOrder === "asc" ? "⬆️" : "⬇️") : ""}
+            {translateText("leaderboard.maxpopulation")}
+            {sortKey === "maxpopulation"
+              ? sortOrder === "asc"
+                ? "⬆️"
+                : "⬇️"
+              : ""}
           </div>
         </div>
 
@@ -224,7 +230,7 @@ function Leaderboard({ visible }: LeaderboardProps): React.JSX.Element {
                 index < players.length - 1 ? "border-b border-slate-500" : ""
               }`}
             >
-              {player.maxTroops}
+              {player.maxPopulation}
             </div>
           </div>
         ))}

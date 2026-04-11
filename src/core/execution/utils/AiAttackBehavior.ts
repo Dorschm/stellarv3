@@ -22,7 +22,7 @@ import {
 } from "../../Util";
 import { AssaultShuttleExecution } from "../AssaultShuttleExecution";
 import { AttackExecution } from "../AttackExecution";
-import { DonateTroopsExecution } from "../DonateTroopExecution";
+import { DonatePopulationExecution } from "../DonatePopulationExecution";
 import { NationAllianceBehavior } from "../nation/NationAllianceBehavior";
 import {
   EMOJI_ASSIST_ACCEPT,
@@ -34,7 +34,7 @@ import {
 import { closestTwoTiles } from "../Util";
 
 export class AiAttackBehavior {
-  private botAttackTroopsSent: number = 0;
+  private botAttackPopulationSent: number = 0;
 
   constructor(
     private random: PseudoRandom,
@@ -65,7 +65,7 @@ export class AiAttackBehavior {
           .map((t) => this.game.playerBySmallID(this.game.ownerID(t)))
           .filter((o): o is Player => o.isPlayer()),
       ),
-    ].sort((a, b) => a.troops() - b.troops());
+    ].sort((a, b) => a.population() - b.population());
     const borderingFriends = borderingPlayers.filter(
       (o) => this.player?.isFriendly(o) === true,
     );
@@ -130,7 +130,11 @@ export class AiAttackBehavior {
     }
 
     this.game.addExecution(
-      new AssaultShuttleExecution(this.player, dst, this.player.troops() / 5),
+      new AssaultShuttleExecution(
+        this.player,
+        dst,
+        this.player.population() / 5,
+      ),
     );
     return;
   }
@@ -167,7 +171,7 @@ export class AiAttackBehavior {
         continue;
       }
       // Don't spam boats into players which are stronger than us
-      if (owner.isPlayer() && owner.troops() > this.player.troops()) {
+      if (owner.isPlayer() && owner.population() > this.player.population()) {
         continue;
       }
 
@@ -196,23 +200,23 @@ export class AiAttackBehavior {
     return null;
   }
 
-  // attackBestTarget is called with borderingFriends and borderingEnemies sorted by troops (ascending)
+  // attackBestTarget is called with borderingFriends and borderingEnemies sorted by population (ascending)
   private attackBestTarget(
     borderingFriends: Player[],
     borderingEnemies: Player[],
   ) {
     // In games with high starting gold, nations will quickly build a lot of cities
-    // This causes them to expand slowly (cities increase max troops), and bots will steal their structures
+    // This causes them to expand slowly (cities increase max population), and bots will steal their structures
     // In this case: Attack bots before ratio checks
     if (this.hasNeighboringBotWithStructures()) {
       if (this.attackBots()) return;
     }
 
-    // Save up troops until we reach the reserve ratio
-    if (!this.hasReserveRatioTroops()) return;
+    // Save up population until we reach the reserve ratio
+    if (!this.hasReserveRatioPopulation()) return;
 
-    // Maybe save up troops until we reach the trigger ratio
-    if (!this.hasTriggerRatioTroops() && !this.random.chance(10)) return;
+    // Maybe save up population until we reach the trigger ratio
+    if (!this.hasTriggerRatioPopulation() && !this.random.chance(10)) return;
 
     // Get attack strategies in priority order based on difficulty
     const strategies = this.getAttackStrategies(
@@ -255,10 +259,11 @@ export class AiAttackBehavior {
     };
 
     const afk = (): boolean => {
-      // borderingEnemies is already sorted by troops (ascending), so first match is weakest afk enemy
+      // borderingEnemies is already sorted by population (ascending), so first match is weakest afk enemy
       const afk = borderingEnemies.find(
         (enemy) =>
-          enemy.isDisconnected() && enemy.troops() < this.player.troops() * 3,
+          enemy.isDisconnected() &&
+          enemy.population() < this.player.population() * 3,
       );
       if (afk) {
         this.sendAttack(afk);
@@ -292,7 +297,7 @@ export class AiAttackBehavior {
         if (relation.relation !== Relation.Hostile) continue;
         const other = relation.player;
         if (this.player.isFriendly(other)) continue;
-        if (other.troops() > this.player.troops() * 3) continue;
+        if (other.population() > this.player.population() * 3) continue;
         this.sendAttack(other);
         return true;
       }
@@ -310,10 +315,10 @@ export class AiAttackBehavior {
 
     const weakest = (): boolean => {
       if (borderingEnemies.length > 0) {
-        // borderingEnemies is already sorted by troops (ascending), so first match is weakest
+        // borderingEnemies is already sorted by population (ascending), so first match is weakest
         const weakest = borderingEnemies[0];
-        // Don't attack if they have more troops than us
-        if (weakest.troops() < this.player.troops()) {
+        // Don't attack if they have more population than us
+        if (weakest.population() < this.player.population()) {
           this.sendAttack(weakest);
           return true;
         }
@@ -332,7 +337,7 @@ export class AiAttackBehavior {
       return false;
     };
 
-    const donate = (): boolean => this.donateTroops();
+    const donate = (): boolean => this.donatePopulation();
 
     // Return strategies in order based on difficulty
     // Easy nations get the dumbest order, impossible nations get the smartest order
@@ -366,15 +371,15 @@ export class AiAttackBehavior {
       );
   }
 
-  private hasReserveRatioTroops(): boolean {
-    const maxTroops = this.game.config().maxTroops(this.player);
-    const ratio = this.player.troops() / maxTroops;
+  private hasReserveRatioPopulation(): boolean {
+    const maxPopulation = this.game.config().maxPopulation(this.player);
+    const ratio = this.player.population() / maxPopulation;
     return ratio >= this.reserveRatio;
   }
 
-  private hasTriggerRatioTroops(): boolean {
-    const maxTroops = this.game.config().maxTroops(this.player);
-    const ratio = this.player.troops() / maxTroops;
+  private hasTriggerRatioPopulation(): boolean {
+    const maxPopulation = this.game.config().maxPopulation(this.player);
+    const ratio = this.player.population() / maxPopulation;
     return ratio >= this.triggerRatio;
   }
 
@@ -389,8 +394,8 @@ export class AiAttackBehavior {
     let largestAttack = 0;
     let largestAttacker: Player | undefined;
     for (const attack of incomingAttacks) {
-      if (attack.troops() <= largestAttack) continue;
-      largestAttack = attack.troops();
+      if (attack.population() <= largestAttack) continue;
+      largestAttack = attack.population();
       largestAttacker = attack.attacker();
     }
     if (largestAttacker !== undefined) {
@@ -399,8 +404,8 @@ export class AiAttackBehavior {
     return null;
   }
 
-  // Sort neighboring bots by density (troops / tiles) and attempt to attack many of them (Parallel attacks)
-  // sendAttack will do nothing if we don't have enough reserve troops left
+  // Sort neighboring bots by density (population / tiles) and attempt to attack many of them (Parallel attacks)
+  // sendAttack will do nothing if we don't have enough reserve population left
   // Bots that own structures are prioritized as targets (they might have stolen our structures and they will delete them!)
   private attackBots(): boolean {
     const bots = this.player
@@ -416,9 +421,9 @@ export class AiAttackBehavior {
       return false;
     }
 
-    this.botAttackTroopsSent = 0;
+    this.botAttackPopulationSent = 0;
 
-    const density = (p: Player) => p.troops() / p.numTilesOwned();
+    const density = (p: Player) => p.population() / p.numTilesOwned();
     const ownsStructures = (p: Player) =>
       p.units().some((u) => Structures.has(u.type()));
     const sortedBots = bots.slice().sort((a, b) => {
@@ -436,8 +441,8 @@ export class AiAttackBehavior {
     }
 
     // Only short-circuit the rest of the targeting pipeline if we actually
-    // allocated some troops to bot attacks.
-    return this.botAttackTroopsSent > 0;
+    // allocated some population to bot attacks.
+    return this.botAttackPopulationSent > 0;
   }
 
   private getBotAttackMaxParallelism(): number {
@@ -488,11 +493,12 @@ export class AiAttackBehavior {
 
   // Find a traitor who isn't significantly stronger than us
   private findTraitor(borderingEnemies: Player[]): Player | null {
-    // borderingEnemies is already sorted by troops (ascending), so first match is weakest traitor
+    // borderingEnemies is already sorted by population (ascending), so first match is weakest traitor
     return (
       borderingEnemies.find(
         (enemy) =>
-          enemy.isTraitor() && enemy.troops() < this.player.troops() * 1.2,
+          enemy.isTraitor() &&
+          enemy.population() < this.player.population() * 1.2,
       ) ?? null
     );
   }
@@ -534,34 +540,34 @@ export class AiAttackBehavior {
     return false;
   }
 
-  // Find someone who isn't significantly stronger than us and is under big attack from others (50%+ of their troops incoming)
+  // Find someone who isn't significantly stronger than us and is under big attack from others (50%+ of their population incoming)
   private findVictim(borderingEnemies: Player[]): Player | null {
-    // borderingEnemies is already sorted by troops (ascending), so first match is weakest victim
+    // borderingEnemies is already sorted by population (ascending), so first match is weakest victim
     return (
       borderingEnemies.find((enemy) => {
-        if (enemy.troops() > this.player.troops() * 1.2) return false;
+        if (enemy.population() > this.player.population() * 1.2) return false;
 
-        const totalIncomingTroops = enemy
+        const totalIncomingPopulation = enemy
           .incomingAttacks()
-          .reduce((sum, attack) => sum + attack.troops(), 0);
+          .reduce((sum, attack) => sum + attack.population(), 0);
 
-        return totalIncomingTroops > enemy.troops() * 0.5;
+        return totalIncomingPopulation > enemy.population() * 0.5;
       }) ?? null
     );
   }
 
-  // Find very weak (less than 15% of their maxTroops) enemies
-  // which also don't have significantly more troops than us (to target MIRVed players)
+  // Find very weak (less than 15% of their maxPopulation) enemies
+  // which also don't have significantly more population than us (to target MIRVed players)
   private findVeryWeakEnemy(borderingEnemies: Player[]): Player | null {
     const veryWeakEnemies = borderingEnemies.filter((enemy) => {
-      const enemyMaxTroops = this.game.config().maxTroops(enemy);
+      const enemyMaxPopulation = this.game.config().maxPopulation(enemy);
       return (
-        enemy.troops() < enemyMaxTroops * 0.15 &&
-        enemy.troops() < this.player.troops() * 1.2
+        enemy.population() < enemyMaxPopulation * 0.15 &&
+        enemy.population() < this.player.population() * 1.2
       );
     });
 
-    // borderingEnemies is already sorted by troops (ascending), so first match is weakest very weak enemy
+    // borderingEnemies is already sorted by population (ascending), so first match is weakest very weak enemy
     return veryWeakEnemies.length > 0 ? veryWeakEnemies[0] : null;
   }
 
@@ -583,8 +589,8 @@ export class AiAttackBehavior {
     const filteredPlayers = this.game.players().filter((p) => {
       if (p === this.player) return false;
       if (this.player.isFriendly(p)) return false;
-      // Don't spam boats into players with more troops
-      return p.troops() < this.player.troops();
+      // Don't spam boats into players with more population
+      return p.population() < this.player.population();
     });
 
     if (filteredPlayers.length === 0) return null;
@@ -648,8 +654,8 @@ export class AiAttackBehavior {
   }
 
   attackRandomTarget() {
-    // Save up troops until we reach the trigger ratio
-    if (!this.hasTriggerRatioTroops()) return;
+    // Save up population until we reach the trigger ratio
+    if (!this.hasTriggerRatioPopulation()) return;
 
     // Retaliate against incoming attacks
     const incomingAttackPlayer = this.findIncomingAttackPlayer();
@@ -698,7 +704,7 @@ export class AiAttackBehavior {
   forceSendAttack(target: Player | TerraNullius) {
     this.game.addExecution(
       new AttackExecution(
-        this.player.troops() / 2,
+        this.player.population() / 2,
         this.player,
         target.isPlayer() ? target.id() : this.game.terraNullius().id(),
       ),
@@ -740,7 +746,7 @@ export class AiAttackBehavior {
   }
 
   private sendLandAttack(target: Player | TerraNullius) {
-    const maxTroops = this.game.config().maxTroops(this.player);
+    const maxPopulation = this.game.config().maxPopulation(this.player);
     const botWithStructures =
       target.isPlayer() &&
       target.type() === PlayerType.Bot &&
@@ -749,23 +755,25 @@ export class AiAttackBehavior {
     // recapture those structures ASAP, even before reaching the normal reserve.
     const useReserve = target.isPlayer() && !botWithStructures;
     const reserveRatio = useReserve ? this.reserveRatio : this.expandRatio;
-    const targetTroops = maxTroops * reserveRatio;
+    const targetPopulation = maxPopulation * reserveRatio;
 
-    let troops;
+    let population;
     if (
       target.isPlayer() &&
       target.type() === PlayerType.Bot &&
       this.player.type() !== PlayerType.Bot
     ) {
-      troops = this.calculateBotAttackTroops(
+      population = this.calculateBotAttackPopulation(
         target,
-        this.player.troops() - targetTroops - this.botAttackTroopsSent,
+        this.player.population() -
+          targetPopulation -
+          this.botAttackPopulationSent,
       );
     } else {
-      troops = this.player.troops() - targetTroops;
+      population = this.player.population() - targetPopulation;
     }
 
-    if (troops < 1) {
+    if (population < 1) {
       return;
     }
 
@@ -776,7 +784,7 @@ export class AiAttackBehavior {
 
     this.game.addExecution(
       new AttackExecution(
-        troops,
+        population,
         this.player,
         target.isPlayer() ? target.id() : this.game.terraNullius().id(),
       ),
@@ -799,14 +807,17 @@ export class AiAttackBehavior {
       return;
     }
 
-    let troops;
+    let population;
     if (target.type() === PlayerType.Bot) {
-      troops = this.calculateBotAttackTroops(target, this.player.troops() / 5);
+      population = this.calculateBotAttackPopulation(
+        target,
+        this.player.population() / 5,
+      );
     } else {
-      troops = this.player.troops() / 5;
+      population = this.player.population() / 5;
     }
 
-    if (troops < 1) {
+    if (population < 1) {
       return;
     }
 
@@ -816,32 +827,35 @@ export class AiAttackBehavior {
     }
 
     this.game.addExecution(
-      new AssaultShuttleExecution(this.player, closest.y, troops),
+      new AssaultShuttleExecution(this.player, closest.y, population),
     );
   }
 
-  private calculateBotAttackTroops(target: Player, maxTroops: number): number {
+  private calculateBotAttackPopulation(
+    target: Player,
+    maxPopulation: number,
+  ): number {
     const { difficulty } = this.game.config().gameConfig();
     if (difficulty === Difficulty.Easy) {
-      this.botAttackTroopsSent += maxTroops;
-      return maxTroops;
+      this.botAttackPopulationSent += maxPopulation;
+      return maxPopulation;
     }
-    let troops = target.troops() * 4;
+    let population = target.population() * 4;
 
-    // Don't send more troops than maxTroops (Keep reserve)
-    if (troops > maxTroops) {
-      // If we haven't enough troops left to do a big enough bot attack, skip it
-      if (maxTroops < target.troops() * 2) {
-        troops = 0;
+    // Don't send more population than maxPopulation (Keep reserve)
+    if (population > maxPopulation) {
+      // If we haven't enough population left to do a big enough bot attack, skip it
+      if (maxPopulation < target.population() * 2) {
+        population = 0;
       } else {
-        troops = maxTroops;
+        population = maxPopulation;
       }
     }
-    this.botAttackTroopsSent += troops;
-    return troops;
+    this.botAttackPopulationSent += population;
+    return population;
   }
 
-  private donateTroops(): boolean {
+  private donatePopulation(): boolean {
     // Only donate in team games
     if (this.game.config().gameConfig().gameMode !== GameMode.Team) {
       return false;
@@ -852,8 +866,8 @@ export class AiAttackBehavior {
       return false;
     }
 
-    // Check if donating troops is allowed
-    if (this.game.config().donateTroops() === false) {
+    // Check if donating population is allowed
+    if (this.game.config().donatePopulation() === false) {
       return false;
     }
 
@@ -899,19 +913,20 @@ export class AiAttackBehavior {
       return false;
     }
 
-    // Find teammate with lowest troop percentage (troops / maxTroops)
+    // Find teammate with lowest population percentage (population / maxPopulation)
     const teammatesWithTroopPercentage = teammates
       .map((teammate) => {
-        const maxTroops = this.game.config().maxTroops(teammate);
-        const troopPercentage = teammate.troops() / Math.max(maxTroops, 1);
+        const maxPopulation = this.game.config().maxPopulation(teammate);
+        const troopPercentage =
+          teammate.population() / Math.max(maxPopulation, 1);
         return { teammate, troopPercentage };
       })
       .sort((a, b) => a.troopPercentage - b.troopPercentage);
 
-    // Try to donate to teammates in order of lowest troop percentage
+    // Try to donate to teammates in order of lowest population percentage
     let selectedTeammate: Player | null = null;
     for (const entry of teammatesWithTroopPercentage) {
-      if (this.player.canDonateTroops(entry.teammate)) {
+      if (this.player.canDonatePopulation(entry.teammate)) {
         selectedTeammate = entry.teammate;
         break;
       }
@@ -921,20 +936,20 @@ export class AiAttackBehavior {
       return false;
     }
 
-    // Donate a portion of our troops (keeping reserve)
-    const maxTroops = this.game.config().maxTroops(this.player);
-    const troopsToKeep = maxTroops * this.reserveRatio;
-    const availableTroops = this.player.troops() - troopsToKeep;
+    // Donate a portion of our population (keeping reserve)
+    const maxPopulation = this.game.config().maxPopulation(this.player);
+    const populationToKeep = maxPopulation * this.reserveRatio;
+    const availablePopulation = this.player.population() - populationToKeep;
 
-    if (availableTroops < 1) {
+    if (availablePopulation < 1) {
       return false;
     }
 
     this.game.addExecution(
-      new DonateTroopsExecution(
+      new DonatePopulationExecution(
         this.player,
         selectedTeammate.id(),
-        availableTroops,
+        availablePopulation,
       ),
     );
 

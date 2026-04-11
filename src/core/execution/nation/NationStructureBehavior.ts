@@ -875,7 +875,7 @@ export class NationStructureBehavior {
     const otherUnits = player.units(UnitType.DefenseStation);
     const { borderSpacing, structureSpacing } = this.spacingConstants();
 
-    // Check if we have any non-friendly non-bot neighbors with more troops
+    // Check if we have any non-friendly non-bot neighbors with more population
     const hasHostileNeighbor =
       player
         .neighbors()
@@ -884,7 +884,7 @@ export class NationStructureBehavior {
             n.isPlayer() &&
             player.isFriendly(n) === false &&
             n.type() !== PlayerType.Bot &&
-            n.troops() > player.troops(),
+            n.population() > player.population(),
         ).length > 0;
 
     // Don't build defense posts if there is no danger
@@ -906,7 +906,7 @@ export class NationStructureBehavior {
           borderSpacing - Math.abs(borderSpacing - closestBorderDist),
         );
 
-        // Prefer adjacent players who are hostile and have more troops
+        // Prefer adjacent players who are hostile and have more population
         const neighbors: Set<Player> = new Set();
         for (const neighborTile of game.neighbors(closest)) {
           if (!game.isSector(neighborTile)) continue;
@@ -915,7 +915,7 @@ export class NationStructureBehavior {
           const neighbor = game.playerBySmallID(id);
           if (!neighbor.isPlayer()) continue;
           if (neighbor.type() === PlayerType.Bot) continue;
-          if (neighbor.troops() <= player.troops()) continue;
+          if (neighbor.population() <= player.population()) continue;
           neighbors.add(neighbor);
         }
         for (const neighbor of neighbors) {

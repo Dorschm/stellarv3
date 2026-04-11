@@ -9,7 +9,7 @@ import { ContextMenuEvent, TileHoverEvent, TouchEvent } from "../InputHandler";
 import {
   getTranslatedPlayerTeamLabel,
   renderNumber,
-  renderTroops,
+  renderPopulation,
   translateText,
 } from "../Utils";
 import {
@@ -187,12 +187,12 @@ export function PlayerInfoOverlay(): React.JSX.Element {
   const renderPlayerInfo = (playerInfo: PlayerView) => {
     const myPlayer = gameView.myPlayer();
     const isFriendly = myPlayer?.isFriendly(playerInfo);
-    const maxTroops = gameView.config().maxTroops(playerInfo);
-    const attackingTroops = playerInfo
+    const maxPopulation = gameView.config().maxPopulation(playerInfo);
+    const attackingPopulation = playerInfo
       .outgoingAttacks()
-      .map((a) => a.troops)
+      .map((a) => a.population)
       .reduce((a, b) => a + b, 0);
-    const totalTroops = playerInfo.troops();
+    const totalPopulation = playerInfo.population();
 
     let playerType = "";
     switch (playerInfo.type()) {
@@ -210,7 +210,7 @@ export function PlayerInfoOverlay(): React.JSX.Element {
 
     return (
       <div className="flex items-start gap-1 lg:gap-2 p-1 lg:p-1.5">
-        {/* Left: Credits & Troop bar */}
+        {/* Left: Credits & Population bar */}
         <div className="flex flex-col gap-1 shrink-0 w-28 md:w-36">
           <div className="flex items-center gap-1">
             <div
@@ -224,7 +224,7 @@ export function PlayerInfoOverlay(): React.JSX.Element {
             </div>
             <div
               className={`flex flex-1 flex-col items-center justify-center text-xs font-bold ${
-                attackingTroops > 0 ? "text-sky-400" : "text-white/40"
+                attackingPopulation > 0 ? "text-sky-400" : "text-white/40"
               } drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]`}
               translate="no"
             >
@@ -234,22 +234,26 @@ export function PlayerInfoOverlay(): React.JSX.Element {
                   className="w-2.5 h-2.5"
                   style={{
                     filter:
-                      attackingTroops > 0
+                      attackingPopulation > 0
                         ? "brightness(0) saturate(100%) invert(62%) sepia(80%) saturate(500%) hue-rotate(175deg) brightness(100%)"
                         : "brightness(0) invert(1)",
-                    opacity: attackingTroops > 0 ? 1 : 0.4,
+                    opacity: attackingPopulation > 0 ? 1 : 0.4,
                   }}
                   alt=""
                 />
                 ↑
               </span>
               <span className="tabular-nums leading-none text-sm mt-0.5">
-                {renderTroops(attackingTroops)}
+                {renderPopulation(attackingPopulation)}
               </span>
             </div>
           </div>
           <div className="w-28 md:w-36" translate="no">
-            {renderTroopBar(totalTroops, attackingTroops, maxTroops)}
+            {renderTroopBar(
+              totalPopulation,
+              attackingPopulation,
+              maxPopulation,
+            )}
           </div>
         </div>
 
@@ -379,13 +383,13 @@ export function PlayerInfoOverlay(): React.JSX.Element {
   };
 
   const renderTroopBar = (
-    totalTroops: number,
-    attackingTroops: number,
-    maxTroops: number,
+    totalPopulation: number,
+    attackingPopulation: number,
+    maxPopulation: number,
   ) => {
-    const base = Math.max(maxTroops, 1);
-    const greenPercentRaw = (totalTroops / base) * 100;
-    const orangePercentRaw = (attackingTroops / base) * 100;
+    const base = Math.max(maxPopulation, 1);
+    const greenPercentRaw = (totalPopulation / base) * 100;
+    const orangePercentRaw = (attackingPopulation / base) * 100;
 
     const greenPercent = Math.max(0, Math.min(100, greenPercentRaw));
     const orangePercent = Math.max(
@@ -414,10 +418,10 @@ export function PlayerInfoOverlay(): React.JSX.Element {
           translate="no"
         >
           <span className="text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">
-            {renderTroops(totalTroops)}
+            {renderPopulation(totalPopulation)}
           </span>
           <span className="text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">
-            {renderTroops(maxTroops)}
+            {renderPopulation(maxPopulation)}
           </span>
         </div>
         <img
@@ -451,7 +455,7 @@ export function PlayerInfoOverlay(): React.JSX.Element {
           )}
           {unitInfo.type() === UnitType.AssaultShuttle && (
             <div className="text-sm">
-              Troops: {renderTroops(unitInfo.troops())}
+              Population: {renderPopulation(unitInfo.population())}
             </div>
           )}
         </div>

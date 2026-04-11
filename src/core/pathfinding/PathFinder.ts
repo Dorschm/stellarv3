@@ -33,12 +33,12 @@ export class UniversalPathFinding {
  * Pathfinders that require Game - simulation layer only
  */
 export class PathFinding {
-  static Water(game: Game): SteppingPathFinder<TileRef> {
+  static DeepSpace(game: Game): SteppingPathFinder<TileRef> {
     const pf = game.miniDeepSpaceHPA();
     const graph = game.miniDeepSpaceGraph();
 
     if (!pf || !graph || graph.nodeCount < 100) {
-      return PathFinding.WaterSimple(game);
+      return PathFinding.DeepSpaceSimple(game);
     }
 
     const miniMap = game.miniMap();
@@ -52,7 +52,7 @@ export class PathFinding {
       .buildWithStepper(tileStepperConfig(game));
   }
 
-  static WaterSimple(game: Game): SteppingPathFinder<TileRef> {
+  static DeepSpaceSimple(game: Game): SteppingPathFinder<TileRef> {
     const miniMap = game.miniMap();
     const pf = new AStarDeepSpace(miniMap);
 
@@ -80,7 +80,7 @@ export class PathFinding {
     });
   }
 
-  static Air(game: Game): SteppingPathFinder<TileRef> {
+  static Vacuum(game: Game): SteppingPathFinder<TileRef> {
     const pf = new AirPathFinder(game);
 
     return PathFinderBuilder.create(pf).buildWithStepper({

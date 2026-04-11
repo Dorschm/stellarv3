@@ -1,4 +1,4 @@
-import { renderTroops } from "../../client/Utils";
+import { renderPopulation } from "../../client/Utils";
 import { targetShuttleTile } from "../game/AssaultShuttleUtils";
 import {
   Execution,
@@ -6,6 +6,7 @@ import {
   MessageType,
   Player,
   PlayerType,
+  TerrainType,
   TerraNullius,
   Unit,
   UnitType,
@@ -21,7 +22,10 @@ const malusForRetreat = 25;
 export class AssaultShuttleExecution implements Execution {
   private active = true;
 
-  // TODO: make this configurable
+  // GDD §6 — Assault Fleet travel speed (1 AU/min). Resolved from
+  // Config.assaultShuttleTicksPerTile() in init() once the Game ref is
+  // available; the field default is the legacy "1 tick/tile" pace so any
+  // pre-init access still behaves sensibly.
   private ticksPerMove = 1;
   private lastMove: number;
 
@@ -41,7 +45,7 @@ export class AssaultShuttleExecution implements Execution {
   constructor(
     private attacker: Player,
     private ref: TileRef,
-    private troops: number,
+    private population: number,
   ) {
     this.originalOwner = this.attacker;
   }
@@ -60,7 +64,8 @@ export class AssaultShuttleExecution implements Execution {
     this.lastMove = ticks;
     this.mg = mg;
     this.target = mg.owner(this.ref);
-    this.pathFinder = PathFinding.Water(mg);
+    this.pathFinder = PathFinding.DeepSpace(mg);
+    this.ticksPerMove = mg.config().assaultShuttleTicksPerTile();
 
     if (
       this.attacker.unitCount(UnitType.AssaultShuttle) >=
@@ -92,10 +97,10 @@ export class AssaultShuttleExecution implements Execution {
       return;
     }
 
-    this.troops ??= this.mg
+    this.population ??= this.mg
       .config()
       .shuttleAttackAmount(this.attacker, this.target);
-    this.troops = Math.min(this.troops, this.attacker.troops());
+    this.population = Math.min(this.population, this.attacker.population());
 
     this.dst = targetShuttleTile(this.mg, this.ref);
 
@@ -120,7 +125,7 @@ export class AssaultShuttleExecution implements Execution {
     this.src = src;
 
     this.shuttle = this.attacker.buildUnit(UnitType.AssaultShuttle, this.src, {
-      troops: this.troops,
+      population: this.population,
       targetTile: this.dst,
     });
 
@@ -145,7 +150,7 @@ export class AssaultShuttleExecution implements Execution {
       mg.displayIncomingUnit(
         this.shuttle.id(),
         // TODO TranslateText
-        `Shuttle assault incoming from ${this.attacker.displayName()} (${renderTroops(this.shuttle.troops())})`,
+        `Shuttle assault incoming from ${this.attacker.displayName()} (${renderPopulation(this.shuttle.population())})`,
         MessageType.ORBITAL_ASSAULT_INBOUND,
         this.target.id(),
       );
@@ -154,7 +159,11 @@ export class AssaultShuttleExecution implements Execution {
     // Record stats
     this.mg
       .stats()
-      .shuttleSendTroops(this.attacker, this.target, this.shuttle.troops());
+      .shuttleSendPopulation(
+        this.attacker,
+        this.target,
+        this.shuttle.population(),
+      );
   }
 
   tick(ticks: number) {
@@ -194,7 +203,7 @@ export class AssaultShuttleExecution implements Execution {
         console.warn(
           `AssaultShuttleExecution: retreating but no retreat destination found`,
         );
-        this.attacker.addTroops(this.shuttle.troops());
+        this.attacker.addPopulation(this.shuttle.population());
         this.shuttle.delete(false);
         this.active = false;
         return;
@@ -211,34 +220,38 @@ export class AssaultShuttleExecution implements Execution {
     switch (result.status) {
       case PathStatus.COMPLETE:
         if (this.mg.owner(this.dst) === this.attacker) {
-          const deaths = this.shuttle.troops() * (malusForRetreat / 100);
-          const survivors = this.shuttle.troops() - deaths;
-          this.attacker.addTroops(survivors);
+          // GDD §6: an Assault Fleet landing on a friendly Nebula tile
+          // converts it to OpenSpace (partial → full habitability). The
+          // conversion is free (no cost beyond the shuttle itself).
+          this.convertNebulaToOpenSpace(this.dst);
+          const deaths = this.shuttle.population() * (malusForRetreat / 100);
+          const survivors = this.shuttle.population() - deaths;
+          this.attacker.addPopulation(survivors);
           this.shuttle.delete(false);
           this.active = false;
 
           // Record stats
           this.mg
             .stats()
-            .shuttleArriveTroops(this.attacker, this.target, survivors);
+            .shuttleArrivePopulation(this.attacker, this.target, survivors);
           if (deaths) {
             this.mg.displayMessage(
               "events_display.attack_cancelled_retreat",
               MessageType.ATTACK_CANCELLED,
               this.attacker.id(),
               undefined,
-              { troops: renderTroops(deaths) },
+              { population: renderPopulation(deaths) },
             );
           }
           return;
         }
         this.attacker.conquer(this.dst);
         if (this.target.isPlayer() && this.attacker.isFriendly(this.target)) {
-          this.attacker.addTroops(this.shuttle.troops());
+          this.attacker.addPopulation(this.shuttle.population());
         } else {
           this.mg.addExecution(
             new AttackExecution(
-              this.shuttle.troops(),
+              this.shuttle.population(),
               this.attacker,
               this.target.id(),
               this.dst,
@@ -252,10 +265,10 @@ export class AssaultShuttleExecution implements Execution {
         // Record stats
         this.mg
           .stats()
-          .shuttleArriveTroops(
+          .shuttleArrivePopulation(
             this.attacker,
             this.target,
-            this.shuttle.troops(),
+            this.shuttle.population(),
           );
         return;
       case PathStatus.NEXT:
@@ -268,7 +281,7 @@ export class AssaultShuttleExecution implements Execution {
         console.warn(
           `AssaultShuttle path not found: shuttle@(${map.x(shuttleTile)},${map.y(shuttleTile)}) -> dst@(${map.x(this.dst)},${map.y(this.dst)}), attacker=${this.attacker.id()}, target=${this.target.id()}`,
         );
-        this.attacker.addTroops(this.shuttle.troops());
+        this.attacker.addPopulation(this.shuttle.population());
         this.shuttle.delete(false);
         this.active = false;
         return;
@@ -311,6 +324,32 @@ export class AssaultShuttleExecution implements Execution {
       .find((ar) => ar.requestor() === target);
     if (request !== undefined) {
       request.reject();
+    }
+  }
+
+  /**
+   * GDD §6: friendly Assault Fleet landings convert partial habitability
+   * (Nebula) to full habitability (OpenSpace). Mirrors the SectorMap
+   * synchronization done in {@link ScoutSwarmExecution.applyTerraformStep}.
+   * No-op for any other terrain.
+   */
+  private convertNebulaToOpenSpace(tile: TileRef): void {
+    const map = this.mg.map();
+    if (map.terrainType(tile) !== TerrainType.Nebula) {
+      return;
+    }
+    const sectorMap = this.mg.sectorMap();
+    const ownerIdBefore = map.hasOwner(tile) ? map.ownerID(tile) : null;
+    const previousHab =
+      ownerIdBefore !== null ? sectorMap.effectiveHabitability(tile) : 0;
+
+    // Route through Game.setTerrainType (not GameMap) so the mutation is
+    // recorded on the terrain update sync channel for clients — same as
+    // ScoutSwarmExecution.applyTerraformStep.
+    this.mg.setTerrainType(tile, TerrainType.OpenSpace);
+
+    if (ownerIdBefore !== null) {
+      sectorMap.recomputeHabitabilityForTile(tile, ownerIdBefore, previousHab);
     }
   }
 }

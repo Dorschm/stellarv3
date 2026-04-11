@@ -4,7 +4,7 @@ import { PlayerView } from "../../core/game/GameView";
 import {
   formatPercentage,
   renderNumber,
-  renderTroops,
+  renderPopulation,
   translateText,
 } from "../Utils";
 import { useGameTick } from "./useGameTick";
@@ -14,7 +14,7 @@ interface TeamEntry {
   isMyTeam: boolean;
   totalScoreStr: string;
   totalGold: string;
-  totalMaxTroops: string;
+  totalMaxPopulation: string;
   totalSAMs: string;
   totalLaunchers: string;
   totalWarShips: string;
@@ -84,7 +84,7 @@ function TeamStats({ visible }: TeamStatsProps): React.JSX.Element {
         const teamName = translated !== key ? translated : String(rawTeam);
 
         let totalGold = 0n;
-        let totalMaxTroops = 0;
+        let totalMaxPopulation = 0;
         let totalScoreSort = 0;
         let totalSAMs = 0;
         let totalLaunchers = 0;
@@ -93,7 +93,7 @@ function TeamStats({ visible }: TeamStatsProps): React.JSX.Element {
 
         for (const p of teamPlayers) {
           if (p.isAlive()) {
-            totalMaxTroops += gameView.config().maxTroops(p);
+            totalMaxPopulation += gameView.config().maxPopulation(p);
             totalGold += p.credits();
             totalScoreSort += p.numTilesOwned();
             totalLaunchers += p.totalUnitLevels(UnitType.OrbitalStrikePlatform);
@@ -113,7 +113,7 @@ function TeamStats({ visible }: TeamStatsProps): React.JSX.Element {
           totalScoreStr: formatPercentage(totalScorePercent),
           totalScoreSort,
           totalGold: renderNumber(totalGold),
-          totalMaxTroops: renderTroops(totalMaxTroops),
+          totalMaxPopulation: renderPopulation(totalMaxPopulation),
           players: teamPlayers,
           totalLaunchers: renderNumber(totalLaunchers),
           totalSAMs: renderNumber(totalSAMs),
@@ -168,7 +168,7 @@ function TeamStats({ visible }: TeamStatsProps): React.JSX.Element {
                 {translateText("leaderboard.gold")}
               </div>
               <div className="p-1.5 md:p-2.5 text-center border-b border-slate-500">
-                {translateText("leaderboard.maxtroops")}
+                {translateText("leaderboard.maxpopulation")}
               </div>
             </>
           )}
@@ -216,7 +216,7 @@ function TeamStats({ visible }: TeamStatsProps): React.JSX.Element {
                 {team.totalGold}
               </div>
               <div className="py-1.5 border-b border-slate-500">
-                {team.totalMaxTroops}
+                {team.totalMaxPopulation}
               </div>
             </div>
           ),

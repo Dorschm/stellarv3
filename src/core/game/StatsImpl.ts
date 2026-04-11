@@ -66,7 +66,10 @@ export class StatsImpl implements Stats {
 
   // GDD §10 scoring book-keeping. Indexed by `player.smallID()` so we can
   // serve queries without iterating the player set on every tick.
-  // - sectorsEverOwned: distinct sector IDs the player has ever owned
+  // - sectorsEverOwned: distinct sector IDs the player has ever owned.
+  //   These IDs are identical to the `Planet.sectorId` / `Planet.id` of
+  //   the corresponding Planet entity, so the cardinality doubles as the
+  //   GDD §10 "planets conquered" metric surfaced on the RunScore.
   // - eliminationOrder: rank assigned at first kill (1 = first eliminated)
   // - eliminationTick: tick of the first kill, used for survivalTicks
   private readonly sectorsEverOwned: Map<number, Set<number>> = new Map();
@@ -129,8 +132,12 @@ export class StatsImpl implements Stats {
         eliminated ?? survivorRankValue ?? this.nextEliminationRank;
       const killedAt = this.eliminationTick.get(id);
       const survivalTicks = killedAt ?? tick;
-      // Currently-controlled sectors: any sector containing at least one
-      // tile this player owns.
+      // Currently-controlled planets: any sector-turned-Planet containing
+      // at least one tile this player owns. The sector id numeric space
+      // is shared with `Planet.sectorId`, so counting distinct sector ids
+      // is equivalent to counting distinct Planet entities — we walk
+      // tiles instead of planets to keep the cost O(player tiles) rather
+      // than O(map tiles).
       const currentSectors = new Set<number>();
       for (const tile of p.tiles()) {
         const sid = sectorMap.sectorOf(tile);
@@ -268,23 +275,23 @@ export class StatsImpl implements Stats {
   attack(
     player: Player,
     target: Player | TerraNullius,
-    troops: BigIntLike,
+    population: BigIntLike,
   ): void {
-    this._addAttack(player, ATTACK_INDEX_SENT, troops);
+    this._addAttack(player, ATTACK_INDEX_SENT, population);
     if (target.isPlayer()) {
-      this._addAttack(target, ATTACK_INDEX_RECV, troops);
+      this._addAttack(target, ATTACK_INDEX_RECV, population);
     }
   }
 
   attackCancel(
     player: Player,
     target: Player | TerraNullius,
-    troops: BigIntLike,
+    population: BigIntLike,
   ): void {
-    this._addAttack(player, ATTACK_INDEX_CANCEL, troops);
-    this._addAttack(player, ATTACK_INDEX_SENT, -troops);
+    this._addAttack(player, ATTACK_INDEX_CANCEL, population);
+    this._addAttack(player, ATTACK_INDEX_SENT, -population);
     if (target.isPlayer()) {
-      this._addAttack(target, ATTACK_INDEX_RECV, -troops);
+      this._addAttack(target, ATTACK_INDEX_RECV, -population);
     }
   }
 
@@ -319,26 +326,26 @@ export class StatsImpl implements Stats {
     this._addSpaceUnit(player, "tfreight", SHUTTLE_INDEX_DESTROY, 1);
   }
 
-  shuttleSendTroops(
+  shuttleSendPopulation(
     player: Player,
     target: Player | TerraNullius,
-    troops: BigIntLike,
+    population: BigIntLike,
   ): void {
     this._addSpaceUnit(player, "ashuttle", SHUTTLE_INDEX_SENT, 1);
   }
 
-  shuttleArriveTroops(
+  shuttleArrivePopulation(
     player: Player,
     target: Player | TerraNullius,
-    troops: BigIntLike,
+    population: BigIntLike,
   ): void {
     this._addSpaceUnit(player, "ashuttle", SHUTTLE_INDEX_ARRIVE, 1);
   }
 
-  shuttleDestroyTroops(
+  shuttleDestroyPopulation(
     player: Player,
     target: Player,
-    troops: BigIntLike,
+    population: BigIntLike,
   ): void {
     this._addSpaceUnit(player, "ashuttle", SHUTTLE_INDEX_DESTROY, 1);
   }

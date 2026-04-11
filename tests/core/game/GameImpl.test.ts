@@ -24,7 +24,7 @@ describe("GameImpl", () => {
     game = await setup("ocean_and_land", {
       infiniteCredits: true,
       instantBuild: true,
-      infiniteTroops: true,
+      infinitePopulation: true,
     });
     const attackerInfo = new PlayerInfo(
       "attacker dude",

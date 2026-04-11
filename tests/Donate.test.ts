@@ -1,16 +1,16 @@
 import { DonateCreditsExecution } from "../src/core/execution/DonateCreditsExecution";
-import { DonateTroopsExecution } from "../src/core/execution/DonateTroopExecution";
+import { DonatePopulationExecution } from "../src/core/execution/DonatePopulationExecution";
 import { SpawnExecution } from "../src/core/execution/SpawnExecution";
 import { PlayerInfo, PlayerType } from "../src/core/game/Game";
 import { GameID } from "../src/core/Schemas";
 import { setup } from "./util/Setup";
 
-describe("Donate troops to an ally", () => {
-  it("Troops should be successfully donated", async () => {
+describe("Donate population to an ally", () => {
+  it("Population should be successfully donated", async () => {
     const gameID: GameID = "game_id";
     const game = await setup("ocean_and_land", {
-      infiniteTroops: false,
-      donateTroops: true,
+      infinitePopulation: false,
+      donatePopulation: true,
     });
 
     const donorInfo = new PlayerInfo(
@@ -55,17 +55,19 @@ describe("Donate troops to an ally", () => {
     }
 
     // Ensure donor can actually donate the requested amount
-    donor.addTroops(6000);
-    const donorTroopsBefore = donor.troops();
-    const recipientTroopsBefore = recipient.troops();
-    game.addExecution(new DonateTroopsExecution(donor, recipientInfo.id, 5000));
+    donor.addPopulation(6000);
+    const donorPopulationBefore = donor.population();
+    const recipientPopulationBefore = recipient.population();
+    game.addExecution(
+      new DonatePopulationExecution(donor, recipientInfo.id, 5000),
+    );
 
     for (let i = 0; i < 5; i++) {
       game.executeNextTick();
     }
 
-    expect(donor.troops() < donorTroopsBefore).toBe(true);
-    expect(recipient.troops() > recipientTroopsBefore).toBe(true);
+    expect(donor.population() < donorPopulationBefore).toBe(true);
+    expect(recipient.population() > recipientPopulationBefore).toBe(true);
   });
 });
 
@@ -136,11 +138,11 @@ describe("Donate gold to an ally", () => {
   });
 });
 
-describe("Donate troops to a non ally", () => {
-  it("Troops should not be donated", async () => {
+describe("Donate population to a non ally", () => {
+  it("Population should not be donated", async () => {
     const game = await setup("ocean_and_land", {
-      infiniteTroops: false,
-      donateTroops: true,
+      infinitePopulation: false,
+      donatePopulation: true,
     });
     const gameID: GameID = "game_id";
 
@@ -185,15 +187,17 @@ describe("Donate troops to a non ally", () => {
       allianceRequest.reject();
     }
 
-    const donorTroopsBefore = donor.troops();
-    const recipientTroopsBefore = recipient.troops();
+    const donorPopulationBefore = donor.population();
+    const recipientPopulationBefore = recipient.population();
 
-    game.addExecution(new DonateTroopsExecution(donor, recipientInfo.id, 5000));
+    game.addExecution(
+      new DonatePopulationExecution(donor, recipientInfo.id, 5000),
+    );
     game.executeNextTick();
 
-    // Troops should not be donated since they are not allies
-    expect(donor.troops() >= donorTroopsBefore).toBe(true);
-    expect(recipient.troops() >= recipientTroopsBefore).toBe(true);
+    // Population should not be donated since they are not allies
+    expect(donor.population() >= donorPopulationBefore).toBe(true);
+    expect(recipient.population() >= recipientPopulationBefore).toBe(true);
   });
 });
 

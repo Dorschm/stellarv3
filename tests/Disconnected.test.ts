@@ -240,7 +240,7 @@ describe("Disconnected", () => {
         UnitType.AssaultShuttle,
         game.map().ref(coastX + 1, 11),
         {
-          troops: 100,
+          population: 100,
         },
       );
 
@@ -266,7 +266,7 @@ describe("Disconnected", () => {
         UnitType.AssaultShuttle,
         game.map().ref(coastX + 1, 6),
         {
-          troops: 100,
+          population: 100,
         },
       );
 
@@ -278,16 +278,16 @@ describe("Disconnected", () => {
       expect(assaultShuttle.owner()).toBe(player1);
     });
 
-    test("Player can attack disconnected team mate without troop loss", () => {
+    test("Player can attack disconnected team mate without population loss", () => {
       player2.conquer(game.map().ref(coastX - 2, 2));
       player2.conquer(game.map().ref(coastX - 2, 3));
       player2.markDisconnected(true);
 
-      const troopsBeforeAttack = player1.troops();
-      const startTroops = troopsBeforeAttack * 0.25;
+      const populationBeforeAttack = player1.population();
+      const startPopulation = populationBeforeAttack * 0.25;
 
       game.addExecution(
-        new AttackExecution(startTroops, player1, player2.id(), null),
+        new AttackExecution(startPopulation, player1, player2.id(), null),
       );
 
       let expectedTotalGrowth = 0n;
@@ -295,7 +295,7 @@ describe("Disconnected", () => {
 
       while (player2.isAlive()) {
         if (afterTickZero) {
-          // No growth on tick 0, troop additions start from tick 1
+          // No growth on tick 0, population additions start from tick 1
           const troopIncThisTick = game.config().troopIncreaseRate(player1);
           expectedTotalGrowth += toInt(troopIncThisTick);
         }
@@ -304,18 +304,18 @@ describe("Disconnected", () => {
         afterTickZero = true;
       }
 
-      // Tick for retreat() in AttackExecution to add back startTtoops to owner troops
+      // Tick for retreat() in AttackExecution to add back startTtoops to owner population
       const troopIncThisTick1 = game.config().troopIncreaseRate(player1);
       expectedTotalGrowth += toInt(troopIncThisTick1);
 
       game.executeNextTick();
 
-      const expectedFinalTroops = Number(
-        toInt(troopsBeforeAttack) + expectedTotalGrowth,
+      const expectedFinalPopulation = Number(
+        toInt(populationBeforeAttack) + expectedTotalGrowth,
       );
 
-      // Verify no troop loss
-      expect(player1.troops()).toBe(expectedFinalTroops);
+      // Verify no population loss
+      expect(player1.population()).toBe(expectedFinalPopulation);
     });
 
     test("Conqueror gets conquered disconnected team member's assault shuttles and battlecruisers", () => {
@@ -330,7 +330,7 @@ describe("Disconnected", () => {
         UnitType.AssaultShuttle,
         game.map().ref(coastX + 1, 3),
         {
-          troops: 100,
+          population: 100,
         },
       );
 
@@ -438,9 +438,9 @@ describe("Disconnected", () => {
       // this test is asserting.
       giveSpaceport(game, player2, enemyShoreTile);
 
-      const shuttleTroops = 100;
+      const shuttlePopulation = 100;
       game.addExecution(
-        new AssaultShuttleExecution(player2, enemyShoreTile, shuttleTroops),
+        new AssaultShuttleExecution(player2, enemyShoreTile, shuttlePopulation),
       );
       executeTicks(game, 1);
 
@@ -479,16 +479,18 @@ describe("Disconnected", () => {
 
       const troopIncPerTick = game.config().troopIncreaseRate(player1);
       const expectedTroopGrowth = toInt(troopIncPerTick * 1);
-      const expectedFinalTroops = Number(
-        toInt(player1.troops()) + expectedTroopGrowth,
+      const expectedFinalPopulation = Number(
+        toInt(player1.population()) + expectedTroopGrowth,
       );
 
       assaultShuttle.orderShuttleRetreat();
       executeTicks(game, 1);
 
       expect(assaultShuttle.isActive()).toBe(false);
-      // Also test if shuttle troops were returned to player1 as new ship owner
-      expect(player1.troops()).toBe(expectedFinalTroops + shuttleTroops);
+      // Also test if shuttle population were returned to player1 as new ship owner
+      expect(player1.population()).toBe(
+        expectedFinalPopulation + shuttlePopulation,
+      );
     });
   });
 });

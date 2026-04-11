@@ -14,9 +14,9 @@ describe("Alliance Donation", () => {
       {
         infiniteCredits: false,
         instantBuild: true,
-        infiniteTroops: false,
+        infinitePopulation: false,
         donateCredits: true,
-        donateTroops: true,
+        donatePopulation: true,
       },
       [
         playerInfo("player1", PlayerType.Human),
@@ -27,12 +27,12 @@ describe("Alliance Donation", () => {
     player1 = game.player("player1");
     player1.conquer(game.ref(0, 0));
     player1.addCredits(1000n);
-    player1.addTroops(1000);
+    player1.addPopulation(1000);
 
     player2 = game.player("player2");
     player2.conquer(game.ref(0, 1));
     player2.addCredits(100n);
-    player2.addTroops(100);
+    player2.addPopulation(100);
 
     while (game.inSpawnPhase()) {
       game.executeNextTick();
@@ -58,7 +58,7 @@ describe("Alliance Donation", () => {
     expect(player2.credits()).toBe(goldBefore + 100n);
   });
 
-  test("Can donate troops after alliance formed by reply", () => {
+  test("Can donate population after alliance formed by reply", () => {
     game.addExecution(new AllianceRequestExecution(player1, player2.id()));
     game.executeNextTick();
 
@@ -68,11 +68,11 @@ describe("Alliance Donation", () => {
     expect(player1.isAlliedWith(player2)).toBeTruthy();
     expect(player2.isAlliedWith(player1)).toBeTruthy();
 
-    expect(player1.canDonateTroops(player2)).toBeTruthy();
-    const troopsBefore = player2.troops();
-    const success = player1.donateTroops(player2, 100);
+    expect(player1.canDonatePopulation(player2)).toBeTruthy();
+    const populationBefore = player2.population();
+    const success = player1.donatePopulation(player2, 100);
     expect(success).toBeTruthy();
-    expect(player2.troops()).toBe(troopsBefore + 100);
+    expect(player2.population()).toBe(populationBefore + 100);
   });
 
   test("Can donate gold after alliance formed by mutual request", () => {
@@ -94,7 +94,7 @@ describe("Alliance Donation", () => {
     expect(player2.credits()).toBe(goldBefore + 100n);
   });
 
-  test("Can donate troops after alliance formed by mutual request", () => {
+  test("Can donate population after alliance formed by mutual request", () => {
     game.addExecution(new AllianceRequestExecution(player1, player2.id()));
     game.executeNextTick();
 
@@ -104,11 +104,11 @@ describe("Alliance Donation", () => {
     expect(player1.isAlliedWith(player2)).toBeTruthy();
     expect(player2.isAlliedWith(player1)).toBeTruthy();
 
-    expect(player1.canDonateTroops(player2)).toBeTruthy();
-    const troopsBefore = player2.troops();
-    const success = player1.donateTroops(player2, 100);
+    expect(player1.canDonatePopulation(player2)).toBeTruthy();
+    const populationBefore = player2.population();
+    const success = player1.donatePopulation(player2, 100);
     expect(success).toBeTruthy();
-    expect(player2.troops()).toBe(troopsBefore + 100);
+    expect(player2.population()).toBe(populationBefore + 100);
   });
 
   test("Can donate immediately after accepting alliance (race condition)", () => {

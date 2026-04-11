@@ -11,7 +11,7 @@ import { AttackExecution } from "./AttackExecution";
 import { ConstructionExecution } from "./ConstructionExecution";
 import { DeleteUnitExecution } from "./DeleteUnitExecution";
 import { DonateCreditsExecution } from "./DonateCreditsExecution";
-import { DonateTroopsExecution } from "./DonateTroopExecution";
+import { DonatePopulationExecution } from "./DonatePopulationExecution";
 import { EmbargoAllExecution } from "./EmbargoAllExecution";
 import { EmbargoExecution } from "./EmbargoExecution";
 import { EmojiExecution } from "./EmojiExecution";
@@ -57,7 +57,7 @@ export class Executor {
     switch (intent.type) {
       case "attack": {
         return new AttackExecution(
-          intent.troops,
+          intent.population,
           player,
           intent.targetID,
           null,
@@ -76,7 +76,11 @@ export class Executor {
       case "spawn":
         return new SpawnExecution(this.gameID, player.info(), intent.tile);
       case "shuttle":
-        return new AssaultShuttleExecution(player, intent.dst, intent.troops);
+        return new AssaultShuttleExecution(
+          player,
+          intent.dst,
+          intent.population,
+        );
       case "allianceRequest":
         return new AllianceRequestExecution(player, intent.recipient);
       case "allianceReject":
@@ -87,11 +91,11 @@ export class Executor {
         return new TargetPlayerExecution(player, intent.target);
       case "emoji":
         return new EmojiExecution(player, intent.recipient, intent.emoji);
-      case "donate_troops":
-        return new DonateTroopsExecution(
+      case "donate_population":
+        return new DonatePopulationExecution(
           player,
           intent.recipient,
-          intent.troops,
+          intent.population,
         );
       case "donate_credits":
         return new DonateCreditsExecution(

@@ -40,7 +40,7 @@ export type Intent =
   | TargetPlayerIntent
   | EmojiIntent
   | DonateCreditsIntent
-  | DonateTroopsIntent
+  | DonatePopulationIntent
   | BuildUnitIntent
   | EmbargoIntent
   | QuickChatIntent
@@ -65,7 +65,7 @@ export type BreakAllianceIntent = z.infer<typeof BreakAllianceIntentSchema>;
 export type TargetPlayerIntent = z.infer<typeof TargetPlayerIntentSchema>;
 export type EmojiIntent = z.infer<typeof EmojiIntentSchema>;
 export type DonateCreditsIntent = z.infer<typeof DonateCreditsIntentSchema>;
-export type DonateTroopsIntent = z.infer<typeof DonateTroopIntentSchema>;
+export type DonatePopulationIntent = z.infer<typeof DonateTroopIntentSchema>;
 export type EmbargoIntent = z.infer<typeof EmbargoIntentSchema>;
 export type BuildUnitIntent = z.infer<typeof BuildUnitIntentSchema>;
 export type UpgradeStructureIntent = z.infer<
@@ -219,7 +219,7 @@ export const GameConfigSchema = z.object({
   gameMap: z.enum(GameMapType),
   difficulty: z.enum(Difficulty),
   donateCredits: z.boolean(), // Configures donations to humans only
-  donateTroops: z.boolean(), // Configures donations to humans only
+  donatePopulation: z.boolean(), // Configures donations to humans only
   gameType: z.enum(GameType),
   gameMode: z.enum(GameMode),
   rankedType: z.enum(RankedType).optional(), // Only set for ranked games.
@@ -247,7 +247,7 @@ export const GameConfigSchema = z.object({
     .or(z.enum(["default", "disabled"])),
   bots: z.number().int().min(0).max(400),
   infiniteCredits: z.boolean(),
-  infiniteTroops: z.boolean(),
+  infinitePopulation: z.boolean(),
   instantBuild: z.boolean(),
   disableNavMesh: z.boolean().optional(),
   disableAlliances: z.boolean().optional(),
@@ -321,7 +321,7 @@ export const AllianceExtensionIntentSchema = z.object({
 export const AttackIntentSchema = z.object({
   type: z.literal("attack"),
   targetID: ID.nullable(),
-  troops: z.number().nonnegative().nullable(),
+  population: z.number().nonnegative().nullable(),
 });
 
 export const SpawnIntentSchema = z.object({
@@ -331,7 +331,7 @@ export const SpawnIntentSchema = z.object({
 
 export const ShuttleAttackIntentSchema = z.object({
   type: z.literal("shuttle"),
-  troops: z.number().nonnegative(),
+  population: z.number().nonnegative(),
   dst: z.number(),
 });
 
@@ -379,9 +379,9 @@ export const DonateCreditsIntentSchema = z.object({
 });
 
 export const DonateTroopIntentSchema = z.object({
-  type: z.literal("donate_troops"),
+  type: z.literal("donate_population"),
   recipient: ID,
-  troops: z.number().nonnegative().nullable(),
+  population: z.number().nonnegative().nullable(),
 });
 
 export const BuildUnitIntentSchema = z.object({

@@ -89,12 +89,15 @@ export class UserSettings {
     return this.get("settings.territoryPatterns", true);
   }
 
-  attackingTroopsOverlay() {
-    return this.get("settings.attackingTroopsOverlay", true);
+  attackingPopulationOverlay() {
+    return this.get("settings.attackingPopulationOverlay", true);
   }
 
-  toggleAttackingTroopsOverlay() {
-    this.set("settings.attackingTroopsOverlay", !this.attackingTroopsOverlay());
+  toggleAttackingPopulationOverlay() {
+    this.set(
+      "settings.attackingPopulationOverlay",
+      !this.attackingPopulationOverlay(),
+    );
   }
 
   cursorCostLabel() {

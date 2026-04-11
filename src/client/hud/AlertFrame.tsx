@@ -86,8 +86,8 @@ export function AlertFrame(): React.JSX.Element {
       currentTick - lastAlertTickRef.current < ALERT_COOLDOWN_TICKS;
 
     // Find new attacks that we haven't seen yet
-    const playerTroops = myPlayer.troops();
-    const minAttackTroopsThreshold = playerTroops / 5; // 1/5 of current troops
+    const playerPopulation = myPlayer.population();
+    const minAttackPopulationThreshold = playerPopulation / 5; // 1/5 of current population
 
     for (const attack of incomingAttacks) {
       // Only alert for non-retreating attacks
@@ -110,13 +110,13 @@ export function AlertFrame(): React.JSX.Element {
           ourAttackTick !== undefined &&
           currentTick - ourAttackTick < RETALIATION_WINDOW_TICKS;
 
-        // Check if attack is too small (less than 1/5 of our troops)
-        const isSmallAttack = attack.troops < minAttackTroopsThreshold;
+        // Check if attack is too small (less than 1/5 of our population)
+        const isSmallAttack = attack.population < minAttackPopulationThreshold;
 
         // Don't alert if:
         // 1. We're in cooldown from a recent alert
         // 2. This is a retaliation (we attacked them within 15 seconds)
-        // 3. The attack is too small (less than 1/5 of our troops)
+        // 3. The attack is too small (less than 1/5 of our population)
         if (!inCooldown && !isRetaliation && !isSmallAttack) {
           seenAttackIdsRef.current.add(attack.id);
           setAlertType("local-attack");

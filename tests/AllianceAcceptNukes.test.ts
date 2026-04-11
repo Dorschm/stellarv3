@@ -23,7 +23,7 @@ describe("Alliance acceptance immediately destroys in-flight nukes", () => {
       {
         infiniteCredits: true,
         instantBuild: true,
-        infiniteTroops: true,
+        infinitePopulation: true,
       },
       [
         new PlayerInfo("player1", PlayerType.Human, "c1", "p1"),

@@ -243,8 +243,8 @@ export function renderDuration(totalSeconds: number): string {
   return time.trim();
 }
 
-export function renderTroops(troops: number): string {
-  return renderNumber(troops / 10);
+export function renderPopulation(population: number): string {
+  return renderNumber(population / 10);
 }
 
 export async function copyToClipboard(

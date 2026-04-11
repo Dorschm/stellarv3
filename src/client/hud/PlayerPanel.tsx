@@ -26,7 +26,7 @@ import {
 import {
   renderDuration,
   renderNumber,
-  renderTroops,
+  renderPopulation,
   translateText,
 } from "../Utils";
 import {
@@ -231,12 +231,12 @@ export function PlayerPanel(): React.JSX.Element {
     [eventBus, gameView, tile, hidePanel],
   );
 
-  // -- Donate troops / credits (legacy opened an inline send-resource modal;
+  // -- Donate population / credits (legacy opened an inline send-credit modal;
   //    in the migrated HUD we emit an event so a dedicated modal component
   //    can consume it). --
   const handleDonateTroopClick = useCallback(
     (other: any) => {
-      eventBus.emit(new ShowDonateResourceModalEvent(other, "troops"));
+      eventBus.emit(new ShowDonateResourceModalEvent(other, "population"));
       setSuppressNextHide(true);
     },
     [eventBus],
@@ -341,7 +341,7 @@ export function PlayerPanel(): React.JSX.Element {
     : actions?.interaction?.canSendEmoji;
   const canEmbargo = actions?.interaction?.canEmbargo;
   const canDonateCredits = actions?.interaction?.canDonateCredits;
-  const canDonateTroops = actions?.interaction?.canDonateTroops;
+  const canDonatePopulation = actions?.interaction?.canDonatePopulation;
   const canEmbargoAll = actions?.canEmbargoAll;
   const isLobbyCreator =
     typeof myPlayer.isLobbyCreator === "function" && myPlayer.isLobbyCreator();
@@ -461,10 +461,10 @@ export function PlayerPanel(): React.JSX.Element {
             <div className="inline-flex items-center gap-1.5 rounded-lg bg-white/4 px-3 py-1.5 shrink-0 text-white">
               <span>⚔️</span>
               <span className="tabular-nums font-semibold">
-                {renderTroops(Number(other.troops() ?? 0n))}
+                {renderPopulation(Number(other.population() ?? 0n))}
               </span>
               <span className="text-zinc-200 whitespace-nowrap">
-                {translateText("player_panel.troops")}
+                {translateText("player_panel.population")}
               </span>
             </div>
           </div>
@@ -533,14 +533,14 @@ export function PlayerPanel(): React.JSX.Element {
               </button>
             )}
 
-            {canDonateTroops && (
+            {canDonatePopulation && (
               <button
                 onClick={() => handleDonateTroopClick(other)}
                 className="flex items-center gap-2 px-3 py-2 bg-zinc-700 hover:bg-zinc-600 text-white rounded transition-colors"
-                title={translateText("player_panel.send_troops")}
+                title={translateText("player_panel.send_population")}
               >
                 <img src={donateTroopIcon} alt="" className="w-4 h-4" />
-                {translateText("player_panel.troops")}
+                {translateText("player_panel.population")}
               </button>
             )}
 

@@ -46,6 +46,18 @@ export class TestServerConfig implements ServerConfig {
   turnIntervalMs(): number {
     throw new Error("Method not implemented.");
   }
+  minTurnIntervalMs(): number {
+    return 50;
+  }
+  maxTurnIntervalMs(): number {
+    return 100;
+  }
+  dynamicTurnIntervalMs(progress: number): number {
+    const min = this.minTurnIntervalMs();
+    const max = this.maxTurnIntervalMs();
+    const clamped = Math.max(0, Math.min(1, progress));
+    return Math.round(max - (max - min) * clamped);
+  }
   gameCreationRate(): number {
     throw new Error("Method not implemented.");
   }

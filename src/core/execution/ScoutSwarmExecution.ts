@@ -66,9 +66,22 @@ export class ScoutSwarmExecution implements Execution {
     // Launch cost is a percentage of the player's *current* credits (GDD §4).
     // Snapshot it now so the deducted amount can't drift if the player
     // spends between the intent being submitted and this tick.
+    //
+    // We use deterministic bigint-only arithmetic here: converting the
+    // credit balance via `Number(credits)` loses precision once the player
+    // grows beyond `Number.MAX_SAFE_INTEGER`, which would quietly under- or
+    // overcharge launches and violate the 10% cost contract for the bigint
+    // economy. Instead, rasterize the fractional multiplier to a fixed-
+    // precision rational (numerator / denominator) and apply it entirely in
+    // bigint space. Integer division floors toward zero, which matches the
+    // previous `Math.floor` rounding behavior.
     const credits = this.launcher.credits();
     const fraction = mg.config().scoutSwarmCostFraction();
-    const cost = BigInt(Math.floor(Number(credits) * fraction));
+    const FRACTION_SCALE = 1_000_000n;
+    const scaledNumerator = BigInt(
+      Math.round(fraction * Number(FRACTION_SCALE)),
+    );
+    const cost = (credits * scaledNumerator) / FRACTION_SCALE;
     if (cost > 0n) {
       this.launcher.removeCredits(cost);
     }
@@ -194,6 +207,10 @@ export class ScoutSwarmExecution implements Execution {
    * the SectorMap's per-player habitability sum in sync if the tile is
    * owned. The magnitude changes happen inside GameMap.setTerrainType;
    * here we just translate the current TerrainType to its next stage.
+   *
+   * The actual mutation is routed through `Game.setTerrainType` (not
+   * `GameMap.setTerrainType`) so the change is recorded on the server's
+   * per-tick terrain update channel and synchronized to clients.
    */
   private applyTerraformStep(tile: TileRef): void {
     const map = this.mg.map();
@@ -216,7 +233,7 @@ export class ScoutSwarmExecution implements Execution {
     const previousHab =
       ownerIdBefore !== null ? sectorMap.effectiveHabitability(tile) : 0;
 
-    map.setTerrainType(tile, next);
+    this.mg.setTerrainType(tile, next);
 
     // Keep the per-player habitability sum in sync if someone owns the
     // tile. Scouts normally target unowned territory, but nothing stops

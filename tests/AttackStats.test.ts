@@ -15,7 +15,7 @@ let player2: Player;
 
 describe("AttackStats", () => {
   beforeEach(async () => {
-    game = await setup("plains", { infiniteTroops: true }, [
+    game = await setup("plains", { infinitePopulation: true }, [
       new PlayerInfo("player1", PlayerType.Human, "player1", "player1"),
       new PlayerInfo("player2", PlayerType.Human, "player2", "player2"),
     ]);
@@ -111,7 +111,7 @@ function expectWarGoldStatIsIncreasedAfterKill(
 function performAttack(game: Game, attacker: Player, defender: Player) {
   // Execute the attack
   game.addExecution(
-    new AttackExecution(attacker.troops(), attacker, defender.id()),
+    new AttackExecution(attacker.population(), attacker, defender.id()),
   );
   // Wait for the attack to complete
   do {

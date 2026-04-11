@@ -73,14 +73,14 @@ export class NationEmojiBehavior {
     const incomingAttacks = this.player.incomingAttacks();
     if (incomingAttacks.length === 0) return;
 
-    const incomingTroops = incomingAttacks.reduce(
-      (sum, attack) => sum + attack.troops(),
+    const incomingPopulation = incomingAttacks.reduce(
+      (sum, attack) => sum + attack.population(),
       0,
     );
-    const ourTroops = this.player.troops();
+    const ourPopulation = this.player.population();
 
-    // If incoming troops are at least 3x our troops, we're overwhelmed
-    if (incomingTroops >= ourTroops * 3) {
+    // If incoming population are at least 3x our population, we're overwhelmed
+    if (incomingPopulation >= ourPopulation * 3) {
       this.sendEmoji(AllPlayers, EMOJI_OVERWHELMED);
     }
   }
@@ -91,15 +91,15 @@ export class NationEmojiBehavior {
     const incomingAttacks = this.player.incomingAttacks();
     if (incomingAttacks.length === 0) return;
 
-    const ourTroops = this.player.troops();
-    if (ourTroops <= 0) return;
+    const ourPopulation = this.player.population();
+    if (ourPopulation <= 0) return;
 
-    // Find attacks from humans that are very small (less than 10% of our troops)
+    // Find attacks from humans that are very small (less than 10% of our population)
     for (const attack of incomingAttacks) {
       const attacker = attack.attacker();
       if (attacker.type() !== PlayerType.Human) continue;
 
-      if (attack.troops() < ourTroops * 0.1) {
+      if (attack.population() < ourPopulation * 0.1) {
         this.maybeSendEmoji(
           attacker,
           this.random.chance(2) ? EMOJI_CONFUSED : EMOJI_BORED,

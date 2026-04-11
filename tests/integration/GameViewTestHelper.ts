@@ -10,18 +10,22 @@ if (typeof globalThis.localStorage === "undefined") {
   };
 }
 
-import { Config } from "../../src/core/configuration/Config";
-import { Execution, Game, NameViewData, PlayerInfo } from "../../src/core/game/Game";
-import { GameView } from "../../src/core/game/GameView";
-import { GameUpdateViewData } from "../../src/core/game/GameUpdates";
-import { TerrainMapData } from "../../src/core/game/TerrainMapLoader";
-import { WorkerClient } from "../../src/core/worker/WorkerClient";
-import { ClientID, GameID } from "../../src/core/Schemas";
 import { placeName } from "../../src/client/NameBoxCalculator";
+import { Config } from "../../src/core/configuration/Config";
 import { SpawnExecution } from "../../src/core/execution/SpawnExecution";
+import {
+  Execution,
+  Game,
+  NameViewData,
+  PlayerInfo,
+} from "../../src/core/game/Game";
 import { TileRef } from "../../src/core/game/GameMap";
+import { GameUpdateViewData } from "../../src/core/game/GameUpdates";
+import { GameView } from "../../src/core/game/GameView";
+import { TerrainMapData } from "../../src/core/game/TerrainMapLoader";
+import { ClientID, GameID } from "../../src/core/Schemas";
+import { WorkerClient } from "../../src/core/worker/WorkerClient";
 import { setup } from "../util/Setup";
-import { TestConfig } from "../util/TestConfig";
 
 /**
  * Creates a minimal mock WorkerClient sufficient for GameView construction.
@@ -82,11 +86,13 @@ export class GameViewTestHarness {
     }
 
     const packedTileUpdates = this.game.drainPackedTileUpdates();
+    const packedTerrainUpdates = this.game.drainPackedTerrainUpdates();
     const packedMotionPlans = this.game.drainPackedMotionPlans();
 
     const viewData: GameUpdateViewData = {
       tick: this.game.ticks(),
       packedTileUpdates,
+      packedTerrainUpdates,
       ...(packedMotionPlans ? { packedMotionPlans } : {}),
       updates,
       playerNameViewData: this.playerViewData,

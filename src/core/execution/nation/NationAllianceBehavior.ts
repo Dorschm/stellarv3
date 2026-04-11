@@ -218,27 +218,31 @@ export class NationAllianceBehavior {
         // On easy we are very dumb, we don't see anybody as a threat
         return false;
       case Difficulty.Medium:
-        // On medium we just see players with much more troops as a threat
-        return otherPlayer.troops() > this.player.troops() * 2.5;
+        // On medium we just see players with much more population as a threat
+        return otherPlayer.population() > this.player.population() * 2.5;
       case Difficulty.Hard:
-        // On hard we are smarter, we check for maxTroops to see the actual strength
+        // On hard we are smarter, we check for maxPopulation to see the actual strength
         return (
-          otherPlayer.troops() > this.player.troops() &&
-          this.game.config().maxTroops(otherPlayer) >
-            this.game.config().maxTroops(this.player) * 2
+          otherPlayer.population() > this.player.population() &&
+          this.game.config().maxPopulation(otherPlayer) >
+            this.game.config().maxPopulation(this.player) * 2
         );
       case Difficulty.Impossible: {
         // On impossible we check for multiple factors and try to not mess with stronger players (we want to steamroll over weaklings)
-        const otherHasMoreTroops =
-          otherPlayer.troops() > this.player.troops() * 1.5;
-        const otherHasMoreMaxTroops =
-          otherPlayer.troops() > this.player.troops() &&
-          this.game.config().maxTroops(otherPlayer) >
-            this.game.config().maxTroops(this.player) * 1.5;
+        const otherHasMorePopulation =
+          otherPlayer.population() > this.player.population() * 1.5;
+        const otherHasMoreMaxPopulation =
+          otherPlayer.population() > this.player.population() &&
+          this.game.config().maxPopulation(otherPlayer) >
+            this.game.config().maxPopulation(this.player) * 1.5;
         const otherHasMoreTiles =
-          otherPlayer.troops() > this.player.troops() &&
+          otherPlayer.population() > this.player.population() &&
           otherPlayer.numTilesOwned() > this.player.numTilesOwned() * 1.5;
-        return otherHasMoreTroops || otherHasMoreMaxTroops || otherHasMoreTiles;
+        return (
+          otherHasMorePopulation ||
+          otherHasMoreMaxPopulation ||
+          otherHasMoreTiles
+        );
       }
       default:
         assertNever(difficulty);
@@ -339,27 +343,29 @@ export class NationAllianceBehavior {
     const troopRange = troopPercentRangeByDifficulty[difficulty];
     const tileRange = tilePercentRangeByDifficulty[difficulty];
 
-    const playerOutgoingTroops = this.player
+    const playerOutgoingPopulation = this.player
       .outgoingAttacks()
-      .reduce((sum, attack) => sum + attack.troops(), 0);
-    const otherOutgoingTroops = otherPlayer
+      .reduce((sum, attack) => sum + attack.population(), 0);
+    const otherOutgoingPopulation = otherPlayer
       .outgoingAttacks()
-      .reduce((sum, attack) => sum + attack.troops(), 0);
-    const playerTotalTroops = this.player.troops() + playerOutgoingTroops;
-    const otherTotalTroops = otherPlayer.troops() + otherOutgoingTroops;
+      .reduce((sum, attack) => sum + attack.population(), 0);
+    const playerTotalPopulation =
+      this.player.population() + playerOutgoingPopulation;
+    const otherTotalPopulation =
+      otherPlayer.population() + otherOutgoingPopulation;
 
     const troopThreshold =
-      playerTotalTroops *
+      playerTotalPopulation *
       (this.random.nextInt(troopRange[0], troopRange[1]) / 100);
     const tileThreshold =
       this.player.numTilesOwned() *
       (this.random.nextInt(tileRange[0], tileRange[1]) / 100);
 
-    const hasComparableTroops = otherTotalTroops > troopThreshold;
+    const hasComparablePopulation = otherTotalPopulation > troopThreshold;
     const hasComparableTiles =
       otherPlayer.numTilesOwned() > tileThreshold &&
-      otherTotalTroops > playerTotalTroops * 0.5;
-    return hasComparableTroops || hasComparableTiles;
+      otherTotalPopulation > playerTotalPopulation * 0.5;
+    return hasComparablePopulation || hasComparableTiles;
   }
 
   maybeBetray(otherPlayer: Player, borderingPlayerCount: number): boolean {
@@ -369,14 +375,16 @@ export class NationAllianceBehavior {
 
     // Betray very weak players (For example MIRVed ones)
     if (difficulty !== Difficulty.Easy && difficulty !== Difficulty.Medium) {
-      const otherPlayerMaxTroops = this.game.config().maxTroops(otherPlayer);
-      const otherPlayerOutgoingTroops = otherPlayer
+      const otherPlayerMaxPopulation = this.game
+        .config()
+        .maxPopulation(otherPlayer);
+      const otherPlayerOutgoingPopulation = otherPlayer
         .outgoingAttacks()
-        .reduce((sum, attack) => sum + attack.troops(), 0);
+        .reduce((sum, attack) => sum + attack.population(), 0);
       if (
-        otherPlayer.troops() + otherPlayerOutgoingTroops <
-          otherPlayerMaxTroops * 0.2 &&
-        otherPlayer.troops() < this.player.troops()
+        otherPlayer.population() + otherPlayerOutgoingPopulation <
+          otherPlayerMaxPopulation * 0.2 &&
+        otherPlayer.population() < this.player.population()
       ) {
         this.betray(otherPlayer);
         return true;
@@ -384,10 +392,10 @@ export class NationAllianceBehavior {
     }
 
     // Betray very weak players (similar check as above but for the easier difficulties)
-    // This doesn't check for maxTroops and isn't really smart. It opens the nations up for attacks, but that's intended.
+    // This doesn't check for maxPopulation and isn't really smart. It opens the nations up for attacks, but that's intended.
     if (
       (difficulty === Difficulty.Easy || difficulty === Difficulty.Medium) &&
-      this.player.troops() >= otherPlayer.troops() * 10
+      this.player.population() >= otherPlayer.population() * 10
     ) {
       this.betray(otherPlayer);
       return true;
@@ -397,7 +405,7 @@ export class NationAllianceBehavior {
     if (
       difficulty !== Difficulty.Easy &&
       otherPlayer.isTraitor() &&
-      otherPlayer.troops() < this.player.troops() * 1.2
+      otherPlayer.population() < this.player.population() * 1.2
     ) {
       this.betray(otherPlayer);
       return true;
@@ -407,7 +415,7 @@ export class NationAllianceBehavior {
     if (
       difficulty !== Difficulty.Easy &&
       borderingPlayerCount === 1 &&
-      otherPlayer.troops() * 3 < this.player.troops()
+      otherPlayer.population() * 3 < this.player.population()
     ) {
       this.betray(otherPlayer);
       return true;

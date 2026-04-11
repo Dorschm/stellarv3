@@ -9,7 +9,7 @@ test.setTimeout(120_000);
 
 test("dump nations and camera", async ({ page }) => {
   page.on("console", (msg) => {
-    if (msg.type() === "error" || msg.type() === "warn") {
+    if (msg.type() === "error" || msg.type() === "warning") {
       console.log(`[browser ${msg.type()}]`, msg.text());
     }
   });

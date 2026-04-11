@@ -3,7 +3,7 @@ import { assetUrl } from "../../core/AssetUrls";
 import { useHUDStore } from "../bridge/HUDStore";
 import { useEventBus } from "../bridge/useEventBus";
 import { AttackRatioEvent } from "../InputHandler";
-import { renderNumber, renderTroops } from "../Utils";
+import { renderNumber, renderPopulation } from "../Utils";
 import { useGameTick } from "./useGameTick";
 
 const goldCoinIcon = assetUrl("images/GoldCoinIcon.svg");
@@ -14,11 +14,11 @@ export function ControlPanel(): React.JSX.Element {
   const { gameView, eventBus, tick } = useGameTick(100);
   const [isVisible, setIsVisible] = useState(false);
   const [troopData, setTroopData] = useState({
-    troops: 0,
-    maxTroops: 1,
+    population: 0,
+    maxPopulation: 1,
     troopRate: 0,
     credits: 0n,
-    attackingTroops: 0,
+    attackingPopulation: 0,
     troopRateIsIncreasing: true,
   });
   const [localAttackRatio, setLocalAttackRatio] = useState(0.2);
@@ -71,25 +71,25 @@ export function ControlPanel(): React.JSX.Element {
     const troopRateIsIncreasing = troopIncreaseRate >= lastTroopRateRef.current;
     lastTroopRateRef.current = troopIncreaseRate;
 
-    const outgoingTroops = player
+    const outgoingPopulation = player
       .outgoingAttacks()
-      .map((a) => a.troops)
+      .map((a) => a.population)
       .reduce((a, b) => a + b, 0);
 
     setTroopData({
-      troops: player.troops(),
-      maxTroops: gameView.config().maxTroops(player),
+      population: player.population(),
+      maxPopulation: gameView.config().maxPopulation(player),
       troopRate: gameView.config().troopIncreaseRate(player) * 10,
       credits: player.credits(),
-      attackingTroops: outgoingTroops,
+      attackingPopulation: outgoingPopulation,
       troopRateIsIncreasing,
     });
   }, [tick, gameView, isVisible]);
 
   const calculateTroopBar = () => {
-    const base = Math.max(troopData.maxTroops, 1);
-    const greenPercentRaw = (troopData.troops / base) * 100;
-    const orangePercentRaw = (troopData.attackingTroops / base) * 100;
+    const base = Math.max(troopData.maxPopulation, 1);
+    const greenPercentRaw = (troopData.population / base) * 100;
+    const orangePercentRaw = (troopData.attackingPopulation / base) * 100;
 
     const greenPercent = Math.max(0, Math.min(100, greenPercentRaw));
     const orangePercent = Math.max(
@@ -120,7 +120,7 @@ export function ControlPanel(): React.JSX.Element {
 
   const { greenPercent, orangePercent } = calculateTroopBar();
   const player = gameView.myPlayer();
-  const currentTroops = player?.troops() ?? 0;
+  const currentPopulation = player?.population() ?? 0;
 
   return (
     <div
@@ -138,7 +138,7 @@ export function ControlPanel(): React.JSX.Element {
             <img src={goldCoinIcon} width="13" height="13" alt="" />
             <span className="px-0.5">{renderNumber(troopData.credits)}</span>
           </div>
-          {/* Troop bar */}
+          {/* Population bar */}
           <div className="w-[40%] shrink-0 flex items-center">
             <div className="w-full h-6 border border-gray-600 rounded-md bg-gray-900/60 overflow-hidden relative">
               <div className="h-full flex">
@@ -160,10 +160,10 @@ export function ControlPanel(): React.JSX.Element {
                 translate="no"
               >
                 <span className="text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">
-                  {renderTroops(troopData.troops)}
+                  {renderPopulation(troopData.population)}
                 </span>
                 <span className="text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">
-                  {renderTroops(troopData.maxTroops)}
+                  {renderPopulation(troopData.maxPopulation)}
                 </span>
               </div>
               <div
@@ -185,7 +185,7 @@ export function ControlPanel(): React.JSX.Element {
                       : "text-orange-400"
                   }`}
                 >
-                  +{renderTroops(troopData.troopRate)}/s
+                  +{renderPopulation(troopData.troopRate)}/s
                 </span>
               </div>
             </div>
@@ -224,9 +224,9 @@ export function ControlPanel(): React.JSX.Element {
 
       {/* Desktop render */}
       <div className="hidden lg:block">
-        {/* Row 1: troop rate | troop bar | credits */}
+        {/* Row 1: population rate | population bar | credits */}
         <div className="flex gap-1.5 items-center mb-1">
-          {/* Troop rate */}
+          {/* Population rate */}
           <div
             className={`flex items-center gap-1 shrink-0 border rounded-md font-bold text-sm py-0.5 px-1 w-[5.5rem] ${
               troopData.troopRateIsIncreasing
@@ -255,10 +255,10 @@ export function ControlPanel(): React.JSX.Element {
                   : "text-orange-400"
               }`}
             >
-              +{renderTroops(troopData.troopRate)}/s
+              +{renderPopulation(troopData.troopRate)}/s
             </span>
           </div>
-          {/* Troop bar */}
+          {/* Population bar */}
           <div className="flex-1">
             <div className="w-full h-6 border border-gray-600 rounded-md bg-gray-900/60 overflow-hidden relative">
               <div className="h-full flex">
@@ -281,7 +281,7 @@ export function ControlPanel(): React.JSX.Element {
               >
                 <span className="flex-1 flex justify-end h-full items-center pr-0.5">
                   <span className="text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">
-                    {renderTroops(troopData.troops)}
+                    {renderPopulation(troopData.population)}
                   </span>
                 </span>
                 <span className="h-full flex items-center px-0.5 text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">
@@ -289,7 +289,7 @@ export function ControlPanel(): React.JSX.Element {
                 </span>
                 <span className="flex-1 flex justify-start h-full items-center pl-0.5 gap-0.5">
                   <span className="text-white tabular-nums w-[3.5rem] drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">
-                    {renderTroops(troopData.maxTroops)}
+                    {renderPopulation(troopData.maxPopulation)}
                   </span>
                   <img
                     src={soldierIcon}
@@ -333,7 +333,7 @@ export function ControlPanel(): React.JSX.Element {
             />
             <span>
               {(localAttackRatio * 100).toFixed(0)}% (
-              {renderTroops(currentTroops * localAttackRatio)})
+              {renderPopulation(currentPopulation * localAttackRatio)})
             </span>
           </div>
           <input

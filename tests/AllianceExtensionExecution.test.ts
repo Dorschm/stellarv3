@@ -15,7 +15,7 @@ describe("AllianceExtensionExecution", () => {
       {
         infiniteCredits: true,
         instantBuild: true,
-        infiniteTroops: true,
+        infinitePopulation: true,
       },
       [
         playerInfo("player1", PlayerType.Human),

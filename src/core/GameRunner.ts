@@ -173,11 +173,13 @@ export class GameRunner {
     }
 
     const packedTileUpdates = this.game.drainPackedTileUpdates();
+    const packedTerrainUpdates = this.game.drainPackedTerrainUpdates();
     const packedMotionPlans = this.game.drainPackedMotionPlans();
 
     this.callBack({
       tick: this.game.ticks(),
       packedTileUpdates,
+      packedTerrainUpdates,
       ...(packedMotionPlans ? { packedMotionPlans } : {}),
       updates: updates,
       playerNameViewData: this.playerViewData,
@@ -248,7 +250,7 @@ export class GameRunner {
         canSendAllianceRequest: player.canSendAllianceRequest(other),
         canBreakAlliance: player.isAlliedWith(other),
         canDonateCredits: player.canDonateCredits(other),
-        canDonateTroops: player.canDonateTroops(other),
+        canDonatePopulation: player.canDonatePopulation(other),
         canEmbargo: !player.hasEmbargoAgainst(other),
         allianceInfo: player.allianceInfo(other) ?? undefined,
       };

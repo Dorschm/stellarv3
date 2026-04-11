@@ -13,7 +13,7 @@ export class AttackImpl implements Attack {
     private _id: string,
     private _target: Player | TerraNullius,
     private _attacker: Player,
-    private _troops: number,
+    private _population: number,
     private _sourceTile: TileRef | null,
     private _border: Set<number>,
     private _mg: GameImpl,
@@ -29,11 +29,11 @@ export class AttackImpl implements Attack {
   attacker(): Player {
     return this._attacker;
   }
-  troops(): number {
-    return this._troops;
+  population(): number {
+    return this._population;
   }
-  setTroops(troops: number) {
-    this._troops = Math.max(0, troops);
+  setPopulation(population: number) {
+    this._population = Math.max(0, population);
   }
 
   isActive() {

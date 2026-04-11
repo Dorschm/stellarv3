@@ -65,7 +65,7 @@ const LRW_HABITABILITY_DAMAGE = 0.1;
  * GDD §4/§6 — Scout Swarm constants.
  *
  * `SCOUT_SWARM_COST_FRACTION` is the slice of the player's current credits
- * deducted at launch (GDD: "10% of total resources"). Expressed as a float
+ * deducted at launch (GDD: "10% of total credits"). Expressed as a float
  * so ScoutSwarmExecution can multiply into bigint safely.
  *
  * `SCOUT_SWARM_AU_PER_MINUTE` is the GDD's travel figure ("2 AU/min").
@@ -89,12 +89,36 @@ const SCOUT_SWARM_TERRAFORM_ACCUMULATION = 10;
 const SCOUT_SWARM_LIFETIME_TICKS = 5 * 60 * 10;
 
 /**
+ * GDD §6 — Assault Fleet travel speed: 1 AU per minute. Resolved at module
+ * load via {@link AU_IN_TILES} for the same reason as the LRW/scout speeds.
+ *
+ * The Assault Shuttle's pathfinder steps one tile at a time, so we express
+ * the speed as an integer "ticks per tile" (the reciprocal of tiles/tick).
+ * With AU=100 and 1 AU/min: 100 tiles per 60 seconds = 100 tiles per 600
+ * ticks → 6 ticks per tile.
+ */
+const ASSAULT_SHUTTLE_AU_PER_MINUTE = 1;
+const ASSAULT_SHUTTLE_TICKS_PER_TILE = Math.max(
+  1,
+  Math.round((60 * 10) / (ASSAULT_SHUTTLE_AU_PER_MINUTE * AU_IN_TILES)),
+);
+
+/**
  * GDD §14 — Battlecruiser structure slot count. A Battlecruiser can host
  * a single DefenseStation or OrbitalStrikePlatform, acting as a "mobile
  * one-slot planet" per the GDD. Kept behind a config method so balance
  * changes don't require touching call sites.
  */
 const BATTLECRUISER_STRUCTURE_SLOT_COUNT = 1;
+
+/**
+ * GDD §7 — Trade routes carry both credits and a small population payload.
+ * This is the fraction of the source player's current population that a single
+ * trade freighter picks up at launch and ferries to the destination port.
+ * Default of 1% keeps each trade modest while creating a meaningful migration
+ * channel between economically connected players.
+ */
+const TRADE_POPULATION_FRACTION = 0.01;
 
 const JwksSchema = z.object({
   keys: z
@@ -184,6 +208,23 @@ export abstract class DefaultServerConfig implements ServerConfig {
   turnIntervalMs(): number {
     return 100;
   }
+  minTurnIntervalMs(): number {
+    return 50;
+  }
+  maxTurnIntervalMs(): number {
+    return 100;
+  }
+  dynamicTurnIntervalMs(progress: number): number {
+    // GDD §10 — server-side variant of {@link Config.dynamicTurnIntervalMs}.
+    // Linear interpolation between max (slow) and min (fast) bounds. The
+    // game-side Config method does the same math against the leading
+    // player's tile ratio; the server feeds wall-clock progress instead
+    // because it has no direct view of the lockstep simulation state.
+    const min = this.minTurnIntervalMs();
+    const max = this.maxTurnIntervalMs();
+    const clamped = Math.max(0, Math.min(1, progress));
+    return Math.round(max - (max - min) * clamped);
+  }
   gameCreationRate(): number {
     return 2 * 60 * 1000;
   }
@@ -210,21 +251,6 @@ export class DefaultConfig implements Config {
   private pastelThemeDark: PastelThemeDark = new PastelThemeDark();
   private unitInfoCache = new Map<UnitType, UnitInfo>();
   private _sectorMap: SectorMap | null = null;
-
-  /**
-   * Credits awarded per owned-sector-tile per tick (scaled by habitability
-   * and `creditMultiplier()` in the credit formula). See GDD Economy
-   * Alignment Approach §3 — currently unused; wired in by Ticket 3.
-   */
-  private readonly VOLUME_CREDIT_RATE = 0.005;
-
-  /**
-   * Max troop capacity contributed per owned-sector-tile at 100% habitability.
-   * Used as a habitability-derived floor on top of the existing `maxTroops()`
-   * formula. See GDD Economy Alignment Approach §3 — currently unused; wired
-   * in by Ticket 3.
-   */
-  private readonly POP_PER_TILE = 2.0;
 
   constructor(
     private _serverConfig: ServerConfig,
@@ -352,6 +378,21 @@ export class DefaultConfig implements Config {
     return BATTLECRUISER_STRUCTURE_SLOT_COUNT;
   }
 
+  // ---- Ticket 8: Habitability-gated structure slot limits -----------------
+  // Buckets line up with the SectorMap habitability constants:
+  //   AsteroidField (0.3)  → 0 (must be terraformed before any build)
+  //   Nebula        (0.6)  → 1
+  //   OpenSpace     (1.0)  → 2
+  // The numeric thresholds use "≤" so a tile sitting exactly at the boundary
+  // gets the more restrictive cap, matching how partially-terraformed tiles
+  // (e.g. an Asteroid hit by one terraform tick) should still feel uninhabit-
+  // able until they cleanly cross into the next bucket.
+  maxStructuresForHabitability(habitability: number): number {
+    if (!Number.isFinite(habitability) || habitability <= 0.3) return 0;
+    if (habitability <= 0.6) return 1;
+    return 2;
+  }
+
   // ---- Ticket 7: Dynamic tick-rate scaling --------------------------------
   minTurnIntervalMs(): number {
     return 50;
@@ -414,11 +455,11 @@ export class DefaultConfig implements Config {
   donateCredits(): boolean {
     return this._gameConfig.donateCredits;
   }
-  infiniteTroops(): boolean {
-    return this._gameConfig.infiniteTroops;
+  infinitePopulation(): boolean {
+    return this._gameConfig.infinitePopulation;
   }
-  donateTroops(): boolean {
-    return this._gameConfig.donateTroops;
+  donatePopulation(): boolean {
+    return this._gameConfig.donatePopulation;
   }
   creditMultiplier(): number {
     return this._gameConfig.creditMultiplier ?? 1;
@@ -478,6 +519,10 @@ export class DefaultConfig implements Config {
     return BigInt(Math.floor(baseCredits * multiplier));
   }
 
+  tradePopulationFraction(): number {
+    return TRADE_POPULATION_FRACTION;
+  }
+
   // Probability of trade freighter spawn = 1 / tradeFreighterSpawnRate
   tradeFreighterSpawnRate(
     tradeFreighterSpawnRejections: number,
@@ -504,7 +549,11 @@ export class DefaultConfig implements Config {
     switch (type) {
       case UnitType.AssaultShuttle:
         info = {
-          cost: () => 0n,
+          // GDD §6 — Assault Fleet costs 100k Credits to launch (in
+          // addition to the 100k Population payload subtracted by
+          // shuttleAttackAmount). The infinite-credits cheat path is
+          // honored by costWrapper.
+          cost: this.costWrapper(() => 100_000, UnitType.AssaultShuttle),
         };
         break;
       case UnitType.Battlecruiser:
@@ -529,9 +578,13 @@ export class DefaultConfig implements Config {
         break;
       case UnitType.Spaceport:
         info = {
+          // GDD §5 — Star Port cost ladder: 100k → 200k → 500k → 1M (capped).
+          // Indexed by the number already owned (0,1,2,3+ → 100k,200k,500k,1M).
           cost: this.costWrapper(
-            (numUnits: number) =>
-              Math.min(1_000_000, Math.pow(2, numUnits) * 125_000),
+            (numUnits: number) => {
+              const ladder = [100_000, 200_000, 500_000, 1_000_000];
+              return ladder[Math.min(numUnits, ladder.length - 1)];
+            },
             UnitType.Spaceport,
             UnitType.Foundry,
           ),
@@ -684,7 +737,7 @@ export class DefaultConfig implements Config {
   }
 
   defaultDonationAmount(sender: Player): number {
-    return Math.floor(sender.troops() / 3);
+    return Math.floor(sender.population() / 3);
   }
   donateCooldown(): Tick {
     return 10 * 10;
@@ -756,6 +809,9 @@ export class DefaultConfig implements Config {
     }
     return 3;
   }
+  assaultShuttleTicksPerTile(): number {
+    return ASSAULT_SHUTTLE_TICKS_PER_TILE;
+  }
   numSpawnPhaseTurns(): number {
     if (this._gameConfig.gameType === GameType.Singleplayer) {
       return 100;
@@ -776,7 +832,7 @@ export class DefaultConfig implements Config {
 
   attackLogic(
     gm: Game,
-    attackTroops: number,
+    attackPopulation: number,
     attacker: Player,
     defender: Player | TerraNullius,
     tileToConquer: TileRef,
@@ -826,7 +882,7 @@ export class DefaultConfig implements Config {
 
     if (attacker.isPlayer() && defender.isPlayer()) {
       if (defender.isDisconnected() && attacker.isOnSameTeam(defender)) {
-        // No troop loss if defender is disconnected and on same team
+        // No population loss if defender is disconnected and on same team
         mag = 0;
       }
       if (
@@ -864,10 +920,11 @@ export class DefaultConfig implements Config {
         largeAttackerSpeedBonus = (100_000 / attacker.numTilesOwned()) ** 0.6;
       }
 
-      const defenderTroopLoss = defender.troops() / defender.numTilesOwned();
+      const defenderTroopLoss =
+        defender.population() / defender.numTilesOwned();
       const traitorMod = defender.isTraitor() ? this.traitorDefenseDebuff() : 1;
       const currentAttackerLoss =
-        within(defender.troops() / attackTroops, 0.6, 2) *
+        within(defender.population() / attackPopulation, 0.6, 2) *
         mag *
         0.8 *
         largeDefenderAttackDebuff *
@@ -882,7 +939,7 @@ export class DefaultConfig implements Config {
         attackerTroopLoss,
         defenderTroopLoss,
         tilesPerTickUsed:
-          within(defender.troops() / (5 * attackTroops), 0.2, 1.5) *
+          within(defender.population() / (5 * attackPopulation), 0.2, 1.5) *
           speed *
           largeDefenderSpeedDebuff *
           largeAttackerSpeedBonus *
@@ -894,7 +951,7 @@ export class DefaultConfig implements Config {
           attacker.type() === PlayerType.Bot ? mag / 10 : mag / 5,
         defenderTroopLoss: 0,
         tilesPerTickUsed: within(
-          (2000 * Math.max(10, speed)) / attackTroops,
+          (2000 * Math.max(10, speed)) / attackPopulation,
           5,
           100,
         ),
@@ -903,14 +960,18 @@ export class DefaultConfig implements Config {
   }
 
   attackTilesPerTick(
-    attackTroops: number,
+    attackPopulation: number,
     attacker: Player,
     defender: Player | TerraNullius,
     numAdjacentTilesWithEnemy: number,
   ): number {
     if (defender.isPlayer()) {
       return (
-        within(((5 * attackTroops) / defender.troops()) * 2, 0.01, 0.5) *
+        within(
+          ((5 * attackPopulation) / defender.population()) * 2,
+          0.01,
+          0.5,
+        ) *
         numAdjacentTilesWithEnemy *
         3
       );
@@ -923,7 +984,10 @@ export class DefaultConfig implements Config {
     attacker: Player,
     defender: Player | TerraNullius,
   ): number {
-    return Math.floor(attacker.troops() / 5);
+    // GDD §6 — Assault Fleet payload is a fixed 100k Population. Capped to
+    // the attacker's actual current population so a player who can't afford
+    // a full payload still ships what they have rather than going negative.
+    return Math.min(100_000, attacker.population());
   }
 
   battlecruiserPlasmaBoltLifetime(): number {
@@ -944,13 +1008,13 @@ export class DefaultConfig implements Config {
 
   attackAmount(attacker: Player, defender: Player | TerraNullius) {
     if (attacker.type() === PlayerType.Bot) {
-      return attacker.troops() / 20;
+      return attacker.population() / 20;
     } else {
-      return attacker.troops() / 5;
+      return attacker.population() / 5;
     }
   }
 
-  startManpower(playerInfo: PlayerInfo): number {
+  startPopulation(playerInfo: PlayerInfo): number {
     if (playerInfo.playerType === PlayerType.Bot) {
       return 10_000;
     }
@@ -968,120 +1032,152 @@ export class DefaultConfig implements Config {
           assertNever(this._gameConfig.difficulty);
       }
     }
-    return this.infiniteTroops() ? 1_000_000 : 25_000;
+    // GDD §3 — humans start with 100,000 population.
+    return this.infinitePopulation() ? 1_000_000 : 100_000;
   }
 
-  maxTroops(player: Player | PlayerView): number {
-    const baseMaxTroops =
-      player.type() === PlayerType.Human && this.infiniteTroops()
-        ? 1_000_000_000
-        : 2 * (Math.pow(player.numTilesOwned(), 0.6) * 1000 + 50000) +
-          player
-            .units(UnitType.Colony)
-            .map((colony) => colony.level())
-            .reduce((a, b) => a + b, 0) *
-            this.colonyTroopIncrease();
-
-    let maxTroops: number;
-    if (player.type() === PlayerType.Bot) {
-      maxTroops = baseMaxTroops / 3;
-    } else if (player.type() === PlayerType.Human) {
-      maxTroops = baseMaxTroops;
-    } else {
-      switch (this._gameConfig.difficulty) {
-        case Difficulty.Easy:
-          maxTroops = baseMaxTroops * 0.5;
-          break;
-        case Difficulty.Medium:
-          maxTroops = baseMaxTroops * 0.75;
-          break;
-        case Difficulty.Hard:
-          maxTroops = baseMaxTroops * 1; // Like humans
-          break;
-        case Difficulty.Impossible:
-          maxTroops = baseMaxTroops * 1.25;
-          break;
-        default:
-          assertNever(this._gameConfig.difficulty);
-      }
+  maxPopulation(player: Player | PlayerView): number {
+    // GDD §3 — population cap is purely habitability-driven:
+    //   100 pop per fully-habitable tile (km²) + 25 pop per partially-
+    //   habitable tile + 0 from uninhabitable. Colony levels still add a
+    //   flat bonus on top so the existing structure stays meaningful.
+    if (player.type() === PlayerType.Human && this.infinitePopulation()) {
+      return 1_000_000_000;
     }
 
-    // GDD Economy Alignment Approach §1 — habitability cap floor.
-    // The hab-based capacity uses `max()` so it can only ever lift the
-    // existing cap, never reduce it. When `_sectorMap` is null (e.g., some
-    // unit-test setups never wire one in) the floor collapses to 0 and the
-    // base formula is preserved exactly.
-    const ownedSectorTiles =
-      this._sectorMap?.playerOwnedSectorTiles(player) ?? 0;
-    const avgHab = this._sectorMap?.playerAverageHabitability(player) ?? 1.0;
-    const habCap = ownedSectorTiles * this.POP_PER_TILE * avgHab;
-    return Math.max(maxTroops, habCap);
+    const sm = this._sectorMap;
+    let baseMaxPopulation: number;
+    if (sm !== null) {
+      const fullTiles = sm.playerFullHabTiles(player);
+      const partialTiles = sm.playerPartialHabTiles(player);
+      baseMaxPopulation = fullTiles * 100 + partialTiles * 25;
+    } else {
+      // Test/no-SectorMap fallback: treat every owned tile as fully habitable
+      // so unit tests that don't wire a SectorMap still get a positive cap.
+      baseMaxPopulation = player.numTilesOwned() * 100;
+    }
+
+    baseMaxPopulation +=
+      player
+        .units(UnitType.Colony)
+        .map((colony) => colony.level())
+        .reduce((a, b) => a + b, 0) * this.colonyTroopIncrease();
+
+    // Floor: a freshly-spawned player with no sector tiles yet should still
+    // be able to hold their starting population (100k for humans, 10k for
+    // bots). Without this the spawn-tick troopIncreaseRate would clamp to
+    // zero before territory expands into a sector.
+    const startFloor =
+      player.type() === PlayerType.Bot
+        ? 10_000
+        : player.type() === PlayerType.Human
+          ? 100_000
+          : 25_000;
+    baseMaxPopulation = Math.max(baseMaxPopulation, startFloor);
+
+    if (player.type() === PlayerType.Bot) {
+      return baseMaxPopulation / 3;
+    }
+    if (player.type() === PlayerType.Human) {
+      return baseMaxPopulation;
+    }
+    switch (this._gameConfig.difficulty) {
+      case Difficulty.Easy:
+        return baseMaxPopulation * 0.5;
+      case Difficulty.Medium:
+        return baseMaxPopulation * 0.75;
+      case Difficulty.Hard:
+        return baseMaxPopulation * 1; // Like humans
+      case Difficulty.Impossible:
+        return baseMaxPopulation * 1.25;
+      default:
+        assertNever(this._gameConfig.difficulty);
+    }
   }
 
   troopIncreaseRate(player: Player): number {
-    const max = this.maxTroops(player);
+    // GDD §3 — population grows +3%/s, but only on fully-habitable tiles.
+    // Partial (Nebula) and uninhabitable (Asteroid) tiles contribute 0%.
+    // We weight the growth by the share of the player's owned sector tiles
+    // that are fully habitable, then convert to per-tick (10 ticks/s).
+    const max = this.maxPopulation(player);
+    const current = player.population();
+    if (current >= max) return 0;
 
-    let toAdd = 10 + Math.pow(player.troops(), 0.73) / 4;
+    const sm = this._sectorMap;
+    let fullShare = 1.0;
+    if (sm !== null) {
+      const total = sm.playerOwnedSectorTiles(player);
+      if (total > 0) {
+        fullShare = sm.playerFullHabTiles(player) / total;
+      } else {
+        // Pre-territory spawn tick: keep a small trickle so a brand-new
+        // player isn't stuck at 0 growth before their first sector tile.
+        fullShare = 0.0;
+      }
+    }
 
-    const ratio = 1 - player.troops() / max;
-    toAdd *= ratio;
+    // 3% per second → 0.3% per tick. Scaled by full-hab share.
+    let perTick = current * 0.003 * fullShare;
+
+    // Idle floor so players with no fully-habitable territory yet still see
+    // some recovery (mirrors the old `10 + …` baseline term). Without this,
+    // a player whose only tiles are Nebula/Asteroid would never recover from
+    // attrition until they terraform.
+    perTick += 10;
 
     if (player.type() === PlayerType.Bot) {
-      toAdd *= 0.6;
+      perTick *= 0.6;
     }
 
     if (player.type() === PlayerType.Nation) {
       switch (this._gameConfig.difficulty) {
         case Difficulty.Easy:
-          toAdd *= 0.9;
+          perTick *= 0.9;
           break;
         case Difficulty.Medium:
-          toAdd *= 0.95;
+          perTick *= 0.95;
           break;
         case Difficulty.Hard:
-          toAdd *= 1; // Like humans
+          perTick *= 1; // Like humans
           break;
         case Difficulty.Impossible:
-          toAdd *= 1.05;
+          perTick *= 1.05;
           break;
         default:
           assertNever(this._gameConfig.difficulty);
       }
     }
 
-    // GDD Economy Alignment Approach §1 — habitability multiplier.
-    // Players in 100% OpenSpace (avgHab = 1.0) see identical growth to the
-    // pre-refactor formula. Mixed/harsh terrain players grow proportionally
-    // slower. Falls back to 1.0 when no SectorMap is wired in (test harness
-    // edge cases) and never increases growth above the base.
-    const avgHab = this._sectorMap?.playerAverageHabitability(player) ?? 1.0;
-    toAdd *= avgHab;
-
-    return Math.min(player.troops() + toAdd, max) - player.troops();
+    return Math.min(current + perTick, max) - current;
   }
 
   creditAdditionRate(player: Player): Credits {
+    // GDD §3 — credits are generated at +1 per km³/s by every habitable
+    // tile (full + partial). Uninhabitable tiles produce nothing. We treat
+    // each tile as ~1 km³ and convert "+1 per second" to "+0.1 per tick"
+    // (10 ticks/s), summed across all yielding tiles.
     const multiplier = this.creditMultiplier();
-    let baseRate: bigint;
-    if (player.type() === PlayerType.Bot) {
-      baseRate = 50n;
-    } else {
-      baseRate = 100n;
-    }
-    const flatRate = BigInt(Math.floor(Number(baseRate) * multiplier));
+    const sm = this._sectorMap;
 
-    // GDD Economy Alignment Approach §1 — volume credit bonus.
-    // Adds intrinsic credit income proportional to controlled sector area,
-    // scaled by habitability so harsh territory pays less. Both sector-tile
-    // and habitability lookups fall back to no-op values when no SectorMap
-    // is wired in, leaving the flat rate unchanged.
-    const ownedSectorTiles =
-      this._sectorMap?.playerOwnedSectorTiles(player) ?? 0;
-    const avgHab = this._sectorMap?.playerAverageHabitability(player) ?? 1.0;
-    const volumeBonus = Math.floor(
-      ownedSectorTiles * this.VOLUME_CREDIT_RATE * avgHab * multiplier,
-    );
-    return flatRate + BigInt(volumeBonus);
+    // Flat trickle so a player who hasn't reached any sector tile yet
+    // still has some income to bootstrap with. Matches the old 100/tick
+    // baseline at half value so the new volume term carries the bulk.
+    const baseRate = player.type() === PlayerType.Bot ? 25 : 50;
+    const flatRate = Math.floor(baseRate * multiplier);
+
+    let yieldingTiles = 0;
+    if (sm !== null) {
+      yieldingTiles =
+        sm.playerFullHabTiles(player) + sm.playerPartialHabTiles(player);
+    } else {
+      yieldingTiles = player.numTilesOwned();
+    }
+
+    // 1/s/tile → 0.1/tick/tile.
+    const volumeBonus = Math.floor(yieldingTiles * 0.1 * multiplier);
+
+    return BigInt(flatRate + volumeBonus);
   }
 
   nukeMagnitudes(unitType: UnitType): NukeMagnitude {
@@ -1130,17 +1226,17 @@ export class DefaultConfig implements Config {
     nukeType: NukeType,
     humans: number,
     tilesOwned: number,
-    maxTroops: number,
+    maxPopulation: number,
   ): number {
     if (nukeType !== UnitType.ClusterWarheadSubmunition) {
       return (5 * humans) / Math.max(1, tilesOwned);
     }
-    const targetTroops = 0.03 * maxTroops;
-    const excessTroops = Math.max(0, humans - targetTroops);
+    const targetPopulation = 0.03 * maxPopulation;
+    const excessPopulation = Math.max(0, humans - targetPopulation);
     const scalingFactor = 500;
 
     const steepness = 2;
-    const normalizedExcess = excessTroops / maxTroops;
+    const normalizedExcess = excessPopulation / maxPopulation;
     return scalingFactor * (1 - Math.exp(-steepness * normalizedExcess));
   }
 

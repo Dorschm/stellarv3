@@ -1,12 +1,12 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
+import quickChatData from "resources/QuickChat.json" with { type: "json" };
 import { PlayerType } from "../../core/game/Game";
 import { PlayerView } from "../../core/game/GameView";
-import quickChatData from "resources/QuickChat.json" with { type: "json" };
 import { useGameView } from "../bridge/GameViewContext";
+import { useEventBus } from "../bridge/useEventBus";
 import { CloseViewEvent } from "../InputHandler";
 import { SendQuickChatEvent } from "../Transport";
 import { translateText } from "../Utils";
-import { useEventBus } from "../bridge/useEventBus";
 import { ShowChatModalEvent } from "./events";
 
 export type QuickChatPhrase = {
@@ -18,14 +18,7 @@ export type QuickChatPhrases = Record<string, QuickChatPhrase[]>;
 
 const quickChatPhrases: QuickChatPhrases = quickChatData;
 
-const CATEGORIES = [
-  "help",
-  "attack",
-  "defend",
-  "greet",
-  "misc",
-  "warnings",
-];
+const CATEGORIES = ["help", "attack", "defend", "greet", "misc", "warnings"];
 
 export function ChatModal(): React.JSX.Element {
   const { gameView, eventBus } = useGameView();
@@ -60,9 +53,12 @@ export function ChatModal(): React.JSX.Element {
         if (p.type() === PlayerType.Bot) return false;
         if (!p.isAlive()) return false;
         if (p.smallID() === myPlayer?.smallID()) return false;
-        return p.displayName().toLowerCase().includes(playerSearchQuery.toLowerCase());
+        return p
+          .displayName()
+          .toLowerCase()
+          .includes(playerSearchQuery.toLowerCase());
       })
-      .sort((a, b) => b.troops() - a.troops());
+      .sort((a, b) => b.population() - a.population());
   };
 
   const getPhrasesForCategory = (categoryId: string): QuickChatPhrase[] => {
@@ -80,9 +76,7 @@ export function ChatModal(): React.JSX.Element {
     setSelectedPhrase(phrase);
     setRequiresPlayerSelection(phrase.requiresPlayer);
 
-    const phraseText = translateText(
-      `chat.${selectedCategory}.${phrase.key}`,
-    );
+    const phraseText = translateText(`chat.${selectedCategory}.${phrase.key}`);
     setPreviewText(phraseText);
 
     if (!phrase.requiresPlayer) {
@@ -109,11 +103,7 @@ export function ChatModal(): React.JSX.Element {
     const recipient = selectedPlayer ?? gameView.myPlayer();
     if (!recipient) return;
     eventBus.emit(
-      new SendQuickChatEvent(
-        recipient,
-        fullKey,
-        selectedPlayer?.id(),
-      ),
+      new SendQuickChatEvent(recipient, fullKey, selectedPlayer?.id()),
     );
 
     close();
@@ -143,7 +133,10 @@ export function ChatModal(): React.JSX.Element {
   const filteredPlayers = getSortedFilteredPlayers();
 
   return (
-    <div data-testid="chat-modal" className="fixed inset-0 bg-black/50 z-[1000] flex items-center justify-center pointer-events-auto">
+    <div
+      data-testid="chat-modal"
+      className="fixed inset-0 bg-black/50 z-[1000] flex items-center justify-center pointer-events-auto"
+    >
       <div className="bg-gray-900 border border-gray-700 rounded-lg max-w-2xl w-full mx-4 max-h-[80vh] overflow-auto">
         <div className="sticky top-0 bg-gray-800 border-b border-gray-700 p-4 flex items-center justify-between">
           <h2 className="text-white font-bold text-lg">
@@ -227,9 +220,10 @@ export function ChatModal(): React.JSX.Element {
                         : "bg-gray-800 text-gray-300 hover:bg-gray-700 border-gray-700"
                     }`}
                     style={{
-                      borderLeftColor: selectedPlayer?.id() === player.id()
-                        ? player.territoryColor().toHex()
-                        : "transparent",
+                      borderLeftColor:
+                        selectedPlayer?.id() === player.id()
+                          ? player.territoryColor().toHex()
+                          : "transparent",
                     }}
                     onClick={() => selectPlayer(player)}
                   >
@@ -257,14 +251,12 @@ export function ChatModal(): React.JSX.Element {
             </button>
             <button
               className={`px-4 py-2 rounded text-sm font-medium ${
-                previewText &&
-                (!requiresPlayerSelection || selectedPlayer)
+                previewText && (!requiresPlayerSelection || selectedPlayer)
                   ? "bg-blue-600 text-white hover:bg-blue-700"
                   : "bg-gray-700 text-gray-400 cursor-not-allowed"
               }`}
               disabled={
-                !previewText ||
-                (requiresPlayerSelection && !selectedPlayer)
+                !previewText || (requiresPlayerSelection && !selectedPlayer)
               }
               onClick={sendChatMessage}
             >

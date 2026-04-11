@@ -100,7 +100,7 @@ export class SpatialQuery {
       const shores = Array.from(player.borderTiles()).filter(isValidTile);
       if (shores.length === 0) return null;
 
-      const path = PathFinding.Water(gm).findPath(shores, target);
+      const path = PathFinding.DeepSpace(gm).findPath(shores, target);
       if (!path || path.length === 0) return null;
 
       return DebugSpan.wrap("SpatialQuery.refineStartTile", () =>

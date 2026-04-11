@@ -73,12 +73,12 @@ export class ShowPlayerModerationModalEvent implements GameEvent {
   constructor(public readonly target: PlayerView) {}
 }
 
-// -- Donate resource modal event (legacy send-resource modal — lets the
-//    player choose an amount of troops or credits to donate to another player).
+// -- Donate credit modal event (legacy send-credit modal — lets the
+//    player choose an amount of population or credits to donate to another player).
 export class ShowDonateResourceModalEvent implements GameEvent {
   constructor(
     public readonly target: PlayerView,
-    public readonly mode: "troops" | "credits",
+    public readonly mode: "population" | "credits",
   ) {}
 }
 

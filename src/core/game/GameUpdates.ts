@@ -26,6 +26,21 @@ export interface GameUpdateViewData {
    */
   packedTileUpdates: Uint32Array;
   /**
+   * Packed terrain updates as `[tileRef, terrainType]` uint32 pairs.
+   *
+   * Terrain lives in a separate backing buffer from per-tile state (see
+   * `GameMap.setTerrainType` — it writes magnitude bits, not state bits),
+   * so runtime terrain mutations like Scout Swarm terraforming are not
+   * captured by `packedTileUpdates`. This channel carries the enum value
+   * of the new `TerrainType` so clients can call `setTerrainType` and keep
+   * their local `GameMap` (and any derived UI like habitability overlays)
+   * coherent with the server.
+   *
+   * Empty in the common case — only populated on ticks where a terrain
+   * mutation actually happened.
+   */
+  packedTerrainUpdates: Uint32Array;
+  /**
    * Optional packed motion plan records.
    *
    * When present, this buffer is expected to be transferred worker -> main
@@ -98,7 +113,7 @@ export interface BonusEventUpdate {
   player: PlayerID;
   tile: TileRef;
   credits: number;
-  troops: number;
+  population: number;
 }
 
 export interface HyperspaceLaneConstructionUpdate {
@@ -131,7 +146,7 @@ export interface ConquestUpdate {
 export interface UnitUpdate {
   type: GameUpdateType.Unit;
   unitType: UnitType;
-  troops: number;
+  population: number;
   id: number;
   ownerID: number;
   lastOwnerID?: number;
@@ -157,7 +172,7 @@ export interface UnitUpdate {
 export interface AttackUpdate {
   attackerID: number;
   targetID: number;
-  troops: number;
+  population: number;
   id: string;
   retreating: boolean;
 }
@@ -176,7 +191,7 @@ export interface PlayerUpdate {
   isDisconnected: boolean;
   tilesOwned: number;
   credits: Credits;
-  troops: number;
+  population: number;
   allies: number[];
   embargoes: Set<PlayerID>;
   isTraitor: boolean;

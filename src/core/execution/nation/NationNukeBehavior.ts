@@ -205,14 +205,14 @@ export class NationNukeBehavior {
 
     // Find the most hated player
     // Ignore much weaker players (we don't need nukes to deal with them)
-    const myMaxTroops = this.game.config().maxTroops(this.player);
+    const myMaxPopulation = this.game.config().maxPopulation(this.player);
     for (const relation of this.player.allRelationsSorted()) {
       if (relation.relation !== Relation.Hostile) continue;
       const other = relation.player;
       if (this.player.isFriendly(other)) continue;
 
-      const otherMaxTroops = this.game.config().maxTroops(other);
-      if (myMaxTroops >= otherMaxTroops * 2) continue;
+      const otherMaxPopulation = this.game.config().maxPopulation(other);
+      if (myMaxPopulation >= otherMaxPopulation * 2) continue;
 
       return other;
     }
@@ -356,8 +356,8 @@ export class NationNukeBehavior {
     if (this.random.chance(2)) {
       // Strongest player
       return validTargets.reduce((prev, current) =>
-        this.game.config().maxTroops(prev) >
-        this.game.config().maxTroops(current)
+        this.game.config().maxPopulation(prev) >
+        this.game.config().maxPopulation(current)
           ? prev
           : current,
       );
@@ -408,16 +408,16 @@ export class NationNukeBehavior {
   }
 
   private isUnderHeavyAttack(): boolean {
-    // Get the total incoming attack troops
+    // Get the total incoming attack population
     const incomingAttacks = this.player.incomingAttacks();
-    let totalIncomingTroops = 0;
+    let totalIncomingPopulation = 0;
     for (const attack of incomingAttacks) {
-      totalIncomingTroops += attack.troops();
+      totalIncomingPopulation += attack.population();
     }
 
-    const myTroops = this.player.troops();
+    const myPopulation = this.player.population();
 
-    return totalIncomingTroops >= myTroops;
+    return totalIncomingPopulation >= myPopulation;
   }
 
   private removeOldNukeEvents() {

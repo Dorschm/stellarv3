@@ -8,7 +8,7 @@ import {
   MeshStandardMaterial,
   SphereGeometry,
 } from "three";
-import { Nation } from "../../core/game/TerrainMapLoader";
+import { Planet } from "../../core/game/Planet";
 import { useGameView } from "../bridge/GameViewContext";
 import { getPlanetTexture, hashString } from "./PlanetTextureGenerator";
 import { tileToWorld } from "./UnitRenderer";
@@ -44,60 +44,19 @@ const LABEL_COLOR = "#aabbcc";
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
 /**
- * Derive a per-nation planet radius by sampling outward from the nation's
- * coordinates in 8 directions and averaging the distance to the first
- * non-land tile, then scaling to world units.
+ * Derive a planet sphere radius from its `Planet.tileCount()`. Treats the
+ * sector as a rough circular disk (`radius = sqrt(tiles / π)`) and scales
+ * the result into world units. This replaces the earlier ad-hoc 8-direction
+ * sector walk with a single O(1) read off the already-computed sector
+ * tile count, and guarantees that two planets with the same tile count
+ * render at the same size regardless of shape.
  */
-function computeNationRadius(
-  game: {
-    ref(x: number, y: number): number;
-    isSector(tile: number): boolean;
-    width(): number;
-    height(): number;
-    isValidCoord(x: number, y: number): boolean;
-  },
-  cx: number,
-  cy: number,
-): number {
-  const directions = [
-    [1, 0],
-    [-1, 0],
-    [0, 1],
-    [0, -1],
-    [1, 1],
-    [-1, -1],
-    [1, -1],
-    [-1, 1],
-  ];
-  const maxSearch = 300;
-  let totalDist = 0;
-  let count = 0;
-
-  for (const [dx, dy] of directions) {
-    for (let d = 1; d <= maxSearch; d++) {
-      const x = cx + dx * d;
-      const y = cy + dy * d;
-      if (!game.isValidCoord(x, y)) {
-        totalDist += d;
-        count++;
-        break;
-      }
-      if (!game.isSector(game.ref(x, y))) {
-        totalDist += d;
-        count++;
-        break;
-      }
-      if (d === maxSearch) {
-        totalDist += d;
-        count++;
-      }
-    }
-  }
-
-  const avgTileRadius = count > 0 ? totalDist / count : 50;
+function computePlanetRadius(planet: Planet): number {
+  const tiles = planet.tileCount();
+  const tileRadius = tiles > 0 ? Math.sqrt(tiles / Math.PI) : 50;
   return Math.max(
     MIN_PLANET_RADIUS,
-    Math.min(MAX_PLANET_RADIUS, avgTileRadius * RADIUS_SCALE),
+    Math.min(MAX_PLANET_RADIUS, tileRadius * RADIUS_SCALE),
   );
 }
 
@@ -121,28 +80,24 @@ export function PlanetLandmarks(): React.JSX.Element {
   const halfW = mapWidth / 2;
   const halfH = mapHeight / 2;
 
-  const nations = useMemo(() => game.nations(), [game]);
+  // GDD §2 — read the authoritative Planet list off the GameView. This
+  // replaces the previous ad-hoc per-nation centroid computation with a
+  // single `buildPlanets()` result shared with the server and scoring.
+  const planets = useMemo(() => game.planets(), [game]);
 
-  // Compute per-nation radius from terrain data once
-  const nationRadii = useMemo(
-    () =>
-      nations.map((nation) =>
-        computeNationRadius(
-          game as unknown as Parameters<typeof computeNationRadius>[0],
-          nation.coordinates[0],
-          nation.coordinates[1],
-        ),
-      ),
-    [game, nations],
+  // Compute per-planet radius from its tile count (see computePlanetRadius).
+  const planetRadii = useMemo(
+    () => planets.map((p) => computePlanetRadius(p)),
+    [planets],
   );
 
   return (
     <group>
-      {nations.map((nation, idx) => (
+      {planets.map((planet, idx) => (
         <PlanetSphere
-          key={`planet-${idx}`}
-          nation={nation}
-          radius={nationRadii[idx]}
+          key={`planet-${planet.id}`}
+          planet={planet}
+          radius={planetRadii[idx]}
           halfW={halfW}
           halfH={halfH}
           game={game}
@@ -160,7 +115,7 @@ interface TileOwner {
 }
 
 interface PlanetSphereProps {
-  nation: Nation;
+  planet: Planet;
   radius: number;
   halfW: number;
   halfH: number;
@@ -171,7 +126,7 @@ interface PlanetSphereProps {
 }
 
 function PlanetSphere({
-  nation,
+  planet,
   radius,
   halfW,
   halfH,
@@ -184,35 +139,30 @@ function PlanetSphere({
   const planetHeight = radius + PLANET_CLEARANCE;
 
   const pos = useMemo(() => {
-    const w = tileToWorld(
-      nation.coordinates[0],
-      nation.coordinates[1],
-      halfW,
-      halfH,
-    );
+    const w = tileToWorld(planet.seedX, planet.seedY, halfW, halfH);
     return [w.wx, w.wy, planetHeight] as [number, number, number];
-  }, [nation.coordinates, halfW, halfH, planetHeight]);
+  }, [planet.seedX, planet.seedY, halfW, halfH, planetHeight]);
 
   const tileRef = useMemo(
-    () => game.ref(nation.coordinates[0], nation.coordinates[1]),
-    [game, nation.coordinates],
+    () => game.ref(planet.seedX, planet.seedY),
+    [game, planet.seedX, planet.seedY],
   );
 
   const geometry = useMemo(() => new SphereGeometry(radius, 24, 16), [radius]);
 
-  // Procedural texture: deterministic per nation. Hashing both the name and
-  // the coordinates means two nations with the same name on different maps
-  // still get different planets, and two coordinates with the same hash are
-  // pushed apart by the name component. Module-level cache in
+  // Procedural texture: deterministic per planet. Hashing both the name and
+  // the seed coordinates means two planets with the same name on different
+  // maps still get different textures, and two coordinates with the same
+  // hash are pushed apart by the name component. Module-level cache in
   // PlanetTextureGenerator means re-renders of this component are free.
   const texture: CanvasTexture = useMemo(() => {
     const seed =
-      (hashString(nation.name) ^
-        Math.imul(nation.coordinates[0], 73856093) ^
-        Math.imul(nation.coordinates[1], 19349663)) >>>
+      (hashString(planet.name) ^
+        Math.imul(planet.seedX, 73856093) ^
+        Math.imul(planet.seedY, 19349663)) >>>
       0;
     return getPlanetTexture(seed);
-  }, [nation.name, nation.coordinates]);
+  }, [planet.name, planet.seedX, planet.seedY]);
 
   // Label offset: ABOVE the sphere top so the label hangs in empty space.
   // Labels placed below the planet at z<0 get alpha-blended away by the
@@ -272,7 +222,7 @@ function PlanetSphere({
           outlineColor="#000000"
           raycast={() => {}} // No pointer events — clicks pass through to map
         >
-          {nation.name}
+          {planet.name}
         </Text>
       </Billboard>
     </group>

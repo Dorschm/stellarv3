@@ -16,7 +16,7 @@ import {
  * Full gameplay E2E test.
  *
  * Drives a singleplayer game end-to-end through the full core loop — spawn,
- * passive resource growth, territory expansion by attacking terra nullius,
+ * passive credit growth, territory expansion by attacking terra nullius,
  * building a structure, adjusting the attack ratio, targeting a bot enemy,
  * and finally verifying the player is still alive and making progress after
  * a meaningful chunk of real-time ticks.
@@ -33,8 +33,11 @@ test.describe.configure({ mode: "serial" });
 
 // This spec performs many tick-waits and network round-trips. Raise the
 // per-test timeout well above the Playwright default so the slower steps
-// (bot attack + 60 ticks of gameplay) don't false-fail on CI.
-test.setTimeout(180_000);
+// (bot attack + 60 ticks of gameplay + waiting for ~50k credits to build
+// the cheapest structure) don't false-fail on CI. Headless Chromium
+// throttles timers so the in-game tick rate runs well below the 10 tps
+// real-time target — credit accrual is the bottleneck for this spec.
+test.setTimeout(360_000);
 
 test.describe("Full gameplay (singleplayer)", () => {
   let page: Page;
@@ -78,7 +81,7 @@ test.describe("Full gameplay (singleplayer)", () => {
         __gameView: {
           myPlayer(): {
             numTilesOwned(): number;
-            troops(): number;
+            population(): number;
             credits(): bigint;
           } | null;
         };
@@ -87,7 +90,7 @@ test.describe("Full gameplay (singleplayer)", () => {
       if (!mp) return null;
       return {
         tiles: mp.numTilesOwned(),
-        troops: mp.troops(),
+        population: mp.population(),
         gold: Number(mp.credits()),
       };
     });
@@ -95,13 +98,13 @@ test.describe("Full gameplay (singleplayer)", () => {
     expect(snapshot!.tiles).toBeGreaterThan(0);
   });
 
-  test("troops and gold accumulate passively over time", async () => {
+  test("population and gold accumulate passively over time", async () => {
     const baseline = await page.evaluate(() => {
       const w = window as unknown as {
         __gameView: {
           ticks(): number;
           myPlayer(): {
-            troops(): number;
+            population(): number;
             credits(): bigint;
           } | null;
         };
@@ -109,7 +112,7 @@ test.describe("Full gameplay (singleplayer)", () => {
       const mp = w.__gameView.myPlayer()!;
       return {
         tick: w.__gameView.ticks(),
-        troops: mp.troops(),
+        population: mp.population(),
         gold: Number(mp.credits()),
       };
     });
@@ -120,16 +123,16 @@ test.describe("Full gameplay (singleplayer)", () => {
       const w = window as unknown as {
         __gameView: {
           myPlayer(): {
-            troops(): number;
+            population(): number;
             credits(): bigint;
           } | null;
         };
       };
       const mp = w.__gameView.myPlayer()!;
-      return { troops: mp.troops(), gold: Number(mp.credits()) };
+      return { population: mp.population(), gold: Number(mp.credits()) };
     });
 
-    expect(after.troops).toBeGreaterThan(baseline.troops);
+    expect(after.population).toBeGreaterThan(baseline.population);
     expect(after.gold).toBeGreaterThan(baseline.gold);
   });
 
@@ -145,7 +148,7 @@ test.describe("Full gameplay (singleplayer)", () => {
 
     // Find an unowned land tile and attack it via the RadialMenu.
     // Right-clicking on unowned territory → "Attack" dispatches
-    // SendAttackIntentEvent(null, troops) → terra nullius expansion.
+    // SendAttackIntentEvent(null, population) → terra nullius expansion.
     const unownedTile = await findBorderUnownedTile(page);
     expect(unownedTile).not.toBeNull();
     await rightClickOnGameTile(page, unownedTile!.tileX, unownedTile!.tileY);
@@ -171,21 +174,55 @@ test.describe("Full gameplay (singleplayer)", () => {
   });
 
   test("player can build a DefenseStation on owned territory", async () => {
-    // Wait for enough credits (DefenseStation costs ~50K).
-    await expect
-      .poll(
-        async () =>
-          await page.evaluate(() => {
-            const w = window as unknown as {
-              __gameView: {
-                myPlayer(): { credits(): bigint } | null;
-              };
-            };
-            return Number(w.__gameView.myPlayer()?.credits() ?? 0n);
-          }),
-        { timeout: 120_000, intervals: [1000, 2000] },
-      )
-      .toBeGreaterThanOrEqual(55_000);
+    // Wait for enough credits to afford a DefenseStation (first one costs
+    // 50_000 — see DefaultConfig.unitInfo for UnitType.DefenseStation:
+    // `(numUnits + 1) * 50_000`). The 5k buffer prevents a single tick of
+    // rounding between read-credits and click-build from no-op'ing
+    // sendBuildOrUpgrade.
+    //
+    // We use page.waitForFunction (in-page predicate) instead of
+    // expect.poll + page.evaluate so that:
+    //   1. We're navigation-resilient — if the player dies during the
+    //      long credit accumulation and the page navigates to a results
+    //      screen, expect.poll's evaluate would crash with "execution
+    //      context destroyed". waitForFunction handles navigation cleanly.
+    //   2. We can trip the predicate early on isAlive===false and surface
+    //      a clear "player died during credit accumulation" error rather
+    //      than a confusing context-destroyed stack trace.
+    await page.waitForFunction(
+      () => {
+        const w = window as unknown as {
+          __gameView?: {
+            myPlayer?: () => {
+              credits?: () => bigint;
+              isAlive?: () => boolean;
+            } | null;
+          };
+        };
+        const mp = w.__gameView?.myPlayer?.();
+        if (!mp) return false;
+        // Bail early if the player has died — the test below will fail
+        // with a clearer message than a context-destroyed crash.
+        if (mp.isAlive?.() !== true) return true;
+        return Number(mp.credits?.() ?? 0n) >= 55_000;
+      },
+      null,
+      { timeout: 270_000, polling: 1000 },
+    );
+
+    // Sanity-check that the player survived the wait. If they didn't, the
+    // bots overwhelmed the homeworld during credit accumulation — that's
+    // a balance/regression issue, not a test bug.
+    const stillAlive = await page.evaluate(() => {
+      const w = window as unknown as {
+        __gameView?: { myPlayer?: () => { isAlive?: () => boolean } | null };
+      };
+      return w.__gameView?.myPlayer?.()?.isAlive?.() === true;
+    });
+    expect(
+      stillAlive,
+      "Player died during credit accumulation — investigate balance regression",
+    ).toBe(true);
 
     // Right-click on an interior owned tile → "Build" in RadialMenu.
     // Interior tiles (surrounded by own territory) are more likely to
@@ -201,27 +238,36 @@ test.describe("Full gameplay (singleplayer)", () => {
     await expect(buildRadialButton).toBeEnabled({ timeout: 10_000 });
     await buildRadialButton.click();
 
-    // BuildMenu opens — find an enabled build option (not disabled).
-    // The randomly chosen tile may not support every structure, so we
-    // pick the first enabled button rather than hardcoding "Defense Post".
+    // BuildMenu opens — pick the first enabled buildable that ISN'T
+    // ScoutSwarm. ScoutSwarm has cost 0 and is always enabled, but its
+    // execution path is special-cased (ScoutSwarmExecution handles its
+    // own spawn / credit deduction outside the normal construction
+    // flow), so the asserting-on-units check below would not see it.
+    //
+    // We can't lock onto DefenseStation specifically: with the GDD §4 /
+    // Ticket 8 sector-slot limits, the randomly chosen build tile might
+    // simply not allow a DefenseStation in this run, even with enough
+    // credits — the "Not enough money" tooltip is hardcoded for any
+    // disabled state. Picking first-enabled-non-ScoutSwarm gives us a
+    // structure that the game says is currently buildable on the tile
+    // we picked, regardless of which one wins the dice roll.
     const buildMenu = page.locator('[data-testid="build-menu"]');
     await expect(buildMenu).toBeVisible({ timeout: 10_000 });
 
-    // Wait for buildable data to load (buttons are rendered after async
-    // `buildables()` resolves).
-    const enabledButton = buildMenu.locator("button:not([disabled])").first();
-    await expect(enabledButton).toBeVisible({ timeout: 10_000 });
-
-    // Read the unit type from the enabled button's image alt text.
-    const unitType = await enabledButton
+    const enabledStructureButton = buildMenu
+      .locator('button:not([disabled]):not(:has(img[alt="Scout Swarm"]))')
+      .first();
+    await expect(enabledStructureButton).toBeVisible({ timeout: 30_000 });
+    const unitType = await enabledStructureButton
       .locator("img")
       .first()
       .getAttribute("alt");
     expect(unitType).not.toBeNull();
+    await enabledStructureButton.click({ force: true });
 
-    await enabledButton.click({ force: true });
-
-    // Poll for the built unit to appear.
+    // Poll for the built unit to appear. Construction takes ~50 ticks
+    // (~17s at 3 tps headless throttle), so 60s is comfortably above
+    // the worst-case spawn time.
     await expect
       .poll(
         async () =>
@@ -294,7 +340,7 @@ test.describe("Full gameplay (singleplayer)", () => {
           myPlayer(): {
             isAlive(): boolean;
             numTilesOwned(): number;
-            troops(): number;
+            population(): number;
             credits(): bigint;
           } | null;
         };
@@ -303,13 +349,13 @@ test.describe("Full gameplay (singleplayer)", () => {
       return {
         alive: mp.isAlive(),
         tiles: mp.numTilesOwned(),
-        troops: mp.troops(),
+        population: mp.population(),
         gold: Number(mp.credits()),
       };
     });
     expect(finalState.alive).toBe(true);
     expect(finalState.tiles).toBeGreaterThan(0);
-    expect(finalState.troops).toBeGreaterThan(0);
+    expect(finalState.population).toBeGreaterThan(0);
   });
 
   test("no console errors and all visible text is correct", async () => {

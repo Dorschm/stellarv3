@@ -117,7 +117,7 @@ export class MapPlaylist {
 
     return {
       donateCredits: mode === GameMode.Team,
-      donateTroops: mode === GameMode.Team,
+      donatePopulation: mode === GameMode.Team,
       gameMap: map,
       maxPlayers: await this.lobbyMaxPlayers(map, mode, playerTeams, isCompact),
       gameType: GameType.Public,
@@ -128,7 +128,7 @@ export class MapPlaylist {
       difficulty:
         playerTeams === HumansVsNations ? Difficulty.Hard : Difficulty.Medium,
       infiniteCredits: false,
-      infiniteTroops: false,
+      infinitePopulation: false,
       maxTimerValue: undefined,
       instantBuild: false,
       randomSpawn: false,
@@ -274,7 +274,7 @@ export class MapPlaylist {
 
     return {
       donateCredits: mode === GameMode.Team,
-      donateTroops: mode === GameMode.Team,
+      donatePopulation: mode === GameMode.Team,
       gameMap: map,
       maxPlayers,
       gameType: GameType.Public,
@@ -300,7 +300,7 @@ export class MapPlaylist {
           ? Difficulty.Hard
           : Difficulty.Medium,
       infiniteCredits: false,
-      infiniteTroops: false,
+      infinitePopulation: false,
       maxTimerValue: undefined,
       instantBuild: false,
       randomSpawn: isRandomSpawn ? true : false,
@@ -326,7 +326,7 @@ export class MapPlaylist {
     const isCompact = Math.random() < 0.5;
     return {
       donateCredits: false,
-      donateTroops: false,
+      donatePopulation: false,
       gameMap: maps[Math.floor(Math.random() * maps.length)],
       maxPlayers: 2,
       gameType: GameType.Public,
@@ -334,7 +334,7 @@ export class MapPlaylist {
       difficulty: Difficulty.Medium, // Doesn't matter, nations are disabled
       rankedType: RankedType.OneVOne,
       infiniteCredits: false,
-      infiniteTroops: false,
+      infinitePopulation: false,
       maxTimerValue: isCompact ? 10 : 15,
       instantBuild: false,
       randomSpawn: false,

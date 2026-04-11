@@ -14,7 +14,7 @@ describe("PathFinding.DeepSpace", () => {
   let worldGame: Game;
 
   function createPathFinder(g: Game = game): SteppingPathFinder<TileRef> {
-    return PathFinding.Water(g);
+    return PathFinding.DeepSpace(g);
   }
 
   beforeAll(async () => {

@@ -27,7 +27,7 @@ export class BattlecruiserExecution implements Execution {
 
   init(mg: Game, ticks: number): void {
     this.mg = mg;
-    this.pathfinder = PathFinding.Water(mg);
+    this.pathfinder = PathFinding.DeepSpace(mg);
     this.random = new PseudoRandom(mg.ticks());
     if (isUnit(this.input)) {
       this.battlecruiser = this.input;

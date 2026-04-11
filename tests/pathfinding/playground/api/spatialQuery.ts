@@ -139,7 +139,7 @@ export async function computeSpatialQuery(
   // Compute full path if we have a selected shore
   let path: TileRef[] | null = null;
   if (selectedShore) {
-    path = PathFinding.Water(game).findPath(selectedShore, targetRef);
+    path = PathFinding.DeepSpace(game).findPath(selectedShore, targetRef);
   }
 
   const timings = span ? extractTimings(span) : {};

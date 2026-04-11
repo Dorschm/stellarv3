@@ -24,7 +24,7 @@ describe("DeleteUnitExecution Security Tests", () => {
     game = await setup("plains", {
       infiniteCredits: true,
       instantBuild: true,
-      infiniteTroops: true,
+      infinitePopulation: true,
     });
 
     const player1Info = new PlayerInfo(

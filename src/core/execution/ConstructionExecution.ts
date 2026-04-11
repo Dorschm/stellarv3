@@ -64,6 +64,22 @@ export class ConstructionExecution implements Execution {
       // attach via `setSlottedStructure`.
       const hostCruiser = this.findHostBattlecruiser(this.tile);
       if (hostCruiser !== null) {
+        // Authoritative affordability check. `PlayerImpl.buildUnit` only
+        // subtracts up to the available balance via `removeCredits`, so
+        // without this guard a player could build a hosted structure with
+        // insufficient funds — diverging from the ground-based path which
+        // gates on `player.canBuild()`. We must enforce the same credit
+        // sufficiency contract here before constructing the unit.
+        const hostCost = this.mg
+          .unitInfo(this.constructionType)
+          .cost(this.mg, this.player);
+        if (this.player.credits() < hostCost) {
+          console.warn(
+            `cannot host ${this.constructionType} on battlecruiser: insufficient credits`,
+          );
+          this.active = false;
+          return;
+        }
         this.structure = this.player.buildUnit(
           this.constructionType,
           hostCruiser.tile(),

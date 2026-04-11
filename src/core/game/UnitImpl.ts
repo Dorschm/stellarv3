@@ -29,7 +29,7 @@ export class UnitImpl implements Unit {
   private _lastSetSafeFromRaiders: number; // Only for trade ships
   private _underConstruction: boolean = false;
   private _lastOwner: PlayerImpl | null = null;
-  private _troops: number;
+  private _population: number;
   // Number of missiles in cooldown, if empty all missiles are ready.
   private _missileTimerQueue: number[] = [];
   private _hasTradeHub: boolean = false;
@@ -62,7 +62,7 @@ export class UnitImpl implements Unit {
     this._targetTile =
       "targetTile" in params ? (params.targetTile ?? undefined) : undefined;
     this._trajectory = "trajectory" in params ? (params.trajectory ?? []) : [];
-    this._troops = "troops" in params ? (params.troops ?? 0) : 0;
+    this._population = "population" in params ? (params.population ?? 0) : 0;
     this._lastSetSafeFromRaiders =
       "lastSetSafeFromRaiders" in params
         ? (params.lastSetSafeFromRaiders ?? 0)
@@ -148,7 +148,7 @@ export class UnitImpl implements Unit {
       type: GameUpdateType.Unit,
       unitType: this._type,
       id: this._id,
-      troops: this._troops,
+      population: this._population,
       ownerID: this._owner.smallID(),
       lastOwnerID: this._lastOwner?.smallID(),
       isActive: this._active,
@@ -187,11 +187,11 @@ export class UnitImpl implements Unit {
     this.mg.onUnitMoved(this);
   }
 
-  setTroops(troops: number): void {
-    this._troops = Math.max(0, troops);
+  setPopulation(population: number): void {
+    this._population = Math.max(0, population);
   }
-  troops(): number {
-    return this._troops;
+  population(): number {
+    return this._population;
   }
   health(): number {
     return Number(this._health);
@@ -316,7 +316,7 @@ export class UnitImpl implements Unit {
         case UnitType.AssaultShuttle:
           this.mg
             .stats()
-            .shuttleDestroyTroops(destroyer, this._owner, this._troops);
+            .shuttleDestroyPopulation(destroyer, this._owner, this._population);
           break;
         case UnitType.TradeFreighter:
           this.mg.stats().freighterDestroyTrade(destroyer, this._owner);
