@@ -6,6 +6,7 @@ import {
   GameMapType,
   GameMode,
   GameType,
+  WinCondition,
 } from "../../../core/game/Game";
 import { genAnonUsername } from "../../AnonUsername";
 import { getPlayerCosmetics } from "../../Cosmetics";
@@ -100,6 +101,12 @@ export function SinglePlayerModal() {
             randomSpawn: false,
             nations: "default" as const,
             disabledUnits: [],
+            // GDD §1, §10 — singleplayer defaults to last-faction-standing
+            // elimination, and permadeath is driven by the lobby toggle (ON
+            // by default, see useState above). DefaultConfig reads both
+            // fields straight from _gameConfig.
+            winCondition: WinCondition.Elimination,
+            permadeath,
           },
           lobbyCreatedAt: Date.now(),
           visibleAt: Date.now(),

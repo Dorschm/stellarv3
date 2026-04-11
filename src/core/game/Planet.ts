@@ -107,6 +107,16 @@ export interface Planet {
   volume(): number;
 
   /**
+   * GDD §9 — random resource modifier in `[0.5, 2.0)` attached to
+   * this planet. Reads directly from {@link SectorMap.sectorResourceModifier}
+   * so the server, clients, and HUD all agree on the same value
+   * without any network sync. Two planets of identical size and
+   * habitability can still produce different credit rates based on
+   * this roll, fulfilling the GDD "each planet has its own luck" goal.
+   */
+  resourceModifier(): number;
+
+  /**
    * Dominant habitability bucket across the sector's tiles.
    * Recomputed from `SectorMap` buckets on each call so LRW damage
    * and Scout Swarm terraforming are reflected immediately.
@@ -194,6 +204,10 @@ class PlanetImpl implements Planet {
     // on the map data. Any future "true km³" value should override
     // this method on a subclass and leave the base formula untouched.
     return Math.pow(size, 1.5);
+  }
+
+  resourceModifier(): number {
+    return this.sectorMap.sectorResourceModifier(this.sectorId);
   }
 
   habitabilityState(): HabitabilityState {

@@ -211,6 +211,12 @@ export class ScoutSwarmExecution implements Execution {
    * The actual mutation is routed through `Game.setTerrainType` (not
    * `GameMap.setTerrainType`) so the change is recorded on the server's
    * per-tick terrain update channel and synchronized to clients.
+   *
+   * GDD §4 "Controlled once partially habitable": if the tile was
+   * unowned (TerraNullius) before the terraform step, the launching
+   * player now takes ownership. This completes the GDD's explore →
+   * terraform → control loop. Ownership is only granted on unowned
+   * tiles — capturing enemy territory still requires combat.
    */
   private applyTerraformStep(tile: TileRef): void {
     const map = this.mg.map();
@@ -241,6 +247,19 @@ export class ScoutSwarmExecution implements Execution {
     // so we handle the owned case gracefully.
     if (ownerIdBefore !== null) {
       sectorMap.recomputeHabitabilityForTile(tile, ownerIdBefore, previousHab);
+      return;
+    }
+
+    // Tile was unowned before the terraform — grant ownership to the
+    // launcher. Gated on isAlive() because conquer() adds a tile to the
+    // player, and PlayerImpl.isAlive() is defined as `_tiles.size > 0`.
+    // If the launcher was eliminated while the scout was travelling,
+    // conquering here would revive them with one tile and break the
+    // elimination / permadeath contract. conquer() runs *after*
+    // setTerrainType so the recordTileGained inside it picks up the
+    // new terrain's habitability, not the old one.
+    if (this.launcher.isAlive()) {
+      this.launcher.conquer(tile);
     }
   }
 

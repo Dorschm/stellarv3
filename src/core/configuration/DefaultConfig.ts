@@ -636,19 +636,27 @@ export class DefaultConfig implements Config {
         };
         break;
       case UnitType.DefenseStation:
+        // GDD §5 — all structures stack with exponential cost scaling.
+        // Doubling curve (50k → 100k → 200k → 400k → 800k cap) matches
+        // Colony/Foundry/JumpGate. Units 0 and 1 intentionally cost the
+        // same as the prior linear curve; divergence starts at unit 2.
         info = {
           cost: this.costWrapper(
-            (numUnits: number) => Math.min(250_000, (numUnits + 1) * 50_000),
+            (numUnits: number) =>
+              Math.min(800_000, Math.pow(2, numUnits) * 50_000),
             UnitType.DefenseStation,
           ),
           constructionDuration: this.instantBuild() ? 0 : 5 * 10,
         };
         break;
       case UnitType.PointDefenseArray:
+        // GDD §5 — exponential scaling. 1.5M → 3M → 6M cap. Units 0 and
+        // 1 match the old linear curve; unit 2+ doubles before hitting
+        // the new 6M ceiling (old cap was 3M).
         info = {
           cost: this.costWrapper(
             (numUnits: number) =>
-              Math.min(3_000_000, (numUnits + 1) * 1_500_000),
+              Math.min(6_000_000, Math.pow(2, numUnits) * 1_500_000),
             UnitType.PointDefenseArray,
           ),
           constructionDuration: this.instantBuild()
@@ -1166,16 +1174,21 @@ export class DefaultConfig implements Config {
     const baseRate = player.type() === PlayerType.Bot ? 25 : 50;
     const flatRate = Math.floor(baseRate * multiplier);
 
-    let yieldingTiles = 0;
+    // GDD §9 — each yielding tile contributes its sector's random
+    // resource modifier (0.5..2.0) rather than a flat 1.0. The weighted
+    // sum is a pre-computed O(1) running total maintained by SectorMap,
+    // so this stays hot-path safe. When no SectorMap is wired (unit
+    // tests), fall back to the raw tile count × 1.0 so the legacy shape
+    // of the formula is preserved.
+    let weightedYield = 0;
     if (sm !== null) {
-      yieldingTiles =
-        sm.playerFullHabTiles(player) + sm.playerPartialHabTiles(player);
+      weightedYield = sm.playerWeightedYieldTiles(player);
     } else {
-      yieldingTiles = player.numTilesOwned();
+      weightedYield = player.numTilesOwned();
     }
 
-    // 1/s/tile → 0.1/tick/tile.
-    const volumeBonus = Math.floor(yieldingTiles * 0.1 * multiplier);
+    // 1/s/tile → 0.1/tick/tile, weighted by the per-sector modifier.
+    const volumeBonus = Math.floor(weightedYield * 0.1 * multiplier);
 
     return BigInt(flatRate + volumeBonus);
   }

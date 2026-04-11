@@ -920,3 +920,95 @@ describe.skip("Economy formulas (PlayerView integration)", () => {
     });
   });
 });
+
+/**
+ * Live tests for GDD §9 per-sector resource modifiers. Unlike the
+ * (skipped) legacy blocks above, these exercise the production
+ * `creditAdditionRate()` path directly — they inject a stub SectorMap
+ * that returns a controlled `playerWeightedYieldTiles` value so the
+ * assertion math doesn't depend on the real BFS partition or terrain
+ * layout. The SectorMap-side of the modifier is already covered by
+ * `tests/core/game/SectorMap.test.ts`.
+ */
+describe("creditAdditionRate (per-sector resource modifier)", () => {
+  /**
+   * Stub SectorMap that returns a fixed `playerWeightedYieldTiles`
+   * value for every player. All the other accessors
+   * `creditAdditionRate` doesn't read return zero/1.0 no-ops.
+   */
+  function stubSectorMap(weightedYield: number): SectorMap {
+    return {
+      playerOwnedSectorTiles: () => 0,
+      playerAverageHabitability: () => 1.0,
+      playerFullHabTiles: () => 0,
+      playerPartialHabTiles: () => 0,
+      playerUninhabTiles: () => 0,
+      playerWeightedYieldTiles: () => weightedYield,
+    } as unknown as SectorMap;
+  }
+
+  test("different weighted yields produce different volume bonuses", async () => {
+    // Two queries, same player, but with SectorMaps that return
+    // different weighted yield sums — mirroring a lucky vs. unlucky
+    // sector-modifier roll. The lucky rate must strictly exceed the
+    // unlucky rate. Concretely: lucky = 10 tiles × modifier 2.0 = 20
+    // weighted → floor(20 × 0.1) = 2 bonus; unlucky = 10 × 0.5 = 5
+    // weighted → floor(5 × 0.1) = 0 bonus.
+    const game = await setup(
+      "big_plains",
+      { infiniteCredits: false, infinitePopulation: false },
+      [humanInfo],
+    );
+    const player = game.player(HUMAN_ID);
+    const config = game.config() as DefaultConfig;
+
+    config.setSectorMap(stubSectorMap(20));
+    const luckyRate = config.creditAdditionRate(player);
+
+    config.setSectorMap(stubSectorMap(5));
+    const unluckyRate = config.creditAdditionRate(player);
+
+    expect(luckyRate).toBeGreaterThan(unluckyRate);
+    // Flat Human trickle is 50/tick in the current formula; both rates
+    // must include it regardless of modifier so no player ever earns
+    // zero credits from a bad roll.
+    expect(unluckyRate).toBeGreaterThanOrEqual(50n);
+    expect(luckyRate - unluckyRate).toBe(2n);
+  });
+
+  test("flat trickle is unchanged by the modifier", async () => {
+    // A player with zero weighted yield (no sector tiles / all
+    // uninhabitable) must still earn the 50/tick Human flat trickle.
+    const game = await setup(
+      "big_plains",
+      { infiniteCredits: false, infinitePopulation: false },
+      [humanInfo],
+    );
+    const player = game.player(HUMAN_ID);
+    const config = game.config() as DefaultConfig;
+
+    config.setSectorMap(stubSectorMap(0));
+    expect(config.creditAdditionRate(player)).toBe(50n);
+  });
+
+  test("creditMultiplier scales the weighted bonus alongside the flat rate", async () => {
+    // With creditMultiplier = 2 the bonus for the same weighted yield
+    // should double. Confirms the modifier flows through the same
+    // multiplier as the flat rate rather than a fixed numeric scale.
+    const game = await setup(
+      "big_plains",
+      {
+        infiniteCredits: false,
+        infinitePopulation: false,
+        creditMultiplier: 2,
+      },
+      [humanInfo],
+    );
+    const player = game.player(HUMAN_ID);
+    const config = game.config() as DefaultConfig;
+
+    // 100 weighted × 0.1 × 2 = 20 bonus; flat 50 × 2 = 100.
+    config.setSectorMap(stubSectorMap(100));
+    expect(config.creditAdditionRate(player)).toBe(100n + 20n);
+  });
+});

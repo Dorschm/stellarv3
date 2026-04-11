@@ -7,6 +7,8 @@ import {
   HABITABILITY_NEBULA,
   HABITABILITY_OPEN_SPACE,
   habitabilityForTerrain,
+  SECTOR_RESOURCE_MODIFIER_MAX,
+  SECTOR_RESOURCE_MODIFIER_MIN,
   SectorMap,
 } from "../../../src/core/game/SectorMap";
 
@@ -506,5 +508,198 @@ describe("SectorMap habitability damage (LRW Ticket 5)", () => {
 
     const player = fakePlayerWithTiles(sm, [tile]);
     expect(sm.playerAverageHabitability(player)).toBeCloseTo(0.6, 10);
+  });
+});
+
+describe("SectorMap resource modifiers (GDD §9)", () => {
+  test("sectorResourceModifier returns a deterministic value in [0.5, 2.0)", () => {
+    // Two 1-sector maps, same topology, same seed coordinates → the
+    // modifier roll must agree. This guards against accidental
+    // randomness (e.g. reaching for Math.random instead of the
+    // PseudoRandom seeded from the sector ID).
+    const mapA = buildMap(3, 1, [OPEN, OPEN, OPEN]);
+    const smA = new SectorMap(mapA, [{ x: 0, y: 0 }]);
+    const mapB = buildMap(3, 1, [OPEN, OPEN, OPEN]);
+    const smB = new SectorMap(mapB, [{ x: 0, y: 0 }]);
+
+    const modA = smA.sectorResourceModifier(1);
+    const modB = smB.sectorResourceModifier(1);
+    expect(modA).toBe(modB);
+    expect(modA).toBeGreaterThanOrEqual(SECTOR_RESOURCE_MODIFIER_MIN);
+    expect(modA).toBeLessThan(SECTOR_RESOURCE_MODIFIER_MAX);
+  });
+
+  test("different sector IDs produce different modifiers", () => {
+    // Two disjoint sectors → the PRNG is re-seeded with a different ID
+    // per sector, so the modifiers should almost certainly differ.
+    // Accept a small collision risk by asserting NOT-equal rather than
+    // pinning specific values; seeds 7919 and 15838 collide only under
+    // a catastrophic PRNG failure, in which case the whole test suite
+    // is already broken.
+    const map = buildMap(5, 1, [OPEN, OPEN, VOID, OPEN, OPEN]);
+    const sm = new SectorMap(map, [
+      { x: 0, y: 0 },
+      { x: 4, y: 0 },
+    ]);
+
+    const mod1 = sm.sectorResourceModifier(1);
+    const mod2 = sm.sectorResourceModifier(2);
+    expect(mod1).not.toBe(mod2);
+    expect(mod1).toBeGreaterThanOrEqual(SECTOR_RESOURCE_MODIFIER_MIN);
+    expect(mod1).toBeLessThan(SECTOR_RESOURCE_MODIFIER_MAX);
+    expect(mod2).toBeGreaterThanOrEqual(SECTOR_RESOURCE_MODIFIER_MIN);
+    expect(mod2).toBeLessThan(SECTOR_RESOURCE_MODIFIER_MAX);
+  });
+
+  test("sectorResourceModifier returns 1.0 for sector 0 and out-of-range IDs", () => {
+    // 1.0 is the no-op identity for the volume bonus so callers that
+    // look up "no sector" tiles don't get a spurious penalty or bonus.
+    const map = buildMap(3, 1, [OPEN, OPEN, OPEN]);
+    const sm = new SectorMap(map, [{ x: 0, y: 0 }]);
+
+    expect(sm.sectorResourceModifier(0)).toBe(1.0);
+    expect(sm.sectorResourceModifier(-1)).toBe(1.0);
+    expect(sm.sectorResourceModifier(2)).toBe(1.0);
+    expect(sm.sectorResourceModifier(999)).toBe(1.0);
+  });
+
+  test("playerWeightedYieldTiles sums (fullTiles + partialTiles) × sectorModifier across sectors", () => {
+    // Two disjoint sectors. Player owns 2 OpenSpace tiles in sector 1
+    // and 1 Nebula tile in sector 2. Uninhabitable tiles do NOT
+    // contribute — we verify by also owning an AsteroidField tile in
+    // sector 2 and asserting it doesn't affect the sum.
+    //
+    //   sector 1          sector 2
+    //   OPEN OPEN  VOID  NEBULA ASTEROID
+    const map = buildMap(5, 1, [OPEN, OPEN, VOID, NEBULA, ASTEROID]);
+    const sm = new SectorMap(map, [
+      { x: 0, y: 0 },
+      { x: 3, y: 0 },
+    ]);
+    const mod1 = sm.sectorResourceModifier(1);
+    const mod2 = sm.sectorResourceModifier(2);
+
+    const player = fakePlayerWithTiles(sm, [
+      map.ref(0, 0), // sector 1, OpenSpace  → yielding
+      map.ref(1, 0), // sector 1, OpenSpace  → yielding
+      map.ref(3, 0), // sector 2, Nebula     → yielding
+      map.ref(4, 0), // sector 2, Asteroid   → uninhabitable, excluded
+    ]);
+
+    // Expected: 2 × mod1 + 1 × mod2 (Asteroid excluded).
+    const expected = 2 * mod1 + 1 * mod2;
+    expect(sm.playerWeightedYieldTiles(player)).toBeCloseTo(expected, 10);
+  });
+
+  test("playerWeightedYieldTiles returns 0 for a player with no tiles", () => {
+    const map = buildMap(3, 1, [OPEN, OPEN, OPEN]);
+    const sm = new SectorMap(map, [{ x: 0, y: 0 }]);
+    const player = fakePlayerWithTiles(sm, []);
+    expect(sm.playerWeightedYieldTiles(player)).toBe(0);
+  });
+
+  test("recordTileLost subtracts the sector modifier from the weighted sum", () => {
+    // Gain 2 OpenSpace tiles, then lose 1 — weighted sum should drop
+    // by exactly one sector-1 modifier.
+    const map = buildMap(3, 1, [OPEN, OPEN, OPEN]);
+    const sm = new SectorMap(map, [{ x: 0, y: 0 }]);
+    const mod1 = sm.sectorResourceModifier(1);
+
+    const player = fakePlayerWithTiles(sm, [map.ref(0, 0), map.ref(1, 0)]);
+    expect(sm.playerWeightedYieldTiles(player)).toBeCloseTo(2 * mod1, 10);
+
+    sm.recordTileLost(player.smallID(), map.ref(1, 0));
+    expect(sm.playerWeightedYieldTiles(player)).toBeCloseTo(1 * mod1, 10);
+  });
+
+  test("recordTileLost on the last tile zeros the weighted sum", () => {
+    // The last-tile branch resets bucket counters explicitly — the
+    // weighted sum must be reset alongside them so float drift can't
+    // leak across an ownership wipe.
+    const map = buildMap(3, 1, [OPEN, OPEN, OPEN]);
+    const sm = new SectorMap(map, [{ x: 0, y: 0 }]);
+
+    const player = fakePlayerWithTiles(sm, [map.ref(0, 0)]);
+    expect(sm.playerWeightedYieldTiles(player)).toBeGreaterThan(0);
+
+    sm.recordTileLost(player.smallID(), map.ref(0, 0));
+    expect(sm.playerWeightedYieldTiles(player)).toBe(0);
+  });
+
+  test("applyHabitabilityDamage subtracts the modifier when a yielding tile becomes uninhabitable", () => {
+    // Single OpenSpace tile owned by a player — the weighted sum
+    // should start at mod1, then drop to 0 after enough damage lands
+    // the tile in the uninhabitable bucket.
+    const map = buildMap(1, 1, [OPEN]);
+    const sm = new SectorMap(map, [{ x: 0, y: 0 }]);
+    const tile = map.ref(0, 0);
+    const mod1 = sm.sectorResourceModifier(1);
+
+    const player = fakePlayerWithTiles(sm, [tile]);
+    expect(sm.playerWeightedYieldTiles(player)).toBeCloseTo(mod1, 10);
+
+    // 1.0 base − 0.9 damage = 0.1 effective → below uninhab threshold.
+    sm.applyHabitabilityDamage(tile, 0.9, player.smallID());
+    expect(sm.playerWeightedYieldTiles(player)).toBe(0);
+  });
+
+  test("applyHabitabilityDamage is a no-op on the weighted sum when the damage stays within a yielding bucket", () => {
+    // OpenSpace → Nebula-ish (0.7 effective) is still a "yielding"
+    // bucket swap (full → partial). The weighted sum must NOT change
+    // because both buckets count equally toward credit yield.
+    const map = buildMap(1, 1, [OPEN]);
+    const sm = new SectorMap(map, [{ x: 0, y: 0 }]);
+    const tile = map.ref(0, 0);
+    const mod1 = sm.sectorResourceModifier(1);
+
+    const player = fakePlayerWithTiles(sm, [tile]);
+    expect(sm.playerWeightedYieldTiles(player)).toBeCloseTo(mod1, 10);
+
+    // 1.0 → 0.7 effective (full → partial bucket). Still yielding.
+    sm.applyHabitabilityDamage(tile, 0.3, player.smallID());
+    expect(sm.playerWeightedYieldTiles(player)).toBeCloseTo(mod1, 10);
+  });
+
+  test("recomputeHabitabilityForTile adds the modifier when a tile is terraformed uninhabitable → partial", () => {
+    // Start with an AsteroidField tile (uninhabitable → not in the
+    // weighted sum), then simulate a Scout Swarm terraforming it to
+    // Nebula. The caller reports the pre-mutation effective hab (0.3),
+    // the underlying terrain is flipped, then recomputeHabitabilityForTile
+    // is called. The weighted sum should jump by one sector-1 modifier.
+    const map = buildMap(1, 1, [ASTEROID]);
+    const sm = new SectorMap(map, [{ x: 0, y: 0 }]);
+    const tile = map.ref(0, 0);
+    const mod1 = sm.sectorResourceModifier(1);
+
+    const player = fakePlayerWithTiles(sm, [tile]);
+    // Asteroid is uninhabitable → not counted in the weighted sum.
+    expect(sm.playerWeightedYieldTiles(player)).toBe(0);
+
+    // Terraform: flip the underlying terrain to Nebula and notify
+    // SectorMap with the pre-mutation effective habitability.
+    const prevHab = sm.effectiveHabitability(tile);
+    map.setTerrainType(tile, TerrainType.Nebula);
+    sm.recomputeHabitabilityForTile(tile, player.smallID(), prevHab);
+
+    expect(sm.playerWeightedYieldTiles(player)).toBeCloseTo(mod1, 10);
+  });
+
+  test("recomputeHabitabilityForTile stays a no-op on the weighted sum when the bucket crossing is yielding ↔ yielding", () => {
+    // Nebula → OpenSpace is a partial → full transition. The tile was
+    // already yielding; it is still yielding. The weighted sum must
+    // not double-count.
+    const map = buildMap(1, 1, [NEBULA]);
+    const sm = new SectorMap(map, [{ x: 0, y: 0 }]);
+    const tile = map.ref(0, 0);
+    const mod1 = sm.sectorResourceModifier(1);
+
+    const player = fakePlayerWithTiles(sm, [tile]);
+    expect(sm.playerWeightedYieldTiles(player)).toBeCloseTo(mod1, 10);
+
+    const prevHab = sm.effectiveHabitability(tile);
+    map.setTerrainType(tile, TerrainType.OpenSpace);
+    sm.recomputeHabitabilityForTile(tile, player.smallID(), prevHab);
+
+    expect(sm.playerWeightedYieldTiles(player)).toBeCloseTo(mod1, 10);
   });
 });

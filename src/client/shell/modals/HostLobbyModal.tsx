@@ -8,6 +8,7 @@ import {
   GameMapType,
   GameMode,
   GameType,
+  WinCondition,
 } from "../../../core/game/Game";
 import { getPlayToken } from "../../Auth";
 import { translateText } from "../../Utils";
@@ -41,6 +42,10 @@ export function HostLobbyModal() {
   );
   const [gameMode, setGameMode] = useState<GameMode>(GameMode.FFA);
   const [bots, setBots] = useState(400);
+  // GDD §10 — private lobbies default to roguelike permadeath so the host
+  // can opt into the same experience singleplayer ships with. The public
+  // MapPlaylist path is unaffected (it never builds this payload).
+  const [permadeath, setPermadeath] = useState<boolean>(true);
   const [lobbyId, setLobbyId] = useState("");
   const [lobbyUrl, setLobbyUrl] = useState("");
   const [clients, setClients] = useState<{ username: string }[]>([]);
@@ -70,8 +75,13 @@ export function HostLobbyModal() {
       randomSpawn: false,
       nations: "default" as const,
       disabledUnits: [],
+      // GDD §1, §10 — private lobbies default to elimination + permadeath.
+      // Public multiplayer games (created via MapPlaylist) never reach this
+      // builder and keep Domination/false via DefaultConfig fallback.
+      winCondition: WinCondition.Elimination,
+      permadeath,
     }),
-    [selectedMap, selectedDifficulty, gameMode, bots],
+    [selectedMap, selectedDifficulty, gameMode, bots, permadeath],
   );
 
   const onOpen = useCallback(async () => {
@@ -397,6 +407,21 @@ export function HostLobbyModal() {
               onChange={(e) => setBots(Number(e.target.value))}
               className="w-full accent-blue-500"
             />
+          </div>
+
+          {/* Permadeath toggle — GDD §10 roguelike mode */}
+          <div className="py-3 px-4 rounded-lg bg-white/5 border border-white/10">
+            <label className="flex items-center gap-3 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={permadeath}
+                onChange={(e) => setPermadeath(e.target.checked)}
+                className="w-4 h-4"
+              />
+              <span className="text-sm font-medium text-white">
+                Permadeath (Roguelike)
+              </span>
+            </label>
           </div>
 
           {/* Players list */}

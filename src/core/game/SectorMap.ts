@@ -1,3 +1,4 @@
+import { PseudoRandom } from "../PseudoRandom";
 import { Player, TerrainType } from "./Game";
 import { GameMap, TileRef } from "./GameMap";
 import type { PlayerView } from "./GameView";
@@ -55,6 +56,24 @@ export interface SectorSeed {
 const MAX_SECTOR_ID = 255;
 
 /**
+ * GDD §9 — per-planet random resource modifier range. A lucky planet
+ * produces 4× the credit volume bonus of an unlucky one (2.0 / 0.5),
+ * while the flat trickle in `creditAdditionRate()` is unaffected so no
+ * player ever earns zero credits regardless of modifier.
+ */
+export const SECTOR_RESOURCE_MODIFIER_MIN = 0.5;
+export const SECTOR_RESOURCE_MODIFIER_MAX = 2.0;
+
+/**
+ * Prime multiplier used to seed the per-sector `PseudoRandom` from the
+ * sector ID. Chosen so sequential sector IDs (1, 2, 3 …) produce
+ * well-spread seeds instead of clustering in the low end of the RNG state
+ * space. Must stay constant across server and clients for the modifier
+ * to remain deterministic.
+ */
+const SECTOR_RESOURCE_SEED_MULTIPLIER = 7919;
+
+/**
  * `SectorMap` partitions the `GameMap`'s sector tiles into per-nation
  * sectors via a BFS flood from each nation's seed coordinate.
  *
@@ -70,6 +89,19 @@ export class SectorMap {
   private readonly sectorIds: Uint8Array;
   /** Per-sector tile counts. Index 0 unused; indices 1..N are valid. */
   private readonly perSectorTileCount: number[];
+  /**
+   * Per-sector GDD §9 random resource modifier in `[0.5, 2.0)`. Index 0
+   * unused; indices 1..N mirror {@link perSectorTileCount}. Generated
+   * deterministically from the sector ID via {@link PseudoRandom} so
+   * every peer (server + clients) agrees on the same value for a given
+   * sector without any network sync.
+   *
+   * Feeds into {@link playerWeightedYieldTiles} (and therefore
+   * `creditAdditionRate` in DefaultConfig) — planets of identical size
+   * and habitability produce different credit rates depending on the
+   * luck of this roll.
+   */
+  private readonly perSectorResourceModifier: number[];
   /**
    * The map this SectorMap was built from. Stored so the per-player query
    * methods can resolve `terrainType()` without callers having to thread the
@@ -113,6 +145,27 @@ export class SectorMap {
   private readonly perPlayerPartialHabTileCount: number[] = [];
   private readonly perPlayerUninhabTileCount: number[] = [];
   /**
+   * Running per-player sum of `(fullTiles + partialTiles) × sectorModifier`
+   * across the player's owned sector tiles, keyed by `smallID()`. Drives the
+   * GDD §9 random-resource bonus in `creditAdditionRate()` without forcing
+   * the hot-path credit formula to re-walk the player's tile set each tick.
+   *
+   * Only *yielding* tiles (full or partial habitability buckets)
+   * contribute — uninhabitable tiles are excluded because
+   * `creditAdditionRate()` already treats them as zero yield. The sum is
+   * maintained by the same four mutation points that manage
+   * {@link perPlayerHabitabilitySum}:
+   *   - {@link recordTileGained}     — add modifier when a yielding tile is gained
+   *   - {@link recordTileLost}       — subtract modifier when a yielding tile is lost
+   *   - {@link applyHabitabilityDamage} — swap on bucket transitions after LRW damage
+   *   - {@link recomputeHabitabilityForTile} — swap on bucket transitions after terraforming
+   *
+   * Kept as a SEPARATE running total from `perPlayerHabitabilitySum` so
+   * population formulas (`maxTroops`, `troopIncreaseRate`) remain
+   * unweighted by the random modifier; only credit generation is affected.
+   */
+  private readonly perPlayerWeightedYieldSum: number[] = [];
+  /**
    * Sparse per-tile habitability damage overlay. Indexed by `TileRef`
    * (the same flat tile index used by `sectorIds`). Values represent the
    * cumulative habitability *reduction* (0..1) inflicted on a tile by
@@ -139,6 +192,7 @@ export class SectorMap {
     this.sectorIds = new Uint8Array(w * h);
     // Index 0 = "no sector"; per-sector counts start at index 1.
     this.perSectorTileCount = [0];
+    this.perSectorResourceModifier = [0];
 
     let nextSectorId = 1;
     for (const seed of seeds) {
@@ -160,6 +214,17 @@ export class SectorMap {
       const sectorId = nextSectorId++;
       const count = this.floodFill(gameMap, seedRef, sectorId);
       this.perSectorTileCount.push(count);
+      // GDD §9 — roll a deterministic per-sector resource modifier from
+      // the sector ID. PseudoRandom is seeded solely from the sector ID
+      // (× a prime for spread) so server and all clients produce the
+      // same modifier without any sync, and replays are bit-exact.
+      const rng = new PseudoRandom(sectorId * SECTOR_RESOURCE_SEED_MULTIPLIER);
+      this.perSectorResourceModifier.push(
+        rng.nextFloat(
+          SECTOR_RESOURCE_MODIFIER_MIN,
+          SECTOR_RESOURCE_MODIFIER_MAX,
+        ),
+      );
     }
   }
 
@@ -212,6 +277,22 @@ export class SectorMap {
   /** Number of distinct sectors detected (excludes the implicit `0`). */
   numSectors(): number {
     return this.perSectorTileCount.length - 1;
+  }
+
+  /**
+   * GDD §9 per-sector random resource modifier in `[0.5, 2.0)`.
+   * Deterministic across server and all clients: same sector ID always
+   * produces the same modifier because it is seeded from the sector ID
+   * itself at construction time. Returns `1.0` (the no-op identity for
+   * the volume bonus) for `sectorId === 0` and any out-of-range sector,
+   * so callers that look up "no sector" tiles via {@link sectorOf} get a
+   * harmless pass-through instead of a spurious penalty or bonus.
+   */
+  sectorResourceModifier(sectorId: number): number {
+    if (sectorId <= 0 || sectorId >= this.perSectorResourceModifier.length) {
+      return 1.0;
+    }
+    return this.perSectorResourceModifier[sectorId];
   }
 
   /**
@@ -309,6 +390,26 @@ export class SectorMap {
   }
 
   /**
+   * O(1) GDD §9 weighted yield query: the running sum of
+   * `(fullTiles + partialTiles) × sectorModifier` across every sector
+   * the player owns yielding tiles in. Mirrors
+   * `playerFullHabTiles + playerPartialHabTiles` but weighted by the
+   * per-sector resource modifier, so `creditAdditionRate()` can credit
+   * lucky sectors more than unlucky ones without a per-tick walk over
+   * the player's tile set.
+   *
+   * Returns `0` for players with no tracked totals (unknown smallID,
+   * or a player who owns only non-sector / uninhabitable tiles).
+   * Accepts both `Player` and `PlayerView` — the running total is
+   * keyed by `smallID()` so the client HUD reads the same authoritative
+   * value the server tick does.
+   */
+  playerWeightedYieldTiles(player: Player | PlayerView): number {
+    const id = player.smallID();
+    return this.perPlayerWeightedYieldSum[id] ?? 0;
+  }
+
+  /**
    * O(1) average habitability across the player's owned **sector** tiles.
    *
    * Non-sector tiles (DebrisField / DeepSpace, never normally owned) do
@@ -385,6 +486,25 @@ export class SectorMap {
       if (prevBucket !== newBucket) {
         this.adjustBucket(ownerSmallID, prevBucket, -1);
         this.adjustBucket(ownerSmallID, newBucket, +1);
+        // GDD §9 — track yielding/non-yielding crossings for the
+        // weighted sum. A bucket swap that stays on the yielding side
+        // (full ↔ partial) is a no-op for the weighted sum because the
+        // modifier is applied per-tile regardless of full-vs-partial.
+        // Only crossings into or out of the uninhabitable bucket matter.
+        const wasYielding = prevBucket !== -1;
+        const isYielding = newBucket !== -1;
+        if (wasYielding !== isYielding) {
+          const modifier = this.sectorResourceModifier(sectorId);
+          if (wasYielding) {
+            this.perPlayerWeightedYieldSum[ownerSmallID] = Math.max(
+              0,
+              (this.perPlayerWeightedYieldSum[ownerSmallID] ?? 0) - modifier,
+            );
+          } else {
+            this.perPlayerWeightedYieldSum[ownerSmallID] =
+              (this.perPlayerWeightedYieldSum[ownerSmallID] ?? 0) + modifier;
+          }
+        }
       }
     }
   }
@@ -407,7 +527,17 @@ export class SectorMap {
       (this.perPlayerSectorTileCount[playerSmallID] ?? 0) + 1;
     this.perPlayerHabitabilitySum[playerSmallID] =
       (this.perPlayerHabitabilitySum[playerSmallID] ?? 0) + hab;
-    this.adjustBucket(playerSmallID, this.bucketForHab(hab), +1);
+    const bucket = this.bucketForHab(hab);
+    this.adjustBucket(playerSmallID, bucket, +1);
+    // GDD §9 — a newly-owned *yielding* tile (full or partial hab)
+    // contributes its sector's resource modifier to the weighted yield
+    // sum. Uninhabitable tiles are excluded because the credit formula
+    // treats them as zero yield.
+    if (bucket !== -1) {
+      this.perPlayerWeightedYieldSum[playerSmallID] =
+        (this.perPlayerWeightedYieldSum[playerSmallID] ?? 0) +
+        this.sectorResourceModifier(sectorId);
+    }
   }
 
   /**
@@ -451,6 +581,24 @@ export class SectorMap {
     if (prevBucket !== newBucket) {
       this.adjustBucket(ownerSmallID, prevBucket, -1);
       this.adjustBucket(ownerSmallID, newBucket, +1);
+      // GDD §9 — same yielding/non-yielding crossing logic as
+      // {@link applyHabitabilityDamage}. Scout-swarm terraforming an
+      // asteroid into a nebula crosses uninhabitable → partial and
+      // starts contributing the sector's modifier to the weighted sum.
+      const wasYielding = prevBucket !== -1;
+      const isYielding = newBucket !== -1;
+      if (wasYielding !== isYielding) {
+        const modifier = this.sectorResourceModifier(sectorId);
+        if (wasYielding) {
+          this.perPlayerWeightedYieldSum[ownerSmallID] = Math.max(
+            0,
+            (this.perPlayerWeightedYieldSum[ownerSmallID] ?? 0) - modifier,
+          );
+        } else {
+          this.perPlayerWeightedYieldSum[ownerSmallID] =
+            (this.perPlayerWeightedYieldSum[ownerSmallID] ?? 0) + modifier;
+        }
+      }
     }
   }
 
@@ -470,13 +618,27 @@ export class SectorMap {
       this.perPlayerFullHabTileCount[playerSmallID] = 0;
       this.perPlayerPartialHabTileCount[playerSmallID] = 0;
       this.perPlayerUninhabTileCount[playerSmallID] = 0;
+      // Last tile — zero the weighted sum so float drift doesn't leak
+      // across an ownership wipe. Matches the bucket-counter reset above.
+      this.perPlayerWeightedYieldSum[playerSmallID] = 0;
     } else {
       this.perPlayerSectorTileCount[playerSmallID] = count - 1;
       this.perPlayerHabitabilitySum[playerSmallID] = Math.max(
         0,
         (this.perPlayerHabitabilitySum[playerSmallID] ?? 0) - hab,
       );
-      this.adjustBucket(playerSmallID, this.bucketForHab(hab), -1);
+      const bucket = this.bucketForHab(hab);
+      this.adjustBucket(playerSmallID, bucket, -1);
+      // GDD §9 — decrement the weighted sum only when the lost tile was
+      // yielding (full/partial). Lost uninhabitable tiles never
+      // contributed in the first place.
+      if (bucket !== -1) {
+        this.perPlayerWeightedYieldSum[playerSmallID] = Math.max(
+          0,
+          (this.perPlayerWeightedYieldSum[playerSmallID] ?? 0) -
+            this.sectorResourceModifier(sectorId),
+        );
+      }
     }
   }
 }
