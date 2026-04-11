@@ -1,10 +1,7 @@
 import React from "react";
 import { useGameView } from "../bridge/GameViewContext";
 import { useEventBus } from "../bridge/useEventBus";
-import {
-  ShowDonateResourceModalEvent,
-  ShowPlayerModerationModalEvent,
-} from "./events";
+import { ShowDonateResourceModalEvent } from "./events";
 import { AttacksDisplay } from "./AttacksDisplay";
 import { ControlPanel } from "./ControlPanel";
 import { UnitDisplay } from "./UnitDisplay";
@@ -29,15 +26,13 @@ import { PlayerInfoOverlay } from "./PlayerInfoOverlay";
 import { HeadsUpMessage } from "./HeadsUpMessage";
 import { InGamePromo } from "./InGamePromo";
 import { GameStartingModal } from "./GameStartingModal";
+import { PlayerModerationModal } from "./PlayerModerationModal";
 
 /**
- * Short-term stub: the legacy Lit `<send-resource-modal>` and
- * `<player-moderation-modal>` components have not yet been ported to React.
- * PlayerPanel still emits `ShowDonateResourceModalEvent` and
- * `ShowPlayerModerationModalEvent` when the donate / moderation buttons
- * are clicked, but without this listener the events were silently dropped,
- * so clicking those buttons appeared to do nothing. Log a console warning
- * so the regression is visible until dedicated modal components are built.
+ * Short-term stub: the legacy Lit `<send-resource-modal>` component has not
+ * yet been ported to React. PlayerPanel still emits
+ * `ShowDonateResourceModalEvent` when the donate button is clicked, but
+ * without this listener the event would be silently dropped.
  */
 function UnimplementedModalWarnings(): null {
   const { eventBus } = useGameView();
@@ -46,13 +41,6 @@ function UnimplementedModalWarnings(): null {
     console.warn(
       `[HUD] ShowDonateResourceModalEvent (${e.mode}) received but the ` +
         `corresponding React modal has not been implemented yet.`,
-    );
-  });
-
-  useEventBus(eventBus, ShowPlayerModerationModalEvent, () => {
-    console.warn(
-      `[HUD] ShowPlayerModerationModalEvent received but the corresponding ` +
-        `React moderation modal has not been implemented yet.`,
     );
   });
 
@@ -128,6 +116,7 @@ export function HUDOverlay(): React.JSX.Element {
       <PlayerInfoOverlay />
       <HeadsUpMessage />
       <InGamePromo />
+      <PlayerModerationModal />
       <UnimplementedModalWarnings />
     </>
   );
