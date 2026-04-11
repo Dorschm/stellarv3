@@ -1,11 +1,9 @@
 import React from "react";
 import { useGameView } from "../bridge/GameViewContext";
 import { useEventBus } from "../bridge/useEventBus";
-import {
-  ShowDonateResourceModalEvent,
-  ShowPlayerModerationModalEvent,
-} from "./events";
+import { ShowPlayerModerationModalEvent } from "./events";
 import { AttacksDisplay } from "./AttacksDisplay";
+import { DonateResourceModal } from "./DonateResourceModal";
 import { ControlPanel } from "./ControlPanel";
 import { UnitDisplay } from "./UnitDisplay";
 import { ChatDisplay } from "./ChatDisplay";
@@ -31,23 +29,12 @@ import { InGamePromo } from "./InGamePromo";
 import { GameStartingModal } from "./GameStartingModal";
 
 /**
- * Short-term stub: the legacy Lit `<send-resource-modal>` and
- * `<player-moderation-modal>` components have not yet been ported to React.
- * PlayerPanel still emits `ShowDonateResourceModalEvent` and
- * `ShowPlayerModerationModalEvent` when the donate / moderation buttons
- * are clicked, but without this listener the events were silently dropped,
- * so clicking those buttons appeared to do nothing. Log a console warning
- * so the regression is visible until dedicated modal components are built.
+ * Short-term stub: `<player-moderation-modal>` has not yet been ported to
+ * React. Log a console warning so the regression is visible until a dedicated
+ * modal component is built.
  */
 function UnimplementedModalWarnings(): null {
   const { eventBus } = useGameView();
-
-  useEventBus(eventBus, ShowDonateResourceModalEvent, (e) => {
-    console.warn(
-      `[HUD] ShowDonateResourceModalEvent (${e.mode}) received but the ` +
-        `corresponding React modal has not been implemented yet.`,
-    );
-  });
 
   useEventBus(eventBus, ShowPlayerModerationModalEvent, () => {
     console.warn(
@@ -123,6 +110,7 @@ export function HUDOverlay(): React.JSX.Element {
       <AlertFrame />
       <ChatModal />
       <MultiTabModal />
+      <DonateResourceModal />
       <GameLeftSidebar />
       <PerformanceOverlay />
       <PlayerInfoOverlay />
