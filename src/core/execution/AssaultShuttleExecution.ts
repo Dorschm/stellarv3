@@ -144,10 +144,10 @@ export class AssaultShuttleExecution implements Execution {
     if (this.target.id() !== mg.terraNullius().id()) {
       mg.displayIncomingUnit(
         this.shuttle.id(),
-        // TODO TranslateText
-        `Shuttle assault incoming from ${this.attacker.displayName()} (${renderTroops(this.shuttle.troops())})`,
+        "events_display.shuttle_assault_inbound",
         MessageType.ORBITAL_ASSAULT_INBOUND,
         this.target.id(),
+        { name: this.attacker.displayName(), troops: renderTroops(this.shuttle.troops()) },
       );
     }
 
