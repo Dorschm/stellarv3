@@ -280,6 +280,10 @@ export class DefaultConfig implements Config {
     return this._gameConfig;
   }
 
+  updateGameConfig(config: Partial<GameConfig>): void {
+    this._gameConfig = { ...this._gameConfig, ...config };
+  }
+
   serverConfig(): ServerConfig {
     return this._serverConfig;
   }
