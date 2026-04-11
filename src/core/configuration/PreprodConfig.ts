@@ -15,12 +15,7 @@ export const preprodConfig = new (class extends DefaultServerConfig {
     return "dev.stellar.game";
   }
   allowedFlares(): string[] | undefined {
-    return undefined;
-    // TODO: Uncomment this after testing.
-    // Allow access without login for now to test
-    // the new login flow.
-    // return [
-    //   // "access:dev.stellar.game"
-    // ];
+    // "access:dev.stellar.game" flare is intentionally excluded for now.
+    return [];
   }
 })();

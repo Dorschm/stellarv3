@@ -107,6 +107,14 @@ export class AssaultShuttleExecution implements Execution {
       return;
     }
 
+    if (this.attacker.isPoisonedPort(this.dst)) {
+      console.warn(
+        `${this.attacker} cannot send ship to ${this.target}, destination port is poisoned`,
+      );
+      this.active = false;
+      return;
+    }
+
     const src = this.attacker.canBuild(UnitType.AssaultShuttle, this.dst);
 
     if (src === false) {
@@ -262,7 +270,7 @@ export class AssaultShuttleExecution implements Execution {
         this.shuttle.move(result.node);
         break;
       case PathStatus.NOT_FOUND: {
-        // TODO: add to poisoned port list
+        this.attacker.addPoisonedPort(this.dst);
         const map = this.mg.map();
         const shuttleTile = this.shuttle.tile();
         console.warn(

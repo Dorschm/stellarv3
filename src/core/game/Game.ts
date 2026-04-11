@@ -490,7 +490,6 @@ export class PlayerInfo {
     public readonly playerType: PlayerType,
     // null if tribe.
     public readonly clientID: ClientID | null,
-    // TODO: make player id the small id
     public readonly id: PlayerID,
     public readonly isLobbyCreator: boolean = false,
     public readonly clanTag: string | null = null,
@@ -760,6 +759,11 @@ export interface Player {
   playerProfile(): PlayerProfile;
   // WARNING: this operation is expensive.
   bestShuttleSpawn(tile: TileRef): TileRef | false;
+
+  // Poisoned ports: destination tiles where shuttle pathfinding has failed.
+  // Recorded on PATH_NOT_FOUND so future launches skip known-unreachable ports.
+  addPoisonedPort(tile: TileRef): void;
+  isPoisonedPort(tile: TileRef): boolean;
 }
 
 export interface Game extends GameMap {

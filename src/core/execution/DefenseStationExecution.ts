@@ -1,4 +1,4 @@
-import { Execution, Game, Unit } from "../game/Game";
+import { Execution, Game, Unit, UnitType } from "../game/Game";
 import { PlasmaBoltExecution } from "./PlasmaBoltExecution";
 
 export class DefenseStationExecution implements Execution {
@@ -55,49 +55,48 @@ export class DefenseStationExecution implements Execution {
       this.target = null;
     }
 
-    // TODO: Reconsider how/if defense posts target ships.
-    // const ships = this.mg
-    //   .nearbyUnits(
-    //     this.post.tile(),
-    //     this.mg.config().defenseStationTargettingRange(),
-    //     [UnitType.AssaultShuttle, UnitType.Battlecruiser],
-    //   )
-    //   .filter(
-    //     ({ unit }) =>
-    //       this.post !== null &&
-    //       unit.owner() !== this.post.owner() &&
-    //       !unit.owner().isFriendly(this.post.owner()) &&
-    //       !this.alreadySentShell.has(unit),
-    //   );
-    //
-    // this.target =
-    //   ships.sort((a, b) => {
-    //     const { unit: unitA, distSquared: distA } = a;
-    //     const { unit: unitB, distSquared: distB } = b;
-    //
-    //     // Prioritize AssaultShuttle
-    //     if (
-    //       unitA.type() === UnitType.AssaultShuttle &&
-    //       unitB.type() !== UnitType.AssaultShuttle
-    //     )
-    //       return -1;
-    //     if (
-    //       unitA.type() !== UnitType.AssaultShuttle &&
-    //       unitB.type() === UnitType.AssaultShuttle
-    //     )
-    //       return 1;
-    //
-    //     // If both are the same type, sort by distance (lower `distSquared` means closer)
-    //     return distA - distB;
-    //   })[0]?.unit ?? null;
-    //
-    // if (this.target === null || !this.target.isActive()) {
-    //   this.target = null;
-    //   return;
-    // } else {
-    //   this.shoot();
-    //   return;
-    // }
+    const ships = this.mg
+      .nearbyUnits(
+        this.post.tile(),
+        this.mg.config().defenseStationTargettingRange(),
+        [UnitType.AssaultShuttle, UnitType.Battlecruiser],
+      )
+      .filter(
+        ({ unit }) =>
+          this.post !== null &&
+          unit.owner() !== this.post.owner() &&
+          !unit.owner().isFriendly(this.post.owner()) &&
+          !this.alreadySentShell.has(unit),
+      );
+
+    this.target =
+      ships.sort((a, b) => {
+        const { unit: unitA, distSquared: distA } = a;
+        const { unit: unitB, distSquared: distB } = b;
+
+        // Prioritize AssaultShuttle
+        if (
+          unitA.type() === UnitType.AssaultShuttle &&
+          unitB.type() !== UnitType.AssaultShuttle
+        )
+          return -1;
+        if (
+          unitA.type() !== UnitType.AssaultShuttle &&
+          unitB.type() === UnitType.AssaultShuttle
+        )
+          return 1;
+
+        // If both are the same type, sort by distance (lower `distSquared` means closer)
+        return distA - distB;
+      })[0]?.unit ?? null;
+
+    if (this.target === null || !this.target.isActive()) {
+      this.target = null;
+      return;
+    } else {
+      this.shoot();
+      return;
+    }
   }
 
   isActive(): boolean {
