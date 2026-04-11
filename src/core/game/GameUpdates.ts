@@ -68,6 +68,7 @@ export enum GameUpdateType {
   ConquestEvent,
   EmbargoEvent,
   GamePaused,
+  PeaceVote,
 }
 
 export type GameUpdate =
@@ -91,7 +92,8 @@ export type GameUpdate =
   | HyperspaceLaneSnapUpdate
   | ConquestUpdate
   | EmbargoUpdate
-  | GamePausedUpdate;
+  | GamePausedUpdate
+  | PeaceVoteUpdate;
 
 export interface BonusEventUpdate {
   type: GameUpdateType.BonusEvent;
@@ -299,4 +301,12 @@ export interface EmbargoUpdate {
 export interface GamePausedUpdate {
   type: GameUpdateType.GamePaused;
   paused: boolean;
+}
+
+export interface PeaceVoteUpdate {
+  type: GameUpdateType.PeaceVote;
+  /** smallID of the player casting the vote. */
+  voterID: number;
+  /** smallID of the allied player being endorsed as winner (the assist target). */
+  targetID: number;
 }

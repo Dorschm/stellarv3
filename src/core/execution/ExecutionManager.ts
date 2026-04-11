@@ -6,6 +6,7 @@ import { AllianceExtensionExecution } from "./alliance/AllianceExtensionExecutio
 import { AllianceRejectExecution } from "./alliance/AllianceRejectExecution";
 import { AllianceRequestExecution } from "./alliance/AllianceRequestExecution";
 import { BreakAllianceExecution } from "./alliance/BreakAllianceExecution";
+import { VoteForPeaceExecution } from "./alliance/VoteForPeaceExecution";
 import { AssaultShuttleExecution } from "./AssaultShuttleExecution";
 import { AttackExecution } from "./AttackExecution";
 import { ConstructionExecution } from "./ConstructionExecution";
@@ -129,6 +130,8 @@ export class Executor {
         return new MarkDisconnectedExecution(player, intent.isDisconnected);
       case "toggle_pause":
         return new PauseExecution(player, intent.paused);
+      case "voteForPeace":
+        return new VoteForPeaceExecution(player, intent.targetID);
       default:
         throw new Error(`intent type ${intent} not found`);
     }

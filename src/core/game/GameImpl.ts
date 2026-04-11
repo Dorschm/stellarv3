@@ -102,6 +102,8 @@ export class GameImpl implements Game {
 
   allianceRequests: AllianceRequestImpl[] = [];
   alliances_: AllianceImpl[] = [];
+  // Maps voterPlayerID → targetPlayerID for peace votes cast this game.
+  private peaceVotes: Map<PlayerID, PlayerID> = new Map();
 
   private nextPlayerID = 1;
   private _nextUnitID = 1;
@@ -421,6 +423,26 @@ export class GameImpl implements Game {
       request: request.toUpdate(),
       accepted: false,
     });
+  }
+
+  recordPeaceVote(voter: Player, target: Player): void {
+    if (this.peaceVotes.has(voter.id())) return; // already voted
+    this.peaceVotes.set(voter.id(), target.id());
+    this.addUpdate({
+      type: GameUpdateType.PeaceVote,
+      voterID: voter.smallID(),
+      targetID: target.smallID(),
+    });
+  }
+
+  peaceVotesByTarget(target: Player): Player[] {
+    const result: Player[] = [];
+    for (const [voterID, targetID] of this.peaceVotes) {
+      if (targetID === target.id() && this.hasPlayer(voterID)) {
+        result.push(this.player(voterID));
+      }
+    }
+    return result;
   }
 
   hasPlayer(id: PlayerID): boolean {
@@ -944,11 +966,10 @@ export class GameImpl implements Game {
       if (clientId === null) {
         return ["nation", winner.name()];
       }
-      return [
-        "player",
-        clientId,
-        // TODO: Assists (vote for peace)
-      ];
+      const assists = this.peaceVotesByTarget(winner)
+        .filter((p) => p !== winner && p.clientID() !== null)
+        .map((p) => p.clientID()!);
+      return ["player", clientId, ...assists];
     }
   }
 
