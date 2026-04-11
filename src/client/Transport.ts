@@ -173,6 +173,14 @@ export class SendUpdateGameConfigIntentEvent implements GameEvent {
   constructor(public readonly config: Partial<GameConfig>) {}
 }
 
+export class SendJumpGateTeleportIntentEvent implements GameEvent {
+  constructor(
+    public readonly unitId: number,
+    public readonly sourceGateId: number,
+    public readonly destinationGateId: number,
+  ) {}
+}
+
 export class Transport {
   private socket: WebSocket | null = null;
 
@@ -261,6 +269,10 @@ export class Transport {
 
     this.eventBus.on(SendUpdateGameConfigIntentEvent, (e) =>
       this.onSendUpdateGameConfigIntent(e),
+    );
+
+    this.eventBus.on(SendJumpGateTeleportIntentEvent, (e) =>
+      this.onSendJumpGateTeleportIntent(e),
     );
   }
 
@@ -674,6 +686,17 @@ export class Transport {
     this.sendIntent({
       type: "update_game_config",
       config: event.config,
+    });
+  }
+
+  private onSendJumpGateTeleportIntent(
+    event: SendJumpGateTeleportIntentEvent,
+  ) {
+    this.sendIntent({
+      type: "jump_gate_teleport",
+      unitId: event.unitId,
+      sourceGateId: event.sourceGateId,
+      destinationGateId: event.destinationGateId,
     });
   }
 

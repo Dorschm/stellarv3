@@ -551,7 +551,8 @@
     "antimatter_torpedo": "Antimatter Torpedo",
     "nova_bomb": "Nova Bomb",
     "cluster_warhead": "Cluster Warhead",
-    "foundry": "Foundry"
+    "foundry": "Foundry",
+    "jump_gate": "Jump Gate"
   },
   "user_setting": {
     "title": "Settings",
@@ -769,7 +770,8 @@
       "spaceport": "Sends trade freighters to generate credits",
       "defense_station": "Increases defenses of nearby borders",
       "colony": "Increases max population",
-      "foundry": "Creates hyperspace lanes and spawns frigates"
+      "foundry": "Creates hyperspace lanes and spawns frigates",
+      "jump_gate": "Teleports units to a paired gate"
     },
     "not_enough_money": "Not enough money"
   },
@@ -986,6 +988,7 @@
     "shuttle": "Shuttle attack",
     "player_info": "Player info",
     "unowned": "Unowned territory",
+    "jump_gate": "Jump to gate",
     "delete_unit_title": "Delete Unit",
     "delete_unit_description": "Click to delete the nearest unit"
   },

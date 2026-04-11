@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { assetUrl } from "../../core/AssetUrls";
-import { PlayerActions, UnitType } from "../../core/game/Game";
+import { PlayerActions, Structures, UnitType } from "../../core/game/Game";
 import { TileRef } from "../../core/game/GameMap";
+import { UnitView } from "../../core/game/GameView";
 import { PlayerView } from "../../core/game/GameView";
 import { useGameView } from "../bridge/GameViewContext";
 import { useHUDStore } from "../bridge/HUDStore";
@@ -15,6 +16,7 @@ import {
 } from "../InputHandler";
 import {
   SendAttackIntentEvent,
+  SendJumpGateTeleportIntentEvent,
   SendShuttleAttackIntentEvent,
 } from "../Transport";
 import { translateText } from "../Utils";
@@ -59,12 +61,20 @@ export function RadialMenu(): React.JSX.Element | null {
   const [anchor, setAnchor] = useState<{ x: number; y: number } | null>(null);
   const [tile, setTile] = useState<TileRef | null>(null);
   const [actions, setActions] = useState<PlayerActions | null>(null);
+  // State for the destination-gate picker sub-panel shown after the player
+  // clicks "Jump to gate". Cleared whenever the menu closes.
+  const [gatePicker, setGatePicker] = useState<{
+    unitId: number;
+    sourceGateId: number;
+    destinations: Array<{ id: number; label: string }>;
+  } | null>(null);
 
   const hide = useCallback(() => {
     setIsVisible(false);
     setAnchor(null);
     setTile(null);
     setActions(null);
+    setGatePicker(null);
   }, []);
 
   // -- Listen for context-menu clicks from SpaceMapPlane ---------------------
@@ -240,34 +250,121 @@ export function RadialMenu(): React.JSX.Element | null {
   const canOpenPlayerPanel = ownerIsPlayer && actions !== null;
   const canBuild = !gameView.inSpawnPhase();
 
-  // GDD §5 Jump Gate — collect the player's available gates so the "Jump to
-  // gate" entry can show a count and be greyed out when the player has fewer
-  // than two ready endpoints. Gates that are still under construction are
-  // excluded so a partially-built gate isn't counted as a usable destination.
+  // GDD §5 Jump Gate — collect the player's active, ready gates.
   const myGates =
     myPlayer
       ?.units(UnitType.JumpGate)
       .filter((u) => u.isActive() && !u.isUnderConstruction()) ?? [];
-  const canJumpGate = myGates.length >= 2;
+
+  // Is the right-clicked tile sitting on one of the player's own gates?
+  const gateAtTile =
+    tile !== null ? myGates.find((g) => g.tile() === tile) : undefined;
+
+  // Find the first non-structure unit the player owns at that gate tile
+  // (this is the unit that will be teleported).
+  const unitAtGateTile: UnitView | undefined =
+    gateAtTile !== undefined && tile !== null
+      ? myPlayer
+          ?.units()
+          .find((u) => u.tile() === tile && !Structures.has(u.type()) && u.isActive())
+      : undefined;
+
+  const canJumpGate =
+    gateAtTile !== undefined &&
+    unitAtGateTile !== undefined &&
+    myGates.length >= 2;
+
   const jumpGateTooltip = !myPlayer
     ? undefined
-    : myGates.length === 0
-      ? "Build a Jump Gate first"
-      : myGates.length === 1
-        ? "Need at least two Jump Gates"
-        : `${myGates.length} gates available`;
+    : gateAtTile === undefined
+      ? "Right-click a tile with your Jump Gate"
+      : unitAtGateTile === undefined
+        ? "No unit at this gate to teleport"
+        : myGates.length < 2
+          ? "Need at least two Jump Gates"
+          : `Jump to one of ${myGates.length - 1} available gate${myGates.length > 2 ? "s" : ""}`;
 
   const handleJumpGate = () => {
-    if (!canJumpGate) return;
-    // Surface the available gates in a toast. Full intent wiring (select
-    // unit + source/destination gates over the network) is left to a
-    // follow-up — JumpGateTravel.teleport already handles the server-side
-    // logic, so the next step is just plumbing through Transport.
-    showJumpGateInfo(
-      `Jump Gate: ${myGates.length} ready endpoints. Right-click a unit on a gate to jump.`,
-    );
-    hide();
+    if (!canJumpGate || !gateAtTile || !unitAtGateTile) return;
+    const destinations = myGates
+      .filter((g) => g.id() !== gateAtTile.id())
+      .map((g) => ({
+        id: g.id(),
+        label: `Gate at (${gameView.x(g.tile())}, ${gameView.y(g.tile())})`,
+      }));
+    if (destinations.length === 1) {
+      // Only one destination — jump immediately without a picker.
+      eventBus.emit(
+        new SendJumpGateTeleportIntentEvent(
+          unitAtGateTile.id(),
+          gateAtTile.id(),
+          destinations[0].id,
+        ),
+      );
+      hide();
+    } else {
+      // Multiple destinations — open the sub-panel so the player can choose.
+      setGatePicker({
+        unitId: unitAtGateTile.id(),
+        sourceGateId: gateAtTile.id(),
+        destinations,
+      });
+    }
   };
+
+  // -- Destination gate picker -----------------------------------------------
+  if (gatePicker !== null) {
+    return (
+      <div
+        className="fixed inset-0 z-[9500] pointer-events-auto"
+        onClick={hide}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          hide();
+        }}
+        style={{ background: "rgba(0,0,0,0.18)" }}
+      >
+        <div
+          className="absolute flex flex-col gap-2 p-3 rounded-xl bg-zinc-900/95 ring-1 ring-white/10 shadow-2xl shadow-black/50 min-w-48"
+          style={{
+            left: anchor!.x,
+            top: anchor!.y,
+            transform: "translate(-50%, -50%)",
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="text-xs font-semibold text-zinc-400 uppercase tracking-wider pb-1 border-b border-white/10">
+            Select destination gate
+          </div>
+          {gatePicker.destinations.map((dest) => (
+            <button
+              key={dest.id}
+              className="flex items-center gap-2 px-3 py-2 rounded text-white text-sm bg-zinc-800 hover:bg-zinc-700 cursor-pointer transition-colors"
+              onClick={() => {
+                eventBus.emit(
+                  new SendJumpGateTeleportIntentEvent(
+                    gatePicker.unitId,
+                    gatePicker.sourceGateId,
+                    dest.id,
+                  ),
+                );
+                hide();
+              }}
+            >
+              <img src={jumpGateIcon} alt="" className="w-5 h-5" />
+              <span>{dest.label}</span>
+            </button>
+          ))}
+          <button
+            className="flex items-center gap-2 px-3 py-2 rounded text-zinc-400 text-sm bg-zinc-800/50 hover:bg-zinc-700/50 cursor-pointer transition-colors mt-1"
+            onClick={hide}
+          >
+            <span>Cancel</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // -- Render ----------------------------------------------------------------
   return (

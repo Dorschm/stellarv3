@@ -27,6 +27,7 @@ import { SpawnExecution } from "./SpawnExecution";
 import { TargetPlayerExecution } from "./TargetPlayerExecution";
 import { TribeSpawner } from "./TribeSpawner";
 import { UpgradeStructureExecution } from "./UpgradeStructureExecution";
+import { JumpGateTeleportExecution } from "./JumpGateExecution";
 import { PlayerSpawner } from "./utils/PlayerSpawner";
 
 export class Executor {
@@ -129,6 +130,13 @@ export class Executor {
         return new MarkDisconnectedExecution(player, intent.isDisconnected);
       case "toggle_pause":
         return new PauseExecution(player, intent.paused);
+      case "jump_gate_teleport":
+        return new JumpGateTeleportExecution(
+          player,
+          intent.unitId,
+          intent.sourceGateId,
+          intent.destinationGateId,
+        );
       default:
         throw new Error(`intent type ${intent} not found`);
     }
