@@ -148,18 +148,18 @@ export class NukeExecution implements Execution {
         } else if (this.nukeType === UnitType.AntimatterTorpedo) {
           this.mg.displayIncomingUnit(
             this.nuke.id(),
-            // TODO TranslateText
-            `${this.player.displayName()} - antimatter torpedo inbound`,
+            "events_display.antimatter_torpedo_inbound",
             MessageType.NUKE_INBOUND,
             target.id(),
+            { name: this.player.displayName() },
           );
         } else if (this.nukeType === UnitType.NovaBomb) {
           this.mg.displayIncomingUnit(
             this.nuke.id(),
-            // TODO TranslateText
-            `${this.player.displayName()} - nova bomb inbound`,
+            "events_display.nova_bomb_inbound",
             MessageType.NOVA_BOMB_INBOUND,
             target.id(),
+            { name: this.player.displayName() },
           );
         }
 

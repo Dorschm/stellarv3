@@ -885,6 +885,7 @@ export interface Game extends GameMap {
     message: string,
     type: MessageType,
     playerID: PlayerID | null,
+    params?: Record<string, string | number>,
   ): void;
 
   displayChat(

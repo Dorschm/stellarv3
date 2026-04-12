@@ -91,10 +91,10 @@ export class MirvExecution implements Execution {
 
       this.mg.displayIncomingUnit(
         this.nuke.id(),
-        // TODO TranslateText
-        `⚠️⚠️⚠️ ${this.player.displayName()} - CLUSTER WARHEAD INBOUND ⚠️⚠️⚠️`,
+        "events_display.cluster_warhead_inbound",
         MessageType.CLUSTER_WARHEAD_INBOUND,
         this.targetPlayer.id(),
+        { name: this.player.displayName() },
       );
     }
 

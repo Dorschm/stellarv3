@@ -853,7 +853,11 @@
     "unit_captured_by_enemy": "Your {unit} was captured by {name}",
     "captured_enemy_unit": "Captured {unit} from {name}",
     "unit_destroyed": "Your {unit} was destroyed",
-    "no_shuttles_available": "No shuttles available, max {max}"
+    "no_shuttles_available": "No shuttles available, max {max}",
+    "shuttle_assault_inbound": "Shuttle assault incoming from {name} ({troops})",
+    "cluster_warhead_inbound": "⚠️⚠️⚠️ {name} - CLUSTER WARHEAD INBOUND ⚠️⚠️⚠️",
+    "antimatter_torpedo_inbound": "{name} - antimatter torpedo inbound",
+    "nova_bomb_inbound": "{name} - nova bomb inbound"
   },
   "player_type": {
     "player": "Player",
