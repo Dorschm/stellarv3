@@ -1,51 +1,30 @@
 import React from "react";
-import { useGameView } from "../bridge/GameViewContext";
-import { useEventBus } from "../bridge/useEventBus";
-import { ShowDonateResourceModalEvent } from "./events";
-import { AttacksDisplay } from "./AttacksDisplay";
-import { ControlPanel } from "./ControlPanel";
-import { UnitDisplay } from "./UnitDisplay";
-import { ChatDisplay } from "./ChatDisplay";
-import { EventsDisplay } from "./EventsDisplay";
-import { EmojiTable } from "./EmojiTable";
-import { BuildMenu } from "./BuildMenu";
-import { WinModal } from "./WinModal";
-import { GameRightSidebar } from "./GameRightSidebar";
-import { ReplayPanel } from "./ReplayPanel";
-import { SettingsModal } from "./SettingsModal";
-import { PlayerPanel } from "./PlayerPanel";
-import { RadialMenu } from "./RadialMenu";
-import { SpawnTimer } from "./SpawnTimer";
-import { ImmunityTimer } from "./ImmunityTimer";
 import { AlertFrame } from "./AlertFrame";
+import { AttacksDisplay } from "./AttacksDisplay";
+import { BuildMenu } from "./BuildMenu";
+import { ChatDisplay } from "./ChatDisplay";
 import { ChatModal } from "./ChatModal";
-import { MultiTabModal } from "./MultiTabModal";
+import { ControlPanel } from "./ControlPanel";
+import { DonateResourceModal } from "./DonateResourceModal";
+import { EmojiTable } from "./EmojiTable";
+import { EventsDisplay } from "./EventsDisplay";
 import { GameLeftSidebar } from "./GameLeftSidebar";
+import { GameRightSidebar } from "./GameRightSidebar";
+import { GameStartingModal } from "./GameStartingModal";
+import { HeadsUpMessage } from "./HeadsUpMessage";
+import { ImmunityTimer } from "./ImmunityTimer";
+import { InGamePromo } from "./InGamePromo";
+import { MultiTabModal } from "./MultiTabModal";
 import { PerformanceOverlay } from "./PerformanceOverlay";
 import { PlayerInfoOverlay } from "./PlayerInfoOverlay";
-import { HeadsUpMessage } from "./HeadsUpMessage";
-import { InGamePromo } from "./InGamePromo";
-import { GameStartingModal } from "./GameStartingModal";
 import { PlayerModerationModal } from "./PlayerModerationModal";
-
-/**
- * Short-term stub: the legacy Lit `<send-resource-modal>` component has not
- * yet been ported to React. PlayerPanel still emits
- * `ShowDonateResourceModalEvent` when the donate button is clicked, but
- * without this listener the event would be silently dropped.
- */
-function UnimplementedModalWarnings(): null {
-  const { eventBus } = useGameView();
-
-  useEventBus(eventBus, ShowDonateResourceModalEvent, (e) => {
-    console.warn(
-      `[HUD] ShowDonateResourceModalEvent (${e.mode}) received but the ` +
-        `corresponding React modal has not been implemented yet.`,
-    );
-  });
-
-  return null;
-}
+import { PlayerPanel } from "./PlayerPanel";
+import { RadialMenu } from "./RadialMenu";
+import { ReplayPanel } from "./ReplayPanel";
+import { SettingsModal } from "./SettingsModal";
+import { SpawnTimer } from "./SpawnTimer";
+import { UnitDisplay } from "./UnitDisplay";
+import { WinModal } from "./WinModal";
 
 /**
  * Root React component for the entire in-game HUD.
@@ -111,13 +90,13 @@ export function HUDOverlay(): React.JSX.Element {
       <AlertFrame />
       <ChatModal />
       <MultiTabModal />
+      <DonateResourceModal />
       <GameLeftSidebar />
       <PerformanceOverlay />
       <PlayerInfoOverlay />
       <HeadsUpMessage />
       <InGamePromo />
       <PlayerModerationModal />
-      <UnimplementedModalWarnings />
     </>
   );
 }
