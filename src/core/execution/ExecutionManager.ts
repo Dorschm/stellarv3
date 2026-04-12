@@ -6,6 +6,7 @@ import { AllianceExtensionExecution } from "./alliance/AllianceExtensionExecutio
 import { AllianceRejectExecution } from "./alliance/AllianceRejectExecution";
 import { AllianceRequestExecution } from "./alliance/AllianceRequestExecution";
 import { BreakAllianceExecution } from "./alliance/BreakAllianceExecution";
+import { VoteForPeaceExecution } from "./alliance/VoteForPeaceExecution";
 import { AssaultShuttleExecution } from "./AssaultShuttleExecution";
 import { AttackExecution } from "./AttackExecution";
 import { ConstructionExecution } from "./ConstructionExecution";
@@ -139,6 +140,8 @@ export class Executor {
         return new KickPlayerExecution(player, intent.target);
       case "update_game_config":
         return new UpdateGameConfigExecution(player, intent.config);
+      case "voteForPeace":
+        return new VoteForPeaceExecution(player, intent.targetID);
       default:
         throw new Error(`intent type ${intent} not found`);
     }

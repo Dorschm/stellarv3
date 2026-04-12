@@ -803,6 +803,10 @@ export interface Game extends GameMap {
   alliances(): MutableAlliance[];
   expireAlliance(alliance: Alliance): void;
 
+  // Peace voting — allies endorse a player as winner; recorded as assists in the Winner tuple.
+  recordPeaceVote(voter: Player, target: Player): void;
+  peaceVotesByTarget(target: Player): Player[];
+
   // Immunity timer
   isSpawnImmunityActive(): boolean;
   isNationSpawnImmunityActive(): boolean;
@@ -1059,6 +1063,7 @@ export enum MessageType {
   RECEIVED_TROOPS_FROM_PLAYER,
   CHAT,
   RENEW_ALLIANCE,
+  PEACE_VOTE,
 }
 
 // Message categories used for filtering events in the EventsDisplay
@@ -1097,6 +1102,7 @@ export const MESSAGE_TYPE_CATEGORIES: Record<MessageType, MessageCategory> = {
   [MessageType.SENT_TROOPS_TO_PLAYER]: MessageCategory.TRADE,
   [MessageType.RECEIVED_TROOPS_FROM_PLAYER]: MessageCategory.TRADE,
   [MessageType.CHAT]: MessageCategory.CHAT,
+  [MessageType.PEACE_VOTE]: MessageCategory.ALLIANCE,
 } as const;
 
 /**
