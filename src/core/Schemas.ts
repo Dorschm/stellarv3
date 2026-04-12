@@ -52,7 +52,8 @@ export type Intent =
   | KickPlayerIntent
   | TogglePauseIntent
   | UpdateGameConfigIntent
-  | VoteForPeaceIntent;
+  | VoteForPeaceIntent
+  | JumpGateTeleportIntent;
 
 export type AttackIntent = z.infer<typeof AttackIntentSchema>;
 export type CancelAttackIntent = z.infer<typeof CancelAttackIntentSchema>;
@@ -89,6 +90,9 @@ export type UpdateGameConfigIntent = z.infer<
   typeof UpdateGameConfigIntentSchema
 >;
 export type VoteForPeaceIntent = z.infer<typeof VoteForPeaceIntentSchema>;
+export type JumpGateTeleportIntent = z.infer<
+  typeof JumpGateTeleportIntentSchema
+>;
 
 export type Turn = z.infer<typeof TurnSchema>;
 export type GameConfig = z.infer<typeof GameConfigSchema>;
@@ -454,6 +458,13 @@ export const VoteForPeaceIntentSchema = z.object({
   targetID: ID,
 });
 
+export const JumpGateTeleportIntentSchema = z.object({
+  type: z.literal("jump_gate_teleport"),
+  unitId: z.number(),
+  sourceGateId: z.number(),
+  destinationGateId: z.number(),
+});
+
 const IntentSchema = z.discriminatedUnion("type", [
   AttackIntentSchema,
   CancelAttackIntentSchema,
@@ -480,6 +491,7 @@ const IntentSchema = z.discriminatedUnion("type", [
   TogglePauseIntentSchema,
   UpdateGameConfigIntentSchema,
   VoteForPeaceIntentSchema,
+  JumpGateTeleportIntentSchema,
 ]);
 
 // StampedIntent = Intent with server-stamped clientID (used in turns and execution)

@@ -124,3 +124,60 @@ export class JumpGateTravel {
     return true;
   }
 }
+
+/**
+ * One-shot execution that teleports a player-owned unit between two Jump Gates
+ * in response to a `jump_gate_teleport` intent. Validation is delegated to
+ * {@link JumpGateTravel.teleport}, which checks gate readiness and friendly
+ * ownership. The execution completes in the same tick it initialises.
+ */
+export class JumpGateTeleportExecution implements Execution {
+  constructor(
+    private readonly player: Player,
+    private readonly unitId: number,
+    private readonly sourceGateId: number,
+    private readonly destinationGateId: number,
+  ) {}
+
+  init(mg: Game, _ticks: number): void {
+    const unit = this.player.units().find((u) => u.id() === this.unitId);
+    if (!unit) {
+      console.warn(
+        `[JumpGateTeleportExecution] unit ${this.unitId} not found for player ${this.player.displayName()}`,
+      );
+      return;
+    }
+
+    const sourceGate = mg
+      .units(UnitType.JumpGate)
+      .find((u) => u.id() === this.sourceGateId);
+    if (!sourceGate) {
+      console.warn(
+        `[JumpGateTeleportExecution] source gate ${this.sourceGateId} not found`,
+      );
+      return;
+    }
+
+    const destGate = mg
+      .units(UnitType.JumpGate)
+      .find((u) => u.id() === this.destinationGateId);
+    if (!destGate) {
+      console.warn(
+        `[JumpGateTeleportExecution] dest gate ${this.destinationGateId} not found`,
+      );
+      return;
+    }
+
+    JumpGateTravel.teleport(mg, unit, sourceGate, destGate);
+  }
+
+  tick(_ticks: number): void {}
+
+  isActive(): boolean {
+    return false;
+  }
+
+  activeDuringSpawnPhase(): boolean {
+    return false;
+  }
+}

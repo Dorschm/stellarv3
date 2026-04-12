@@ -16,6 +16,7 @@ import { DonatePopulationExecution } from "./DonatePopulationExecution";
 import { EmbargoAllExecution } from "./EmbargoAllExecution";
 import { EmbargoExecution } from "./EmbargoExecution";
 import { EmojiExecution } from "./EmojiExecution";
+import { JumpGateTeleportExecution } from "./JumpGateExecution";
 import { KickPlayerExecution } from "./KickPlayerExecution";
 import { MarkDisconnectedExecution } from "./MarkDisconnectedExecution";
 import { MoveBattlecruiserExecution } from "./MoveBattlecruiserExecution";
@@ -142,6 +143,13 @@ export class Executor {
         return new UpdateGameConfigExecution(player, intent.config);
       case "voteForPeace":
         return new VoteForPeaceExecution(player, intent.targetID);
+      case "jump_gate_teleport":
+        return new JumpGateTeleportExecution(
+          player,
+          intent.unitId,
+          intent.sourceGateId,
+          intent.destinationGateId,
+        );
       default:
         throw new Error(`intent type ${intent} not found`);
     }
