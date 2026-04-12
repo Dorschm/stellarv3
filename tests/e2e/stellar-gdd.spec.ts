@@ -95,7 +95,7 @@ test.describe("Stellar GDD v0.1 feature coverage", () => {
               isAlive(): boolean;
               numTilesOwned(): number;
               population(): number;
-              resources(): bigint;
+              credits(): bigint;
               hasSpawned(): boolean;
             } | null;
           };
@@ -110,7 +110,7 @@ test.describe("Stellar GDD v0.1 feature coverage", () => {
         hasSpawned: mp.hasSpawned(),
         tiles: mp.numTilesOwned(),
         population: mp.population(),
-        resources: Number(mp.resources()),
+        resources: Number(mp.credits()),
       };
     });
     expect(state).not.toBeNull();
@@ -173,7 +173,7 @@ test.describe("Stellar GDD v0.1 feature coverage", () => {
             ticks(): number;
             myPlayer(): {
               population(): number;
-              resources(): bigint;
+              credits(): bigint;
             } | null;
           };
         }
@@ -182,7 +182,7 @@ test.describe("Stellar GDD v0.1 feature coverage", () => {
       return {
         tick: gv.ticks(),
         population: mp.population(),
-        resources: Number(mp.resources()),
+        resources: Number(mp.credits()),
       };
     });
 
@@ -194,12 +194,12 @@ test.describe("Stellar GDD v0.1 feature coverage", () => {
           __gameView: {
             myPlayer(): {
               population(): number;
-              resources(): bigint;
+              credits(): bigint;
             } | null;
           };
         }
       ).__gameView.myPlayer()!;
-      return { population: mp.population(), resources: Number(mp.resources()) };
+      return { population: mp.population(), resources: Number(mp.credits()) };
     });
 
     expect(after.population).toBeGreaterThan(baseline.population);

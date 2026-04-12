@@ -227,43 +227,63 @@ test.describe("Full gameplay (singleplayer)", () => {
     // Right-click on an interior owned tile → "Build" in RadialMenu.
     // Interior tiles (surrounded by own territory) are more likely to
     // support building. Fall back to any owned tile if no interior found.
-    const ownedTile =
-      (await findInteriorOwnedTile(page)) ?? (await findOwnedTile(page));
-    expect(ownedTile).not.toBeNull();
-    await rightClickOnGameTile(page, ownedTile!.tileX, ownedTile!.tileY);
-
-    const buildRadialButton = page
-      .getByRole("button", { name: /build/i })
-      .first();
-    await expect(buildRadialButton).toBeEnabled({ timeout: 10_000 });
-    await buildRadialButton.click();
-
-    // BuildMenu opens — pick the first enabled buildable that ISN'T
-    // ScoutSwarm. ScoutSwarm has cost 0 and is always enabled, but its
-    // execution path is special-cased (ScoutSwarmExecution handles its
-    // own spawn / credit deduction outside the normal construction
-    // flow), so the asserting-on-units check below would not see it.
     //
-    // We can't lock onto DefenseStation specifically: with the GDD §4 /
-    // Ticket 8 sector-slot limits, the randomly chosen build tile might
-    // simply not allow a DefenseStation in this run, even with enough
-    // credits — the "Not enough money" tooltip is hardcoded for any
-    // disabled state. Picking first-enabled-non-ScoutSwarm gives us a
-    // structure that the game says is currently buildable on the tile
-    // we picked, regardless of which one wins the dice roll.
+    // With the GDD §4 / Ticket 8 sector-slot limits, the randomly chosen
+    // build tile may land in a sector that's already full, so every
+    // non-ScoutSwarm button in the BuildMenu shows up disabled. When
+    // that happens we close the menu and try another tile — this loop
+    // finds a tile where at least one structure is actually buildable.
     const buildMenu = page.locator('[data-testid="build-menu"]');
-    await expect(buildMenu).toBeVisible({ timeout: 10_000 });
+    const tryOpenBuildMenuWithEnabledStructure = async (): Promise<
+      string | null
+    > => {
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const ownedTile =
+          (await findInteriorOwnedTile(page)) ?? (await findOwnedTile(page));
+        if (ownedTile === null) return null;
+        await rightClickOnGameTile(page, ownedTile.tileX, ownedTile.tileY);
 
-    const enabledStructureButton = buildMenu
-      .locator('button:not([disabled]):not(:has(img[alt="Scout Swarm"]))')
-      .first();
-    await expect(enabledStructureButton).toBeVisible({ timeout: 30_000 });
-    const unitType = await enabledStructureButton
-      .locator("img")
-      .first()
-      .getAttribute("alt");
-    expect(unitType).not.toBeNull();
-    await enabledStructureButton.click({ force: true });
+        const buildRadialButton = page
+          .getByRole("button", { name: /build/i })
+          .first();
+        await expect(buildRadialButton).toBeEnabled({ timeout: 10_000 });
+        await buildRadialButton.click();
+
+        await expect(buildMenu).toBeVisible({ timeout: 10_000 });
+        const enabledStructureButton = buildMenu
+          .locator('button:not([disabled]):not(:has(img[alt="Scout Swarm"]))')
+          .first();
+        try {
+          await expect(enabledStructureButton).toBeVisible({ timeout: 5_000 });
+          const unitType = await enabledStructureButton
+            .locator("img")
+            .first()
+            .getAttribute("alt");
+          if (unitType) {
+            await enabledStructureButton.click({ force: true });
+            return unitType;
+          }
+        } catch {
+          // No enabled structure on this tile — close the menu and retry.
+          // CloseViewEvent closes the BuildMenu without opening the
+          // settings modal (it doesn't toggle when an overlay is visible).
+          await page.evaluate(() => {
+            const w = window as unknown as { __closeMenus?: () => void };
+            w.__closeMenus?.();
+          });
+          await expect(buildMenu).toBeHidden({ timeout: 5_000 });
+          // Brief wait so territory / credits state shifts before the
+          // next tile lookup.
+          await page.waitForTimeout(1_000);
+        }
+      }
+      return null;
+    };
+    const unitType = await tryOpenBuildMenuWithEnabledStructure();
+    expect(
+      unitType,
+      "No tile offered an enabled non-ScoutSwarm build option across 5 attempts — sector-slot saturation",
+    ).not.toBeNull();
 
     // Poll for the built unit to appear. Construction takes ~50 ticks
     // (~17s at 3 tps headless throttle), so 60s is comfortably above

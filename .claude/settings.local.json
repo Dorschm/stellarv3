@@ -4,7 +4,16 @@
       "Bash(*)",
       "WebSearch",
       "WebFetch(domain:support.claude.com)",
-      "WebFetch(domain:vscode.dev)"
+      "WebFetch(domain:vscode.dev)",
+      "Bash(break)",
+      "Read(//tmp/**)",
+      "Bash(kill -0 5026)",
+      "Bash(echo \"DONE exit=$?\")",
+      "Bash(kill -0 8474)",
+      "Bash(kill -0 11505)",
+      "Bash(kill -0 18545)",
+      "Bash(kill -0 20815)",
+      "Bash(kill -0 21672)"
     ]
   }
 }

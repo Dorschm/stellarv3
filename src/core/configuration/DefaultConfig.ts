@@ -1071,36 +1071,48 @@ export class DefaultConfig implements Config {
         .map((colony) => colony.level())
         .reduce((a, b) => a + b, 0) * this.colonyTroopIncrease();
 
+    // Apply the type multiplier to the raw habitability-derived cap first.
+    let scaled: number;
+    if (player.type() === PlayerType.Bot) {
+      scaled = baseMaxPopulation / 3;
+    } else if (player.type() === PlayerType.Human) {
+      scaled = baseMaxPopulation;
+    } else {
+      switch (this._gameConfig.difficulty) {
+        case Difficulty.Easy:
+          scaled = baseMaxPopulation * 0.5;
+          break;
+        case Difficulty.Medium:
+          scaled = baseMaxPopulation * 0.75;
+          break;
+        case Difficulty.Hard:
+          scaled = baseMaxPopulation * 1; // Like humans
+          break;
+        case Difficulty.Impossible:
+          scaled = baseMaxPopulation * 1.25;
+          break;
+        default:
+          assertNever(this._gameConfig.difficulty);
+      }
+    }
+
     // Floor: a freshly-spawned player with no sector tiles yet should still
-    // be able to hold their starting population (100k for humans, 10k for
-    // bots). Without this the spawn-tick troopIncreaseRate would clamp to
-    // zero before territory expands into a sector.
+    // be able to hold their starting population AND have headroom for the
+    // +3%/s passive growth loop (GDD §3). The floor is set to 1.5× the
+    // starting population so `current < max` stays true on turn 0 and the
+    // troopIncreaseRate isn't clamped to zero before any territory has
+    // expanded into a sector. Once the hab-based cap (`scaled`) overtakes
+    // the floor (as the player claims tiles) the floor becomes a no-op and
+    // habitability drives the cap as the GDD intends. Applied AFTER the
+    // type multiplier so the Bot `/ 3` divisor doesn't silently collapse
+    // the bot cap below its starting population.
     const startFloor =
       player.type() === PlayerType.Bot
-        ? 10_000
+        ? 15_000
         : player.type() === PlayerType.Human
-          ? 100_000
-          : 25_000;
-    baseMaxPopulation = Math.max(baseMaxPopulation, startFloor);
-
-    if (player.type() === PlayerType.Bot) {
-      return baseMaxPopulation / 3;
-    }
-    if (player.type() === PlayerType.Human) {
-      return baseMaxPopulation;
-    }
-    switch (this._gameConfig.difficulty) {
-      case Difficulty.Easy:
-        return baseMaxPopulation * 0.5;
-      case Difficulty.Medium:
-        return baseMaxPopulation * 0.75;
-      case Difficulty.Hard:
-        return baseMaxPopulation * 1; // Like humans
-      case Difficulty.Impossible:
-        return baseMaxPopulation * 1.25;
-      default:
-        assertNever(this._gameConfig.difficulty);
-    }
+          ? 150_000
+          : 37_500;
+    return Math.max(scaled, startFloor);
   }
 
   troopIncreaseRate(player: Player): number {
