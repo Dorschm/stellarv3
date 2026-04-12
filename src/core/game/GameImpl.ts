@@ -1094,11 +1094,9 @@ export class GameImpl implements Game {
       if (clientId === null) {
         return ["nation", winner.name()];
       }
-      return [
-        "player",
-        clientId,
-        // TODO: Assists (vote for peace)
-      ];
+      // Additional client IDs after clientId are "assists" (WinnerSchema rest-IDs).
+      // These will be populated when a vote-for-peace mechanic is added.
+      return ["player", clientId];
     }
   }
 

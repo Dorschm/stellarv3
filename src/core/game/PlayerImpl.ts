@@ -106,6 +106,7 @@ export class PlayerImpl implements Player {
 
   private _spawnTile: TileRef | undefined;
   private _isDisconnected = false;
+  private _poisonedPorts: Set<TileRef> = new Set();
 
   constructor(
     private mg: GameImpl,
@@ -1559,5 +1560,13 @@ export class PlayerImpl implements Player {
 
   bestShuttleSpawn(targetTile: TileRef): TileRef | false {
     return bestSectorEdgeDeploymentSource(this.mg, this, targetTile) ?? false;
+  }
+
+  addPoisonedPort(tile: TileRef): void {
+    this._poisonedPorts.add(tile);
+  }
+
+  isPoisonedPort(tile: TileRef): boolean {
+    return this._poisonedPorts.has(tile);
   }
 }
