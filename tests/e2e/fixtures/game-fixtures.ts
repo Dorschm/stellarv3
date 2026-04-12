@@ -855,6 +855,8 @@ export function trackConsoleErrors(page: Page): void {
       return;
     // Network fetch failures in dev (auth, cosmetics, analytics)
     if (/^Failed to fetch$/i.test(text)) return;
+    // Cloudflare Turnstile widget errors in dev (no valid sitekey)
+    if (/turnstile/i.test(text)) return;
     errors.push(`[PAGE ERROR] ${text}`);
   });
 }
