@@ -5,7 +5,7 @@ import { useEventBus } from "../bridge/useEventBus";
 import { CloseViewEvent } from "../InputHandler";
 import {
   SendDonateCreditsIntentEvent,
-  SendDonateTroopsIntentEvent,
+  SendDonatePopulationIntentEvent,
 } from "../Transport";
 import { translateText } from "../Utils";
 import { ShowDonateResourceModalEvent } from "./events";
@@ -13,7 +13,7 @@ import { ShowDonateResourceModalEvent } from "./events";
 export function DonateResourceModal(): React.JSX.Element {
   const { gameView, eventBus } = useGameView();
   const [isOpen, setIsOpen] = useState(false);
-  const [mode, setMode] = useState<"troops" | "credits">("troops");
+  const [mode, setMode] = useState<"population" | "credits">("population");
   const [target, setTarget] = useState<PlayerView | null>(null);
   const [amount, setAmount] = useState(0);
   const [max, setMax] = useState(0);
@@ -27,7 +27,9 @@ export function DonateResourceModal(): React.JSX.Element {
     if (!myPlayer) return;
 
     const available =
-      e.mode === "troops" ? myPlayer.troops() : Number(myPlayer.credits());
+      e.mode === "population"
+        ? myPlayer.population()
+        : Number(myPlayer.credits());
     const maxVal = Math.floor(available);
 
     setMode(e.mode);
@@ -46,8 +48,8 @@ export function DonateResourceModal(): React.JSX.Element {
 
   const confirm = () => {
     if (!target || amount < 1 || amount > max) return;
-    if (mode === "troops") {
-      eventBus.emit(new SendDonateTroopsIntentEvent(target, amount));
+    if (mode === "population") {
+      eventBus.emit(new SendDonatePopulationIntentEvent(target, amount));
     } else {
       eventBus.emit(new SendDonateCreditsIntentEvent(target, BigInt(amount)));
     }
@@ -68,7 +70,7 @@ export function DonateResourceModal(): React.JSX.Element {
   }
 
   const canSend = amount >= 1 && amount <= max;
-  const label = mode === "troops" ? "Troops" : "Credits";
+  const label = mode === "population" ? "Population" : "Credits";
 
   return (
     <div
