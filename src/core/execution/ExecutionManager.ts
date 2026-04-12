@@ -15,6 +15,7 @@ import { DonatePopulationExecution } from "./DonatePopulationExecution";
 import { EmbargoAllExecution } from "./EmbargoAllExecution";
 import { EmbargoExecution } from "./EmbargoExecution";
 import { EmojiExecution } from "./EmojiExecution";
+import { KickPlayerExecution } from "./KickPlayerExecution";
 import { MarkDisconnectedExecution } from "./MarkDisconnectedExecution";
 import { MoveBattlecruiserExecution } from "./MoveBattlecruiserExecution";
 import { NationExecution } from "./NationExecution";
@@ -26,6 +27,7 @@ import { ShuttleRetreatExecution } from "./ShuttleRetreatExecution";
 import { SpawnExecution } from "./SpawnExecution";
 import { TargetPlayerExecution } from "./TargetPlayerExecution";
 import { TribeSpawner } from "./TribeSpawner";
+import { UpdateGameConfigExecution } from "./UpdateGameConfigExecution";
 import { UpgradeStructureExecution } from "./UpgradeStructureExecution";
 import { PlayerSpawner } from "./utils/PlayerSpawner";
 
@@ -133,6 +135,10 @@ export class Executor {
         return new MarkDisconnectedExecution(player, intent.isDisconnected);
       case "toggle_pause":
         return new PauseExecution(player, intent.paused);
+      case "kick_player":
+        return new KickPlayerExecution(player, intent.target);
+      case "update_game_config":
+        return new UpdateGameConfigExecution(player, intent.config);
       default:
         throw new Error(`intent type ${intent} not found`);
     }

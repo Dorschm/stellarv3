@@ -75,6 +75,7 @@ export interface Config {
   hasExtendedSpawnImmunity(): boolean;
   serverConfig(): ServerConfig;
   gameConfig(): GameConfig;
+  updateGameConfig(config: Partial<GameConfig>): void;
   theme(): Theme;
   percentageTilesOwnedToWin(): number;
   /**
