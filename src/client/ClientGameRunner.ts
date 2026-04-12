@@ -40,6 +40,7 @@ import { GoToPlayerEvent } from "./CameraEvents";
 import { ShowPlayerPanelEvent } from "./hud/events";
 import {
   AutoUpgradeEvent,
+  CloseViewEvent,
   DoShuttleAttackEvent,
   DoSpaceAttackEvent,
   GhostStructureChangedEvent,
@@ -57,6 +58,7 @@ import {
   BuildUnitIntentEvent,
   SendAttackIntentEvent,
   SendHashEvent,
+  SendJumpGateTeleportIntentEvent,
   SendShuttleAttackIntentEvent,
   SendSpawnIntentEvent,
   SendUpgradeStructureIntentEvent,
@@ -383,6 +385,7 @@ export class ClientGameRunner {
       DoSpaceAttackEvent,
       this.doSpaceAttackUnderCursor.bind(this),
     );
+    this.eventBus.on(CloseViewEvent, this.onCloseView.bind(this));
 
     this.input.initialize();
 
@@ -608,6 +611,15 @@ export class ClientGameRunner {
 
     // Update selectedTile in HUD store for React consumers
     this.bridge.setSelectedTile(tile);
+
+    // -- Jump Gate selection mode -----------------------------------------
+    // While gate mode is active, clicks are routed here instead of normal
+    // attack / build / spawn paths.
+    const hudState = useHUDStore.getState();
+    if (hudState.jumpGateMode !== "idle") {
+      this.handleJumpGateClick(tile, hudState);
+      return;
+    }
 
     // Ghost placement flow: if the user selected a structure via the build
     // hotkeys (SpaceInputHandler.resolveBuildKeybind → GhostStructureChangedEvent),
@@ -883,6 +895,91 @@ export class ClientGameRunner {
     // shuttle/space-attack hotkeys fall through to no-op rather than
     // targeting a stale tile.
     this.lastHoveredTile = null;
+  }
+
+  /**
+   * Clear gate selection mode when CloseViewEvent fires (Escape key).
+   */
+  private onCloseView() {
+    const hs = useHUDStore.getState();
+    if (hs.jumpGateMode !== "idle") {
+      hs.setJumpGateMode("idle");
+      hs.setJumpGateSourceTile(null);
+    }
+  }
+
+  /**
+   * Handle a map click while Jump Gate selection mode is active.
+   *
+   * - `selectSource`: validate the tile has a ready owned/allied gate,
+   *   then transition to `selectDest`.
+   * - `selectDest`: validate the tile has a different ready gate, then
+   *   fire the teleport intent and exit gate mode.
+   */
+  private handleJumpGateClick(
+    tile: TileRef,
+    hudState: ReturnType<typeof useHUDStore.getState>,
+  ) {
+    if (this.myPlayer === null) {
+      if (!this.clientID) return;
+      const myPlayer = this.gameView.playerByClientID(this.clientID);
+      if (myPlayer === null) return;
+      this.myPlayer = myPlayer;
+    }
+
+    // Collect all ready gates (owned + allied)
+    const readyGates: { tile: TileRef }[] = [];
+    for (const g of this.myPlayer.units(UnitType.JumpGate)) {
+      if (g.isActive() && !g.isUnderConstruction()) {
+        readyGates.push({ tile: g.tile() });
+      }
+    }
+    for (const ally of this.myPlayer.allies()) {
+      for (const g of ally.units(UnitType.JumpGate)) {
+        if (g.isActive() && !g.isUnderConstruction()) {
+          readyGates.push({ tile: g.tile() });
+        }
+      }
+    }
+
+    const gateAtTile = readyGates.find((g) => g.tile === tile);
+
+    if (hudState.jumpGateMode === "selectSource") {
+      if (!gateAtTile) {
+        this.showGateError("No valid gate at this location");
+        return;
+      }
+      hudState.setJumpGateSourceTile(tile);
+      hudState.setJumpGateMode("selectDest");
+      return;
+    }
+
+    if (hudState.jumpGateMode === "selectDest") {
+      if (!gateAtTile) {
+        this.showGateError("No valid gate at this location");
+        return;
+      }
+      if (tile === hudState.jumpGateSourceTile) {
+        this.showGateError("Cannot jump to the same gate");
+        return;
+      }
+      // Fire the teleport intent
+      this.eventBus.emit(
+        new SendJumpGateTeleportIntentEvent(hudState.jumpGateSourceTile!, tile),
+      );
+      // Exit gate mode
+      hudState.setJumpGateMode("idle");
+      hudState.setJumpGateSourceTile(null);
+    }
+  }
+
+  /** Show an error toast for invalid gate selection clicks. */
+  private showGateError(message: string) {
+    window.dispatchEvent(
+      new CustomEvent("show-message", {
+        detail: { message, color: "red", duration: 3000 },
+      }),
+    );
   }
 
   private onConnectionCheck() {

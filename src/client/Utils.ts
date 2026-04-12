@@ -502,12 +502,14 @@ export function getMessageTypeClasses(type: MessageType): string {
     case MessageType.CAPTURED_ENEMY_UNIT:
     case MessageType.RECEIVED_CREDITS_FROM_TRADE:
     case MessageType.CONQUERED_PLAYER:
+    case MessageType.JUMP_GATE_TELEPORT:
       return severityColors["success"];
     case MessageType.ATTACK_FAILED:
     case MessageType.ALLIANCE_REJECTED:
     case MessageType.ALLIANCE_BROKEN:
     case MessageType.UNIT_CAPTURED_BY_ENEMY:
     case MessageType.UNIT_DESTROYED:
+    case MessageType.JUMP_GATE_FAILED:
       return severityColors["fail"];
     case MessageType.ATTACK_CANCELLED:
     case MessageType.ATTACK_REQUEST:

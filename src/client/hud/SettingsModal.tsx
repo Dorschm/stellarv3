@@ -64,7 +64,7 @@ export function SettingsModal(): React.JSX.Element {
       closeModal();
     } else {
       const hasActiveOverlay = document.querySelector(
-        '[data-testid="build-menu"], [data-testid="chat-modal"]',
+        '[data-testid="build-menu"], [data-testid="chat-modal"], [data-testid="jump-gate-status-bar"]',
       );
       if (!hasActiveOverlay) {
         openModal();

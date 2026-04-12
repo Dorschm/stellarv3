@@ -133,6 +133,8 @@ function createProxyGeometry(key: RenderKey): BufferGeometry {
       return new OctahedronGeometry(2);
     case UnitType.PointDefenseArray:
       return new ConeGeometry(2, 3, 8);
+    case UnitType.JumpGate:
+      return new TorusGeometry(2, 0.5, 8, 16);
     default:
       return new SphereGeometry(1, 8, 8);
   }
@@ -223,6 +225,11 @@ export function createBaseTransform(key: RenderKey): BaseTransform {
     case UnitType.Spaceport:
       return { rotation: [0, 0, 0], scale: uniformScale, offset: [0, 0, 0] };
 
+    // JumpGate torus: same orientation as Spaceport — lies flat on the XY
+    // plane with hole axis along +Z.
+    case UnitType.JumpGate:
+      return { rotation: [0, 0, 0], scale: uniformScale, offset: [0, 0, 0] };
+
     // DefenseStation / Foundry: boxes/octahedrons with structure scaling
     case UnitType.DefenseStation:
     case UnitType.Foundry:
@@ -244,6 +251,7 @@ const STRUCTURE_TYPES: ReadonlySet<UnitType> = new Set([
   UnitType.OrbitalStrikePlatform,
   UnitType.DefenseStation,
   UnitType.PointDefenseArray,
+  UnitType.JumpGate,
 ]);
 
 /** All render keys: unit types (excluding Frigate which is replaced by subtypes) + frigate subtypes + AssaultShuttle variants. */
@@ -272,6 +280,7 @@ export const ALL_RENDER_KEYS: readonly RenderKey[] = [
   UnitType.OrbitalStrikePlatform,
   UnitType.DefenseStation,
   UnitType.PointDefenseArray,
+  UnitType.JumpGate,
 ];
 
 /** Height above the map plane for mobile units. */
@@ -285,6 +294,7 @@ const STRUCTURE_HEIGHTS: Partial<Record<UnitType, number>> = {
   [UnitType.OrbitalStrikePlatform]: 6,
   [UnitType.DefenseStation]: 8,
   [UnitType.PointDefenseArray]: 6,
+  [UnitType.JumpGate]: 10,
 };
 
 /** Per-structure-type scale multipliers so structures are prominent from angles. */
@@ -295,6 +305,7 @@ const STRUCTURE_SCALES: Partial<Record<UnitType, number>> = {
   [UnitType.OrbitalStrikePlatform]: 1.5,
   [UnitType.DefenseStation]: 2.0,
   [UnitType.PointDefenseArray]: 1.5,
+  [UnitType.JumpGate]: 2.0,
 };
 
 /**
@@ -526,6 +537,10 @@ const GLTF_MODELS: Partial<Record<RenderKey, GltfModelDescriptor>> = {
   [UnitType.PointDefenseArray]: {
     url: assetUrl("models/PointDefenseArray.glb"),
     targetSize: 7,
+  },
+  [UnitType.JumpGate]: {
+    url: assetUrl("models/Jumpgate.glb"),
+    targetSize: 10,
   },
 };
 

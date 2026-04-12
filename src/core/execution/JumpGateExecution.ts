@@ -1,4 +1,11 @@
-import { Execution, Game, Player, Unit, UnitType } from "../game/Game";
+import {
+  Execution,
+  Game,
+  MessageType,
+  Player,
+  Unit,
+  UnitType,
+} from "../game/Game";
 import { TileRef } from "../game/GameMap";
 
 /**
@@ -125,50 +132,105 @@ export class JumpGateTravel {
   }
 }
 
+/** Unit types eligible for mass teleport through a Jump Gate. */
+const TELEPORTABLE_UNIT_TYPES: readonly UnitType[] = [
+  UnitType.AssaultShuttle,
+  UnitType.Battlecruiser,
+  UnitType.ScoutSwarm,
+  UnitType.TradeFreighter,
+];
+
 /**
- * One-shot execution that teleports a player-owned unit between two Jump Gates
- * in response to a `jump_gate_teleport` intent. Validation is delegated to
- * {@link JumpGateTravel.teleport}, which checks gate readiness and friendly
- * ownership. The execution completes in the same tick it initialises.
+ * One-shot execution that teleports all eligible mobile units on a source Jump
+ * Gate tile to a destination Jump Gate tile, in response to a
+ * `jump_gate_teleport` intent. Gates are discovered by tile rather than by ID
+ * so the intent payload stays location-based. The execution completes in
+ * `init()` — `isActive()` always returns `false`.
  */
 export class JumpGateTeleportExecution implements Execution {
   constructor(
     private readonly player: Player,
-    private readonly unitId: number,
-    private readonly sourceGateId: number,
-    private readonly destinationGateId: number,
+    private readonly sourceGateTile: TileRef,
+    private readonly destinationGateTile: TileRef,
   ) {}
 
   init(mg: Game, _ticks: number): void {
-    const unit = this.player.units().find((u) => u.id() === this.unitId);
-    if (!unit) {
-      console.warn(
-        `[JumpGateTeleportExecution] unit ${this.unitId} not found for player ${this.player.displayName()}`,
+    const playerID = this.player.id();
+
+    // Same source/destination is always invalid.
+    if (this.sourceGateTile === this.destinationGateTile) {
+      mg.displayMessage(
+        "events_display.jump_gate_failed",
+        MessageType.JUMP_GATE_FAILED,
+        playerID,
+        undefined,
+        { reason: "Source and destination are the same gate" },
       );
       return;
     }
 
+    // Locate an active, finished gate at the source tile that the player or
+    // an ally owns.
     const sourceGate = mg
       .units(UnitType.JumpGate)
-      .find((u) => u.id() === this.sourceGateId);
+      .find(
+        (u) =>
+          u.tile() === this.sourceGateTile &&
+          u.isActive() &&
+          !u.isUnderConstruction() &&
+          (u.owner() === this.player || u.owner().isFriendly(this.player)),
+      );
     if (!sourceGate) {
-      console.warn(
-        `[JumpGateTeleportExecution] source gate ${this.sourceGateId} not found`,
+      mg.displayMessage(
+        "events_display.jump_gate_failed",
+        MessageType.JUMP_GATE_FAILED,
+        playerID,
+        undefined,
+        { reason: "No usable gate at source" },
       );
       return;
     }
 
+    // Locate an active, finished gate at the destination tile.
     const destGate = mg
       .units(UnitType.JumpGate)
-      .find((u) => u.id() === this.destinationGateId);
+      .find(
+        (u) =>
+          u.tile() === this.destinationGateTile &&
+          u.isActive() &&
+          !u.isUnderConstruction() &&
+          (u.owner() === this.player || u.owner().isFriendly(this.player)),
+      );
     if (!destGate) {
-      console.warn(
-        `[JumpGateTeleportExecution] dest gate ${this.destinationGateId} not found`,
+      mg.displayMessage(
+        "events_display.jump_gate_failed",
+        MessageType.JUMP_GATE_FAILED,
+        playerID,
+        undefined,
+        { reason: "No usable gate at destination" },
       );
       return;
     }
 
-    JumpGateTravel.teleport(mg, unit, sourceGate, destGate);
+    // Collect all eligible mobile units the player owns at the source tile.
+    let moved = 0;
+    for (const unitType of TELEPORTABLE_UNIT_TYPES) {
+      for (const unit of this.player.units(unitType)) {
+        if (unit.tile() === this.sourceGateTile && unit.isActive()) {
+          if (JumpGateTravel.teleport(mg, unit, sourceGate, destGate)) {
+            moved++;
+          }
+        }
+      }
+    }
+
+    mg.displayMessage(
+      "events_display.jump_gate_teleport",
+      MessageType.JUMP_GATE_TELEPORT,
+      playerID,
+      undefined,
+      { count: moved },
+    );
   }
 
   tick(_ticks: number): void {}

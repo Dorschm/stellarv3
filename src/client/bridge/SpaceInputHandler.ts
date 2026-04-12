@@ -281,8 +281,21 @@ export class SpaceInputHandler {
 
     if (e.code === "Escape") {
       e.preventDefault();
+
+      // Snapshot gate mode before CloseViewEvent (which synchronously
+      // resets it via ClientGameRunner.onCloseView).
+      const wasInGateMode = useHUDStore.getState().jumpGateMode !== "idle";
+
       // Close any open overlays first (RadialMenu, BuildMenu, etc.).
       this.eventBus.emit(new CloseViewEvent());
+
+      // Jump Gate selection mode: Escape cancels gate mode without
+      // opening the settings modal. CloseViewEvent already cleared the
+      // gate state, so just return.
+      if (wasInGateMode) {
+        return;
+      }
+
       const currentGhost = useHUDStore.getState().ghostStructure;
       if (currentGhost !== null) {
         // If a build ghost is active, just clear it — don't open settings.

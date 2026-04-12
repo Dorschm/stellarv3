@@ -146,9 +146,8 @@ export class Executor {
       case "jump_gate_teleport":
         return new JumpGateTeleportExecution(
           player,
-          intent.unitId,
-          intent.sourceGateId,
-          intent.destinationGateId,
+          intent.sourceGateTile,
+          intent.destinationGateTile,
         );
       default:
         throw new Error(`intent type ${intent} not found`);

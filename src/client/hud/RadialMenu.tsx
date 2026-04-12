@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { assetUrl } from "../../core/AssetUrls";
-import { PlayerActions, Structures, UnitType } from "../../core/game/Game";
+import { PlayerActions, UnitType } from "../../core/game/Game";
 import { TileRef } from "../../core/game/GameMap";
 import { PlayerView, UnitView } from "../../core/game/GameView";
 import { useGameView } from "../bridge/GameViewContext";
@@ -68,9 +68,8 @@ export function RadialMenu(): React.JSX.Element | null {
   // State for the destination-gate picker sub-panel shown after the player
   // clicks "Jump to gate". Cleared whenever the menu closes.
   const [gatePicker, setGatePicker] = useState<{
-    unitId: number;
-    sourceGateId: number;
-    destinations: Array<{ id: number; label: string }>;
+    sourceGateTile: number;
+    destinations: Array<{ tile: number; label: string }>;
   } | null>(null);
 
   const hide = useCallback(() => {
@@ -254,42 +253,42 @@ export function RadialMenu(): React.JSX.Element | null {
   const canOpenPlayerPanel = ownerIsPlayer && actions !== null;
   const canBuild = !gameView.inSpawnPhase();
 
-  // GDD §5 Jump Gate — collect the player's active, ready gates.
-  const myGates =
-    myPlayer
-      ?.units(UnitType.JumpGate)
-      .filter((u) => u.isActive() && !u.isUnderConstruction()) ?? [];
+  // GDD §5 Jump Gate — collect all usable gates (owned + allied, active,
+  // not under construction) so the availability check and destination picker
+  // account for alliance-shared gates.
+  const allReadyGates: UnitView[] = [];
+  if (myPlayer) {
+    for (const g of myPlayer.units(UnitType.JumpGate)) {
+      if (g.isActive() && !g.isUnderConstruction()) allReadyGates.push(g);
+    }
+    for (const ally of myPlayer.allies()) {
+      for (const g of ally.units(UnitType.JumpGate)) {
+        if (g.isActive() && !g.isUnderConstruction()) allReadyGates.push(g);
+      }
+    }
+  }
 
-  // Is the right-clicked tile sitting on one of the player's own gates?
+  // Is the right-clicked tile sitting on a usable gate (owned or allied)?
   const gateAtTile =
-    tile !== null ? myGates.find((g) => g.tile() === tile) : undefined;
+    tile !== null ? allReadyGates.find((g) => g.tile() === tile) : undefined;
 
-  // Find the first non-structure unit the player owns at that gate tile
-  // (this is the unit that will be teleported).
-  const unitAtGateTile: UnitView | undefined =
-    gateAtTile !== undefined && tile !== null
-      ? myPlayer
-          ?.units()
-          .find(
-            (u) =>
-              u.tile() === tile && !Structures.has(u.type()) && u.isActive(),
-          )
-      : undefined;
-
+  // The "Jump to gate" button is enabled in two cases:
+  //  1. The clicked tile is a usable source gate with at least one other gate
+  //     (shortcut path — jump or show destination picker).
+  //  2. The clicked tile is NOT a gate, but the player has 2+ ready endpoints
+  //     globally (enters gate selection mode for source selection).
+  const hasEnoughEndpoints = allReadyGates.length >= 2;
   const canJumpGate =
-    gateAtTile !== undefined &&
-    unitAtGateTile !== undefined &&
-    myGates.length >= 2;
+    (gateAtTile !== undefined && hasEnoughEndpoints) || // shortcut path
+    (gateAtTile === undefined && hasEnoughEndpoints); // off-gate entry
 
   const jumpGateTooltip = !myPlayer
     ? undefined
-    : gateAtTile === undefined
-      ? "Right-click a tile with your Jump Gate"
-      : unitAtGateTile === undefined
-        ? "No unit at this gate to teleport"
-        : myGates.length < 2
-          ? "Need at least two Jump Gates"
-          : `Jump to one of ${myGates.length - 1} available gate${myGates.length > 2 ? "s" : ""}`;
+    : allReadyGates.length < 2
+      ? "Need at least two ready Jump Gates"
+      : gateAtTile !== undefined
+        ? `Jump to one of ${allReadyGates.length - 1} available gate${allReadyGates.length > 2 ? "s" : ""}`
+        : "Select a source gate on the map";
 
   // Ticket 6 — Scout Swarm launch. Launches a temporary swarm from the
   // player's nearest owned tile toward the clicked tile. The ScoutSwarm
@@ -333,28 +332,36 @@ export function RadialMenu(): React.JSX.Element | null {
   };
 
   const handleJumpGate = () => {
-    if (!canJumpGate || !gateAtTile || !unitAtGateTile) return;
-    const destinations = myGates
-      .filter((g) => g.id() !== gateAtTile.id())
+    if (!canJumpGate) return;
+
+    // Off-gate entry: no gate at the clicked tile, but enough global
+    // endpoints — enter map-based source selection mode.
+    if (!gateAtTile) {
+      useHUDStore.getState().setJumpGateMode("selectSource");
+      hide();
+      return;
+    }
+
+    // Shortcut path: the clicked tile has a usable gate.
+    const destinations = allReadyGates
+      .filter((g) => g.tile() !== gateAtTile.tile())
       .map((g) => ({
-        id: g.id(),
+        tile: g.tile(),
         label: `Gate at (${gameView.x(g.tile())}, ${gameView.y(g.tile())})`,
       }));
     if (destinations.length === 1) {
       // Only one destination — jump immediately without a picker.
       eventBus.emit(
         new SendJumpGateTeleportIntentEvent(
-          unitAtGateTile.id(),
-          gateAtTile.id(),
-          destinations[0].id,
+          gateAtTile.tile(),
+          destinations[0].tile,
         ),
       );
       hide();
     } else {
       // Multiple destinations — open the sub-panel so the player can choose.
       setGatePicker({
-        unitId: unitAtGateTile.id(),
-        sourceGateId: gateAtTile.id(),
+        sourceGateTile: gateAtTile.tile(),
         destinations,
       });
     }
@@ -386,14 +393,13 @@ export function RadialMenu(): React.JSX.Element | null {
           </div>
           {gatePicker.destinations.map((dest) => (
             <button
-              key={dest.id}
+              key={dest.tile}
               className="flex items-center gap-2 px-3 py-2 rounded text-white text-sm bg-zinc-800 hover:bg-zinc-700 cursor-pointer transition-colors"
               onClick={() => {
                 eventBus.emit(
                   new SendJumpGateTeleportIntentEvent(
-                    gatePicker.unitId,
-                    gatePicker.sourceGateId,
-                    dest.id,
+                    gatePicker.sourceGateTile,
+                    dest.tile,
                   ),
                 );
                 hide();

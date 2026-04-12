@@ -14,6 +14,7 @@ import { GameStartingModal } from "./GameStartingModal";
 import { HeadsUpMessage } from "./HeadsUpMessage";
 import { ImmunityTimer } from "./ImmunityTimer";
 import { InGamePromo } from "./InGamePromo";
+import { JumpGateStatusBar } from "./JumpGateStatusBar";
 import { MultiTabModal } from "./MultiTabModal";
 import { PerformanceOverlay } from "./PerformanceOverlay";
 import { PlayerInfoOverlay } from "./PlayerInfoOverlay";
@@ -95,6 +96,7 @@ export function HUDOverlay(): React.JSX.Element {
       <PerformanceOverlay />
       <PlayerInfoOverlay />
       <HeadsUpMessage />
+      <JumpGateStatusBar />
       <InGamePromo />
       <PlayerModerationModal />
     </>

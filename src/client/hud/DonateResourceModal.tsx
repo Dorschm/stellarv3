@@ -19,7 +19,7 @@ export function DonateResourceModal(): React.JSX.Element {
   const [max, setMax] = useState(0);
 
   useEventBus(eventBus, CloseViewEvent, () => {
-    if (isOpen) close();
+    close();
   });
 
   useEventBus(eventBus, ShowDonateResourceModalEvent, (e) => {

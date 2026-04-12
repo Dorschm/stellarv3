@@ -175,9 +175,8 @@ export class SendUpdateGameConfigIntentEvent implements GameEvent {
 
 export class SendJumpGateTeleportIntentEvent implements GameEvent {
   constructor(
-    public readonly unitId: number,
-    public readonly sourceGateId: number,
-    public readonly destinationGateId: number,
+    public readonly sourceGateTile: number,
+    public readonly destinationGateTile: number,
   ) {}
 }
 
@@ -692,9 +691,8 @@ export class Transport {
   private onSendJumpGateTeleportIntent(event: SendJumpGateTeleportIntentEvent) {
     this.sendIntent({
       type: "jump_gate_teleport",
-      unitId: event.unitId,
-      sourceGateId: event.sourceGateId,
-      destinationGateId: event.destinationGateId,
+      sourceGateTile: event.sourceGateTile,
+      destinationGateTile: event.destinationGateTile,
     });
   }
 

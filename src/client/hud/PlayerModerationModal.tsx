@@ -25,7 +25,7 @@ export function PlayerModerationModal(): React.JSX.Element {
   });
 
   useEventBus(eventBus, CloseViewEvent, () => {
-    if (isOpen) close();
+    close();
   });
 
   const handleKickConfirm = useCallback(() => {

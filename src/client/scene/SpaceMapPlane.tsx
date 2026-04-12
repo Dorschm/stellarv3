@@ -493,6 +493,15 @@ export function SpaceMapPlane(): React.JSX.Element | null {
         const { tileX, tileY } = uvToTile(e.uv);
         const native = e.nativeEvent;
 
+        // Jump Gate selection mode takes priority over all other left-click
+        // shortcuts. While gate mode is active, every left-click resolves to
+        // tile coordinates and is forwarded as a MouseUpEvent so
+        // ClientGameRunner.inputEvent() can handle source/dest selection.
+        if (useHUDStore.getState().jumpGateMode !== "idle") {
+          eventBus.emit(new MouseUpEvent(tileX, tileY, true));
+          return;
+        }
+
         // Parity with legacy InputHandler.onPointerUp:
         //   modifierKey + click → directly open the BuildMenu at the tile.
         //   altKey      + click → directly open the EmojiMenu at the tile.
@@ -654,10 +663,19 @@ export function SpaceMapPlane(): React.JSX.Element | null {
       e.nativeEvent.preventDefault();
       e.stopPropagation();
 
+      // Jump Gate selection mode: right-click cancels gate mode without
+      // opening the RadialMenu / context menu.
+      const hudState = useHUDStore.getState();
+      if (hudState.jumpGateMode !== "idle") {
+        hudState.setJumpGateMode("idle");
+        hudState.setJumpGateSourceTile(null);
+        return;
+      }
+
       // Mirror legacy InputHandler.onContextMenu: if a ghost structure is
       // active, right-click cancels it instead of opening the radial/context
       // menu. This prevents an unintended build on the next left-click.
-      if (useHUDStore.getState().ghostStructure !== null) {
+      if (hudState.ghostStructure !== null) {
         eventBus.emit(new GhostStructureChangedEvent(null));
         return;
       }

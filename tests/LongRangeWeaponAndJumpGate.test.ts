@@ -1,12 +1,14 @@
 // @vitest-environment node
 import {
   JumpGateExecution,
+  JumpGateTeleportExecution,
   JumpGateTravel,
 } from "../src/core/execution/JumpGateExecution";
 import { OrbitalStrikePlatformExecution } from "../src/core/execution/OrbitalStrikePlatformExecution";
 import { SpawnExecution } from "../src/core/execution/SpawnExecution";
 import {
   Game,
+  MessageType,
   Player,
   PlayerInfo,
   PlayerType,
@@ -372,5 +374,196 @@ describe("Jump Gate (Ticket 5)", () => {
     const ok = JumpGateTravel.teleport(game, ship, sourceGate, destGate);
     expect(ok).toBe(false);
     expect(ship.tile()).toBe(sourceGate.tile());
+  });
+
+  // --- JumpGateTeleportExecution (tile-based mass teleport) ---
+
+  test("mass teleport moves all eligible mobile units on the source tile", () => {
+    const srcGate = spawnActiveGate(game, owner, game.ref(1, 1));
+    const dstGate = spawnActiveGate(game, owner, game.ref(3, 3));
+
+    // Place multiple mobile units at the source gate tile.
+    const ship1 = owner.buildUnit(UnitType.Battlecruiser, srcGate.tile(), {
+      patrolTile: srcGate.tile(),
+    });
+    const ship2 = owner.buildUnit(UnitType.Battlecruiser, srcGate.tile(), {
+      patrolTile: srcGate.tile(),
+    });
+
+    const exec = new JumpGateTeleportExecution(
+      owner,
+      srcGate.tile(),
+      dstGate.tile(),
+    );
+    game.addExecution(exec);
+    game.executeNextTick();
+
+    // Both ships should have moved to the destination tile.
+    expect(ship1.tile()).toBe(dstGate.tile());
+    expect(ship2.tile()).toBe(dstGate.tile());
+  });
+
+  test("mass teleport emits success displayMessage with moved count", () => {
+    const srcGate = spawnActiveGate(game, owner, game.ref(1, 1));
+    const dstGate = spawnActiveGate(game, owner, game.ref(3, 3));
+
+    owner.buildUnit(UnitType.Battlecruiser, srcGate.tile(), {
+      patrolTile: srcGate.tile(),
+    });
+
+    const spy = vi.spyOn(game, "displayMessage");
+
+    const exec = new JumpGateTeleportExecution(
+      owner,
+      srcGate.tile(),
+      dstGate.tile(),
+    );
+    game.addExecution(exec);
+    game.executeNextTick();
+
+    expect(spy).toHaveBeenCalledWith(
+      "events_display.jump_gate_teleport",
+      MessageType.JUMP_GATE_TELEPORT,
+      owner.id(),
+      undefined,
+      { count: 1 },
+    );
+    spy.mockRestore();
+  });
+
+  test("mass teleport with 0 units on source tile is a valid success", () => {
+    const srcGate = spawnActiveGate(game, owner, game.ref(1, 1));
+    const dstGate = spawnActiveGate(game, owner, game.ref(3, 3));
+
+    // No mobile units at the source tile — still a valid jump.
+    const spy = vi.spyOn(game, "displayMessage");
+
+    const exec = new JumpGateTeleportExecution(
+      owner,
+      srcGate.tile(),
+      dstGate.tile(),
+    );
+    game.addExecution(exec);
+    game.executeNextTick();
+
+    expect(spy).toHaveBeenCalledWith(
+      "events_display.jump_gate_teleport",
+      MessageType.JUMP_GATE_TELEPORT,
+      owner.id(),
+      undefined,
+      { count: 0 },
+    );
+    spy.mockRestore();
+  });
+
+  test("mass teleport emits failure when source gate is missing", () => {
+    // Only one gate — no gate at the "source" tile we'll pass.
+    spawnActiveGate(game, owner, game.ref(3, 3));
+
+    const spy = vi.spyOn(game, "displayMessage");
+
+    const exec = new JumpGateTeleportExecution(
+      owner,
+      game.ref(5, 5), // no gate here
+      game.ref(3, 3),
+    );
+    game.addExecution(exec);
+    game.executeNextTick();
+
+    expect(spy).toHaveBeenCalledWith(
+      "events_display.jump_gate_failed",
+      MessageType.JUMP_GATE_FAILED,
+      owner.id(),
+      undefined,
+      { reason: "No usable gate at source" },
+    );
+    spy.mockRestore();
+  });
+
+  test("mass teleport emits failure when destination gate is missing", () => {
+    spawnActiveGate(game, owner, game.ref(1, 1));
+
+    const spy = vi.spyOn(game, "displayMessage");
+
+    const exec = new JumpGateTeleportExecution(
+      owner,
+      game.ref(1, 1),
+      game.ref(5, 5), // no gate here
+    );
+    game.addExecution(exec);
+    game.executeNextTick();
+
+    expect(spy).toHaveBeenCalledWith(
+      "events_display.jump_gate_failed",
+      MessageType.JUMP_GATE_FAILED,
+      owner.id(),
+      undefined,
+      { reason: "No usable gate at destination" },
+    );
+    spy.mockRestore();
+  });
+
+  test("mass teleport emits failure when source and destination are same tile", () => {
+    spawnActiveGate(game, owner, game.ref(1, 1));
+
+    const spy = vi.spyOn(game, "displayMessage");
+
+    const exec = new JumpGateTeleportExecution(
+      owner,
+      game.ref(1, 1),
+      game.ref(1, 1),
+    );
+    game.addExecution(exec);
+    game.executeNextTick();
+
+    expect(spy).toHaveBeenCalledWith(
+      "events_display.jump_gate_failed",
+      MessageType.JUMP_GATE_FAILED,
+      owner.id(),
+      undefined,
+      { reason: "Source and destination are the same gate" },
+    );
+    spy.mockRestore();
+  });
+
+  test("mass teleport uses dedicated MessageType entries", () => {
+    const srcGate = spawnActiveGate(game, owner, game.ref(1, 1));
+    const dstGate = spawnActiveGate(game, owner, game.ref(3, 3));
+
+    const spy = vi.spyOn(game, "displayMessage");
+
+    // Success path
+    const exec1 = new JumpGateTeleportExecution(
+      owner,
+      srcGate.tile(),
+      dstGate.tile(),
+    );
+    game.addExecution(exec1);
+    game.executeNextTick();
+
+    const successCall = spy.mock.calls.find(
+      (c) => c[1] === MessageType.JUMP_GATE_TELEPORT,
+    );
+    expect(successCall).toBeDefined();
+    expect(successCall![0]).toBe("events_display.jump_gate_teleport");
+
+    spy.mockClear();
+
+    // Failure path
+    const exec2 = new JumpGateTeleportExecution(
+      owner,
+      game.ref(5, 5),
+      dstGate.tile(),
+    );
+    game.addExecution(exec2);
+    game.executeNextTick();
+
+    const failCall = spy.mock.calls.find(
+      (c) => c[1] === MessageType.JUMP_GATE_FAILED,
+    );
+    expect(failCall).toBeDefined();
+    expect(failCall![0]).toBe("events_display.jump_gate_failed");
+
+    spy.mockRestore();
   });
 });

@@ -2,19 +2,20 @@ import { createRoot, Root } from "react-dom/client";
 import { EventBus } from "../../core/EventBus";
 import { GameView } from "../../core/game/GameView";
 import { UserSettings } from "../../core/game/UserSettings";
+import {
+  CloseViewEvent,
+  ContextMenuEvent,
+  MouseDownEvent,
+  MouseUpEvent,
+} from "../InputHandler";
 import { GameViewContext } from "../bridge/GameViewContext";
+import { useHUDStore } from "../bridge/HUDStore";
+import { HUDOverlay } from "../hud/HUDOverlay";
 import {
   TransformContext,
   TransformContextValue,
 } from "../hud/TransformContext";
-import { HUDOverlay } from "../hud/HUDOverlay";
 import { SpaceScene } from "./SpaceScene";
-import {
-  MouseUpEvent,
-  MouseDownEvent,
-  ContextMenuEvent,
-  CloseViewEvent,
-} from "../InputHandler";
 
 /** Persistent handle so we can unmount cleanly when the game ends. */
 let reactRoot: Root | null = null;
@@ -84,6 +85,7 @@ export function mountReactRoot(gameView: GameView, eventBus: EventBus): void {
       ) => void;
       __emitMouseDown: (tileX: number, tileY: number) => void;
       __closeMenus: () => void;
+      __setJumpGateMode: (mode: "idle" | "selectSource" | "selectDest") => void;
     };
     w.__gameView = gameView;
     w.__eventBus = eventBus;
@@ -96,6 +98,14 @@ export function mountReactRoot(gameView: GameView, eventBus: EventBus): void {
       clientX: number,
       clientY: number,
     ) => {
+      // Mirror SpaceMapPlane.onContextMenu: if gate mode is active,
+      // right-click cancels it without opening the RadialMenu.
+      const hudState = useHUDStore.getState();
+      if (hudState.jumpGateMode !== "idle") {
+        hudState.setJumpGateMode("idle");
+        hudState.setJumpGateSourceTile(null);
+        return;
+      }
       eventBus.emit(new ContextMenuEvent(tileX, tileY, true, clientX, clientY));
     };
     w.__emitMouseDown = (tileX: number, tileY: number) => {
@@ -103,6 +113,9 @@ export function mountReactRoot(gameView: GameView, eventBus: EventBus): void {
     };
     w.__closeMenus = () => {
       eventBus.emit(new CloseViewEvent());
+    };
+    w.__setJumpGateMode = (mode) => {
+      useHUDStore.getState().setJumpGateMode(mode);
     };
   }
 
@@ -133,6 +146,7 @@ export function unmountReactRoot(): void {
       __emitRightClick?: unknown;
       __emitMouseDown?: unknown;
       __closeMenus?: unknown;
+      __setJumpGateMode?: unknown;
     };
     delete w.__gameView;
     delete w.__eventBus;
@@ -140,5 +154,6 @@ export function unmountReactRoot(): void {
     delete w.__emitRightClick;
     delete w.__emitMouseDown;
     delete w.__closeMenus;
+    delete w.__setJumpGateMode;
   }
 }

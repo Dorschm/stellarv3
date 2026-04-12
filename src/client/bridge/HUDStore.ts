@@ -83,6 +83,12 @@ export interface HUDState {
   /** Rocket/missile launch direction (true = up, false = down). */
   rocketDirectionUp: boolean;
 
+  // -- Jump Gate selection mode --
+  /** Current gate selection phase. */
+  jumpGateMode: "idle" | "selectSource" | "selectDest";
+  /** The source gate tile after first click in gate selection mode. */
+  jumpGateSourceTile: TileRef | null;
+
   // -- Game phase --
   /** Whether the game is in the spawn phase (before main play begins). */
   inSpawnPhase: boolean;
@@ -100,6 +106,8 @@ export interface HUDState {
   setAttackRatio: (ratio: number) => void;
   setGhostStructure: (gs: UnitType | null) => void;
   setRocketDirectionUp: (up: boolean) => void;
+  setJumpGateMode: (mode: "idle" | "selectSource" | "selectDest") => void;
+  setJumpGateSourceTile: (tile: TileRef | null) => void;
   setInSpawnPhase: (inSpawnPhase: boolean) => void;
   setWinner: (winner: WinUpdate | null) => void;
   addMessages: (newMessages: MessageSnapshot[]) => void;
@@ -124,6 +132,8 @@ const INITIAL_STATE = {
   attackRatio: 20,
   ghostStructure: null as UnitType | null,
   rocketDirectionUp: true,
+  jumpGateMode: "idle" as "idle" | "selectSource" | "selectDest",
+  jumpGateSourceTile: null as TileRef | null,
   inSpawnPhase: false,
   winner: null as WinUpdate | null,
   messages: [] as MessageSnapshot[],
@@ -142,6 +152,8 @@ export const useHUDStore = create<HUDState>((set) => ({
   setAttackRatio: (ratio) => set({ attackRatio: ratio }),
   setGhostStructure: (gs) => set({ ghostStructure: gs }),
   setRocketDirectionUp: (up) => set({ rocketDirectionUp: up }),
+  setJumpGateMode: (mode) => set({ jumpGateMode: mode }),
+  setJumpGateSourceTile: (tile) => set({ jumpGateSourceTile: tile }),
   setInSpawnPhase: (inSpawnPhase) => set({ inSpawnPhase }),
   setWinner: (winner) => set({ winner }),
   addMessages: (newMessages) =>

@@ -334,7 +334,10 @@ export function EventsDisplay(): React.JSX.Element {
         return { icon: allianceIcon, color: "text-blue-400" };
       case MessageType.ATTACK_FAILED:
       case MessageType.ATTACK_CANCELLED:
+      case MessageType.JUMP_GATE_FAILED:
         return { icon: swordIcon, color: "text-red-400" };
+      case MessageType.JUMP_GATE_TELEPORT:
+        return { icon: allianceIcon, color: "text-cyan-400" };
       case MessageType.NUKE_INBOUND:
       case MessageType.CLUSTER_WARHEAD_INBOUND:
         return { icon: nukeIcon, color: "text-orange-400" };

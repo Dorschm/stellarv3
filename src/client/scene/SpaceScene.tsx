@@ -3,6 +3,7 @@ import { Canvas } from "@react-three/fiber";
 import React, { Suspense } from "react";
 import { CameraController } from "./CameraController";
 import { FxRenderer } from "./FxRenderer";
+import { JumpGateHighlightRenderer } from "./JumpGateHighlightRenderer";
 import { PlanetLandmarks } from "./PlanetLandmarks";
 import { SpaceMapPlane } from "./SpaceMapPlane";
 import { UnitRenderer } from "./UnitRenderer";
@@ -99,6 +100,7 @@ export function SpaceScene(): React.JSX.Element {
         <WarpLaneRenderer />
         <UnitRenderer />
         <FxRenderer />
+        <JumpGateHighlightRenderer />
       </Suspense>
 
       {/* Camera controller: pan, zoom, GoTo via EventBus */}

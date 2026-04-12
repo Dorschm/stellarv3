@@ -460,9 +460,8 @@ export const VoteForPeaceIntentSchema = z.object({
 
 export const JumpGateTeleportIntentSchema = z.object({
   type: z.literal("jump_gate_teleport"),
-  unitId: z.number(),
-  sourceGateId: z.number(),
-  destinationGateId: z.number(),
+  sourceGateTile: z.number(),
+  destinationGateTile: z.number(),
 });
 
 const IntentSchema = z.discriminatedUnion("type", [
