@@ -8,6 +8,7 @@ import {
   destHighlightTiles,
   sourceHighlightTiles,
 } from "../../src/client/scene/JumpGateHighlightRenderer";
+import { resolveLeftClickAction } from "../../src/client/scene/jumpGateClickPrecedence";
 import { EventBus } from "../../src/core/EventBus";
 import { UnitType } from "../../src/core/game/Game";
 import { TileRef } from "../../src/core/game/GameMap";
@@ -241,5 +242,110 @@ describe("click-routing precedence during gate mode", () => {
 
     expect(useHUDStore.getState().jumpGateMode).toBe("idle");
     expect(useHUDStore.getState().jumpGateSourceTile).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// resolveLeftClickAction — exercises the actual precedence helper used by
+// SpaceMapPlane.onPointerUp. Verifies that gate mode beats every other
+// left-click shortcut path, and that the remaining fallback ordering is
+// preserved when gate mode is idle.
+// ---------------------------------------------------------------------------
+
+describe("resolveLeftClickAction: precedence helper", () => {
+  test("gate mode (selectSource) beats modifier + alt + leftClickOpensMenu", () => {
+    expect(
+      resolveLeftClickAction({
+        jumpGateMode: "selectSource",
+        modifierPressed: true,
+        altPressed: true,
+        leftClickOpensMenu: true,
+        shiftKey: false,
+      }),
+    ).toBe("mouseUp");
+  });
+
+  test("gate mode (selectDest) beats every other shortcut", () => {
+    expect(
+      resolveLeftClickAction({
+        jumpGateMode: "selectDest",
+        modifierPressed: true,
+        altPressed: false,
+        leftClickOpensMenu: true,
+        shiftKey: true,
+      }),
+    ).toBe("mouseUp");
+  });
+
+  test("idle + modifier pressed → buildMenu", () => {
+    expect(
+      resolveLeftClickAction({
+        jumpGateMode: "idle",
+        modifierPressed: true,
+        altPressed: false,
+        leftClickOpensMenu: false,
+        shiftKey: false,
+      }),
+    ).toBe("buildMenu");
+  });
+
+  test("idle + alt pressed (no modifier) → emojiMenu", () => {
+    expect(
+      resolveLeftClickAction({
+        jumpGateMode: "idle",
+        modifierPressed: false,
+        altPressed: true,
+        leftClickOpensMenu: false,
+        shiftKey: false,
+      }),
+    ).toBe("emojiMenu");
+  });
+
+  test("modifier takes priority over alt when both pressed", () => {
+    expect(
+      resolveLeftClickAction({
+        jumpGateMode: "idle",
+        modifierPressed: true,
+        altPressed: true,
+        leftClickOpensMenu: false,
+        shiftKey: false,
+      }),
+    ).toBe("buildMenu");
+  });
+
+  test("idle + leftClickOpensMenu + no shift → contextMenu", () => {
+    expect(
+      resolveLeftClickAction({
+        jumpGateMode: "idle",
+        modifierPressed: false,
+        altPressed: false,
+        leftClickOpensMenu: true,
+        shiftKey: false,
+      }),
+    ).toBe("contextMenu");
+  });
+
+  test("shift suppresses leftClickOpensMenu (falls through to mouseUp)", () => {
+    expect(
+      resolveLeftClickAction({
+        jumpGateMode: "idle",
+        modifierPressed: false,
+        altPressed: false,
+        leftClickOpensMenu: true,
+        shiftKey: true,
+      }),
+    ).toBe("mouseUp");
+  });
+
+  test("idle + no modifiers + leftClickOpensMenu off → mouseUp", () => {
+    expect(
+      resolveLeftClickAction({
+        jumpGateMode: "idle",
+        modifierPressed: false,
+        altPressed: false,
+        leftClickOpensMenu: false,
+        shiftKey: false,
+      }),
+    ).toBe("mouseUp");
   });
 });

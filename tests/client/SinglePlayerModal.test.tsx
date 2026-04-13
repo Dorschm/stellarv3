@@ -96,6 +96,11 @@ const mocks = vi.hoisted(() => ({
   showPage: vi.fn(),
   requestMidgameAd: vi.fn(),
   getPlayerCosmetics: vi.fn(),
+  // Run-history helpers are modeled as real mock functions so individual
+  // tests can override the win count or ramp curve to exercise the
+  // permadeath/difficulty wiring in `handleStart`.
+  countWins: vi.fn(),
+  aiDifficultyForWinCount: vi.fn(),
 }));
 
 // Replace the contexts the modal pulls from with stubs that expose just the
@@ -126,11 +131,14 @@ vi.mock("../../src/client/AnonUsername", () => ({
 }));
 
 // `countWins` and `aiDifficultyForWinCount` would otherwise read/parse
-// localStorage and map the result into the Difficulty enum. Freezing them to
-// a known value keeps the default-difficulty path deterministic.
+// localStorage and map the result into the Difficulty enum. Routing through
+// `mocks.*` lets individual tests reconfigure the return values to verify the
+// handleStart difficulty pathway (permadeath on → re-read countWins at start
+// time, permadeath off → respect the user's slider choice).
 vi.mock("../../src/client/RunHistory", () => ({
-  countWins: () => 0,
-  aiDifficultyForWinCount: () => Difficulty.Easy,
+  countWins: (...args: unknown[]) => mocks.countWins(...args),
+  aiDifficultyForWinCount: (...args: unknown[]) =>
+    mocks.aiDifficultyForWinCount(...args),
 }));
 
 // Strip the navigation visibility gate so the modal mounts inside the harness.
@@ -259,6 +267,10 @@ describe("SinglePlayerModal outgoing config payload", () => {
     mocks.getPlayerCosmetics
       .mockReset()
       .mockResolvedValue({ flag: null, pattern: null });
+    // Default to a zero-win history, which the real `aiDifficultyForWinCount`
+    // maps to Easy. Tests that care about ramping override these per-case.
+    mocks.countWins.mockReset().mockReturnValue(0);
+    mocks.aiDifficultyForWinCount.mockReset().mockReturnValue(Difficulty.Easy);
   });
 
   afterEach(() => {
@@ -340,5 +352,126 @@ describe("SinglePlayerModal outgoing config payload", () => {
     // Only `permadeath` should flip — the win condition stays Elimination.
     expect(config.winCondition).toBe(WinCondition.Elimination);
     expect(config.permadeath).toBe(false);
+  });
+
+  it("re-reads countWins at start time when permadeath is on (auto-ramped difficulty)", async () => {
+    // Simulate the player finishing a run between mounting the modal and
+    // hitting Start: countWins returns 0 at mount (→ Easy suggested) but 3
+    // at start time (→ Hard via the ramp). The `handleStart` contract says
+    // the payload should reflect the *start-time* read, not the mount-time
+    // one. If that behavior regresses, the payload will carry Easy instead.
+    mocks.countWins.mockReturnValueOnce(0).mockReturnValue(3);
+    mocks.aiDifficultyForWinCount.mockImplementation((wins: unknown) =>
+      wins === 0 ? Difficulty.Easy : Difficulty.Hard,
+    );
+
+    beginRender();
+    const tree = renderTree(
+      React.createElement(SinglePlayerModal) as unknown as RenderedNode,
+    );
+
+    // Confirm permadeath is on — otherwise handleStart wouldn't hit the
+    // auto-ramp branch at all.
+    expect(findCheckbox(tree).props.checked).toBe(true);
+
+    const start = findButton(tree, /start game/i);
+    await (start.props.onClick as () => Promise<void> | void)?.();
+    await flushAsync();
+
+    const config = (
+      (mocks.joinLobby.mock.calls[0] as unknown[])[0] as {
+        gameStartInfo: { config: { difficulty: unknown } };
+      }
+    ).gameStartInfo.config;
+    // Start-time ramp dominates — Hard, not the mount-time Easy.
+    expect(config.difficulty).toBe(Difficulty.Hard);
+    // countWins must have been called at least twice: once at mount (useMemo)
+    // and once inside handleStart. Anything less means the start-time re-read
+    // regressed.
+    expect(mocks.countWins.mock.calls.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("ignores the user's difficulty selection while permadeath is on", async () => {
+    // With permadeath on, the difficulty buttons are disabled in the UI but a
+    // programmatic click on one must still not leak into the payload — the
+    // start-time ramp is authoritative. This guards the GDD §10 contract.
+    mocks.countWins.mockReturnValue(1);
+    mocks.aiDifficultyForWinCount.mockReturnValue(Difficulty.Medium);
+
+    beginRender();
+    let tree = renderTree(
+      React.createElement(SinglePlayerModal) as unknown as RenderedNode,
+    );
+
+    // Click the "Impossible" difficulty button to try to override the ramp.
+    const impossibleBtn = findButton(tree, /^impossible$/i);
+    (impossibleBtn.props.onClick as () => void)?.();
+
+    beginRender();
+    tree = renderTree(
+      React.createElement(SinglePlayerModal) as unknown as RenderedNode,
+    );
+
+    // Permadeath stays on; the payload should still reflect the ramp value.
+    expect(findCheckbox(tree).props.checked).toBe(true);
+    const start = findButton(tree, /start game/i);
+    await (start.props.onClick as () => Promise<void> | void)?.();
+    await flushAsync();
+
+    const config = (
+      (mocks.joinLobby.mock.calls[0] as unknown[])[0] as {
+        gameStartInfo: { config: { difficulty: unknown } };
+      }
+    ).gameStartInfo.config;
+    expect(config.difficulty).toBe(Difficulty.Medium);
+  });
+
+  it("respects the user's difficulty selection when permadeath is off", async () => {
+    // With permadeath off the auto-ramp is bypassed entirely — whatever the
+    // player clicked must appear verbatim in the outgoing payload.
+    mocks.countWins.mockReturnValue(10);
+    mocks.aiDifficultyForWinCount.mockReturnValue(Difficulty.Impossible);
+
+    beginRender();
+    let tree = renderTree(
+      React.createElement(SinglePlayerModal) as unknown as RenderedNode,
+    );
+
+    // Turn permadeath off first so the difficulty buttons are active.
+    (
+      findCheckbox(tree).props.onChange as (e: {
+        target: { checked: boolean };
+      }) => void
+    )({ target: { checked: false } });
+
+    beginRender();
+    tree = renderTree(
+      React.createElement(SinglePlayerModal) as unknown as RenderedNode,
+    );
+    expect(findCheckbox(tree).props.checked).toBe(false);
+
+    // Explicitly select Easy — well below the would-be auto-ramp pick.
+    const easyBtn = findButton(tree, /^easy$/i);
+    (easyBtn.props.onClick as () => void)?.();
+
+    beginRender();
+    tree = renderTree(
+      React.createElement(SinglePlayerModal) as unknown as RenderedNode,
+    );
+
+    const start = findButton(tree, /start game/i);
+    await (start.props.onClick as () => Promise<void> | void)?.();
+    await flushAsync();
+
+    const config = (
+      (mocks.joinLobby.mock.calls[0] as unknown[])[0] as {
+        gameStartInfo: {
+          config: { difficulty: unknown; permadeath: unknown };
+        };
+      }
+    ).gameStartInfo.config;
+    expect(config.permadeath).toBe(false);
+    // Player's explicit Easy selection wins, not the Impossible ramp.
+    expect(config.difficulty).toBe(Difficulty.Easy);
   });
 });

@@ -37,6 +37,7 @@ import {
   isModifierKeyPressed,
   loadKeybinds,
 } from "../bridge/keybindModifiers";
+import { resolveLeftClickAction } from "./jumpGateClickPrecedence";
 
 // ─── Space-themed terrain palette ────────────────────────────────────────────
 // Ocean  → deep space (very dark blues / near-black)
@@ -493,38 +494,33 @@ export function SpaceMapPlane(): React.JSX.Element | null {
         const { tileX, tileY } = uvToTile(e.uv);
         const native = e.nativeEvent;
 
-        // Jump Gate selection mode takes priority over all other left-click
-        // shortcuts. While gate mode is active, every left-click resolves to
-        // tile coordinates and is forwarded as a MouseUpEvent so
-        // ClientGameRunner.inputEvent() can handle source/dest selection.
-        if (useHUDStore.getState().jumpGateMode !== "idle") {
-          eventBus.emit(new MouseUpEvent(tileX, tileY, true));
-          return;
-        }
+        // Resolve which click action wins given the current HUD / settings
+        // snapshot. Extracted as a pure helper so the precedence rules
+        // (gate mode > modifier > alt > leftClickOpensMenu > default) can be
+        // unit-tested without a DOM/R3F fixture.
+        const action = resolveLeftClickAction({
+          jumpGateMode: useHUDStore.getState().jumpGateMode,
+          modifierPressed: isModifierKeyPressed(native, keybinds),
+          altPressed: isAltKeyPressed(native, keybinds),
+          leftClickOpensMenu: userSettings.leftClickOpensMenu(),
+          shiftKey: native.shiftKey,
+        });
 
-        // Parity with legacy InputHandler.onPointerUp:
-        //   modifierKey + click → directly open the BuildMenu at the tile.
-        //   altKey      + click → directly open the EmojiMenu at the tile.
-        // These used to be emitted from the canvas input path and are
-        // required so BuildMenu / EmojiTable stay reachable during play.
-        // Use keybind-aware checks so users who remap modifierKey / altKey
-        // still get the expected menu shortcuts in the R3F pointer pipeline.
-        if (isModifierKeyPressed(native, keybinds)) {
-          eventBus.emit(new ShowBuildMenuEvent(tileX, tileY));
-          return;
-        }
-        if (isAltKeyPressed(native, keybinds)) {
-          eventBus.emit(new ShowEmojiMenuEvent(tileX, tileY));
-          return;
-        }
-
-        // Honour leftClickOpensMenu user setting
-        if (userSettings.leftClickOpensMenu() && !native.shiftKey) {
-          eventBus.emit(
-            new ContextMenuEvent(tileX, tileY, true, e.clientX, e.clientY),
-          );
-        } else {
-          eventBus.emit(new MouseUpEvent(tileX, tileY, true));
+        switch (action) {
+          case "buildMenu":
+            eventBus.emit(new ShowBuildMenuEvent(tileX, tileY));
+            return;
+          case "emojiMenu":
+            eventBus.emit(new ShowEmojiMenuEvent(tileX, tileY));
+            return;
+          case "contextMenu":
+            eventBus.emit(
+              new ContextMenuEvent(tileX, tileY, true, e.clientX, e.clientY),
+            );
+            return;
+          case "mouseUp":
+            eventBus.emit(new MouseUpEvent(tileX, tileY, true));
+            return;
         }
       }
       // Right-click (button === 2) is handled exclusively by onContextMenu

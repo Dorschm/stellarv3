@@ -10,6 +10,7 @@ import {
 } from "three";
 import { Planet } from "../../core/game/Planet";
 import { useGameView } from "../bridge/GameViewContext";
+import { formatResourceModifier } from "./formatResourceModifier";
 import { getPlanetTexture, hashString } from "./PlanetTextureGenerator";
 import { tileToWorld } from "./UnitRenderer";
 
@@ -40,6 +41,14 @@ const OWNED_EMISSIVE_INTENSITY = 0.28;
 
 /** Color used for label text. */
 const LABEL_COLOR = "#aabbcc";
+
+/** Color used for the resource-modifier sub-label. Dimmer than the name so
+ *  the planet's display name still reads as the primary label. */
+const MODIFIER_LABEL_COLOR = "#d4b26a";
+
+/** Font size (world units) for the resource-modifier sub-label. Smaller
+ *  than the name so it reads as secondary info without dominating. */
+const MODIFIER_FONT_SIZE = 11;
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
@@ -211,7 +220,9 @@ function PlanetSphere({
 
       {/* Billboard name label ABOVE the sphere. fontSize is in WORLD units;
           at the default camera distance (~960wu) a value of ~16 renders to
-          about 10 screen pixels which is the smallest readable text. */}
+          about 10 screen pixels which is the smallest readable text. A
+          smaller secondary line below the name surfaces the GDD §9
+          per-planet resource modifier from the authoritative Planet model. */}
       <Billboard position={[0, 0, labelOffset]}>
         <Text
           fontSize={16}
@@ -223,6 +234,18 @@ function PlanetSphere({
           raycast={() => {}} // No pointer events — clicks pass through to map
         >
           {planet.name}
+        </Text>
+        <Text
+          position={[0, -MODIFIER_FONT_SIZE - 2, 0]}
+          fontSize={MODIFIER_FONT_SIZE}
+          color={MODIFIER_LABEL_COLOR}
+          anchorX="center"
+          anchorY="top"
+          outlineWidth={0.6}
+          outlineColor="#000000"
+          raycast={() => {}} // No pointer events — clicks pass through to map
+        >
+          {formatResourceModifier(planet.resourceModifier())}
         </Text>
       </Billboard>
     </group>
