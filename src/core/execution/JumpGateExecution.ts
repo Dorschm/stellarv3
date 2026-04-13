@@ -141,6 +141,16 @@ const TELEPORTABLE_UNIT_TYPES: readonly UnitType[] = [
 ];
 
 /**
+ * Maximum Manhattan distance (in tiles) between the intent tile and a
+ * Battlecruiser-hosted gate's current tile that still counts as "the gate
+ * the player meant". Intents travel over the network, so by the time a
+ * mass-teleport lands the hosting cruiser may have drifted by a tile.
+ * Keeping this conservative (1) avoids collapsing neighbouring gates onto
+ * each other.
+ */
+const GATE_DRIFT_TOLERANCE = 1;
+
+/**
  * One-shot execution that teleports all eligible mobile units on a source Jump
  * Gate tile to a destination Jump Gate tile, in response to a
  * `jump_gate_teleport` intent. Gates are discovered by tile rather than by ID
@@ -169,17 +179,7 @@ export class JumpGateTeleportExecution implements Execution {
       return;
     }
 
-    // Locate an active, finished gate at the source tile that the player or
-    // an ally owns.
-    const sourceGate = mg
-      .units(UnitType.JumpGate)
-      .find(
-        (u) =>
-          u.tile() === this.sourceGateTile &&
-          u.isActive() &&
-          !u.isUnderConstruction() &&
-          (u.owner() === this.player || u.owner().isFriendly(this.player)),
-      );
+    const sourceGate = this.resolveGate(mg, this.sourceGateTile);
     if (!sourceGate) {
       mg.displayMessage(
         "events_display.jump_gate_failed",
@@ -191,16 +191,9 @@ export class JumpGateTeleportExecution implements Execution {
       return;
     }
 
-    // Locate an active, finished gate at the destination tile.
-    const destGate = mg
-      .units(UnitType.JumpGate)
-      .find(
-        (u) =>
-          u.tile() === this.destinationGateTile &&
-          u.isActive() &&
-          !u.isUnderConstruction() &&
-          (u.owner() === this.player || u.owner().isFriendly(this.player)),
-      );
+    // Exclude the resolved source gate so the drift fallback can never
+    // collapse both endpoints onto the same surviving gate.
+    const destGate = this.resolveGate(mg, this.destinationGateTile, sourceGate);
     if (!destGate) {
       mg.displayMessage(
         "events_display.jump_gate_failed",
@@ -212,11 +205,26 @@ export class JumpGateTeleportExecution implements Execution {
       return;
     }
 
-    // Collect all eligible mobile units the player owns at the source tile.
+    // Identity guard: even with the exclusion above, belt-and-braces check
+    // that the two resolved gates are not the same unit.
+    if (sourceGate.id() === destGate.id()) {
+      mg.displayMessage(
+        "events_display.jump_gate_failed",
+        MessageType.JUMP_GATE_FAILED,
+        playerID,
+        undefined,
+        { reason: "Source and destination are the same gate" },
+      );
+      return;
+    }
+
+    // Units are collected at the gate's *current* tile (not the stale intent
+    // tile) so drifted ship-hosted gates still sweep the correct tile.
+    const resolvedSourceTile = sourceGate.tile();
     let moved = 0;
     for (const unitType of TELEPORTABLE_UNIT_TYPES) {
       for (const unit of this.player.units(unitType)) {
-        if (unit.tile() === this.sourceGateTile && unit.isActive()) {
+        if (unit.tile() === resolvedSourceTile && unit.isActive()) {
           if (JumpGateTravel.teleport(mg, unit, sourceGate, destGate)) {
             moved++;
           }
@@ -231,6 +239,43 @@ export class JumpGateTeleportExecution implements Execution {
       undefined,
       { count: moved },
     );
+  }
+
+  /**
+   * Resolve an intent tile to a usable Jump Gate. Prefers an exact tile
+   * match; falls back to the closest eligible gate within
+   * {@link GATE_DRIFT_TOLERANCE} to tolerate Battlecruiser-hosted gates
+   * that moved between intent and execution. When `exclude` is supplied,
+   * that gate is filtered from both the exact and drift passes.
+   */
+  private resolveGate(
+    mg: Game,
+    intentTile: TileRef,
+    exclude?: Unit,
+  ): Unit | undefined {
+    const usable = (u: Unit): boolean =>
+      u.isActive() &&
+      !u.isUnderConstruction() &&
+      (u.owner() === this.player || u.owner().isFriendly(this.player)) &&
+      (exclude === undefined || u.id() !== exclude.id());
+
+    const gates = mg.units(UnitType.JumpGate);
+    const exact = gates.find((u) => u.tile() === intentTile && usable(u));
+    if (exact) {
+      return exact;
+    }
+
+    let best: Unit | undefined;
+    let bestDist = GATE_DRIFT_TOLERANCE + 1;
+    for (const u of gates) {
+      if (!usable(u)) continue;
+      const d = mg.manhattanDist(intentTile, u.tile());
+      if (d <= GATE_DRIFT_TOLERANCE && d < bestDist) {
+        best = u;
+        bestDist = d;
+      }
+    }
+    return best;
   }
 
   tick(_ticks: number): void {}

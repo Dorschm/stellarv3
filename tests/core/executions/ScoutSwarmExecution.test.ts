@@ -72,6 +72,10 @@ async function buildGame() {
     game.executeNextTick();
   }
   launcher = game.player("scout_launcher");
+  // Scout swarms require a Spaceport or Jump Gate to launch from. Build
+  // one on the launcher's spawn tile so existing tests can actually fire
+  // scouts. The no-launch-structure case has its own dedicated test.
+  launcher.buildUnit(UnitType.Spaceport, game.ref(5, 5), {});
 }
 
 describe("ScoutSwarmExecution — launch cost", () => {
@@ -120,6 +124,82 @@ describe("ScoutSwarmExecution — launch cost", () => {
     const swarms = launcher.units(UnitType.ScoutSwarm);
     expect(swarms).toHaveLength(1);
     expect(swarms[0].isActive()).toBe(true);
+  });
+
+  test("deducts the configured fraction of the launcher's population cap at launch", () => {
+    // GDD §3.1: scout swarms consume population on launch alongside the
+    // credit cost. The deduction is a fraction of the launcher's
+    // *population cap* (not current population), so the tax scales with
+    // empire size rather than with whatever the current headcount is.
+    launcher.addCredits(1_000n);
+    const fraction = game.config().scoutSwarmPopulationFraction();
+    const maxPop = game.config().maxPopulation(launcher);
+    const cost = Math.floor(maxPop * fraction);
+    const popBefore = launcher.population();
+    expect(popBefore).toBeGreaterThanOrEqual(cost);
+
+    const target = game.ref(5, 5);
+    game.addExecution(new ScoutSwarmExecution(launcher, target));
+    game.executeNextTick();
+
+    expect(launcher.population()).toBe(popBefore - cost);
+  });
+
+  test("launch succeeds even when the launcher has zero population (soft cost)", () => {
+    // Soft-cost contract: the scout launch should not be gated on
+    // population availability. A launcher at 0 still spawns the swarm,
+    // and removePopulation simply caps at available (i.e. removes 0).
+    launcher.addCredits(1_000n);
+    // Drain population to zero.
+    launcher.removePopulation(launcher.population());
+    expect(launcher.population()).toBe(0);
+
+    const target = game.ref(5, 5);
+    game.addExecution(new ScoutSwarmExecution(launcher, target));
+    game.executeNextTick();
+
+    expect(launcher.population()).toBe(0);
+    // The swarm itself was spawned despite the insufficient population.
+    expect(launcher.units(UnitType.ScoutSwarm)).toHaveLength(1);
+    expect(launcher.units(UnitType.ScoutSwarm)[0].isActive()).toBe(true);
+  });
+
+  test("aborts silently and charges nothing when the launcher has no Spaceport or Jump Gate", async () => {
+    // Fresh game with no pre-built launch structure so the spawn-tile
+    // check bails before any credits or population are deducted. Builds
+    // its own game to avoid the Spaceport that buildGame() adds.
+    const fresh = await setup("big_plains", {
+      infiniteCredits: false,
+      instantBuild: true,
+    });
+    fresh.addPlayer(
+      new PlayerInfo("no_port", PlayerType.Human, null, "no_port"),
+    );
+    fresh.addExecution(
+      new SpawnExecution(
+        gameID,
+        fresh.player("no_port").info(),
+        fresh.ref(5, 5),
+      ),
+    );
+    while (fresh.inSpawnPhase()) {
+      fresh.executeNextTick();
+    }
+    const p = fresh.player("no_port");
+
+    // Pin credits and population to known pre-launch values.
+    p.removeCredits(p.credits());
+    p.addCredits(1_000n);
+    const creditsBefore = p.credits();
+    const popBefore = p.population();
+
+    fresh.addExecution(new ScoutSwarmExecution(p, fresh.ref(5, 5)));
+    fresh.executeNextTick();
+
+    // No scout, no cost.
+    expect(p.units(UnitType.ScoutSwarm)).toHaveLength(0);
+    expect(p.credits()).toBe(creditsBefore);
+    expect(p.population()).toBe(popBefore);
   });
 });
 
@@ -589,6 +669,8 @@ describe("ScoutSwarmExecution — ownership grant (end-to-end, seeded sectors)",
       seededGame.executeNextTick();
     }
     seededLauncher = seededGame.player("scout_launcher");
+    // Scout swarms require a Spaceport or Jump Gate to launch from.
+    seededLauncher.buildUnit(UnitType.Spaceport, seededGame.ref(5, 5), {});
   }
 
   beforeEach(async () => {

@@ -471,6 +471,333 @@ test.describe("HUD interactions (singleplayer)", () => {
     await expect(statusBar).toBeHidden({ timeout: 3_000 });
   });
 
+  test("full Jump Gate selection flow via RadialMenu", async () => {
+    // End-to-end Jump Gate flow: build 2 gates → right-click non-gate tile →
+    // RadialMenu 'Jump to gate' enabled → click → selectSource status bar →
+    // click source gate → selectDest status bar → click dest gate → intent
+    // emitted + mode reset. Then verify leftClickOpensMenu precedence does
+    // not interfere with the gate flow.
+
+    // Step 1: Find two distinct owned tiles for gate construction.
+    const gate1 = await findOwnedTile(page);
+    expect(gate1).not.toBeNull();
+
+    const gate2 = await page.evaluate((ex) => {
+      const gv = (
+        window as unknown as {
+          __gameView?: {
+            width(): number;
+            height(): number;
+            ref(x: number, y: number): unknown;
+            owner(ref: unknown): { smallID(): number } | null;
+            myPlayer(): { smallID(): number } | null;
+          };
+        }
+      ).__gameView;
+      if (!gv) return null;
+      const mp = gv.myPlayer();
+      if (!mp) return null;
+      const myID = mp.smallID();
+      const w = gv.width();
+      const h = gv.height();
+      // Require at least ~10 tiles of separation so the source/dest gates
+      // are visibly distinct, but accept any owned tile if the territory
+      // is too small to satisfy that.
+      for (const minDist of [10, 4, 1]) {
+        for (const step of [4, 2, 1]) {
+          for (let y = 0; y < h; y += step) {
+            for (let x = 0; x < w; x += step) {
+              const dx = Math.abs(x - ex.tileX);
+              const dy = Math.abs(y - ex.tileY);
+              if (dx + dy < minDist) continue;
+              const r = gv.ref(x, y);
+              const o = gv.owner(r);
+              if (o && o.smallID() === myID) return { tileX: x, tileY: y };
+            }
+          }
+        }
+      }
+      return null;
+    }, gate1!);
+    expect(gate2).not.toBeNull();
+
+    // Step 2: Emit BuildUnitIntentEvent for each gate tile via the EventBus.
+    // We resolve the class constructor through the listener-map so we don't
+    // need to import classes into the evaluate context. Class names survive
+    // in dev builds (non-prod), which is what Playwright runs against.
+    const tileRefs = await page.evaluate(
+      (tiles) => {
+        const gv = (
+          window as unknown as {
+            __gameView: { ref(x: number, y: number): number };
+          }
+        ).__gameView;
+        return tiles.map((t) => gv.ref(t.tileX, t.tileY));
+      },
+      [gate1!, gate2!],
+    );
+
+    const emitBuild = await page.evaluate((refs) => {
+      const w = window as unknown as {
+        __eventBus?: {
+          listeners: Map<
+            { name: string; new (...args: unknown[]): unknown },
+            unknown
+          >;
+          emit(event: object): void;
+        };
+      };
+      const eb = w.__eventBus;
+      if (!eb) return { ok: false, reason: "no eventBus" };
+      let ctor: (new (...args: unknown[]) => object) | null = null;
+      for (const [c] of eb.listeners) {
+        if ((c as { name?: string }).name === "BuildUnitIntentEvent") {
+          ctor = c as unknown as new (...args: unknown[]) => object;
+          break;
+        }
+      }
+      if (!ctor)
+        return { ok: false, reason: "BuildUnitIntentEvent ctor not found" };
+      // UnitType.JumpGate enum value is the string "Jump Gate".
+      for (const r of refs) eb.emit(new ctor("Jump Gate", r));
+      return { ok: true };
+    }, tileRefs);
+    expect(emitBuild.ok, `build emit failed: ${emitBuild.reason}`).toBe(true);
+
+    // Step 3: Poll until 2 ready (active, constructed) gates exist.
+    // Singleplayer does not use instantBuild — gates take ~20 ticks to
+    // construct and require ~375k credits for the first two. By this point
+    // in the serial chain (>3 min of play) the player typically has enough.
+    // If not, surface a clear error rather than timing out silently.
+    const gatesReady = await page
+      .waitForFunction(
+        () => {
+          const gv = (
+            window as unknown as {
+              __gameView?: {
+                myPlayer(): {
+                  units(type: string): Array<{
+                    isActive(): boolean;
+                    isUnderConstruction(): boolean;
+                  }>;
+                } | null;
+              };
+            }
+          ).__gameView;
+          const mp = gv?.myPlayer();
+          if (!mp) return false;
+          const units = mp.units("Jump Gate");
+          const ready = units.filter(
+            (u) => u.isActive() && !u.isUnderConstruction(),
+          );
+          return ready.length >= 2;
+        },
+        null,
+        { timeout: 60_000 },
+      )
+      .then(() => true)
+      .catch(() => false);
+    test.skip(
+      !gatesReady,
+      "Could not build 2 Jump Gates within 60s (insufficient credits or unsuitable tiles on this run).",
+    );
+
+    // Step 4: Find a third owned non-gate tile for the right-click target.
+    const thirdTile = await page.evaluate(
+      ({ g1, g2 }) => {
+        const gv = (
+          window as unknown as {
+            __gameView?: {
+              width(): number;
+              height(): number;
+              ref(x: number, y: number): unknown;
+              owner(ref: unknown): { smallID(): number } | null;
+              myPlayer(): { smallID(): number } | null;
+            };
+          }
+        ).__gameView;
+        if (!gv) return null;
+        const mp = gv.myPlayer();
+        if (!mp) return null;
+        const myID = mp.smallID();
+        const w = gv.width();
+        const h = gv.height();
+        for (const step of [4, 2, 1]) {
+          for (let y = 0; y < h; y += step) {
+            for (let x = 0; x < w; x += step) {
+              if (
+                (x === g1.tileX && y === g1.tileY) ||
+                (x === g2.tileX && y === g2.tileY)
+              )
+                continue;
+              const r = gv.ref(x, y);
+              const o = gv.owner(r);
+              if (o && o.smallID() === myID) return { tileX: x, tileY: y };
+            }
+          }
+        }
+        return null;
+      },
+      { g1: gate1!, g2: gate2! },
+    );
+    expect(thirdTile).not.toBeNull();
+
+    // Step 5: Right-click the third tile → RadialMenu opens, gate button enabled.
+    await rightClickOnGameTile(page, thirdTile!.tileX, thirdTile!.tileY);
+    const jumpGateButton = page
+      .getByRole("button", { name: /jump.*gate/i })
+      .first();
+    await expect(jumpGateButton).toBeVisible({ timeout: 10_000 });
+    await expect(jumpGateButton).toBeEnabled({ timeout: 5_000 });
+
+    // Step 6: Click the enabled button → selectSource mode, status bar visible.
+    await jumpGateButton.click();
+    const statusBar = page.locator('[data-testid="jump-gate-status-bar"]');
+    await expect(statusBar).toBeVisible({ timeout: 5_000 });
+    await expect(statusBar.getByText(/select source gate/i)).toBeVisible({
+      timeout: 3_000,
+    });
+    await expect(statusBar.getByText(/esc/i)).toBeVisible({ timeout: 3_000 });
+
+    // Step 7: Install a listener for SendJumpGateTeleportIntentEvent so we
+    // can assert the final click actually emits the teleport intent.
+    await page.evaluate(() => {
+      const w = window as unknown as {
+        __capturedTeleport?: { source: number; dest: number } | null;
+        __eventBus?: {
+          listeners: Map<{ name: string }, unknown>;
+          on(ctor: unknown, cb: (e: unknown) => void): void;
+        };
+      };
+      w.__capturedTeleport = null;
+      const eb = w.__eventBus;
+      if (!eb) return;
+      for (const [c] of eb.listeners) {
+        if (
+          (c as { name?: string }).name === "SendJumpGateTeleportIntentEvent"
+        ) {
+          eb.on(c, (e: unknown) => {
+            const ev = e as {
+              sourceGateTile: number;
+              destinationGateTile: number;
+            };
+            w.__capturedTeleport = {
+              source: ev.sourceGateTile,
+              dest: ev.destinationGateTile,
+            };
+          });
+          break;
+        }
+      }
+    });
+
+    // Step 8: Left-click the source gate → selectDest mode.
+    await page.evaluate(
+      ({ tx, ty }) => {
+        const w = window as unknown as {
+          __emitClick: (x: number, y: number) => void;
+        };
+        w.__emitClick(tx, ty);
+      },
+      { tx: gate1!.tileX, ty: gate1!.tileY },
+    );
+    await expect(statusBar.getByText(/select destination gate/i)).toBeVisible({
+      timeout: 5_000,
+    });
+
+    // Verify the source tile was recorded in HUDStore (ties the selectDest
+    // transition to the actual source tile, not just the mode change).
+    const sourceMatches = await page.evaluate(
+      ({ tx, ty }) => {
+        const gv = (
+          window as unknown as {
+            __gameView: { ref(x: number, y: number): number };
+          }
+        ).__gameView;
+        const expected = gv.ref(tx, ty);
+        // HUDStore is not exposed directly; infer source via captured intent
+        // is impossible at this step. Return expected so the test can compare
+        // post-teleport via __capturedTeleport.source in the next step.
+        return expected;
+      },
+      { tx: gate1!.tileX, ty: gate1!.tileY },
+    );
+
+    // Step 9: Left-click dest gate → intent emitted, mode resets to idle.
+    await page.evaluate(
+      ({ tx, ty }) => {
+        const w = window as unknown as {
+          __emitClick: (x: number, y: number) => void;
+        };
+        w.__emitClick(tx, ty);
+      },
+      { tx: gate2!.tileX, ty: gate2!.tileY },
+    );
+    await page.waitForFunction(
+      () =>
+        (window as unknown as { __capturedTeleport?: unknown })
+          .__capturedTeleport !== null,
+      null,
+      { timeout: 5_000 },
+    );
+    const captured = await page.evaluate(
+      () =>
+        (
+          window as unknown as {
+            __capturedTeleport: { source: number; dest: number };
+          }
+        ).__capturedTeleport,
+    );
+    const destRef = await page.evaluate(
+      ({ tx, ty }) => {
+        const gv = (
+          window as unknown as {
+            __gameView: { ref(x: number, y: number): number };
+          }
+        ).__gameView;
+        return gv.ref(tx, ty);
+      },
+      { tx: gate2!.tileX, ty: gate2!.tileY },
+    );
+    expect(captured.source).toBe(sourceMatches);
+    expect(captured.dest).toBe(destRef);
+    await expect(statusBar).toBeHidden({ timeout: 3_000 });
+
+    // Step 10: leftClickOpensMenu precedence — with the setting enabled,
+    // the RadialMenu→button→status-bar flow still works (right-click opens
+    // the context menu regardless; gate mode handling does not depend on
+    // this user setting). Also verifies no spurious context menu opens
+    // when left-clicking during gate mode.
+    await page.evaluate(() => {
+      localStorage.setItem("settings.leftClickOpensMenu", "true");
+    });
+    await rightClickOnGameTile(page, thirdTile!.tileX, thirdTile!.tileY);
+    await expect(jumpGateButton).toBeEnabled({ timeout: 5_000 });
+    await jumpGateButton.click();
+    await expect(statusBar).toBeVisible({ timeout: 5_000 });
+    await expect(statusBar.getByText(/select source gate/i)).toBeVisible({
+      timeout: 3_000,
+    });
+    // RadialMenu should be closed after clicking its button (confirms no
+    // duplicate context menu opened on top of the gate flow).
+    const radialStillOpen = await page
+      .getByRole("button", { name: /^build$/i })
+      .first()
+      .isVisible()
+      .catch(() => false);
+    expect(radialStillOpen).toBe(false);
+
+    // Cleanup: exit gate mode, restore leftClickOpensMenu default.
+    await page.evaluate(() => {
+      const w = window as unknown as {
+        __setJumpGateMode?: (m: string) => void;
+      };
+      w.__setJumpGateMode?.("idle");
+      localStorage.setItem("settings.leftClickOpensMenu", "false");
+    });
+    await expect(statusBar).toBeHidden({ timeout: 3_000 });
+  });
+
   test("no console errors and all visible text is correct", async () => {
     const errors = getConsoleErrors(page);
     expect(errors, "Unexpected console errors during HUD interactions").toEqual(

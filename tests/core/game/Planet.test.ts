@@ -19,11 +19,11 @@ import { SectorMap } from "../../../src/core/game/SectorMap";
 
 // Terrain bit layout — mirrors the private constants in GameMapImpl and
 // matches the helpers already used in `SectorMap.test.ts`.
-const LAND_BIT = 1 << 7;
+const SECTOR_BIT = 1 << 7;
 const VOID_BIT = 1 << 5;
 
 /** Open-space sector tile (habitability 1.0). */
-const OPEN = LAND_BIT | 5;
+const OPEN = SECTOR_BIT | 5;
 /** Deep space (non-sector void). */
 const VOID = VOID_BIT;
 
@@ -44,11 +44,11 @@ function buildMap(
     );
   }
   const data = new Uint8Array(terrain);
-  let numLand = 0;
+  let numSector = 0;
   for (let i = 0; i < data.length; i++) {
-    if (data[i] & LAND_BIT) numLand++;
+    if (data[i] & SECTOR_BIT) numSector++;
   }
-  return new GameMapImpl(width, height, data, numLand);
+  return new GameMapImpl(width, height, data, numSector);
 }
 
 describe("Planet.resourceModifier", () => {

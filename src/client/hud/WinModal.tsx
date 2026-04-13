@@ -11,6 +11,7 @@ import {
 import { crazyGamesSDK } from "../CrazyGamesSDK";
 import { Platform } from "../Platform";
 import { saveRunScore } from "../RunHistory";
+import { pushRunScore } from "../RunHistoryApi";
 import { SendWinnerEvent } from "../Transport";
 import {
   getGamesPlayed,
@@ -145,7 +146,15 @@ export function WinModal(): React.JSX.Element {
             wu.winner[1] === gameView.myPlayer()?.clientID()) ||
             (wu.winner[0] === "team" &&
               wu.winner[1] === gameView.myPlayer()?.team()));
-        saveRunScore(wu.runScore, mapName, null, isWinner ? "win" : "loss");
+        const saved = saveRunScore(
+          wu.runScore,
+          mapName,
+          null,
+          isWinner ? "win" : "loss",
+        );
+        if (saved !== null) {
+          void pushRunScore(saved);
+        }
       }
       if (wu.winner === undefined) {
         // ...

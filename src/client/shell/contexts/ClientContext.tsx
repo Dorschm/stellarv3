@@ -8,27 +8,29 @@ import {
 } from "react";
 import { UserMeResponse } from "../../../core/ApiSchemas";
 import { EventBus } from "../../../core/EventBus";
+import type {
+  GameInfo,
+  GameRecord,
+  GameStartInfo,
+  PublicGameInfo,
+} from "../../../core/Schemas";
 import { GAME_ID_REGEX, LobbyInfoEvent } from "../../../core/Schemas";
 import { GameEnv } from "../../../core/configuration/Config";
 import { getRuntimeClientServerConfig } from "../../../core/configuration/ConfigLoader";
 import { GameType } from "../../../core/game/Game";
 import { UserSettings } from "../../../core/game/UserSettings";
+import { genAnonUsername } from "../../AnonUsername";
 import { getUserMe } from "../../Api";
 import { userAuth } from "../../Auth";
 import { joinLobby, type JoinLobbyResult } from "../../ClientGameRunner";
 import { getPlayerCosmeticsRefs } from "../../Cosmetics";
 import { crazyGamesSDK } from "../../CrazyGamesSDK";
+import { syncRunHistoryOnLogin } from "../../RunHistorySync";
 import {
   SendKickPlayerIntentEvent,
   SendUpdateGameConfigIntentEvent,
 } from "../../Transport";
-import { genAnonUsername } from "../../AnonUsername";
-import {
-  getDiscordAvatarUrl,
-  incrementGamesPlayed,
-  translateText,
-} from "../../Utils";
-import type { GameStartInfo, GameRecord, GameInfo, PublicGameInfo } from "../../../core/Schemas";
+import { incrementGamesPlayed, translateText } from "../../Utils";
 
 export interface JoinLobbyEvent {
   gameID: string;
@@ -53,7 +55,7 @@ interface ClientContextValue {
   leaveLobby: (cause?: string) => void;
   openMatchmaking: () => void;
   kickPlayer: (target: string) => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   updateGameConfig: (config: any) => void;
   /** Ref to get current username from the username input */
   getUsernameRef: React.MutableRefObject<(() => string) | null>;
@@ -148,7 +150,8 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
         const hasLinkedAccount =
           !crazyGamesSDK.isOnCrazyGames() &&
           ((response || null)?.player?.flares?.length ?? 0) > 0;
-        window.adsEnabled = !hasLinkedAccount && !crazyGamesSDK.isOnCrazyGames();
+        window.adsEnabled =
+          !hasLinkedAccount && !crazyGamesSDK.isOnCrazyGames();
         document.dispatchEvent(
           new CustomEvent("userMeResponse", {
             detail: response,
@@ -161,6 +164,7 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
             `Your player ID is ${response.player.publicId}\n` +
               "Sharing this ID will allow others to view your game history and stats.",
           );
+          void syncRunHistoryOnLogin();
         }
       };
 
@@ -185,7 +189,7 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
     return () => {
       window.removeEventListener("beforeunload", handleUnload);
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   const resolveTurnstileToken = useCallback(
     async (lobby: JoinLobbyEvent): Promise<string | null> => {
@@ -280,11 +284,7 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
         setIsInGame(true);
 
         if (window.location.hash === "" || window.location.hash === "#") {
-          history.replaceState(
-            null,
-            "",
-            window.location.origin + "#refresh",
-          );
+          history.replaceState(null, "", window.location.origin + "#refresh");
         }
         const lobbyIdHidden = !userSettings.lobbyIdVisibility();
         history.pushState(
@@ -300,41 +300,38 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
     [eventBus, userSettings, resolveTurnstileToken],
   );
 
-  const handleLeaveLobby = useCallback(
-    (cause?: string) => {
-      if (lobbyHandleRef.current === null) return;
-      console.log("leaving lobby, cancelling game");
-      lobbyHandleRef.current.stop(true);
-      lobbyHandleRef.current = null;
-      setLobbyHandle(null);
-      currentUrlRef.current = null;
-      delete document.body.dataset.lobbyConnected;
+  const handleLeaveLobby = useCallback((cause?: string) => {
+    if (lobbyHandleRef.current === null) return;
+    console.log("leaving lobby, cancelling game");
+    lobbyHandleRef.current.stop(true);
+    lobbyHandleRef.current = null;
+    setLobbyHandle(null);
+    currentUrlRef.current = null;
+    delete document.body.dataset.lobbyConnected;
 
-      try {
-        history.replaceState(null, "", "/");
-      } catch (e) {
-        console.warn("Failed to restore URL on leave:", e);
-      }
+    try {
+      history.replaceState(null, "", "/");
+    } catch (e) {
+      console.warn("Failed to restore URL on leave:", e);
+    }
 
-      document.body.classList.remove("in-game");
-      setIsInGame(false);
+    document.body.classList.remove("in-game");
+    setIsInGame(false);
 
-      if (cause === "full-lobby") {
-        window.dispatchEvent(
-          new CustomEvent("show-message", {
-            detail: {
-              message: translateText("public_lobby.join_timeout"),
-              color: "red",
-              duration: 3500,
-            },
-          }),
-        );
-      }
+    if (cause === "full-lobby") {
+      window.dispatchEvent(
+        new CustomEvent("show-message", {
+          detail: {
+            message: translateText("public_lobby.join_timeout"),
+            color: "red",
+            duration: 3500,
+          },
+        }),
+      );
+    }
 
-      crazyGamesSDK.gameplayStop();
-    },
-    [],
-  );
+    crazyGamesSDK.gameplayStop();
+  }, []);
 
   const openMatchmaking = useCallback(() => {
     // This is handled by NavigationContext now
@@ -348,7 +345,6 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
   );
 
   const updateGameConfig = useCallback(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (config: any) => {
       eventBus.emit(new SendUpdateGameConfigIntentEvent(config));
     },
@@ -534,7 +530,7 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
       window.removeEventListener("popstate", onPopState);
       window.removeEventListener("hashchange", onHashChange);
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <ClientContext.Provider

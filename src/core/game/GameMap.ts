@@ -38,7 +38,7 @@ export interface GameMap {
    * Runtime terrain mutation — overwrites the magnitude bits of a sector
    * tile so `terrainType()` reports the new terrain class. Only valid for
    * tiles that are already `isSector()`; calling on deep-space or debris
-   * tiles is a no-op (the IS_LAND bit is not flipped on, so the tile
+   * tiles is a no-op (the IS_SECTOR bit is not flipped on, so the tile
    * remains non-sector).
    *
    * Used by Scout Swarm terraforming (GDD §4 / Ticket 6): scouts step an
@@ -98,7 +98,7 @@ export class GameMapImpl implements GameMap {
   private readonly yToRef: number[];
 
   // Terrain bits (Uint8Array)
-  private static readonly IS_LAND_BIT = 7;
+  private static readonly IS_SECTOR_BIT = 7;
   private static readonly SHORELINE_BIT = 6;
   private static readonly VOID_BIT = 5;
   private static readonly MAGNITUDE_MASK = 0x1f; // 11111 in binary
@@ -181,7 +181,7 @@ export class GameMapImpl implements GameMap {
 
   // Terrain getters (immutable)
   isSector(ref: TileRef): boolean {
-    return Boolean(this.terrain[ref] & (1 << GameMapImpl.IS_LAND_BIT));
+    return Boolean(this.terrain[ref] & (1 << GameMapImpl.IS_SECTOR_BIT));
   }
 
   isVoidShore(ref: TileRef): boolean {
@@ -296,17 +296,52 @@ export class GameMapImpl implements GameMap {
   }
 
   /**
-   * Runtime terrain override. See {@link GameMap.setTerrainType}. Only
-   * affects sector tiles — non-sector tiles (DeepSpace / DebrisField) are
-   * classified from flag bits rather than magnitude, so mutating their
-   * magnitude would desync their rendering from their type and is treated
-   * as a no-op here.
+   * Runtime terrain override. See {@link GameMap.setTerrainType}.
    *
-   * The mutation picks the midpoint of each magnitude band so there is
-   * margin on either side before the band boundary is crossed again — this
-   * keeps subsequent re-reads of `terrainType()` stable and predictable.
+   * Two kinds of mutation are supported:
+   *   1. **Sector-tile magnitude change** — picks the midpoint of each
+   *      magnitude band so there is margin on either side before the band
+   *      boundary is crossed again. This keeps subsequent re-reads of
+   *      `terrainType()` stable and predictable.
+   *   2. **DeepSpace → AsteroidField promotion** — flips the IS_SECTOR bit
+   *      on and the VOID bit off for a void tile, making it a new sector
+   *      tile at AsteroidField magnitude. Scout-swarm terraforming (GDD §4)
+   *      drives this when accumulated scouts land on a void target.
+   *      Shoreline bits on this tile and its 4 neighbors are recomputed
+   *      because the void/sector boundary has moved. {@link numSectorTiles}
+   *      increments so global tile-count consumers (win checks, leaderboard)
+   *      see the new sector tile.
+   *
+   * Other non-sector transitions (→ DeepSpace, → DebrisField) are no-ops —
+   * scout swarms only terraform *toward* habitability, never away from it,
+   * and LRW damage reduces effective habitability without rewriting the
+   * underlying TerrainType.
    */
   setTerrainType(ref: TileRef, type: TerrainType): void {
+    // DeepSpace → AsteroidField: promote a void tile into a sector tile.
+    if (
+      !this.isSector(ref) &&
+      this.isVoid(ref) &&
+      type === TerrainType.AsteroidField
+    ) {
+      const preserved =
+        this.terrain[ref] &
+        ~((1 << GameMapImpl.VOID_BIT) | GameMapImpl.MAGNITUDE_MASK);
+      this.terrain[ref] =
+        preserved |
+        (1 << GameMapImpl.IS_SECTOR_BIT) |
+        (25 & GameMapImpl.MAGNITUDE_MASK);
+      this.numSectorTiles_++;
+      // Recompute shoreline bits on this tile and each 4-connected
+      // neighbor — the sector/void border has moved, so neighbors that
+      // used to be sector-facing void shores may no longer be.
+      this.recomputeShorelineBit(ref);
+      for (const n of this.neighbors(ref)) {
+        this.recomputeShorelineBit(n);
+      }
+      return;
+    }
+
     if (!this.isSector(ref)) return;
     let newMagnitude: number;
     switch (type) {
@@ -320,8 +355,8 @@ export class GameMapImpl implements GameMap {
         newMagnitude = 25;
         break;
       // DeepSpace / DebrisField cannot be expressed via magnitude alone —
-      // they require the IS_LAND bit to be cleared. Out of scope for scout
-      // terraforming, so we skip without touching the buffer.
+      // they require the IS_SECTOR bit to be cleared, which we never do
+      // at runtime (no mechanism reverses sector tiles back to void).
       case TerrainType.DeepSpace:
       case TerrainType.DebrisField:
         return;
@@ -330,10 +365,36 @@ export class GameMapImpl implements GameMap {
     }
     // Clamp to the 5-bit magnitude field (MAGNITUDE_MASK = 0x1f = 31).
     newMagnitude = newMagnitude & GameMapImpl.MAGNITUDE_MASK;
-    // Preserve the non-magnitude bits (IS_LAND, SHORELINE, VOID) and
+    // Preserve the non-magnitude bits (IS_SECTOR, SHORELINE, VOID) and
     // overwrite the magnitude bits in place.
     const preserved = this.terrain[ref] & ~GameMapImpl.MAGNITUDE_MASK;
     this.terrain[ref] = preserved | newMagnitude;
+  }
+
+  /**
+   * Set or clear the SHORELINE bit on `ref` based on whether the tile is
+   * currently a sector tile with at least one non-sector neighbor. Safe to
+   * call on any tile — non-sector tiles always have their SHORELINE bit
+   * cleared because the bit is only meaningful on sector-side edges.
+   *
+   * Used after {@link setTerrainType} promotes a void tile to a sector,
+   * because the void/sector boundary moves: the promoted tile itself
+   * acquires a fresh shoreline status, and each neighbor may have lost its
+   * only void neighbor and should no longer advertise as a shore.
+   */
+  private recomputeShorelineBit(ref: TileRef): void {
+    if (!this.isSector(ref)) {
+      this.terrain[ref] &= ~(1 << GameMapImpl.SHORELINE_BIT);
+      return;
+    }
+    const hasNonSectorNeighbor = this.neighbors(ref).some(
+      (n) => !this.isSector(n),
+    );
+    if (hasNonSectorNeighbor) {
+      this.terrain[ref] |= 1 << GameMapImpl.SHORELINE_BIT;
+    } else {
+      this.terrain[ref] &= ~(1 << GameMapImpl.SHORELINE_BIT);
+    }
   }
 
   neighbors(ref: TileRef): TileRef[] {

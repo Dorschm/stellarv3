@@ -3,6 +3,7 @@ import {
   Game,
   isUnit,
   OwnerComp,
+  Player,
   Unit,
   UnitParams,
   UnitType,
@@ -56,6 +57,16 @@ export class BattlecruiserExecution implements Execution {
       return;
     }
 
+    // GDD §3.2 — recurring fleet upkeep charged to the current owner
+    // (accounts for capture via captureUnit). `removeCredits` deducts up
+    // to the available balance, so hitting 0 credits does not destroy
+    // the cruiser.
+    const cruiserOwner = this.battlecruiser.owner();
+    const upkeep = this.mg.config().battlecruiserUpkeepPerTick(cruiserOwner);
+    if (upkeep > 0n) {
+      cruiserOwner.removeCredits(upkeep);
+    }
+
     const hasPort =
       this.battlecruiser.owner().unitCount(UnitType.Spaceport) > 0;
     if (hasPort) {
@@ -69,13 +80,73 @@ export class BattlecruiserExecution implements Execution {
       return;
     }
 
-    this.patrol();
-
+    // Evaluate ship targeting / LRW intercept against the start-of-tick
+    // position BEFORE patrol movement — otherwise a cruiser that began
+    // the tick inside intercept range could patrol out of range and miss
+    // a valid same-tick intercept. Ship targets still take priority over
+    // LRW intercept (cruiser is primarily a combat ship). Patrol only
+    // runs when no intercept shot was fired, so the intercept isn't
+    // immediately undone by a movement step.
+    let intercepted = false;
     if (this.battlecruiser.targetUnit() !== undefined) {
       this.shootTarget();
+    } else {
+      intercepted = this.tryInterceptLrw();
+    }
+
+    if (!intercepted) {
+      this.patrol();
     }
 
     this.syncSlottedStructure();
+  }
+
+  /**
+   * GDD §8 — "Satellites or fleets can intercept projectiles within range."
+   * The Battlecruiser is the fleet-side intercepter. Unlike DefenseStations
+   * (which prioritize LRW intercept over ship targeting), the cruiser is
+   * primarily a combat ship, so the intercept only fires when no ship
+   * target is engaged. The intercept shares the plasma-bolt cooldown
+   * (`battlecruiserPlasmaBoltAttackRate`) so a single cruiser can't both
+   * shoot a ship and swat an LRW in the same window.
+   *
+   * Friendly filtering: the registry-level `excludeOwnerSmallID` argument
+   * skips impacts owned by the cruiser's owner, but allied players'
+   * bombardments must also be left alone — we resolve each candidate's
+   * owner via `playerBySmallID` and apply `isFriendly` here, matching
+   * DefenseStationExecution.
+   */
+  private tryInterceptLrw(): boolean {
+    const cooldown = this.mg.config().battlecruiserPlasmaBoltAttackRate();
+    if (this.mg.ticks() - this.lastShellAttack <= cooldown) return false;
+
+    const owner = this.battlecruiser.owner();
+    const range = this.mg.config().battlecruiserTargettingRange();
+    const lrwImpacts = this.mg.pendingLrwImpactsNear(
+      this.battlecruiser.tile(),
+      range,
+      owner.smallID(),
+    );
+    if (lrwImpacts.length === 0) return false;
+
+    let bestToken = -1;
+    let bestDist = Infinity;
+    for (let i = 0; i < lrwImpacts.length; i++) {
+      const impact = lrwImpacts[i];
+      const impactOwner = this.mg.playerBySmallID(impact.ownerSmallID);
+      if (impactOwner.isPlayer() && (impactOwner as Player).isFriendly(owner)) {
+        continue;
+      }
+      if (impact.distSquared < bestDist) {
+        bestDist = impact.distSquared;
+        bestToken = impact.token;
+      }
+    }
+    if (bestToken !== -1 && this.mg.interceptPendingLrwImpact(bestToken)) {
+      this.lastShellAttack = this.mg.ticks();
+      return true;
+    }
+    return false;
   }
 
   /**

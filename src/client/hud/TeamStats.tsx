@@ -165,7 +165,7 @@ function TeamStats({ visible }: TeamStatsProps): React.JSX.Element {
                 {translateText("leaderboard.owned")}
               </div>
               <div className="p-1.5 md:p-2.5 text-center border-b border-slate-500">
-                {translateText("leaderboard.gold")}
+                {translateText("leaderboard.credits")}
               </div>
               <div className="p-1.5 md:p-2.5 text-center border-b border-slate-500">
                 {translateText("leaderboard.maxpopulation")}

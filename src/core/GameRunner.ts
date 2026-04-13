@@ -218,11 +218,12 @@ export class GameRunner {
     x?: number,
     y?: number,
     units?: readonly PlayerBuildableUnitType[],
+    options?: { capitalShipMode?: boolean },
   ): BuildableUnit[] {
     const player = this.game.player(playerID);
     const tile =
       x !== undefined && y !== undefined ? this.game.ref(x, y) : null;
-    return player.buildableUnits(tile, units);
+    return player.buildableUnits(tile, units, options);
   }
 
   public playerActions(

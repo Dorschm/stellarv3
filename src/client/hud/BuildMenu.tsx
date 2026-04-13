@@ -149,6 +149,12 @@ export function BuildMenu(): React.JSX.Element {
     BuildableUnit[] | null
   >(null);
   const [clickedTile, setClickedTile] = useState<TileRef | null>(null);
+  // Ticket 6 / GDD §14 — when the menu was opened via the radial
+  // "Build on Capital Ship" entry, buildability for hostable structures
+  // must be evaluated against an empty-slot Battlecruiser instead of the
+  // ground tile. Tracked as state so the refresh loop can pass it through
+  // to `.buildables()`.
+  const [capitalShipMode, setCapitalShipMode] = useState(false);
   const [filteredBuildTable, setFilteredBuildTable] =
     useState<BuildItemDisplay[][]>(buildTable);
 
@@ -167,7 +173,7 @@ export function BuildMenu(): React.JSX.Element {
       return;
     }
     const tile = gameView.ref(e.x, e.y);
-    showMenu(tile);
+    showMenu(tile, e.capitalShip === true);
   });
 
   useEventBus(eventBus, CloseViewEvent, () => {
@@ -184,10 +190,12 @@ export function BuildMenu(): React.JSX.Element {
 
   const hideMenu = useCallback(() => {
     setHidden(true);
+    setCapitalShipMode(false);
   }, []);
 
-  const showMenu = useCallback((tile: TileRef) => {
+  const showMenu = useCallback((tile: TileRef, capitalShip: boolean) => {
     setClickedTile(tile);
+    setCapitalShipMode(capitalShip);
     setHidden(false);
   }, []);
 
@@ -196,7 +204,11 @@ export function BuildMenu(): React.JSX.Element {
     if (tile) {
       gameView
         .myPlayer()
-        ?.buildables(tile, BuildMenus.types)
+        ?.buildables(
+          tile,
+          BuildMenus.types,
+          capitalShipMode ? { capitalShipMode: true } : undefined,
+        )
         .then((buildables) => {
           setPlayerBuildables(buildables);
         });
@@ -205,7 +217,7 @@ export function BuildMenu(): React.JSX.Element {
       const filtered = getBuildableUnits();
       setFilteredBuildTable(filtered);
     }
-  }, [gameView, clickedTile]);
+  }, [gameView, clickedTile, capitalShipMode]);
 
   const getBuildableUnits = useCallback(() => {
     return buildTable.map((row) =>
@@ -221,6 +233,22 @@ export function BuildMenu(): React.JSX.Element {
   }, [tick, hidden, refresh]);
 
   const cost = (item: BuildItemDisplay): Credits => {
+    // GDD §4 — Scout Swarm's unitInfo cost is 0n by design; the real
+    // launch cost is a percentage of the player's current credits,
+    // deducted inside ScoutSwarmExecution. Mirror that computation here
+    // so the build button shows what will actually be charged instead of
+    // a misleading "0".
+    if (item.unitType === UnitType.ScoutSwarm) {
+      const player = gameView?.myPlayer();
+      const cfg = gameView?.config();
+      if (!player || !cfg) {
+        return 0n;
+      }
+      const fraction = cfg.scoutSwarmCostFraction();
+      const FRACTION_SCALE = 1_000_000n;
+      const scaled = BigInt(Math.round(fraction * Number(FRACTION_SCALE)));
+      return (player.credits() * scaled) / FRACTION_SCALE;
+    }
     for (const bu of playerBuildables ?? []) {
       if (bu.type === item.unitType) {
         return bu.cost;
@@ -378,9 +406,7 @@ export function BuildMenu(): React.JSX.Element {
                   enabled && sendBuildOrUpgrade(buildableUnit, clickedTile!)
                 }
                 disabled={!enabled}
-                title={
-                  !enabled ? translateText("build_menu.not_enough_money") : ""
-                }
+                title={!enabled ? buildRejectTooltip(buildableUnit) : ""}
               >
                 <img
                   src={item.icon}
@@ -424,6 +450,19 @@ export function BuildMenu(): React.JSX.Element {
       ))}
     </div>
   );
+}
+
+function buildRejectTooltip(bu: BuildableUnit): string {
+  switch (bu.rejectReason) {
+    case "insufficient_credits":
+      return translateText("build_menu.not_enough_money");
+    case "structure_slot_full":
+      return translateText("build_menu.structure_slot_full");
+    case "invalid_location":
+      return translateText("build_menu.invalid_location");
+    default:
+      return translateText("build_menu.not_enough_money");
+  }
 }
 
 export default BuildMenu;

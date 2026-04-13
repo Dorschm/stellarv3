@@ -4,6 +4,7 @@ import {
   Game,
   GameMode,
   Player,
+  PlayerID,
   PlayerType,
   RankedType,
   Team,
@@ -18,6 +19,18 @@ export class WinCheckExecution implements Execution {
   // Hard time limit (in seconds) to force a winner before the server's
   // maxGameDuration hard kill. 170mins (10 mins before 3hrs)
   private static readonly HARD_TIME_LIMIT_SECONDS = 170 * 60;
+
+  // GDD §12 — a player who owns tiles but has zero population is dead in
+  // practice (can't attack, build, or expand). To avoid false positives
+  // from momentary dips (shuttle launches, trade payloads), only eliminate
+  // after the pop has been at zero for this many consecutive game ticks.
+  // 50 ticks = 5 seconds at the 10 tick/s sim rate.
+  private static readonly ZERO_POP_GRACE_TICKS = 50;
+
+  // First tick at which we observed a surviving (tiles > 0) player/team
+  // with zero population. Cleared as soon as population recovers.
+  private playerZeroPopStart = new Map<PlayerID, number>();
+  private teamZeroPopStart = new Map<Team, number>();
 
   constructor() {}
 
@@ -91,6 +104,55 @@ export class WinCheckExecution implements Execution {
     this.active = false;
   }
 
+  /**
+   * GDD §12 — a faction is considered alive in elimination mode only if it
+   * still owns tiles AND has positive population. A player at exactly 0 pop
+   * is granted `ZERO_POP_GRACE_TICKS` to recover (e.g. from their next
+   * growth tick) before being treated as eliminated.
+   */
+  private isPlayerAlive(p: Player): boolean {
+    if (this.mg === null) throw new Error("Not initialized");
+    if (p.numTilesOwned() <= 0) {
+      this.playerZeroPopStart.delete(p.id());
+      return false;
+    }
+    if (p.population() > 0) {
+      this.playerZeroPopStart.delete(p.id());
+      return true;
+    }
+    const start = this.playerZeroPopStart.get(p.id());
+    if (start === undefined) {
+      this.playerZeroPopStart.set(p.id(), this.mg.ticks());
+      return true;
+    }
+    if (this.mg.ticks() - start < WinCheckExecution.ZERO_POP_GRACE_TICKS) {
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Team-level counterpart of {@link isPlayerAlive}. A team with combined
+   * population of 0 is given the same grace window before being dropped
+   * from the elimination candidate set.
+   */
+  private isTeamAlivePopulation(team: Team, teamPop: number): boolean {
+    if (this.mg === null) throw new Error("Not initialized");
+    if (teamPop > 0) {
+      this.teamZeroPopStart.delete(team);
+      return true;
+    }
+    const start = this.teamZeroPopStart.get(team);
+    if (start === undefined) {
+      this.teamZeroPopStart.set(team, this.mg.ticks());
+      return true;
+    }
+    if (this.mg.ticks() - start < WinCheckExecution.ZERO_POP_GRACE_TICKS) {
+      return true;
+    }
+    return false;
+  }
+
   checkWinnerFFA(): void {
     if (this.mg === null) throw new Error("Not initialized");
     const players = this.mg.players();
@@ -136,21 +198,27 @@ export class WinCheckExecution implements Execution {
     }
     // Only consider factions still on the board. A player with 0 tiles is
     // either dead or hasn't spawned yet — neither counts as "alive in the
-    // run" for elimination.
-    const alive = players.filter((p) => p.numTilesOwned() > 0);
+    // run" for elimination. GDD §12 also treats population = 0 as a loss,
+    // but with a grace period to tolerate momentary dips (e.g. a shuttle
+    // launch that drains the whole pop right before a growth tick).
+    const alive = players.filter((p) => this.isPlayerAlive(p));
     if (alive.length === 1) {
       this.declareWinner(alive[0]);
       return;
     }
     if (alive.length === 0) {
-      // Edge case — everyone died on the same tick. Fall through to the
-      // timer fallback so we don't deadlock the run.
-      if (this.timerExpired()) {
-        const max = players
-          .slice()
-          .sort((a, b) => b.numTilesOwned() - a.numTilesOwned())[0];
-        this.declareWinner(max);
-      }
+      // Edge case — everyone died on the same tick (e.g. simultaneous
+      // zero-pop eliminations). Waiting for `timerExpired()` would soft-
+      // deadlock the run for minutes with no one able to act, so resolve
+      // immediately by applying the most-tiles tie-break among the players
+      // that still own any tiles. If nobody owns tiles either, fall through
+      // to the raw player list so we always declare a winner.
+      const candidates = players.filter((p) => p.numTilesOwned() > 0);
+      const pool = candidates.length > 0 ? candidates : players;
+      const max = pool
+        .slice()
+        .sort((a, b) => b.numTilesOwned() - a.numTilesOwned())[0];
+      this.declareWinner(max);
       return;
     }
     // Multiple factions still alive — only resolve via the timer fallback.
@@ -187,6 +255,7 @@ export class WinCheckExecution implements Execution {
   checkWinnerTeam(): void {
     if (this.mg === null) throw new Error("Not initialized");
     const teamToTiles = new Map<Team, number>();
+    const teamToPopulation = new Map<Team, number>();
     for (const player of this.mg.players()) {
       const team = player.team();
       // Sanity check, team should not be null here
@@ -195,13 +264,17 @@ export class WinCheckExecution implements Execution {
         team,
         (teamToTiles.get(team) ?? 0) + player.numTilesOwned(),
       );
+      teamToPopulation.set(
+        team,
+        (teamToPopulation.get(team) ?? 0) + player.population(),
+      );
     }
     if (teamToTiles.size === 0) {
       return;
     }
 
     if (this.isEliminationMode()) {
-      this.checkWinnerEliminationTeam(teamToTiles);
+      this.checkWinnerEliminationTeam(teamToTiles, teamToPopulation);
       return;
     }
 
@@ -215,7 +288,10 @@ export class WinCheckExecution implements Execution {
    * "alive" for the purposes of triggering elimination, so a single
    * surviving human team beats the surviving Bot team.
    */
-  private checkWinnerEliminationTeam(teamToTiles: Map<Team, number>): void {
+  private checkWinnerEliminationTeam(
+    teamToTiles: Map<Team, number>,
+    teamToPopulation: Map<Team, number>,
+  ): void {
     if (this.mg === null) throw new Error("Not initialized");
     // Symmetric guard with `checkWinnerEliminationFFA`: hold off declaring
     // a team-elimination win while any registered player is still mid-
@@ -228,22 +304,33 @@ export class WinCheckExecution implements Execution {
     for (const [team, tiles] of teamToTiles.entries()) {
       if (tiles <= 0) continue;
       if (team === ColoredTeams.Bot) continue;
+      if (!this.isTeamAlivePopulation(team, teamToPopulation.get(team) ?? 0)) {
+        continue;
+      }
       aliveNonBot.push(team);
+    }
+    // Drop stale grace-period entries for teams that no longer own tiles —
+    // they've already been eliminated by the tiles check, and re-spawning
+    // into the same team slot should get a fresh grace window.
+    for (const team of Array.from(this.teamZeroPopStart.keys())) {
+      if ((teamToTiles.get(team) ?? 0) <= 0) {
+        this.teamZeroPopStart.delete(team);
+      }
     }
     if (aliveNonBot.length === 1) {
       this.declareWinner(aliveNonBot[0]);
       return;
     }
     if (aliveNonBot.length === 0) {
-      // No human team has any tiles left — fall through to the timer
-      // fallback to avoid stalling the run.
-      if (this.timerExpired()) {
-        const sorted = Array.from(teamToTiles.entries())
-          .filter(([t]) => t !== ColoredTeams.Bot)
-          .sort((a, b) => b[1] - a[1]);
-        if (sorted.length > 0) {
-          this.declareWinner(sorted[0][0]);
-        }
+      // No non-bot team satisfies the alive predicate (e.g. all zero-pop
+      // eliminations resolved on the same tick). Waiting for the timer
+      // would soft-deadlock the run, so resolve immediately via the
+      // most-tiles tie-break among non-bot teams.
+      const sorted = Array.from(teamToTiles.entries())
+        .filter(([t]) => t !== ColoredTeams.Bot)
+        .sort((a, b) => b[1] - a[1]);
+      if (sorted.length > 0) {
+        this.declareWinner(sorted[0][0]);
       }
       return;
     }

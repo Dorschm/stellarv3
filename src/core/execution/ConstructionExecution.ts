@@ -216,22 +216,20 @@ export class ConstructionExecution implements Execution {
   }
 
   /**
-   * GDD §14 / Ticket 6 — Battlecruiser one-slot hosting. Returns the
-   * Battlecruiser that should host this construction if:
-   *   - The construction type is a supported slot payload (DefenseStation
-   *     or OrbitalStrikePlatform).
-   *   - There is an active, player-owned Battlecruiser within a 1-tile
-   *     radius of the target tile (so right-clicking the cruiser's tile —
-   *     or a neighbour — picks it up).
+   * GDD §14 — Capital Ship one-slot hosting. Returns the Battlecruiser that
+   * should host this construction if:
+   *   - The construction type is in the config's hostable-structure list
+   *     (all seven structures by default: Spaceport, OSP, DefenseStation,
+   *     PDA, Colony, Foundry, JumpGate — the "mobile one-slot planet").
+   *   - There is an active, player-owned Battlecruiser within a 2-tile
+   *     radius of the target tile.
    *   - That cruiser has an empty structure slot.
    * Otherwise returns `null` so the caller falls back to ground-based
    * structure placement.
    */
   private findHostBattlecruiser(tile: TileRef): Unit | null {
-    if (
-      this.constructionType !== UnitType.DefenseStation &&
-      this.constructionType !== UnitType.OrbitalStrikePlatform
-    ) {
+    const hostable = this.mg.config().battlecruiserHostableStructures();
+    if (!hostable.includes(this.constructionType)) {
       return null;
     }
     const nearby = this.mg.nearbyUnits(tile, 2, [UnitType.Battlecruiser]);

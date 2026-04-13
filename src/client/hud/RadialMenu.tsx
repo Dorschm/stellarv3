@@ -323,10 +323,17 @@ export function RadialMenu(): React.JSX.Element | null {
     // Re-anchor the build menu on the cruiser's tile so the subsequent
     // BuildUnitIntent's target coordinates are within range of
     // ConstructionExecution.findHostBattlecruiser(), which scans a
-    // 2-tile radius around the intent tile.
+    // 2-tile radius around the intent tile. The `capitalShip` flag tells
+    // BuildMenu to resolve buildability for hostable structures against
+    // the cruiser's empty slot instead of the (usually unowned) deep-space
+    // tile it sits on — see PlayerImpl.buildableUnits.
     const cruiserTile = hostCruiser.tile();
     eventBus.emit(
-      new ShowBuildMenuEvent(gameView.x(cruiserTile), gameView.y(cruiserTile)),
+      new ShowBuildMenuEvent(
+        gameView.x(cruiserTile),
+        gameView.y(cruiserTile),
+        true,
+      ),
     );
     hide();
   };

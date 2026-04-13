@@ -40,6 +40,10 @@ export class UnitImpl implements Unit {
   // down; BattlecruiserExecution keeps the hosted structure glued to the
   // cruiser's tile on each tick.
   private _slottedStructure: Unit | undefined;
+  // Back-reference for a structure that's slotted on a Battlecruiser, so
+  // PlayerExecution can recognize ship-hosted structures and skip its
+  // tile-ownership deletion check (their tile is the cruiser's, often void).
+  private _hostBattlecruiser: Unit | undefined;
   private _level: number = 1;
   private _targetable: boolean = true;
   private _loaded: boolean | undefined;
@@ -118,11 +122,24 @@ export class UnitImpl implements Unit {
         `Battlecruiser slot already occupied by ${this._slottedStructure.type()}`,
       );
     }
+    const previous = this._slottedStructure;
     this._slottedStructure = structure;
+    // Maintain the back-reference on the hosted structure so
+    // `hostBattlecruiser()` stays in sync with both attach and clear.
+    if (previous !== undefined && previous !== structure) {
+      (previous as UnitImpl)._hostBattlecruiser = undefined;
+    }
+    if (structure !== undefined) {
+      (structure as UnitImpl)._hostBattlecruiser = this;
+    }
   }
 
   slottedStructure(): Unit | undefined {
     return this._slottedStructure;
+  }
+
+  hostBattlecruiser(): Unit | undefined {
+    return this._hostBattlecruiser;
   }
 
   isUnit(): this is Unit {

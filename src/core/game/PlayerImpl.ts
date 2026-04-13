@@ -1073,11 +1073,28 @@ export class PlayerImpl implements Player {
   public buildableUnits(
     tile: TileRef | null,
     units: readonly PlayerBuildableUnitType[] = PlayerBuildable.types,
+    options: { capitalShipMode?: boolean } = {},
   ): BuildableUnit[] {
     const mg = this.mg;
     const config = mg.config();
     const rail = mg.hyperspaceLaneNetwork();
     const inSpawnPhase = mg.inSpawnPhase();
+    const capitalShipMode = options.capitalShipMode === true;
+
+    // GDD §14 / Ticket 6 — capital-ship build mode short-circuits the
+    // ground-based structure checks for types listed in
+    // `battlecruiserHostableStructures()`. The cruiser tile is typically
+    // unowned deep space, so `validStructureSpawnTiles(tile)` returns []
+    // and normal buildability would always be false. Instead we resolve
+    // a nearby player-owned Battlecruiser with an empty structure slot
+    // once per call and reuse it across every hostable unit type.
+    const hostable = capitalShipMode
+      ? config.battlecruiserHostableStructures()
+      : null;
+    const hostCruiser =
+      capitalShipMode && tile !== null
+        ? this.findEmptySlotHostCruiser(tile)
+        : null;
 
     const validTiles =
       tile !== null && units.some((u) => Structures.has(u))
@@ -1104,31 +1121,53 @@ export class PlayerImpl implements Player {
             canUpgrade = existingUnit.id();
           }
         }
-        canBuild = this.canSpawnUnitType(u, tile, validTiles);
-        // GDD §4 / Ticket 8 — also gate the build menu on the per-sector
-        // structure slot limit so the HUD greys out structures that the
-        // server would refuse anyway. Mirrors the canBuild() call above.
-        if (canBuild !== false && !this.isStructureSlotAvailable(u, canBuild)) {
-          canBuild = false;
+        if (capitalShipMode && hostable!.includes(u) && hostCruiser !== null) {
+          // Route hostable structure buildability through the cruiser
+          // slot instead of ground placement. Credits sufficiency is
+          // already checked by canBuildUnitType(u, cost) above; the
+          // cruiser having an empty slot is verified once for the whole
+          // call above. Report the cruiser's tile as the spawn point so
+          // the build-button cost / hyperspace-lane derivations match
+          // the coordinates the intent will carry.
+          canBuild = hostCruiser.tile();
+        } else {
+          canBuild = this.canSpawnUnitType(u, tile, validTiles);
+          // GDD §4 / Ticket 8 — also gate the build menu on the per-sector
+          // structure slot limit so the HUD greys out structures that the
+          // server would refuse anyway. Mirrors the canBuild() call above.
+          if (
+            canBuild !== false &&
+            !this.isStructureSlotAvailable(u, canBuild)
+          ) {
+            canBuild = false;
+          }
         }
       }
 
       const buildNew = canBuild !== false && canUpgrade === false;
 
-      // Surface a rejection reason for unit types that support it, so the
-      // client UI can explain *why* a build button is disabled. Only the
-      // AssaultShuttle case exposes structured reasons today — it has the
-      // most non-obvious preconditions (deep-space pathing, shuttle cap,
-      // sector-edge ownership).
+      // Surface a rejection reason for disabled build buttons so the UI can
+      // explain *why* the button is greyed out instead of always claiming
+      // "not enough money". Credits are checked first (the common case),
+      // then per-unit-type diagnostics (AssaultShuttle has the richest set),
+      // then structure-specific gates (sector slot cap vs. invalid tile).
       let rejectReason: string | undefined;
-      if (
-        canBuild === false &&
-        u === UnitType.AssaultShuttle &&
-        tile !== null &&
-        !inSpawnPhase &&
-        this._credits >= cost
-      ) {
-        rejectReason = diagnoseCanBuildAssaultShuttle(mg, this, tile).reason;
+      if (canBuild === false && tile !== null && !inSpawnPhase) {
+        if (this._credits < cost) {
+          rejectReason = "insufficient_credits";
+        } else if (u === UnitType.AssaultShuttle) {
+          rejectReason = diagnoseCanBuildAssaultShuttle(mg, this, tile).reason;
+        } else if (Structures.has(u)) {
+          const spawnTile = this.canSpawnUnitType(u, tile, validTiles);
+          if (
+            spawnTile !== false &&
+            !this.isStructureSlotAvailable(u, spawnTile)
+          ) {
+            rejectReason = "structure_slot_full";
+          } else {
+            rejectReason = "invalid_location";
+          }
+        }
       }
 
       result[i] = {
@@ -1159,7 +1198,9 @@ export class PlayerImpl implements Player {
     }
 
     const spawnTile = this.canSpawnUnitType(unitType, targetTile, validTiles);
-    if (spawnTile === false) return false;
+    if (spawnTile === false) {
+      return false;
+    }
     if (!this.isStructureSlotAvailable(unitType, spawnTile)) {
       return false;
     }
@@ -1280,13 +1321,16 @@ export class PlayerImpl implements Player {
       case UnitType.Foundry:
       case UnitType.JumpGate:
         return this.landBasedStructureSpawn(targetTile, validTiles);
-      case UnitType.ScoutSwarm:
-        // Scout swarms launch from any tile the player owns — the real
-        // spawn point is determined by the ScoutSwarmExecution (it picks
-        // the closest owned sector tile to the target). Returning the
-        // target tile here satisfies the "can we build it?" query without
-        // running an expensive pathfind in the hot build-button loop.
-        return targetTile;
+      case UnitType.ScoutSwarm: {
+        // Scout swarms launch from the player's nearest Spaceport or Jump
+        // Gate to the target. Gate buildability on at least one such
+        // structure existing — otherwise ScoutSwarmExecution would bail
+        // out after the build menu had already implied success.
+        const hasLaunchStructure =
+          this.units(UnitType.Spaceport).some((u) => u.isActive()) ||
+          this.units(UnitType.JumpGate).some((u) => u.isActive());
+        return hasLaunchStructure ? targetTile : false;
+      }
       default:
         assertNever(unitType);
     }
@@ -1389,6 +1433,29 @@ export class PlayerImpl implements Player {
       return false;
     }
     return tiles[0];
+  }
+
+  /**
+   * GDD §14 / Ticket 6 — locate a player-owned, active Battlecruiser with
+   * an empty structure slot within the same 2-tile radius that
+   * ConstructionExecution.findHostBattlecruiser() scans. Returns `null`
+   * when no such cruiser exists so the build menu falls back to reporting
+   * hostable structures as unbuildable. Kept as a private helper on the
+   * player so buildableUnits() can reuse the lookup across every hostable
+   * type in a single call.
+   */
+  private findEmptySlotHostCruiser(tile: TileRef): Unit | null {
+    const nearby = this.mg.nearbyUnits(tile, 2, [UnitType.Battlecruiser]);
+    for (const { unit } of nearby) {
+      if (
+        unit.owner() === this &&
+        unit.isActive() &&
+        unit.slottedStructure() === undefined
+      ) {
+        return unit;
+      }
+    }
+    return null;
   }
 
   private validStructureSpawnTiles(tile: TileRef): TileRef[] {

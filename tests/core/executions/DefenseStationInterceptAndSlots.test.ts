@@ -427,15 +427,15 @@ describe("Config.maxStructuresForHabitability", () => {
     expect(cfg.maxStructuresForHabitability(0.0)).toBe(0);
   });
 
-  test("Nebula tier (0.3 < hab ≤ 0.6) → 1 slot", () => {
-    expect(cfg.maxStructuresForHabitability(0.6)).toBe(1);
-    expect(cfg.maxStructuresForHabitability(0.5)).toBe(1);
-    expect(cfg.maxStructuresForHabitability(0.31)).toBe(1);
+  test("Nebula tier (0.3 < hab ≤ 0.6) → 10 slots", () => {
+    expect(cfg.maxStructuresForHabitability(0.6)).toBe(10);
+    expect(cfg.maxStructuresForHabitability(0.5)).toBe(10);
+    expect(cfg.maxStructuresForHabitability(0.31)).toBe(10);
   });
 
-  test("OpenSpace tier (hab > 0.6) → 2 slots", () => {
-    expect(cfg.maxStructuresForHabitability(1.0)).toBe(2);
-    expect(cfg.maxStructuresForHabitability(0.7)).toBe(2);
+  test("OpenSpace tier (hab > 0.6) → 20 slots", () => {
+    expect(cfg.maxStructuresForHabitability(1.0)).toBe(20);
+    expect(cfg.maxStructuresForHabitability(0.7)).toBe(20);
   });
 
   test("Non-finite habitability → 0 slots", () => {
@@ -467,6 +467,18 @@ describe("PlayerImpl.canBuild slot limit (Ticket 8)", () => {
     // The slot limit is structure-specific; structures are pricy. Top up
     // the player so credit checks never gate the test.
     player.addCredits(10_000_000n);
+    // The production OpenSpace cap is 20 structures/sector (with Nebula at
+    // 10 and AsteroidField still 0). These tests read cleaner against the
+    // original 2/1/0 tier breakdown; override the config here so each
+    // scenario still exercises "last allowed build" vs "one past cap".
+    const cfg = game.config() as unknown as {
+      maxStructuresForHabitability(hab: number): number;
+    };
+    cfg.maxStructuresForHabitability = (hab: number): number => {
+      if (!Number.isFinite(hab) || hab <= 0.3) return 0;
+      if (hab <= 0.6) return 1;
+      return 2;
+    };
   });
 
   test("OpenSpace sector allows up to 2 structures, third is rejected", () => {

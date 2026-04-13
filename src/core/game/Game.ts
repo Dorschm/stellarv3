@@ -178,6 +178,7 @@ export interface RunScore {
  * Serialized to localStorage as a JSON array after each game end.
  */
 export interface PersistedRunScore extends RunScore {
+  id?: string;
   date: string;
   mapSeed: number | null;
   mapName: string;
@@ -597,6 +598,13 @@ export interface Unit {
    */
   setSlottedStructure(structure: Unit | undefined): void;
   slottedStructure(): Unit | undefined;
+  /**
+   * GDD §14 — if this unit is currently slotted on a Battlecruiser, returns
+   * that cruiser. Used by PlayerExecution to skip the tile-ownership check
+   * for ship-hosted structures (which ride on deep-space tiles that no
+   * player owns).
+   */
+  hostBattlecruiser(): Unit | undefined;
 }
 
 export interface TerraNullius {
@@ -663,6 +671,7 @@ export interface Player {
   buildableUnits(
     tile: TileRef | null,
     units?: readonly PlayerBuildableUnitType[],
+    options?: { capitalShipMode?: boolean },
   ): BuildableUnit[];
   canBuild(
     type: UnitType,

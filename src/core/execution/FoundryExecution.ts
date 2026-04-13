@@ -21,6 +21,17 @@ export class FoundryExecution implements Execution {
       this.active = false;
       return;
     }
+    if (this.factory.isUnderConstruction()) {
+      return;
+    }
+    // GDD §14 — Capital Ship hosting. A Foundry slotted on a Battlecruiser
+    // sits on a deep-space tile, where the hab-weighted credit formula in
+    // `creditAdditionRate` contributes zero on its behalf. Add a small
+    // fixed credit trickle each tick so the slot is useful.
+    if (this.game.isVoid(this.factory.tile())) {
+      const add = this.game.config().shipHostedFoundryCreditsPerTick();
+      this.factory.owner().addCredits(BigInt(add));
+    }
   }
 
   isActive(): boolean {

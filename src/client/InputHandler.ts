@@ -128,6 +128,14 @@ export class ShowBuildMenuEvent implements GameEvent {
   constructor(
     public readonly x: number,
     public readonly y: number,
+    /**
+     * Ticket 6 / GDD §14 — when true, the BuildMenu should resolve
+     * buildability against a Battlecruiser's empty structure slot rather
+     * than a ground tile. The radial menu sets this when the player chose
+     * the "Build on Capital Ship" entry so hostable structures show as
+     * buildable even on unowned deep-space cruiser tiles.
+     */
+    public readonly capitalShip: boolean = false,
   ) {}
 }
 export class ShowEmojiMenuEvent implements GameEvent {

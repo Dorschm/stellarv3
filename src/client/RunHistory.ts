@@ -1,4 +1,5 @@
 import { Difficulty, PersistedRunScore, RunScore } from "../core/game/Game";
+import { generateCryptoRandomUUID } from "./Utils";
 
 const RUN_HISTORY_KEY = "openfront_run_history";
 const MAX_STORED_RUNS = 100;
@@ -26,25 +27,66 @@ export function saveRunScore(
   mapName: string,
   mapSeed: number | null,
   result: "win" | "loss",
-): void {
+): PersistedRunScore | null {
   try {
     const history = loadRunHistory();
     const entry: PersistedRunScore = {
       ...runScore,
+      id: generateCryptoRandomUUID(),
       date: new Date().toISOString(),
       mapSeed,
       mapName,
       result,
     };
     history.push(entry);
-    // Keep only the most recent runs
     while (history.length > MAX_STORED_RUNS) {
       history.shift();
     }
     localStorage.setItem(RUN_HISTORY_KEY, JSON.stringify(history));
+    return entry;
   } catch (e) {
     console.warn("[RunHistory] Failed to save run score:", e);
+    return null;
   }
+}
+
+export function writeRunHistory(runs: PersistedRunScore[]): void {
+  try {
+    const trimmed = runs.slice(-MAX_STORED_RUNS);
+    localStorage.setItem(RUN_HISTORY_KEY, JSON.stringify(trimmed));
+  } catch (e) {
+    console.warn("[RunHistory] Failed to write run history:", e);
+  }
+}
+
+export function mergeRunHistory(
+  local: PersistedRunScore[],
+  remote: PersistedRunScore[],
+): {
+  merged: PersistedRunScore[];
+  localOnly: PersistedRunScore[];
+} {
+  const seen = new Set<string>();
+  const merged: PersistedRunScore[] = [];
+  const dedupe = (entry: PersistedRunScore) => {
+    const key =
+      entry.id ?? `${entry.date}|${entry.mapName}|${entry.totalTicks}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    merged.push(entry);
+  };
+  remote.forEach(dedupe);
+  const localOnly: PersistedRunScore[] = [];
+  for (const entry of local) {
+    const key =
+      entry.id ?? `${entry.date}|${entry.mapName}|${entry.totalTicks}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    merged.push(entry);
+    localOnly.push(entry);
+  }
+  merged.sort((a, b) => a.date.localeCompare(b.date));
+  return { merged, localOnly };
 }
 
 /**

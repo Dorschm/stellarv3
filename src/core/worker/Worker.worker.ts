@@ -198,6 +198,9 @@ ctx.addEventListener("message", async (e: MessageEvent<MainThreadMessage>) => {
           message.x,
           message.y,
           message.units,
+          message.capitalShipMode === true
+            ? { capitalShipMode: true }
+            : undefined,
         );
         sendMessage({
           type: "player_buildables_result",

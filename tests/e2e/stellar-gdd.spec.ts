@@ -356,8 +356,22 @@ test.describe("Stellar GDD v0.1 feature coverage", () => {
   test("§11 HUD: attack ratio slider is present and responsive to input", async () => {
     const slider = page.locator("input[type='range']:visible").first();
     await expect(slider).toBeVisible({ timeout: 10_000 });
-    await slider.focus();
-    await slider.fill("42");
+    // After ~2 minutes of singleplayer gameplay the HUD re-renders on every
+    // game tick (10/s), which races with Playwright's `focus()` + `fill()`
+    // handshake and can time out ("element was detached from the DOM,
+    // retrying"). Drive the value via the native setter + synthetic events
+    // — the same technique `game-fixtures.ts` uses for the bot-count slider
+    // during lobby setup. React picks up the change via its native-setter
+    // bypass, so the onChange handler fires exactly once per event.
+    await slider.evaluate((el: HTMLInputElement) => {
+      const setter = Object.getOwnPropertyDescriptor(
+        HTMLInputElement.prototype,
+        "value",
+      )!.set!;
+      setter.call(el, "42");
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+      el.dispatchEvent(new Event("change", { bubbles: true }));
+    });
     await expect
       .poll(() => slider.evaluate((el: HTMLInputElement) => el.value), {
         timeout: 5_000,

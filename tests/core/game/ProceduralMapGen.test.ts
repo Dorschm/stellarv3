@@ -2,7 +2,7 @@
 import { describe, expect, it } from "vitest";
 import { generateProceduralMapData } from "../../../src/core/game/ProceduralMapGen";
 
-const IS_LAND_BIT = 1 << 7;
+const IS_SECTOR_BIT = 1 << 7;
 const VOID_BIT = 1 << 5;
 const MAGNITUDE_MASK = 0x1f;
 
@@ -38,7 +38,7 @@ describe("ProceduralMapGen", () => {
     let asteroid = 0;
 
     for (let i = 0; i < terrain.length; i++) {
-      if (terrain[i] & IS_LAND_BIT) {
+      if (terrain[i] & IS_SECTOR_BIT) {
         sectorCount++;
         const mag = terrain[i] & MAGNITUDE_MASK;
         if (mag < 10) openSpace++;
@@ -119,7 +119,7 @@ describe("ProceduralMapGen", () => {
 
       // Nation center should be a sector tile
       const ref = nation.coordinates[1] * 200 + nation.coordinates[0];
-      expect(terrain[ref] & IS_LAND_BIT).toBeTruthy();
+      expect(terrain[ref] & IS_SECTOR_BIT).toBeTruthy();
     }
   });
 
@@ -200,7 +200,7 @@ describe("ProceduralMapGen", () => {
     let debrisCount = 0;
 
     for (let i = 0; i < terrain.length; i++) {
-      if (!(terrain[i] & IS_LAND_BIT)) {
+      if (!(terrain[i] & IS_SECTOR_BIT)) {
         if (terrain[i] & VOID_BIT) voidCount++;
         else debrisCount++;
       }

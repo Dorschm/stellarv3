@@ -172,7 +172,7 @@ function Leaderboard({ visible }: LeaderboardProps): React.JSX.Element {
             className="py-1 md:py-2 text-center border-b border-slate-500 cursor-pointer whitespace-nowrap truncate"
             onClick={() => handleSetSort("credits")}
           >
-            {translateText("leaderboard.gold")}
+            {translateText("leaderboard.credits")}
             {sortKey === "credits" ? (sortOrder === "asc" ? "⬆️" : "⬇️") : ""}
           </div>
           <div

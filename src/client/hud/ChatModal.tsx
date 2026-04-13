@@ -96,14 +96,12 @@ export function ChatModal(): React.JSX.Element {
     if (!selectedPhrase || !selectedCategory) return;
     if (requiresPlayerSelection && !selectedPlayer) return;
 
-    const fullKey = selectedPlayer
-      ? `chat.${selectedCategory}.${selectedPhrase.key}.player`
-      : `chat.${selectedCategory}.${selectedPhrase.key}`;
+    const quickChatKey = `${selectedCategory}.${selectedPhrase.key}`;
 
     const recipient = selectedPlayer ?? gameView.myPlayer();
     if (!recipient) return;
     eventBus.emit(
-      new SendQuickChatEvent(recipient, fullKey, selectedPlayer?.id()),
+      new SendQuickChatEvent(recipient, quickChatKey, selectedPlayer?.id()),
     );
 
     close();

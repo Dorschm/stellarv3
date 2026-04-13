@@ -46,6 +46,14 @@ export class PlayerExecution implements Execution {
         continue;
       }
 
+      // GDD §14 — ship-hosted structures ride on their Battlecruiser's tile
+      // (typically deep-space void, which no player owns). Skip the
+      // tile-ownership check for them; cascade-delete from the cruiser is
+      // handled in UnitImpl.delete().
+      if (u.hostBattlecruiser() !== undefined) {
+        continue;
+      }
+
       const owner = this.mg!.owner(u.tile());
       if (!owner?.isPlayer()) {
         u.delete();

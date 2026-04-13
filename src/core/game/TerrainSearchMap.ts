@@ -1,5 +1,5 @@
 export enum SearchMapTileType {
-  Land,
+  Sector,
   Shore,
   Water,
 }
@@ -17,10 +17,10 @@ export class TerrainSearchMap {
 
   node(x: number, y: number): SearchMapTileType {
     const packedByte = this.mapData[4 + y * this.width + x];
-    const isLand = packedByte & 0b10000000;
+    const isSector = packedByte & 0b10000000;
     const magnitude = packedByte & 0b00011111;
-    if (isLand) {
-      return SearchMapTileType.Land;
+    if (isSector) {
+      return SearchMapTileType.Sector;
     }
     if (magnitude < 10) {
       return SearchMapTileType.Shore;

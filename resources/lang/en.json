@@ -552,7 +552,8 @@
     "nova_bomb": "Nova Bomb",
     "cluster_warhead": "Cluster Warhead",
     "foundry": "Foundry",
-    "jump_gate": "Jump Gate"
+    "jump_gate": "Jump Gate",
+    "scout_swarm": "Scout Swarm"
   },
   "user_setting": {
     "title": "Settings",
@@ -771,9 +772,12 @@
       "defense_station": "Increases defenses of nearby borders",
       "colony": "Increases max population",
       "foundry": "Creates hyperspace lanes and spawns frigates",
-      "jump_gate": "Teleports units to a paired gate"
+      "jump_gate": "Teleports units to a paired gate",
+      "scout_swarm": "Explores and terraforms distant sectors (costs 10% of credits)"
     },
-    "not_enough_money": "Not enough money"
+    "not_enough_money": "Not enough money",
+    "structure_slot_full": "This sector has no free structure slots",
+    "invalid_location": "Can't build here"
   },
   "win_modal": {
     "support_stellar_game": "Support Stellar.Game!",

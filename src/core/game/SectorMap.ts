@@ -264,6 +264,40 @@ export class SectorMap {
   }
 
   /**
+   * Extend the sector map to cover a newly-sectored tile. Scout-swarm
+   * terraforming (GDD §4) flips DeepSpace tiles into AsteroidFields at
+   * runtime — those tiles were not part of any BFS flood at init, so they
+   * carry sector ID 0 until this method adopts them.
+   *
+   * Picks the first adjacent tile that already belongs to a sector, in the
+   * deterministic N/S/E/W order of {@link GameMap.neighbors}, and assigns
+   * the new tile to that sector. Server and all clients run the same code
+   * on the same `[tileRef, terrainType]` pair streamed through the terrain
+   * update channel, so the assignment stays bit-exact without any extra
+   * payload.
+   *
+   * If no neighbour has a sector ID (e.g., the promoted tile sits in an
+   * isolated pocket of debris), the tile stays at sector 0 — callers
+   * accept that edge case rather than forbidding the mutation, because the
+   * scout-swarm terraform contract only promises terrain promotion, not
+   * sector membership.
+   *
+   * No-op when the tile is already assigned to a sector.
+   */
+  onTileConvertedToSector(tile: TileRef): void {
+    if (this.sectorIds[tile] !== 0) return;
+    const neighbors = this.gameMap.neighbors(tile);
+    for (let i = 0; i < neighbors.length; i++) {
+      const neighborSector = this.sectorIds[neighbors[i]];
+      if (neighborSector !== 0) {
+        this.sectorIds[tile] = neighborSector;
+        this.perSectorTileCount[neighborSector]++;
+        return;
+      }
+    }
+  }
+
+  /**
    * Total tile count of a sector. Returns `0` for `sectorId === 0` and for
    * any out-of-range sector ID.
    */

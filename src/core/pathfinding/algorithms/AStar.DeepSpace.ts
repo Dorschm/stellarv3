@@ -2,7 +2,7 @@ import { GameMap, TileRef } from "../../game/GameMap";
 import { PathFinder } from "../types";
 import { MinHeap, PriorityQueue } from "./PriorityQueue";
 
-const LAND_BIT = 7; // Bit 7 in terrain indicates land
+const SECTOR_BIT = 7; // Bit 7 in terrain indicates a sector tile
 const MAGNITUDE_MASK = 0x1f;
 const COST_SCALE = 100;
 const BASE_COST = 1 * COST_SCALE;
@@ -66,7 +66,7 @@ export class AStarDeepSpace implements PathFinder<number> {
     const cameFrom = this.cameFrom;
     const queue = this.queue;
     const weight = this.heuristicWeight;
-    const landMask = 1 << LAND_BIT;
+    const sectorMask = 1 << SECTOR_BIT;
 
     const goalX = goal % width;
     const goalY = (goal / width) | 0;
@@ -127,7 +127,7 @@ export class AStarDeepSpace implements PathFinder<number> {
         const neighborTerrain = terrain[neighbor];
         if (
           closedStamp[neighbor] !== stamp &&
-          (neighbor === goal || (neighborTerrain & landMask) === 0)
+          (neighbor === goal || (neighborTerrain & sectorMask) === 0)
         ) {
           const magnitude = neighborTerrain & MAGNITUDE_MASK;
           const cost = BASE_COST + getMagnitudePenalty(magnitude);
@@ -155,7 +155,7 @@ export class AStarDeepSpace implements PathFinder<number> {
         const neighborTerrain = terrain[neighbor];
         if (
           closedStamp[neighbor] !== stamp &&
-          (neighbor === goal || (neighborTerrain & landMask) === 0)
+          (neighbor === goal || (neighborTerrain & sectorMask) === 0)
         ) {
           const magnitude = neighborTerrain & MAGNITUDE_MASK;
           const cost = BASE_COST + getMagnitudePenalty(magnitude);
@@ -183,7 +183,7 @@ export class AStarDeepSpace implements PathFinder<number> {
         const neighborTerrain = terrain[neighbor];
         if (
           closedStamp[neighbor] !== stamp &&
-          (neighbor === goal || (neighborTerrain & landMask) === 0)
+          (neighbor === goal || (neighborTerrain & sectorMask) === 0)
         ) {
           const magnitude = neighborTerrain & MAGNITUDE_MASK;
           const cost = BASE_COST + getMagnitudePenalty(magnitude);
@@ -211,7 +211,7 @@ export class AStarDeepSpace implements PathFinder<number> {
         const neighborTerrain = terrain[neighbor];
         if (
           closedStamp[neighbor] !== stamp &&
-          (neighbor === goal || (neighborTerrain & landMask) === 0)
+          (neighbor === goal || (neighborTerrain & sectorMask) === 0)
         ) {
           const magnitude = neighborTerrain & MAGNITUDE_MASK;
           const cost = BASE_COST + getMagnitudePenalty(magnitude);

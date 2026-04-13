@@ -67,10 +67,22 @@ export class TradeFreighterExecution implements Execution {
       // GDD §7: ship was destroyed externally (e.g., by raiders). Treat the
       // carried population as explicit casualties so populationCarried is never
       // silently retained, but don't refund — the population went down with the
-      // ship.
+      // ship. No upkeep is charged in this branch: a dead freighter cannot
+      // drain credits on the same tick it was destroyed.
       this.discardTroopPayloadAsCasualty();
       this.active = false;
       return;
+    }
+
+    // GDD §3.2 — recurring fleet upkeep charged to the freighter's
+    // current owner (captors pay upkeep just like the original sender).
+    // `removeCredits` deducts up to the available balance, so bankruptcy
+    // doesn't destroy the ship. Deducted AFTER the active-state guard so
+    // destroyed freighters never siphon a final tick of credits.
+    const freighterOwner = this.tradeFreighter.owner();
+    const upkeep = this.mg.config().tradeFreighterUpkeepPerTick(freighterOwner);
+    if (upkeep > 0n) {
+      freighterOwner.removeCredits(upkeep);
     }
 
     const tradeFreighterOwner = this.tradeFreighter.owner();

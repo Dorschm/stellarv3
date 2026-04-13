@@ -202,6 +202,7 @@ export class WorkerClient {
     x?: number,
     y?: number,
     units?: readonly PlayerBuildableUnitType[],
+    options?: { capitalShipMode?: boolean },
   ): Promise<BuildableUnit[]> {
     return new Promise((resolve, reject) => {
       if (!this.isInitialized) {
@@ -227,6 +228,7 @@ export class WorkerClient {
         x,
         y,
         units,
+        capitalShipMode: options?.capitalShipMode === true,
       });
     });
   }

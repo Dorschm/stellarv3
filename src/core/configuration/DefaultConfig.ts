@@ -87,6 +87,24 @@ const SCOUT_SWARM_TILES_PER_TICK =
   (SCOUT_SWARM_AU_PER_MINUTE * AU_IN_TILES) / 60 / 10;
 const SCOUT_SWARM_TERRAFORM_ACCUMULATION = 10;
 const SCOUT_SWARM_LIFETIME_TICKS = 5 * 60 * 10;
+/**
+ * GDD §3.1 — population cost deducted on scout swarm launch, expressed as
+ * a fraction (0..1) of the launcher's **population cap** (not current
+ * population). 25% makes scouting a real commitment that scales with
+ * empire size instead of a fixed, trivial early-game tax.
+ */
+const SCOUT_SWARM_POPULATION_FRACTION = 0.25;
+
+/**
+ * GDD §3.2 — per-tick credit upkeep charged to the fleet unit's current
+ * owner. Rates scale with the cost/power of the unit: Battlecruisers are
+ * the most expensive to maintain, Trade Freighters the cheapest. Reaching
+ * 0 credits does not destroy the fleet — the drain is a design pressure
+ * to limit runaway fleet counts, not a bankruptcy kill switch.
+ */
+const BATTLECRUISER_UPKEEP_PER_TICK: Credits = 100n;
+const ASSAULT_SHUTTLE_UPKEEP_PER_TICK: Credits = 50n;
+const TRADE_FREIGHTER_UPKEEP_PER_TICK: Credits = 10n;
 
 /**
  * GDD §6 — Assault Fleet travel speed: 1 AU per minute. Resolved at module
@@ -325,6 +343,21 @@ export class DefaultConfig implements Config {
     return 250_000;
   }
 
+  shipHostedColonyPopulationPerTick(): number {
+    // Reduced fixed growth (≈ 50% of a new player's baseline 10/tick idle
+    // trickle scaled up for the cruiser's cost investment). Tuned low so a
+    // ship-hosted Colony is useful but not a strict upgrade over a ground
+    // Colony on a habitable tile.
+    return 50;
+  }
+
+  shipHostedFoundryCreditsPerTick(): number {
+    // Matches the hab-weighted `volumeBonus` of ~5 yielding tiles at 1.0
+    // modifier — enough to give the foundry meaningful income on a void
+    // tile without rivalling a ground-based network of yielding tiles.
+    return 50;
+  }
+
   falloutDefenseModifier(falloutRatio: number): number {
     // falloutRatio is between 0 and 1
     // So defense modifier is between [5, 2.5]
@@ -376,6 +409,60 @@ export class DefaultConfig implements Config {
   scoutSwarmTerraformAccumulation(): number {
     return SCOUT_SWARM_TERRAFORM_ACCUMULATION;
   }
+  scoutSwarmPopulationFraction(): number {
+    return SCOUT_SWARM_POPULATION_FRACTION;
+  }
+
+  // ---- GDD §3.2: Fleet Upkeep --------------------------------------------
+  assaultShuttleUpkeepPerTick(owner?: Player | PlayerView): Credits {
+    return this.scaleFleetUpkeep(ASSAULT_SHUTTLE_UPKEEP_PER_TICK, owner);
+  }
+  battlecruiserUpkeepPerTick(owner?: Player | PlayerView): Credits {
+    return this.scaleFleetUpkeep(BATTLECRUISER_UPKEEP_PER_TICK, owner);
+  }
+  tradeFreighterUpkeepPerTick(owner?: Player | PlayerView): Credits {
+    return this.scaleFleetUpkeep(TRADE_FREIGHTER_UPKEEP_PER_TICK, owner);
+  }
+
+  /**
+   * GDD §3.2 — fleet-upkeep scaling helper. Mirrors the Bot/Nation
+   * multiplier pattern used by {@link troopIncreaseRate} and
+   * {@link creditAdditionRate}: Bots pay 60% of base, Nations scale from
+   * Easy (90%) up to Impossible (105%), and Humans pay the flat base rate.
+   * Integer bigint arithmetic (×N / 100) keeps the drain deterministic —
+   * no float division inside the hot tick path.
+   */
+  private scaleFleetUpkeep(
+    base: Credits,
+    owner?: Player | PlayerView,
+  ): Credits {
+    if (owner === undefined) {
+      return base;
+    }
+    const type = owner.type();
+    let numerator = 100n;
+    if (type === PlayerType.Bot) {
+      numerator = 60n;
+    } else if (type === PlayerType.Nation) {
+      switch (this._gameConfig.difficulty) {
+        case Difficulty.Easy:
+          numerator = 90n;
+          break;
+        case Difficulty.Medium:
+          numerator = 95n;
+          break;
+        case Difficulty.Hard:
+          numerator = 100n;
+          break;
+        case Difficulty.Impossible:
+          numerator = 105n;
+          break;
+        default:
+          assertNever(this._gameConfig.difficulty);
+      }
+    }
+    return (base * numerator) / 100n;
+  }
 
   // ---- Ticket 6: Battlecruiser structure slot -----------------------------
   battlecruiserStructureSlotCount(): number {
@@ -385,16 +472,16 @@ export class DefaultConfig implements Config {
   // ---- Ticket 8: Habitability-gated structure slot limits -----------------
   // Buckets line up with the SectorMap habitability constants:
   //   AsteroidField (0.3)  → 0 (must be terraformed before any build)
-  //   Nebula        (0.6)  → 1
-  //   OpenSpace     (1.0)  → 2
+  //   Nebula        (0.6)  → 10
+  //   OpenSpace     (1.0)  → 20
   // The numeric thresholds use "≤" so a tile sitting exactly at the boundary
   // gets the more restrictive cap, matching how partially-terraformed tiles
   // (e.g. an Asteroid hit by one terraform tick) should still feel uninhabit-
   // able until they cleanly cross into the next bucket.
   maxStructuresForHabitability(habitability: number): number {
     if (!Number.isFinite(habitability) || habitability <= 0.3) return 0;
-    if (habitability <= 0.6) return 1;
-    return 2;
+    if (habitability <= 0.6) return 10;
+    return 20;
   }
 
   // ---- Ticket 7: Dynamic tick-rate scaling --------------------------------
@@ -1287,6 +1374,23 @@ export class DefaultConfig implements Config {
 
   battlecruiserPlasmaBoltAttackRate(): number {
     return 20;
+  }
+
+  battlecruiserHostableStructures(): readonly UnitType[] {
+    // GDD §14 — "Capital Ships act as mobile one-slot planets" means every
+    // ground-buildable structure is hostable. Listed explicitly (rather
+    // than deriving from `Structures.types`) so a future tuning change can
+    // exclude a specific type without having to carve out the Structures
+    // group, which is load-bearing elsewhere.
+    return [
+      UnitType.Spaceport,
+      UnitType.OrbitalStrikePlatform,
+      UnitType.DefenseStation,
+      UnitType.PointDefenseArray,
+      UnitType.Colony,
+      UnitType.Foundry,
+      UnitType.JumpGate,
+    ];
   }
 
   defenseStationPlasmaBoltAttackRate(): number {

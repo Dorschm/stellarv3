@@ -1,5 +1,6 @@
+// @vitest-environment node
 import { TradeFreighterExecution } from "../../../src/core/execution/TradeFreighterExecution";
-import { Game, Player, Unit } from "../../../src/core/game/Game";
+import { Game, Player, PlayerType, Unit } from "../../../src/core/game/Game";
 import { PathStatus } from "../../../src/core/pathfinding/types";
 import { setup } from "../../util/Setup";
 
@@ -33,6 +34,12 @@ describe("TradeFreighterExecution", () => {
       id: vi.fn(() => 1),
       clientID: vi.fn(() => 1),
       canTrade: vi.fn(() => true),
+      type: vi.fn(() => PlayerType.Human),
+      removeCredits: vi.fn(),
+      addCredits: vi.fn(),
+      population: vi.fn(() => 0),
+      removePopulation: vi.fn(() => 0),
+      addPopulation: vi.fn(),
     } as any;
 
     dstOwner = {
@@ -43,6 +50,10 @@ describe("TradeFreighterExecution", () => {
       unitCount: vi.fn(() => 1),
       clientID: vi.fn(() => 2),
       canTrade: vi.fn(() => true),
+      type: vi.fn(() => PlayerType.Human),
+      removeCredits: vi.fn(),
+      addCredits: vi.fn(),
+      addPopulation: vi.fn(),
     } as any;
 
     pirate = {
@@ -52,6 +63,10 @@ describe("TradeFreighterExecution", () => {
       units: vi.fn(() => [piratePort, piratePort2]),
       unitCount: vi.fn(() => 2),
       canTrade: vi.fn(() => true),
+      type: vi.fn(() => PlayerType.Human),
+      removeCredits: vi.fn(),
+      addCredits: vi.fn(),
+      addPopulation: vi.fn(),
     } as any;
 
     piratePort = {
@@ -119,6 +134,27 @@ describe("TradeFreighterExecution", () => {
   it("should deactivate if tradeFreighter is not active", () => {
     tradeFreighter.isActive = vi.fn(() => false);
     tradeFreighterExecution.tick(1);
+    expect(tradeFreighterExecution.isActive()).toBe(false);
+  });
+
+  it("should NOT charge upkeep when tradeFreighter is already inactive on tick", () => {
+    // Comment 2 regression: a freighter destroyed earlier in the tick
+    // order previously paid one last upkeep drain before the execution
+    // deactivated itself. Upkeep is now gated behind the active-state
+    // check, so an inactive freighter must not touch the owner's credits.
+    tradeFreighter.isActive = vi.fn(() => false);
+    const removeCredits = vi.fn();
+    tradeFreighter.owner = vi.fn(
+      () =>
+        ({
+          removeCredits,
+          id: () => 1,
+        }) as any,
+    );
+
+    tradeFreighterExecution.tick(1);
+
+    expect(removeCredits).not.toHaveBeenCalled();
     expect(tradeFreighterExecution.isActive()).toBe(false);
   });
 

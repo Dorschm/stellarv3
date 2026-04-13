@@ -137,6 +137,22 @@ export interface Config {
   proximityBonusSpaceportsNb(totalSpaceports: number): number;
   maxPopulation(player: Player | PlayerView): number;
   colonyTroopIncrease(): number;
+  /**
+   * GDD §14 — per-tick population trickle added by a Battlecruiser-hosted
+   * Colony. Ship-hosted Colonies sit on deep-space tiles (zero habitability)
+   * so the normal hab-weighted growth formula in {@link troopIncreaseRate}
+   * contributes nothing on their behalf. This fixed rate ensures a hosted
+   * Colony pulls its weight as one of the cruiser's single mobile slot.
+   */
+  shipHostedColonyPopulationPerTick(): number;
+  /**
+   * GDD §14 — per-tick credit trickle added by a Battlecruiser-hosted
+   * Foundry. Mirrors {@link shipHostedColonyPopulationPerTick} — without
+   * this, a ship-hosted Foundry on a void tile contributes nothing to the
+   * player's income because `creditAdditionRate` is tile/habitability
+   * driven.
+   */
+  shipHostedFoundryCreditsPerTick(): number;
   shuttleAttackAmount(
     attacker: Player,
     defender: Player | TerraNullius,
@@ -190,6 +206,14 @@ export interface Config {
   battlecruiserPatrolRange(): number;
   battlecruiserPlasmaBoltAttackRate(): number;
   battlecruiserTargettingRange(): number;
+  /**
+   * GDD §14 — set of structure types that a Battlecruiser may host in its
+   * single mobile slot. A Battlecruiser acts as a "mobile one-slot planet",
+   * so in principle every ground-buildable structure is hostable. Exposed
+   * as a config method so balance tuning (e.g. excluding a type for a mode
+   * variant) can happen without editing execution code.
+   */
+  battlecruiserHostableStructures(): readonly UnitType[];
   defenseStationPlasmaBoltAttackRate(): number;
   defenseStationTargettingRange(): number;
   // 0-1
@@ -295,6 +319,41 @@ export interface Config {
    * scout-arrivals per tile in the absence of a physical km² conversion.
    */
   scoutSwarmTerraformAccumulation(): number;
+  /**
+   * GDD §3.1 — "Population uses: colonize/terraform planets." Fraction
+   * (0..1) of the launcher's population **cap** (not current population)
+   * deducted at scout swarm launch. ScoutSwarmExecution reads this and
+   * computes `maxPopulation(player) * scoutSwarmPopulationFraction()`.
+   * Soft cost: if the launcher has insufficient current population the
+   * launch still succeeds and `removePopulation` simply deducts up to
+   * available.
+   */
+  scoutSwarmPopulationFraction(): number;
+
+  // ---- GDD §3.2: Fleet Upkeep ---------------------------------------------
+  /**
+   * Recurring credit drain per tick for each active Assault Shuttle owned
+   * by a player. GDD §3.2 — "Resources uses: maintain fleets." Reaching 0
+   * credits does not destroy the fleet; the drain is strategic pressure,
+   * not a kill switch.
+   *
+   * Owner-aware: scales via the same Bot/Nation-difficulty pattern used
+   * for {@link troopIncreaseRate} / {@link creditAdditionRate} so Easy
+   * bots pay less than Humans and higher-difficulty Nations pay more.
+   */
+  assaultShuttleUpkeepPerTick(owner?: Player | PlayerView): Credits;
+  /**
+   * Recurring credit drain per tick for each active Battlecruiser owned
+   * by a player. See {@link assaultShuttleUpkeepPerTick} for the GDD
+   * reference, owner-aware scaling, and bankruptcy semantics.
+   */
+  battlecruiserUpkeepPerTick(owner?: Player | PlayerView): Credits;
+  /**
+   * Recurring credit drain per tick for each active Trade Freighter
+   * owned by a player. See {@link assaultShuttleUpkeepPerTick} for the
+   * GDD reference, owner-aware scaling, and bankruptcy semantics.
+   */
+  tradeFreighterUpkeepPerTick(owner?: Player | PlayerView): Credits;
 
   // ---- Ticket 6: Battlecruiser structure slot -----------------------------
   /**

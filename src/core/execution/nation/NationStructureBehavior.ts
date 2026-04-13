@@ -463,7 +463,9 @@ export class NationStructureBehavior {
       type === UnitType.Spaceport
         ? this.randCoastalTileArray(25)
         : randTerritoryTileArray(this.random, this.game, this.player, 25);
-    if (tiles.length === 0) return null;
+    if (tiles.length === 0) {
+      return null;
+    }
     const valueFunction = this.structureSpawnTileValue(type);
     if (valueFunction === null) return null;
     let bestTile: TileRef | null = null;
@@ -472,7 +474,6 @@ export class NationStructureBehavior {
       const v = valueFunction(t);
       if (v <= bestValue && bestTile !== null) continue;
       if (!this.player.canBuild(type, t)) continue;
-      // Found a better tile
       bestTile = t;
       bestValue = v;
     }

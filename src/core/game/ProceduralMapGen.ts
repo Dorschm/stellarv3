@@ -13,7 +13,7 @@ import { MapManifest, Nation } from "./TerrainMapLoader";
  */
 
 // ── Terrain byte packing (mirrors map-generator/map_generator.go) ─────
-const IS_LAND_BIT = 7; // bit 7: 1 = sector (land), 0 = non-sector
+const IS_SECTOR_BIT = 7; // bit 7: 1 = sector, 0 = non-sector
 const SHORELINE_BIT = 6; // bit 6: sector boundary
 const VOID_BIT = 5; // bit 5: deep space (void)
 // Bits 0-4: magnitude (0-31)
@@ -213,7 +213,7 @@ function buildTerrainArray(
       if (inSector) {
         // Sector tile
         const magnitude = sectorMagnitude(rng, blobs, x, y);
-        terrain[idx] = (1 << IS_LAND_BIT) | (magnitude & 0x1f);
+        terrain[idx] = (1 << IS_SECTOR_BIT) | (magnitude & 0x1f);
         numSectorTiles++;
       } else {
         // Non-sector: 80% deep space (void), 20% debris field
@@ -231,7 +231,7 @@ function buildTerrainArray(
     const rowOffset = y * width;
     for (let x = 0; x < width; x++) {
       const idx = rowOffset + x;
-      if (!(terrain[idx] & (1 << IS_LAND_BIT))) continue;
+      if (!(terrain[idx] & (1 << IS_SECTOR_BIT))) continue;
 
       // Check 4-connected neighbors
       const neighbors = [
@@ -241,7 +241,7 @@ function buildTerrainArray(
         x < width - 1 ? idx + 1 : -1,
       ];
       for (const n of neighbors) {
-        if (n >= 0 && !(terrain[n] & (1 << IS_LAND_BIT))) {
+        if (n >= 0 && !(terrain[n] & (1 << IS_SECTOR_BIT))) {
           terrain[idx] |= 1 << SHORELINE_BIT;
           break;
         }
@@ -351,7 +351,7 @@ function downsample(
   for (let dy = 0; dy < dstHeight; dy++) {
     for (let dx = 0; dx < dstWidth; dx++) {
       const idx = dy * dstWidth + dx;
-      if (!(dst[idx] & (1 << IS_LAND_BIT))) continue;
+      if (!(dst[idx] & (1 << IS_SECTOR_BIT))) continue;
       const neighbors = [
         dy > 0 ? idx - dstWidth : -1,
         dy < dstHeight - 1 ? idx + dstWidth : -1,
@@ -359,7 +359,7 @@ function downsample(
         dx < dstWidth - 1 ? idx + 1 : -1,
       ];
       for (const n of neighbors) {
-        if (n >= 0 && !(dst[n] & (1 << IS_LAND_BIT))) {
+        if (n >= 0 && !(dst[n] & (1 << IS_SECTOR_BIT))) {
           dst[idx] |= 1 << SHORELINE_BIT;
           break;
         }
@@ -370,11 +370,11 @@ function downsample(
   return dst;
 }
 
-/** Count sector (land) tiles in a packed terrain array. */
+/** Count sector tiles in a packed terrain array. */
 function countSectorTiles(terrain: Uint8Array): number {
   let count = 0;
   for (let i = 0; i < terrain.length; i++) {
-    if (terrain[i] & (1 << IS_LAND_BIT)) count++;
+    if (terrain[i] & (1 << IS_SECTOR_BIT)) count++;
   }
   return count;
 }

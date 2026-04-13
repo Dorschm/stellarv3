@@ -1361,7 +1361,15 @@ export class GameImpl implements Game {
     return this._map.terrainType(ref);
   }
   setTerrainType(ref: TileRef, type: TerrainType): void {
+    // Snapshot pre-mutation sector membership so we can detect void→sector
+    // promotions (scout-swarm terraforming of DeepSpace → AsteroidField)
+    // and keep the SectorMap consistent. Doing this in GameImpl rather
+    // than GameMap keeps the map buffer free of SectorMap coupling.
+    const wasSector = this._map.isSector(ref);
     this._map.setTerrainType(ref, type);
+    if (!wasSector && this._map.isSector(ref)) {
+      this._sectorMap.onTileConvertedToSector(ref);
+    }
     // Ticket 6 — record terrain mutations for the client sync channel.
     // `packedTileUpdates` only carries packed per-tile state, not terrain,
     // so without this the client's GameMap would keep serving the stale

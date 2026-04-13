@@ -447,12 +447,14 @@ export class PlayerView {
   async buildables(
     tile?: TileRef,
     units?: readonly PlayerBuildableUnitType[],
+    options?: { capitalShipMode?: boolean },
   ): Promise<BuildableUnit[]> {
     return this.game.worker.playerBuildables(
       this.id(),
       tile && this.game.x(tile),
       tile && this.game.y(tile),
       units,
+      options,
     );
   }
 
@@ -1439,18 +1441,36 @@ export class GameView implements GameMap {
     // owner + pre-mutation habitability, rewrite the terrain, and then
     // feed the delta back into the local SectorMap so derived habitability
     // UI (overlays, HUD income rates) stays in sync after a terraform.
+    const wasSector = this._map.isSector(ref);
     const ownerIdBefore = this._map.hasOwner(ref)
       ? this._map.ownerID(ref)
       : null;
     const previousHab =
       ownerIdBefore !== null ? this._sectorMap.effectiveHabitability(ref) : 0;
     this._map.setTerrainType(ref, type);
+    const becameSector = !wasSector && this._map.isSector(ref);
+    if (becameSector) {
+      // Void-to-sector promotion: adopt the new tile into an adjacent
+      // sector so the client's SectorMap stays bit-exact with the server.
+      this._sectorMap.onTileConvertedToSector(ref);
+    }
     if (ownerIdBefore !== null) {
-      this._sectorMap.recomputeHabitabilityForTile(
-        ref,
-        ownerIdBefore,
-        previousHab,
-      );
+      if (becameSector) {
+        // Ordering caveat: on the client, packedTileUpdates (ownership) are
+        // processed before packedTerrainUpdates (this call), so when the
+        // same-tick scout-swarm flow `setTerrainType → conquer` arrives
+        // here, the tile is already owned but `recordTileGained` ran
+        // earlier with `sectorId === 0` and no-oped. Now that the
+        // promotion has assigned a sector ID, catch the owner up by
+        // crediting the tile properly.
+        this._sectorMap.recordTileGained(ownerIdBefore, ref);
+      } else {
+        this._sectorMap.recomputeHabitabilityForTile(
+          ref,
+          ownerIdBefore,
+          previousHab,
+        );
+      }
     }
   }
   forEachTile(fn: (tile: TileRef) => void): void {

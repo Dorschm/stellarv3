@@ -25,8 +25,8 @@ import {
  */
 
 // Terrain bit layout — mirrors GameMapImpl's private constants.
-const LAND_BIT = 1 << 7; // IS_LAND_BIT — marks a tile as a sector tile.
-const VOID_BIT = 1 << 5; // VOID_BIT     — marks a tile as deep space.
+const SECTOR_BIT = 1 << 7; // IS_SECTOR_BIT — marks a tile as a sector tile.
+const VOID_BIT = 1 << 5; // VOID_BIT      — marks a tile as deep space.
 
 /**
  * Returns a terrain byte for a sector tile with the given magnitude.
@@ -36,7 +36,7 @@ const VOID_BIT = 1 << 5; // VOID_BIT     — marks a tile as deep space.
  *   ≥20  → AsteroidField (capped at 31 by the 5-bit MAGNITUDE_MASK)
  */
 function sectorTile(magnitude: number): number {
-  return LAND_BIT | (magnitude & 0x1f);
+  return SECTOR_BIT | (magnitude & 0x1f);
 }
 
 /** Open-space sector tile (habitability 1.0). */
@@ -52,8 +52,10 @@ const DEBRIS = 0;
 
 /**
  * Builds a `GameMapImpl` from a flat row-major terrain byte array. The
- * `num_land_tiles` field is computed by counting tiles with the LAND_BIT
- * set, matching how `genTerrainFromBin` populates real maps.
+ * `num_land_tiles` field is computed by counting tiles with the SECTOR_BIT
+ * set, matching how `genTerrainFromBin` populates real maps. (The JSON
+ * manifest key `num_land_tiles` is preserved as-is — it is part of the
+ * binary map data format contract, not a code-identifier rename target.)
  */
 function buildMap(
   width: number,
@@ -66,11 +68,11 @@ function buildMap(
     );
   }
   const data = new Uint8Array(terrain);
-  let numLand = 0;
+  let numSector = 0;
   for (let i = 0; i < data.length; i++) {
-    if (data[i] & LAND_BIT) numLand++;
+    if (data[i] & SECTOR_BIT) numSector++;
   }
-  return new GameMapImpl(width, height, data, numLand);
+  return new GameMapImpl(width, height, data, numSector);
 }
 
 /**

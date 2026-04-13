@@ -716,6 +716,232 @@ describe("WinCheckExecution - 1v1 Ranked Mode", () => {
     expect(winCheck.isActive()).toBe(false);
   });
 
+  test("should eliminate a player with tiles but zero population after the grace period (elimination mode)", async () => {
+    // GDD §12 — a player who owns tiles but has 0 population is functionally
+    // dead. They should be eliminated once the grace window has passed.
+    const game = await setup(
+      "big_plains",
+      {
+        infiniteCredits: true,
+        gameMode: GameMode.FFA,
+        instantBuild: true,
+        winCondition: WinCondition.Elimination,
+      },
+      [
+        playerInfo("Survivor", PlayerType.Human),
+        playerInfo("ZeroPop", PlayerType.Human),
+      ],
+    );
+
+    const survivor = game.player("Survivor");
+    const zeroPop = game.player("ZeroPop");
+
+    while (game.inSpawnPhase()) game.executeNextTick();
+
+    let sAssigned = 0;
+    let zAssigned = 0;
+    let survivorSpawn: number | undefined;
+    let zeroPopSpawn: number | undefined;
+    game.map().forEachTile((tile) => {
+      if (!game.map().isSector(tile)) return;
+      if (sAssigned < 10) {
+        survivor.conquer(tile);
+        survivorSpawn ??= tile;
+        sAssigned++;
+      } else if (zAssigned < 10) {
+        zeroPop.conquer(tile);
+        zeroPopSpawn ??= tile;
+        zAssigned++;
+      }
+    });
+    // Set spawn tiles so the elimination path's `hasSpawned()` guard passes
+    // — `conquer` alone does not mark a player as spawned.
+    if (survivorSpawn !== undefined) survivor.setSpawnTile(survivorSpawn);
+    if (zeroPopSpawn !== undefined) zeroPop.setSpawnTile(zeroPopSpawn);
+
+    // Give the survivor real population so they aren't tripped by the same
+    // zero-pop grace window; keep zeroPop explicitly at zero.
+    survivor.setPopulation(1000);
+    zeroPop.setPopulation(0);
+
+    const setWinnerSpy = vi.fn();
+    game.setWinner = setWinnerSpy;
+    const winCheck = new WinCheckExecution();
+    winCheck.init(game, game.ticks());
+
+    // First tick: grace window opens, no winner yet.
+    winCheck.checkWinnerFFA();
+    expect(setWinnerSpy).not.toHaveBeenCalled();
+    expect(winCheck.isActive()).toBe(true);
+
+    // Advance past the 50-tick grace window.
+    for (let i = 0; i < 60; i++) game.executeNextTick();
+    // Ensure population is still zero after simulation ticks.
+    zeroPop.setPopulation(0);
+
+    winCheck.checkWinnerFFA();
+    expect(setWinnerSpy).toHaveBeenCalledWith(survivor, expect.anything());
+    expect(winCheck.isActive()).toBe(false);
+  });
+
+  test("should NOT eliminate a player whose population recovers within the grace window", async () => {
+    // GDD §12 — shuttle launches and trade payloads can momentarily drain a
+    // player's population to 0. Those transients must not end the run.
+    const game = await setup(
+      "big_plains",
+      {
+        infiniteCredits: true,
+        gameMode: GameMode.FFA,
+        instantBuild: true,
+        winCondition: WinCondition.Elimination,
+      },
+      [playerInfo("A", PlayerType.Human), playerInfo("B", PlayerType.Human)],
+    );
+
+    const a = game.player("A");
+    const b = game.player("B");
+
+    while (game.inSpawnPhase()) game.executeNextTick();
+
+    let aAssigned = 0;
+    let bAssigned = 0;
+    let aSpawn: number | undefined;
+    let bSpawn: number | undefined;
+    game.map().forEachTile((tile) => {
+      if (!game.map().isSector(tile)) return;
+      if (aAssigned < 10) {
+        a.conquer(tile);
+        aSpawn ??= tile;
+        aAssigned++;
+      } else if (bAssigned < 10) {
+        b.conquer(tile);
+        bSpawn ??= tile;
+        bAssigned++;
+      }
+    });
+    if (aSpawn !== undefined) a.setSpawnTile(aSpawn);
+    if (bSpawn !== undefined) b.setSpawnTile(bSpawn);
+
+    a.setPopulation(1000);
+    b.setPopulation(0); // Transient 0-pop
+
+    const setWinnerSpy = vi.fn();
+    game.setWinner = setWinnerSpy;
+    const winCheck = new WinCheckExecution();
+    winCheck.init(game, game.ticks());
+
+    // Open the grace window.
+    winCheck.checkWinnerFFA();
+    expect(setWinnerSpy).not.toHaveBeenCalled();
+
+    // Population recovers before grace expires.
+    b.setPopulation(500);
+
+    // Advance well past the grace window; B should no longer be flagged.
+    for (let i = 0; i < 100; i++) game.executeNextTick();
+
+    winCheck.checkWinnerFFA();
+    expect(setWinnerSpy).not.toHaveBeenCalled();
+    expect(winCheck.isActive()).toBe(true);
+  });
+
+  test("should ignore population in domination mode", async () => {
+    // Domination mode is unaffected by the zero-pop rule — legacy lobbies
+    // continue to use the percentage-of-tiles threshold exclusively.
+    const game = await setup("big_plains", {
+      infiniteCredits: true,
+      gameMode: GameMode.FFA,
+      instantBuild: true,
+      // No winCondition override — falls back to default (Domination).
+    });
+
+    const info = new PlayerInfo("Dom", PlayerType.Human, null, "dom");
+    game.addPlayer(info);
+    const dom = game.player("dom");
+
+    while (game.inSpawnPhase()) game.executeNextTick();
+
+    const totalLand = game.numSectorTiles();
+    const target = Math.ceil(totalLand * 0.81);
+    let assigned = 0;
+    game.map().forEachTile((tile) => {
+      if (assigned >= target) return;
+      if (!game.map().isSector(tile)) return;
+      dom.conquer(tile);
+      assigned++;
+    });
+    dom.setPopulation(0); // Zero pop must NOT block a domination win.
+
+    const setWinnerSpy = vi.fn();
+    game.setWinner = setWinnerSpy;
+    const winCheck = new WinCheckExecution();
+    winCheck.init(game, 0);
+    winCheck.checkWinnerFFA();
+
+    expect(setWinnerSpy).toHaveBeenCalledWith(dom, expect.anything());
+  });
+
+  test("should eliminate a team whose combined population is zero past the grace window", async () => {
+    // GDD §12 team counterpart — a team with tiles but zero combined pop
+    // for longer than the grace window is removed from the candidate set.
+    const game = await setup("big_plains", {
+      infiniteCredits: true,
+      gameMode: GameMode.Team,
+      instantBuild: true,
+      playerTeams: 2,
+      winCondition: WinCondition.Elimination,
+    });
+
+    const aInfo = new PlayerInfo("TA", PlayerType.Human, null, "ta");
+    game.addPlayer(aInfo);
+    const bInfo = new PlayerInfo("TB", PlayerType.Human, null, "tb");
+    game.addPlayer(bInfo);
+    const a = game.player("ta");
+    const b = game.player("tb");
+
+    while (game.inSpawnPhase()) game.executeNextTick();
+
+    let aAssigned = 0;
+    let bAssigned = 0;
+    let aSpawn: number | undefined;
+    let bSpawn: number | undefined;
+    game.map().forEachTile((tile) => {
+      if (!game.map().isSector(tile)) return;
+      if (aAssigned < 10) {
+        a.conquer(tile);
+        aSpawn ??= tile;
+        aAssigned++;
+      } else if (bAssigned < 10) {
+        b.conquer(tile);
+        bSpawn ??= tile;
+        bAssigned++;
+      }
+    });
+    if (aSpawn !== undefined) a.setSpawnTile(aSpawn);
+    if (bSpawn !== undefined) b.setSpawnTile(bSpawn);
+
+    expect(a.team()).not.toBe(b.team());
+
+    a.setPopulation(1000);
+    b.setPopulation(0);
+
+    const setWinnerSpy = vi.fn();
+    game.setWinner = setWinnerSpy;
+    const winCheck = new WinCheckExecution();
+    winCheck.init(game, game.ticks());
+
+    // Open grace window.
+    winCheck.checkWinnerTeam();
+    expect(setWinnerSpy).not.toHaveBeenCalled();
+
+    for (let i = 0; i < 60; i++) game.executeNextTick();
+    b.setPopulation(0);
+
+    winCheck.checkWinnerTeam();
+    expect(setWinnerSpy).toHaveBeenCalledWith(a.team(), expect.anything());
+    expect(winCheck.isActive()).toBe(false);
+  });
+
   test("should declare team winner via elimination when only one non-bot team holds tiles", async () => {
     // GDD §1 — team elimination: a team wins as soon as all other non-bot
     // teams have zero tiles. Bots are excluded from the candidate set.
@@ -771,6 +997,157 @@ describe("WinCheckExecution - 1v1 Ranked Mode", () => {
     winCheck.init(game, 0);
     winCheck.checkWinnerTeam();
 
+    expect(setWinnerSpy).toHaveBeenCalledWith(a.team(), expect.anything());
+    expect(winCheck.isActive()).toBe(false);
+  });
+
+  test("should immediately resolve FFA elimination when all survivors hit zero population on the same tick", async () => {
+    // GDD §12 — if every remaining player's population drops to zero within
+    // the same grace window, the alive set is empty and waiting on the
+    // timer would soft-deadlock the run. Resolve immediately via the
+    // most-tiles tie-break.
+    const game = await setup(
+      "big_plains",
+      {
+        infiniteCredits: true,
+        gameMode: GameMode.FFA,
+        instantBuild: true,
+        maxTimerValue: 5,
+        winCondition: WinCondition.Elimination,
+      },
+      [
+        playerInfo("Leader", PlayerType.Human),
+        playerInfo("Follower", PlayerType.Human),
+      ],
+    );
+
+    const leader = game.player("Leader");
+    const follower = game.player("Follower");
+
+    while (game.inSpawnPhase()) game.executeNextTick();
+
+    let leaderAssigned = 0;
+    let followerAssigned = 0;
+    let leaderSpawn: number | undefined;
+    let followerSpawn: number | undefined;
+    game.map().forEachTile((tile) => {
+      if (!game.map().isSector(tile)) return;
+      if (leaderAssigned < 20) {
+        leader.conquer(tile);
+        leaderSpawn ??= tile;
+        leaderAssigned++;
+      } else if (followerAssigned < 5) {
+        follower.conquer(tile);
+        followerSpawn ??= tile;
+        followerAssigned++;
+      }
+    });
+    if (leaderSpawn !== undefined) leader.setSpawnTile(leaderSpawn);
+    if (followerSpawn !== undefined) follower.setSpawnTile(followerSpawn);
+
+    expect(leader.numTilesOwned()).toBeGreaterThan(follower.numTilesOwned());
+
+    // Both players at zero population simultaneously.
+    leader.setPopulation(0);
+    follower.setPopulation(0);
+
+    const setWinnerSpy = vi.fn();
+    game.setWinner = setWinnerSpy;
+    const winCheck = new WinCheckExecution();
+    winCheck.init(game, game.ticks());
+
+    // Open grace window — neither is declared yet.
+    winCheck.checkWinnerFFA();
+    expect(setWinnerSpy).not.toHaveBeenCalled();
+    expect(winCheck.isActive()).toBe(true);
+
+    // Advance past grace window; populations are still zero for both.
+    for (let i = 0; i < 60; i++) game.executeNextTick();
+    leader.setPopulation(0);
+    follower.setPopulation(0);
+
+    // Timer has NOT expired yet — the fix must resolve immediately anyway.
+    const elapsedSeconds =
+      (game.ticks() - game.config().numSpawnPhaseTurns()) / 10;
+    expect(elapsedSeconds).toBeLessThan(
+      (game.config().gameConfig().maxTimerValue ?? 0) * 60,
+    );
+
+    winCheck.checkWinnerFFA();
+    expect(setWinnerSpy).toHaveBeenCalledWith(leader, expect.anything());
+    expect(winCheck.isActive()).toBe(false);
+  });
+
+  test("should immediately resolve Team elimination when all non-bot teams hit zero population on the same tick", async () => {
+    // GDD §12 team counterpart — simultaneous zero-pop outcomes across all
+    // non-bot teams must not stall the run until the timer fires.
+    const game = await setup("big_plains", {
+      infiniteCredits: true,
+      gameMode: GameMode.Team,
+      instantBuild: true,
+      playerTeams: 2,
+      maxTimerValue: 5,
+      winCondition: WinCondition.Elimination,
+    });
+
+    const aInfo = new PlayerInfo("TA", PlayerType.Human, null, "ta");
+    game.addPlayer(aInfo);
+    const bInfo = new PlayerInfo("TB", PlayerType.Human, null, "tb");
+    game.addPlayer(bInfo);
+    const a = game.player("ta");
+    const b = game.player("tb");
+
+    while (game.inSpawnPhase()) game.executeNextTick();
+
+    let aAssigned = 0;
+    let bAssigned = 0;
+    let aSpawn: number | undefined;
+    let bSpawn: number | undefined;
+    game.map().forEachTile((tile) => {
+      if (!game.map().isSector(tile)) return;
+      if (aAssigned < 20) {
+        a.conquer(tile);
+        aSpawn ??= tile;
+        aAssigned++;
+      } else if (bAssigned < 5) {
+        b.conquer(tile);
+        bSpawn ??= tile;
+        bAssigned++;
+      }
+    });
+    if (aSpawn !== undefined) a.setSpawnTile(aSpawn);
+    if (bSpawn !== undefined) b.setSpawnTile(bSpawn);
+
+    expect(a.team()).not.toBe(b.team());
+    expect(a.numTilesOwned()).toBeGreaterThan(b.numTilesOwned());
+
+    // Both teams' combined populations at zero simultaneously.
+    a.setPopulation(0);
+    b.setPopulation(0);
+
+    const setWinnerSpy = vi.fn();
+    game.setWinner = setWinnerSpy;
+    const winCheck = new WinCheckExecution();
+    winCheck.init(game, game.ticks());
+
+    // Open the grace window.
+    winCheck.checkWinnerTeam();
+    expect(setWinnerSpy).not.toHaveBeenCalled();
+    expect(winCheck.isActive()).toBe(true);
+
+    // Advance past the grace window while keeping populations at zero.
+    for (let i = 0; i < 60; i++) game.executeNextTick();
+    a.setPopulation(0);
+    b.setPopulation(0);
+
+    // Timer has NOT expired — the fix must resolve immediately anyway.
+    const elapsedSeconds =
+      (game.ticks() - game.config().numSpawnPhaseTurns()) / 10;
+    expect(elapsedSeconds).toBeLessThan(
+      (game.config().gameConfig().maxTimerValue ?? 0) * 60,
+    );
+
+    winCheck.checkWinnerTeam();
     expect(setWinnerSpy).toHaveBeenCalledWith(a.team(), expect.anything());
     expect(winCheck.isActive()).toBe(false);
   });

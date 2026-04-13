@@ -63,6 +63,19 @@ export class ScoutSwarmExecution implements Execution {
       return;
     }
 
+    // Scout swarms launch from the launcher's nearest Spaceport or Jump
+    // Gate to the target. Resolve the spawn tile *before* charging cost
+    // so a player with no launch infrastructure isn't silently taxed for
+    // a launch that never happens.
+    const spawnTile = this.findSpawnTile();
+    if (spawnTile === null) {
+      console.warn(
+        `ScoutSwarmExecution: ${this.launcher.displayName()} has no Spaceport or Jump Gate to launch from`,
+      );
+      this.active = false;
+      return;
+    }
+
     // Launch cost is a percentage of the player's *current* credits (GDD §4).
     // Snapshot it now so the deducted amount can't drift if the player
     // spends between the intent being submitted and this tick.
@@ -86,16 +99,16 @@ export class ScoutSwarmExecution implements Execution {
       this.launcher.removeCredits(cost);
     }
 
-    // Find a spawn tile: the launcher's owned tile closest to the target.
-    // Scouts launch from anywhere the player owns — there's no spaceport
-    // requirement, so the launch point is purely a path anchor.
-    const spawnTile = this.findSpawnTile();
-    if (spawnTile === null) {
-      console.warn(
-        `ScoutSwarmExecution: ${this.launcher.displayName()} has no owned tiles to launch from`,
-      );
-      this.active = false;
-      return;
+    // GDD §3.1 — scouting/terraforming also consumes population. The cost
+    // is 25% of the launcher's *population cap* (not current population),
+    // so the tax scales with empire size. Soft cost: `removePopulation`
+    // deducts up to the available balance, so a launcher with insufficient
+    // current population still launches successfully.
+    const popFraction = mg.config().scoutSwarmPopulationFraction();
+    const maxPop = mg.config().maxPopulation(this.launcher);
+    const populationCost = Math.floor(maxPop * popFraction);
+    if (populationCost > 0) {
+      this.launcher.removePopulation(populationCost);
     }
 
     this.scout = this.launcher.buildUnit(UnitType.ScoutSwarm, spawnTile, {
@@ -104,11 +117,21 @@ export class ScoutSwarmExecution implements Execution {
     this.scout.setTargetTile(this.target);
   }
 
+  /**
+   * Scout swarms require a Spaceport or Jump Gate to launch from. Returns
+   * the tile of the player's launch structure closest to the target, or
+   * `null` if the player owns none.
+   */
   private findSpawnTile(): TileRef | null {
-    const tiles = this.launcher.tiles();
+    const structures = [
+      ...this.launcher.units(UnitType.Spaceport),
+      ...this.launcher.units(UnitType.JumpGate),
+    ];
     let best: TileRef | null = null;
     let bestDist = Infinity;
-    for (const t of tiles) {
+    for (const unit of structures) {
+      if (!unit.isActive()) continue;
+      const t = unit.tile();
       const d = this.mg.manhattanDist(t, this.target);
       if (d < bestDist) {
         bestDist = d;
@@ -223,6 +246,14 @@ export class ScoutSwarmExecution implements Execution {
     const current = map.terrainType(tile);
     let next: TerrainType;
     switch (current) {
+      case TerrainType.DeepSpace:
+        // GDD §4 extension — scouts can stake out the first foothold in
+        // previously-impassable void by converting it into an AsteroidField
+        // tile. The sector/void boundary physically shifts: GameMap and
+        // SectorMap track the promotion, and the launcher (below) takes
+        // ownership the same way the asteroid→nebula step does.
+        next = TerrainType.AsteroidField;
+        break;
       case TerrainType.AsteroidField:
         next = TerrainType.Nebula;
         break;
@@ -230,7 +261,7 @@ export class ScoutSwarmExecution implements Execution {
         next = TerrainType.OpenSpace;
         break;
       default:
-        // OpenSpace / DeepSpace / DebrisField — nothing to do.
+        // OpenSpace / DebrisField — nothing to do.
         return;
     }
 

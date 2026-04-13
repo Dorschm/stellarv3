@@ -2,7 +2,7 @@ import { GameMap, TileRef } from "../../game/GameMap";
 import { PathFinder } from "../types";
 import { MinHeap } from "./PriorityQueue";
 
-const LAND_BIT = 7;
+const SECTOR_BIT = 7;
 const MAGNITUDE_MASK = 0x1f;
 const COST_SCALE = 100;
 const BASE_COST = 1 * COST_SCALE;
@@ -105,7 +105,7 @@ export class AStarDeepSpaceBounded implements PathFinder<number> {
     const cameFrom = this.cameFrom;
     const queue = this.queue;
     const weight = this.heuristicWeight;
-    const landMask = 1 << LAND_BIT;
+    const sectorMask = 1 << SECTOR_BIT;
 
     const { minX, maxX, minY, maxY } = bounds;
     const boundsWidth = maxX - minX + 1;
@@ -203,7 +203,7 @@ export class AStarDeepSpaceBounded implements PathFinder<number> {
         const neighborTerrain = terrain[neighbor];
         if (
           closedStamp[neighborLocal] !== stamp &&
-          (neighbor === goal || (neighborTerrain & landMask) === 0)
+          (neighbor === goal || (neighborTerrain & sectorMask) === 0)
         ) {
           const ny = currentY - 1;
           const distToGoal = Math.abs(currentX - goalX) + Math.abs(ny - goalY);
@@ -230,7 +230,7 @@ export class AStarDeepSpaceBounded implements PathFinder<number> {
         const neighborTerrain = terrain[neighbor];
         if (
           closedStamp[neighborLocal] !== stamp &&
-          (neighbor === goal || (neighborTerrain & landMask) === 0)
+          (neighbor === goal || (neighborTerrain & sectorMask) === 0)
         ) {
           const ny = currentY + 1;
           const distToGoal = Math.abs(currentX - goalX) + Math.abs(ny - goalY);
@@ -257,7 +257,7 @@ export class AStarDeepSpaceBounded implements PathFinder<number> {
         const neighborTerrain = terrain[neighbor];
         if (
           closedStamp[neighborLocal] !== stamp &&
-          (neighbor === goal || (neighborTerrain & landMask) === 0)
+          (neighbor === goal || (neighborTerrain & sectorMask) === 0)
         ) {
           const nx = currentX - 1;
           const distToGoal = Math.abs(nx - goalX) + Math.abs(currentY - goalY);
@@ -284,7 +284,7 @@ export class AStarDeepSpaceBounded implements PathFinder<number> {
         const neighborTerrain = terrain[neighbor];
         if (
           closedStamp[neighborLocal] !== stamp &&
-          (neighbor === goal || (neighborTerrain & landMask) === 0)
+          (neighbor === goal || (neighborTerrain & sectorMask) === 0)
         ) {
           const nx = currentX + 1;
           const distToGoal = Math.abs(nx - goalX) + Math.abs(currentY - goalY);

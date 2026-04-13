@@ -74,8 +74,8 @@ export class ConnectedComponents {
   }
 
   /**
-   * Pre-mark all land tiles in the ids array.
-   * Land tiles are marked with 0xFF, water tiles remain 0.
+   * Pre-mark all sector tiles in the ids array.
+   * Sector tiles are marked with 0xFF, deep-space tiles remain 0.
    */
   private premarkSectorTiles(ids: Uint8Array): void {
     for (let i = 0; i < this.numTiles; i++) {
@@ -84,8 +84,8 @@ export class ConnectedComponents {
   }
 
   /**
-   * Pre-mark all land tiles in the ids array.
-   * Land tiles are marked with 0xFF, water tiles remain 0.
+   * Pre-mark all sector tiles in the ids array.
+   * Sector tiles are marked with 0xFF, deep-space tiles remain 0.
    *
    * This implementation accesses the terrain data **directly** without GameMap abstraction.
    * In tests it is 30% to 50% faster than using isDeepSpace() method calls.
@@ -107,8 +107,8 @@ export class ConnectedComponents {
       const chunk = terrain32[i];
 
       // Extract bit 7 from each byte, negate, and combine into single 32-bit write
-      // bit 7 = 0 (water) → -(0) = 0x00
-      // bit 7 = 1 (land)  → -(1) = 0xFF (truncated to 8 bits)
+      // bit 7 = 0 (deep space) → -(0) = 0x00
+      // bit 7 = 1 (sector)     → -(1) = 0xFF (truncated to 8 bits)
       const b0 = -((chunk >> 7) & 1) & 0xff;
       const b1 = -((chunk >> 15) & 1) & 0xff;
       const b2 = -((chunk >> 23) & 1) & 0xff;
@@ -125,7 +125,7 @@ export class ConnectedComponents {
 
   /**
    * Upgrade from Uint8Array to Uint16Array when we exceed 254 components.
-   * Direct copy works because both use 0xFF for land marker.
+   * Direct copy works because both use 0xFF for sector marker.
    */
   private upgradeToUint16Array(ids: Uint8Array): Uint16Array {
     const newIds = new Uint16Array(this.numTiles);
@@ -136,10 +136,10 @@ export class ConnectedComponents {
   }
 
   /**
-   * Flood-fill a single connected water component using scan-line algorithm.
+   * Flood-fill a single connected deep-space component using scan-line algorithm.
    * Processes horizontal spans of tiles for better memory locality and cache performance.
    *
-   * Note: Land tiles are pre-marked, so ids[x] === 0 guarantees water tile.
+   * Note: Sector tiles are pre-marked, so ids[x] === 0 guarantees deep-space tile.
    */
   private floodFillComponent(
     ids: Uint8Array | Uint16Array,
@@ -196,7 +196,7 @@ export class ConnectedComponents {
 
   /**
    * Get the component ID for a tile.
-   * Returns 0 for land tiles or if not initialized.
+   * Returns 0 for sector tiles or if not initialized.
    */
   getComponentId(tile: TileRef): number {
     if (!this.componentIds) return 0;

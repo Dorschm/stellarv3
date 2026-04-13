@@ -2,7 +2,13 @@ import { z } from "zod";
 import { base64urlToUuid } from "./Base64";
 import { ClanTagSchema } from "./Schemas";
 import { BigIntStringSchema, PlayerStatsSchema } from "./StatsSchemas";
-import { Difficulty, GameMode, GameType, RankedType } from "./game/Game";
+import {
+  Difficulty,
+  GameMode,
+  GameType,
+  RankedType,
+  WinCondition,
+} from "./game/Game";
 
 function stripClanTagFromUsername(username: string): string {
   return username.replace(/^\s*\[[a-zA-Z0-9]{2,5}\]\s*/u, "").trim();
@@ -124,6 +130,33 @@ export const PlayerProfileSchema = z.object({
   stats: PlayerStatsTreeSchema,
 });
 export type PlayerProfile = z.infer<typeof PlayerProfileSchema>;
+
+const RunPlayerScoreSchema = z.object({
+  clientID: z.string(),
+  playerID: z.string(),
+  name: z.string(),
+  planetsConquered: z.number(),
+  systemsControlled: z.number(),
+  survivalTicks: z.number(),
+  eliminationRank: z.number(),
+});
+
+export const PersistedRunScoreSchema = z.object({
+  id: z.string().optional(),
+  totalTicks: z.number(),
+  winCondition: z.enum(WinCondition),
+  players: z.array(RunPlayerScoreSchema),
+  date: z.string(),
+  mapSeed: z.number().nullable(),
+  mapName: z.string(),
+  result: z.enum(["win", "loss"]),
+});
+export type PersistedRunScoreApi = z.infer<typeof PersistedRunScoreSchema>;
+
+export const RunHistoryResponseSchema = z.object({
+  runs: z.array(PersistedRunScoreSchema),
+});
+export type RunHistoryResponse = z.infer<typeof RunHistoryResponseSchema>;
 
 export const ClanLeaderboardEntrySchema = z.object({
   clanTag: LeaderboardClanTagSchema,

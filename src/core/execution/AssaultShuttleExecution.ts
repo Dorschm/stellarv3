@@ -189,6 +189,19 @@ export class AssaultShuttleExecution implements Execution {
       this.active = false;
       return;
     }
+    // GDD §3.2 — recurring fleet upkeep charged every tick to the
+    // shuttle's current owner. Must be deducted before the ticksPerMove
+    // gate so slow-moving shuttles (6 ticks/tile) still pay upkeep on
+    // the intervening ticks. `removeCredits` caps at available balance,
+    // so a bankrupt owner keeps their shuttle.
+    const shuttleOwnerForUpkeep = this.shuttle.owner();
+    const upkeep = this.mg
+      .config()
+      .assaultShuttleUpkeepPerTick(shuttleOwnerForUpkeep);
+    if (upkeep > 0n) {
+      shuttleOwnerForUpkeep.removeCredits(upkeep);
+    }
+
     if (ticks - this.lastMove < this.ticksPerMove) {
       return;
     }

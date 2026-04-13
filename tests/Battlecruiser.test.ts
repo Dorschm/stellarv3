@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { BattlecruiserExecution } from "../src/core/execution/BattlecruiserExecution";
 import { MoveBattlecruiserExecution } from "../src/core/execution/MoveBattlecruiserExecution";
 import {
@@ -270,5 +271,101 @@ describe("Battlecruiser", () => {
     exec.init(game, 0);
 
     expect(exec.isActive()).toBe(false);
+  });
+});
+
+describe("Battlecruiser — upkeep drain", () => {
+  // GDD §3.2 — fleet upkeep is a per-tick credit drain on the active
+  // Battlecruiser's current owner. These tests exercise the real economy
+  // path (finite credits, no infiniteCredits flag) and pin both the drain
+  // and the bankruptcy continuation contract.
+  let upkeepGame: Game;
+  let cruiserOwner: Player;
+  let control: Player;
+
+  beforeEach(async () => {
+    // Two symmetric players — one flies the cruiser, the other is a
+    // control subject with identical spawn conditions so per-tick income
+    // cancels out of balance comparisons.
+    upkeepGame = await setup(
+      "half_land_half_ocean",
+      {
+        infiniteCredits: false,
+        instantBuild: true,
+      },
+      [
+        new PlayerInfo("pilot alpha", PlayerType.Human, null, "player_1_id"),
+        new PlayerInfo("pilot beta", PlayerType.Human, null, "player_2_id"),
+      ],
+    );
+
+    while (upkeepGame.inSpawnPhase()) {
+      upkeepGame.executeNextTick();
+    }
+
+    cruiserOwner = upkeepGame.player("player_1_id");
+    control = upkeepGame.player("player_2_id");
+  });
+
+  test("drains credits per tick while the cruiser is active", () => {
+    const patrolTile = upkeepGame.ref(coastX + 1, 10);
+    const cruiser = cruiserOwner.buildUnit(UnitType.Battlecruiser, patrolTile, {
+      patrolTile,
+    });
+    upkeepGame.addExecution(new BattlecruiserExecution(cruiser));
+
+    // Equalize balances — both players then see identical per-tick credit
+    // income from the sector map, so the balance gap that opens up across
+    // ticks is attributable solely to fleet upkeep on the cruiser owner.
+    cruiserOwner.removeCredits(cruiserOwner.credits());
+    control.removeCredits(control.credits());
+    cruiserOwner.addCredits(1_000_000n);
+    control.addCredits(1_000_000n);
+
+    // Run one warm-up tick so the BattlecruiserExecution has had its
+    // init() firing pass and subsequent ticks all hit the steady-state
+    // upkeep path. This keeps the balance-delta arithmetic unambiguous.
+    upkeepGame.executeNextTick();
+
+    const TICKS = 5;
+    const ownerBefore = cruiserOwner.credits();
+    const controlBefore = control.credits();
+
+    for (let i = 0; i < TICKS; i++) {
+      upkeepGame.executeNextTick();
+    }
+
+    const upkeep = upkeepGame.config().battlecruiserUpkeepPerTick(cruiserOwner);
+    expect(upkeep).toBeGreaterThan(0n);
+
+    // The only per-tick divergence between the two players is the fleet
+    // upkeep on the cruiser owner's side: the control's balance delta
+    // subtracts out all shared income/expense terms.
+    const ownerDrop = ownerBefore - cruiserOwner.credits();
+    const controlDrop = controlBefore - control.credits();
+    expect(ownerDrop - controlDrop).toBe(upkeep * BigInt(TICKS));
+  });
+
+  test("cruiser stays active when the owner is bankrupt (upkeep is not a kill switch)", () => {
+    const patrolTile = upkeepGame.ref(coastX + 1, 10);
+    const cruiser = cruiserOwner.buildUnit(UnitType.Battlecruiser, patrolTile, {
+      patrolTile,
+    });
+    upkeepGame.addExecution(new BattlecruiserExecution(cruiser));
+
+    // Drain credits every tick before the execution pass so the owner is
+    // perpetually bankrupt. Income from creditAdditionRate would
+    // otherwise add a baseline per tick.
+    cruiserOwner.removeCredits(cruiserOwner.credits());
+    for (let i = 0; i < 20; i++) {
+      upkeepGame.executeNextTick();
+      cruiserOwner.removeCredits(cruiserOwner.credits());
+      expect(cruiserOwner.credits()).toBe(0n);
+    }
+
+    // removeCredits caps at 0, so the cruiser survives despite the owner
+    // never being able to pay upkeep. This is the bankruptcy-is-not-a-
+    // kill-switch contract from GDD §3.2.
+    expect(cruiser.isActive()).toBe(true);
   });
 });
