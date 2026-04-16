@@ -5,6 +5,12 @@ WORKDIR /usr/src/app
 # Build stage - install ALL dependencies and build
 FROM base AS build
 ENV HUSKY=0
+# procps (ps) is needed by `concurrently --kill-others-on-fail` used by
+# build-prod; without it, the slim base image masks real build errors
+# with a spawn ps ENOENT crash.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends procps \
+    && rm -rf /var/lib/apt/lists/*
 # Copy package files first for better caching
 COPY package*.json ./
 RUN --mount=type=cache,target=/root/.npm \
