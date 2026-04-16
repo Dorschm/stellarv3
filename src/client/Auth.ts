@@ -14,6 +14,20 @@ let __jwt: string | null = null;
 let __refreshPromise: Promise<void> | null = null;
 let __expiresAt: number = 0;
 
+// Deployments that don't run the upstream auth service (`api.${domain}`)
+// would otherwise log two red `TypeError: Failed to fetch` errors on every
+// page load — once on boot-time refresh and once per WS `joinGame`. The
+// flow still works because the client falls back to a persistent UUID
+// which the server accepts on its own (see jwt.ts persistent-ID path), so
+// those errors are expected noise rather than real failures. The first
+// network-level `fetch` failure against api.${domain} flips this flag and
+// short-circuits every subsequent `getApiBase()` call with a silent
+// `false` — avoiding repeat DNS lookups and keeping the console clean.
+// Re-set to `false` if you stand up a real auth service and reload; a
+// 4xx/5xx from a reachable auth service does NOT flip this (different
+// code path), so recoverable backend errors still surface.
+let __upstreamAuthUnreachable = false;
+
 export function discordLogin() {
   const redirectUri = encodeURIComponent(window.location.href);
   window.location.href = `${getApiBase()}/auth/login/discord?redirect_uri=${redirectUri}`;
@@ -81,10 +95,17 @@ export async function userAuth(
     const jwt = __jwt;
     if (!jwt) {
       if (!shouldRefresh) {
-        console.warn("No JWT found and shouldRefresh is false");
+        // Expected when upstream auth isn't deployed — the caller gets
+        // `false` and falls back to the persistent-ID path. Downgraded
+        // from warn to avoid noisy console output on every join.
         return false;
       }
-      console.log("No JWT found");
+      // Skip the refresh attempt entirely if the upstream auth API has
+      // already been observed unreachable this session. Saves a DNS
+      // lookup + TypeError + red log line per call.
+      if (__upstreamAuthUnreachable) {
+        return false;
+      }
       await refreshJwt();
       return userAuth(false);
     }
@@ -155,12 +176,13 @@ async function refreshJwt(): Promise<void> {
 
 async function doRefreshJwt(): Promise<void> {
   try {
-    console.log("Refreshing jwt");
     const response = await fetch(getApiBase() + "/auth/refresh", {
       method: "POST",
       credentials: "include",
     });
     if (response.status !== 200) {
+      // Real HTTP failure from a reachable auth service: keep the error
+      // log so real deployments can diagnose backend problems.
       console.error("Refresh failed", response);
       logOut();
       return;
@@ -168,11 +190,21 @@ async function doRefreshJwt(): Promise<void> {
     const json = await response.json();
     const { jwt, expiresIn } = json;
     __expiresAt = Date.now() + expiresIn * 1000;
-    console.log("Refresh succeeded");
     __jwt = jwt;
   } catch (e) {
-    console.error("Refresh failed", e);
-    // if server unreachable, just clear jwt
+    // TypeError ("Failed to fetch" / DNS failure / CORS) means the
+    // upstream auth service isn't deployed at this domain. This is the
+    // expected state on deployments that only run the game server (e.g.
+    // stellar.game) — anonymous persistent-ID auth covers the join path.
+    // Remember it so we don't retry every page nav / join attempt, and
+    // only log it once at info level instead of spamming the console.
+    if (e instanceof TypeError && !__upstreamAuthUnreachable) {
+      __upstreamAuthUnreachable = true;
+      console.info(
+        `Upstream auth service at ${getApiBase()} is unreachable; ` +
+          "running in anonymous persistent-ID mode",
+      );
+    }
     __jwt = null;
     return;
   }

@@ -67,7 +67,20 @@ export async function fetchCosmetics(): Promise<Cosmetics | null> {
       __cosmeticsHash = simpleHash(hashInput);
       return result.data;
     } catch (error) {
-      console.error("Error getting cosmetics:", error);
+      // TypeError means the upstream cosmetics host (api.${domain}) has
+      // no DNS / isn't deployed — expected on game-server-only
+      // deployments like stellar.game. Fall back silently: cosmetics
+      // become empty, which the rest of the pipeline already handles
+      // as "no cosmetics selected". Keep the error log for real HTTP
+      // errors so an accidentally broken backend is still diagnosable.
+      if (error instanceof TypeError) {
+        console.info(
+          `Cosmetics host at ${getApiBase()} is unreachable; ` +
+            "cosmetics disabled",
+        );
+      } else {
+        console.error("Error getting cosmetics:", error);
+      }
       return null;
     }
   })();
