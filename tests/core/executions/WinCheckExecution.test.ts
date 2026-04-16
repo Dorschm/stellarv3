@@ -526,10 +526,16 @@ describe("WinCheckExecution - 1v1 Ranked Mode", () => {
     expect(winCheck.isActive()).toBe(true);
   });
 
-  test("should not declare a winner under domination thresholds when winCondition is elimination", async () => {
-    // GDD §1 — elimination mode ignores the percentage threshold path. Even
-    // a player above the legacy 80% mark should not win until everyone else
-    // has been eliminated.
+  test("should declare dominator winner in elimination mode when one player exceeds the 80% threshold", async () => {
+    // A run in elimination mode was hanging indefinitely when a player
+    // controlled ≥80% of sector tiles but another faction still squatted
+    // on a handful of tiles (commonly a Nation homeworld). Without this
+    // shortcut, `alive.length === 1` only fires when the dominator has
+    // literally wiped everyone else off the board, which can take tens of
+    // minutes of busywork or never happen at all. The check now mirrors
+    // the legacy Domination threshold path so a dominant player wins as
+    // soon as they pass `percentageTilesOwnedToWin()` regardless of how
+    // many tiny holdouts remain. See WinCheckExecution.checkWinnerEliminationFFA.
     const game = await setup("big_plains", {
       infiniteCredits: true,
       gameMode: GameMode.FFA,
@@ -571,8 +577,10 @@ describe("WinCheckExecution - 1v1 Ranked Mode", () => {
     winCheck.init(game, 0);
     winCheck.checkWinnerFFA();
 
-    expect(setWinnerSpy).not.toHaveBeenCalled();
-    expect(winCheck.isActive()).toBe(true);
+    expect(setWinnerSpy).toHaveBeenCalledTimes(1);
+    // Winner is the dominator (first argument of setWinner).
+    expect(setWinnerSpy.mock.calls[0][0]).toBe(p1);
+    expect(winCheck.isActive()).toBe(false);
   });
 
   test("should declare last-player-standing winner in elimination mode (2-player)", async () => {

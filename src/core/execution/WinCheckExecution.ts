@@ -105,6 +105,56 @@ export class WinCheckExecution implements Execution {
   }
 
   /**
+   * Returns the player whose owned tiles exceed
+   * `percentageTilesOwnedToWin()` of the non-fallout sector total, or
+   * null if no one is above the threshold. Shared by both the
+   * legacy-Domination path and the new Elimination-mode shortcut so the
+   * exact same denominator and percentage logic covers both.
+   *
+   * `candidates` is the pre-filtered set of players still eligible to win
+   * (alive in elimination mode; unfiltered in legacy Domination). Passing
+   * it in lets the caller decide whether to include bots/eliminated
+   * players in the tile max without duplicating the iteration.
+   */
+  private dominantPlayer(candidates: Player[]): Player | null {
+    if (this.mg === null) throw new Error("Not initialized");
+    if (candidates.length === 0) return null;
+    const max = candidates
+      .slice()
+      .sort((a, b) => b.numTilesOwned() - a.numTilesOwned())[0];
+    const numTilesWithoutFallout =
+      this.mg.numSectorTiles() - this.mg.numTilesWithFallout();
+    if (numTilesWithoutFallout <= 0) return null;
+    const pct = (max.numTilesOwned() / numTilesWithoutFallout) * 100;
+    if (pct > this.mg.config().percentageTilesOwnedToWin()) {
+      return max;
+    }
+    return null;
+  }
+
+  /**
+   * Team-mode counterpart of {@link dominantPlayer}. Excludes the Bot
+   * team from the winner pool so a bot-dominated run doesn't declare the
+   * Bot team the winner, matching legacy Domination behavior.
+   */
+  private dominantTeam(teamToTiles: Map<Team, number>): Team | null {
+    if (this.mg === null) throw new Error("Not initialized");
+    const numTilesWithoutFallout =
+      this.mg.numSectorTiles() - this.mg.numTilesWithFallout();
+    if (numTilesWithoutFallout <= 0) return null;
+    const sorted = Array.from(teamToTiles.entries())
+      .filter(([t]) => t !== ColoredTeams.Bot)
+      .sort((a, b) => b[1] - a[1]);
+    if (sorted.length === 0) return null;
+    const [team, tiles] = sorted[0];
+    const pct = (tiles / numTilesWithoutFallout) * 100;
+    if (pct > this.mg.config().percentageTilesOwnedToWin()) {
+      return team;
+    }
+    return null;
+  }
+
+  /**
    * GDD §12 — a faction is considered alive in elimination mode only if it
    * still owns tiles AND has positive population. A player at exactly 0 pop
    * is granted `ZERO_POP_GRACE_TICKS` to recover (e.g. from their next
@@ -204,6 +254,20 @@ export class WinCheckExecution implements Execution {
     const alive = players.filter((p) => this.isPlayerAlive(p));
     if (alive.length === 1) {
       this.declareWinner(alive[0]);
+      return;
+    }
+    // Domination shortcut — if one player already owns the configured
+    // win-threshold fraction of sector tiles (default 80% for FFA), end
+    // the game even if another faction is technically still alive with a
+    // tiny holdout. Without this, a run could drag on indefinitely because
+    // a single Nation squatting on its homeworld tile is enough to keep
+    // `alive.length` at 2. Matches the user's expectation that "the game
+    // ends when one nation controls 80% of the board" and aligns
+    // Elimination mode with the legacy Domination behavior for the
+    // dominant-player case.
+    const dominator = this.dominantPlayer(alive);
+    if (dominator !== null) {
+      this.declareWinner(dominator);
       return;
     }
     if (alive.length === 0) {
@@ -319,6 +383,16 @@ export class WinCheckExecution implements Execution {
     }
     if (aliveNonBot.length === 1) {
       this.declareWinner(aliveNonBot[0]);
+      return;
+    }
+    // Team-mode domination shortcut, mirroring the FFA path. Prevents
+    // runs from hanging when a dominant team owns ≥threshold % of sector
+    // tiles but another team (or an un-eliminated Bot slot) still holds
+    // a single tile. The Bot team is excluded from winner candidates —
+    // only non-Bot teams can win via this shortcut.
+    const teamDominator = this.dominantTeam(teamToTiles);
+    if (teamDominator !== null) {
+      this.declareWinner(teamDominator);
       return;
     }
     if (aliveNonBot.length === 0) {
