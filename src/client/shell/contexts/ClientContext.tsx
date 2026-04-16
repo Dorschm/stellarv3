@@ -276,6 +276,16 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
         console.log("Closing modals — game prestart");
         document.getElementById("settings-button")?.classList.add("hidden");
         crazyGamesSDK.loadingStart();
+        // Dispatch so lobby/host/join modals can dismiss themselves without
+        // calling leaveLobby(). Without this, a user who joined via URL or
+        // the JoinLobbyModal sits on a "Connecting..." spinner forever while
+        // the game runs underneath — the modal renders on top at z-50 and
+        // blocks all gameplay interaction.
+        document.dispatchEvent(
+          new CustomEvent("game-prestart", {
+            detail: { gameID: lobby.gameID },
+          }),
+        );
       });
 
       handle.join.then(() => {
