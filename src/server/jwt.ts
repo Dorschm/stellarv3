@@ -6,7 +6,7 @@ import {
   UserMeResponse,
   UserMeResponseSchema,
 } from "../core/ApiSchemas";
-import { GameEnv, ServerConfig } from "../core/configuration/Config";
+import { ServerConfig } from "../core/configuration/Config";
 import { PersistentIdSchema } from "../core/Schemas";
 
 type TokenVerificationResult =
@@ -22,14 +22,12 @@ export async function verifyClientToken(
   config: ServerConfig,
 ): Promise<TokenVerificationResult> {
   if (PersistentIdSchema.safeParse(token).success) {
-    if (config.env() === GameEnv.Dev) {
-      return { type: "success", persistentId: token, claims: null };
-    } else {
-      return {
-        type: "error",
-        message: "persistent ID not allowed in production",
-      };
-    }
+    // Accept bare persistent IDs in all environments. stellar.game runs
+    // without the external auth service (api.${jwtAudience}) that issues
+    // JWTs, so anonymous play would be impossible in Prod otherwise.
+    // Worker.ts still gates privileged behavior on `claims`, and Turnstile
+    // still gates bot protection on join.
+    return { type: "success", persistentId: token, claims: null };
   }
   try {
     const issuer = config.jwtIssuer();
