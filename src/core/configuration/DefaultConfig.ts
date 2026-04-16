@@ -88,12 +88,20 @@ const SCOUT_SWARM_TILES_PER_TICK =
 const SCOUT_SWARM_TERRAFORM_ACCUMULATION = 10;
 const SCOUT_SWARM_LIFETIME_TICKS = 5 * 60 * 10;
 /**
- * GDD §3.1 — population cost deducted on scout swarm launch, expressed as
- * a fraction (0..1) of the launcher's **population cap** (not current
- * population). 25% makes scouting a real commitment that scales with
- * empire size instead of a fixed, trivial early-game tax.
+ * GDD §4 — radius (in tiles, Euclidean) of the cluster terraformed around
+ * a scout swarm's arrival target. Passed to `Game.circleSearch` so the
+ * arrival also promotes surrounding deep space, not just the single target
+ * tile. Radius 8 covers ~200 tiles, which is a one-time per-scout cost.
  */
-const SCOUT_SWARM_POPULATION_FRACTION = 0.25;
+const SCOUT_SWARM_CLUSTER_RADIUS = 8;
+/**
+ * GDD §3.1 — fixed population cost deducted on scout swarm launch. Chosen
+ * as a small flat tax so scouting is a predictable, non-punitive
+ * commitment regardless of empire size. Soft-cost semantics: launchers
+ * below this threshold still launch successfully; `removePopulation`
+ * caps at the available balance.
+ */
+const SCOUT_SWARM_POPULATION_COST = 1_000;
 
 /**
  * GDD §3.2 — per-tick credit upkeep charged to the fleet unit's current
@@ -409,8 +417,11 @@ export class DefaultConfig implements Config {
   scoutSwarmTerraformAccumulation(): number {
     return SCOUT_SWARM_TERRAFORM_ACCUMULATION;
   }
-  scoutSwarmPopulationFraction(): number {
-    return SCOUT_SWARM_POPULATION_FRACTION;
+  scoutSwarmClusterRadius(): number {
+    return SCOUT_SWARM_CLUSTER_RADIUS;
+  }
+  scoutSwarmPopulationCost(): number {
+    return SCOUT_SWARM_POPULATION_COST;
   }
 
   // ---- GDD §3.2: Fleet Upkeep --------------------------------------------
@@ -1374,6 +1385,10 @@ export class DefaultConfig implements Config {
 
   battlecruiserPlasmaBoltAttackRate(): number {
     return 20;
+  }
+
+  battlecruiserTerritoryRadius(): number {
+    return 5;
   }
 
   battlecruiserHostableStructures(): readonly UnitType[] {

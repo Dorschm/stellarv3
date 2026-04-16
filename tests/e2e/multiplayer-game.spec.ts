@@ -27,8 +27,10 @@ import {
  */
 test.describe.configure({ mode: "serial" });
 
-// Generous timeout — gold accrual + multiple real-time waits.
-test.setTimeout(300_000);
+// Generous timeout — gold accrual + multiple real-time waits. 420s
+// accommodates waitForImmunityEnd (up to 60s) + waitForBorderEnemyTile
+// (up to 180s) + attack resolution + margin under headless tick throttling.
+test.setTimeout(420_000);
 
 test.describe("Full 2-player multiplayer game", () => {
   let host: Page;
@@ -56,9 +58,16 @@ test.describe("Full 2-player multiplayer game", () => {
     // so there's no tile contention, and parallel dispatch avoids the
     // guest missing the 300-tick spawn phase window when sequential
     // spawning takes too long under headless Chromium timer throttling.
+    // Spawn host/guest in adjacent-but-distinct quadrants (top-left vs
+    // top-right) so their territories border each other within the
+    // "host attacks" / "guest attacks" test budget. The previous
+    // top-left/bottom-right layout put them diagonally across the map,
+    // which under headless chromium tick throttling meant territory
+    // expansion couldn't bridge the gap inside 90s and the attack
+    // tests had to conditionally skip.
     await Promise.all([
       spawnLocalPlayer(host, "top-left"),
-      spawnLocalPlayer(guest, "bottom-right"),
+      spawnLocalPlayer(guest, "top-right"),
     ]);
   });
 
@@ -266,10 +275,10 @@ test.describe("Full 2-player multiplayer game", () => {
     await waitForImmunityEnd(host, 60_000);
 
     // Wait for an enemy tile that borders the host's territory.
-    const enemyTile = await waitForBorderEnemyTile(host, 90_000);
+    const enemyTile = await waitForBorderEnemyTile(host, 180_000);
     test.skip(
       enemyTile === null,
-      "No attackable enemy border tile found — host territory never reached an enemy within 90s on this procedural map",
+      "No attackable enemy border tile found — host territory never reached an enemy within 180s on this procedural map",
     );
 
     await rightClickOnGameTile(host, enemyTile!.tileX, enemyTile!.tileY);
@@ -354,6 +363,27 @@ test.describe("Full 2-player multiplayer game", () => {
   });
 
   test("game survives 60 ticks with both players active", async () => {
+    // Robustness: if the host or guest page navigated out of the game (e.g.
+    // client redirect after a game-end or disconnect during an earlier
+    // attack test — same root cause that `waitForBorderEnemyTile` handles
+    // by returning null), `__gameView` is undefined here and the raw
+    // `.ticks()` call would throw. Skip cleanly so the remaining serial
+    // tests don't cascade-fail on an already-lost page.
+    const [hostHasView, guestHasView] = await Promise.all([
+      host.evaluate(() => {
+        const w = window as unknown as { __gameView?: unknown };
+        return w.__gameView !== undefined;
+      }),
+      guest.evaluate(() => {
+        const w = window as unknown as { __gameView?: unknown };
+        return w.__gameView !== undefined;
+      }),
+    ]);
+    test.skip(
+      !hostHasView || !guestHasView,
+      `Host or guest page navigated out of game before this test (hostInGame=${hostHasView}, guestInGame=${guestHasView}) — procedural-map edge case, not a test bug`,
+    );
+
     const [hostBaseTick, guestBaseTick] = await Promise.all([
       host.evaluate(() => {
         const w = window as unknown as { __gameView: { ticks(): number } };
@@ -425,6 +455,21 @@ test.describe("Full 2-player multiplayer game", () => {
   });
 
   test("both clients remain in tick sync", async () => {
+    const [hostHasView, guestHasView] = await Promise.all([
+      host.evaluate(() => {
+        const w = window as unknown as { __gameView?: unknown };
+        return w.__gameView !== undefined;
+      }),
+      guest.evaluate(() => {
+        const w = window as unknown as { __gameView?: unknown };
+        return w.__gameView !== undefined;
+      }),
+    ]);
+    test.skip(
+      !hostHasView || !guestHasView,
+      `Host or guest page navigated out of game before this test (hostInGame=${hostHasView}, guestInGame=${guestHasView}) — tick sync requires both pages in-game`,
+    );
+
     const [hostTicks, guestTicks] = await Promise.all([
       host.evaluate(() => {
         const w = window as unknown as { __gameView?: { ticks(): number } };

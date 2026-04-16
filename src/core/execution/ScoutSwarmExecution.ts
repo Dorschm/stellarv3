@@ -100,13 +100,12 @@ export class ScoutSwarmExecution implements Execution {
     }
 
     // GDD §3.1 — scouting/terraforming also consumes population. The cost
-    // is 25% of the launcher's *population cap* (not current population),
-    // so the tax scales with empire size. Soft cost: `removePopulation`
-    // deducts up to the available balance, so a launcher with insufficient
-    // current population still launches successfully.
-    const popFraction = mg.config().scoutSwarmPopulationFraction();
-    const maxPop = mg.config().maxPopulation(this.launcher);
-    const populationCost = Math.floor(maxPop * popFraction);
+    // is a fixed configurable amount, not derived from the launcher's
+    // population cap, so the tax stays predictable regardless of empire
+    // size. Soft cost: `removePopulation` deducts up to the available
+    // balance, so a launcher with insufficient current population still
+    // launches successfully.
+    const populationCost = mg.config().scoutSwarmPopulationCost();
     if (populationCost > 0) {
       this.launcher.removePopulation(populationCost);
     }
@@ -178,8 +177,20 @@ export class ScoutSwarmExecution implements Execution {
         this.scout.delete(false);
         return;
       }
+      // GDD §4 — scouts lay a 1-tile-wide trail, converting deep-space
+      // tiles they fly through into AsteroidField (and repeated passes
+      // step established corridors further toward habitability). Shares
+      // the same per-tile accumulation counter as destination
+      // terraforming, so multiple scouts on the same path accumulate
+      // progress. The final destination step is handled exclusively by
+      // onArrival() to avoid double-counting the target tile in the
+      // same tick.
+      const arrivingAtTarget = next === this.target;
+      if (!arrivingAtTarget) {
+        this.tryTerraformTrailTile(next);
+      }
       this.scout.move(next);
-      if (next === this.target) {
+      if (arrivingAtTarget) {
         this.onArrival(this.target);
         return;
       }
@@ -219,10 +230,54 @@ export class ScoutSwarmExecution implements Execution {
       this.applyTerraformStep(tile);
       this.mg.resetScoutSwarmTerraformProgress(tile);
     }
+    // GDD §4 — terraform a cluster of deep-space tiles around the
+    // arrival target. circleSearch visits every tile within the
+    // configured Euclidean radius; we bump the shared counter only for
+    // DeepSpace tiles so clusters expand the sector boundary without
+    // re-stepping already-sector tiles that should only progress via
+    // direct arrival or the trail.
+    const clusterRadius = this.mg.config().scoutSwarmClusterRadius();
+    if (clusterRadius > 0) {
+      const tiles = this.mg.circleSearch(tile, clusterRadius);
+      for (const t of tiles) {
+        if (t === tile) continue;
+        if (this.mg.map().terrainType(t) !== TerrainType.DeepSpace) continue;
+        const p = this.mg.recordScoutSwarmTerraformProgress(t);
+        if (p >= threshold) {
+          this.applyTerraformStep(t);
+          this.mg.resetScoutSwarmTerraformProgress(t);
+        }
+      }
+    }
     // Swarms are temporary — dissolve on arrival regardless of whether
     // this particular scout tripped the threshold.
     this.scout.delete(false);
     this.active = false;
+  }
+
+  /**
+   * Bump the shared per-tile terraform counter for `tile` if it is
+   * currently on a terraformable band (DeepSpace, AsteroidField, or
+   * Nebula) and step the terrain one band if the accumulation threshold
+   * is reached. Used by the flight-path trail — onArrival handles the
+   * destination tile itself. OpenSpace and DebrisField are skipped so
+   * fully-habitable/unsteppable terrain is never counted.
+   */
+  private tryTerraformTrailTile(tile: TileRef): void {
+    const terrain = this.mg.map().terrainType(tile);
+    if (
+      terrain !== TerrainType.DeepSpace &&
+      terrain !== TerrainType.AsteroidField &&
+      terrain !== TerrainType.Nebula
+    ) {
+      return;
+    }
+    const threshold = this.mg.config().scoutSwarmTerraformAccumulation();
+    const progress = this.mg.recordScoutSwarmTerraformProgress(tile);
+    if (progress >= threshold) {
+      this.applyTerraformStep(tile);
+      this.mg.resetScoutSwarmTerraformProgress(tile);
+    }
   }
 
   /**

@@ -30,6 +30,15 @@ const DIFFICULTIES: { type: Difficulty; label: string }[] = [
   { type: Difficulty.Impossible, label: "Impossible" },
 ];
 
+// E2E-only: `?e2e=1` URL param enables infiniteCredits + instantBuild so
+// Playwright specs (Jump Gate flow etc.) don't have to wait minutes of
+// wall-clock for credits to accumulate under headless tick throttling.
+// Gated on GAME_ENV !== "prod" so prod bundles drop it.
+const E2E_MODE =
+  process.env.GAME_ENV !== "prod" &&
+  typeof window !== "undefined" &&
+  new URLSearchParams(window.location.search).get("e2e") === "1";
+
 export function SinglePlayerModal() {
   const { getUsernameRef, getClanTagRef, joinLobby } = useClient();
   const { showPage } = useNavigation();
@@ -57,7 +66,9 @@ export function SinglePlayerModal() {
     try {
       const clientID = generateID();
       const gameID = generateID();
-      const username = getUsernameRef.current?.() ?? genAnonUsername();
+      // `||` (not `??`) so empty string also falls back — Zod rejects empty.
+      // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
+      const username = getUsernameRef.current?.() || genAnonUsername();
       const clanTag = getClanTagRef.current?.() ?? null;
       const cosmetics = await getPlayerCosmetics();
 
@@ -93,11 +104,20 @@ export function SinglePlayerModal() {
             playerTeams: 2,
             difficulty: effectiveDifficulty,
             bots: 400,
-            infiniteCredits: false,
+            infiniteCredits: E2E_MODE,
             donateCredits: false,
             donatePopulation: false,
             infinitePopulation: false,
+            // instantBuild deliberately stays false: it would let bots and
+            // nations convert their credit stockpiles into attack fleets in
+            // one tick, overwhelming a passive test player before HUD tests
+            // can even read spawn-phase state. Human builds still complete
+            // in ~20 ticks (2 s), which is fast enough for specs.
             instantBuild: false,
+            // 100M starting pool so raw `credits()` predicates in specs
+            // don't need special-casing for E2E mode, and Jump Gate (2
+            // gates = 375k) is trivially affordable.
+            ...(E2E_MODE ? { startingCredits: 100_000_000 } : {}),
             randomSpawn: false,
             nations: "default" as const,
             disabledUnits: [],

@@ -1,7 +1,17 @@
 // @vitest-environment node
+import { SpawnExecution } from "../../../src/core/execution/SpawnExecution";
 import { TradeFreighterExecution } from "../../../src/core/execution/TradeFreighterExecution";
-import { Game, Player, PlayerType, Unit } from "../../../src/core/game/Game";
+import {
+  Game,
+  Player,
+  PlayerInfo,
+  PlayerType,
+  Unit,
+  UnitType,
+} from "../../../src/core/game/Game";
+import { TileRef } from "../../../src/core/game/GameMap";
 import { PathStatus } from "../../../src/core/pathfinding/types";
+import { GameID } from "../../../src/core/Schemas";
 import { setup } from "../../util/Setup";
 
 describe("TradeFreighterExecution", () => {
@@ -180,5 +190,131 @@ describe("TradeFreighterExecution", () => {
     expect(tradeFreighter.delete).toHaveBeenCalledWith(false);
     expect(tradeFreighterExecution.isActive()).toBe(false);
     expect(game.displayMessage).toHaveBeenCalled();
+  });
+});
+
+/**
+ * GDD §3.2 — TradeFreighter fleet upkeep.
+ *
+ * Steady-state per-tick credit drain and bankruptcy survival for an ACTIVE
+ * trade freighter (the mock-heavy suite above already covers the inactive
+ * edge case). These tests use a real game and real player so the owner's
+ * credits are exercised end-to-end, and stub the pathfinder with a
+ * never-complete NEXT so the freighter stays in flight indefinitely.
+ */
+describe("TradeFreighterExecution — upkeep drain (GDD §3.2)", () => {
+  const gameID: GameID = "trade_freighter_upkeep_game";
+
+  let upkeepGame: Game;
+  let sender: Player;
+  let receiver: Player;
+  let srcPort: Unit;
+  let dstPort: Unit;
+
+  /**
+   * Player.tiles() returns a ReadonlySet<TileRef>; grab the first member
+   * so we can drop a Spaceport on real owned ground.
+   */
+  function firstTile(player: Player): TileRef {
+    for (const t of player.tiles()) {
+      return t;
+    }
+    throw new Error(`player ${player.id()} owns no tiles`);
+  }
+
+  beforeEach(async () => {
+    upkeepGame = await setup("plains", {
+      infiniteCredits: false,
+      instantBuild: true,
+      infinitePopulation: true,
+    });
+    upkeepGame.addPlayer(
+      new PlayerInfo("sender", PlayerType.Human, null, "sender_id"),
+    );
+    upkeepGame.addPlayer(
+      new PlayerInfo("receiver", PlayerType.Human, null, "receiver_id"),
+    );
+    upkeepGame.addExecution(
+      new SpawnExecution(
+        gameID,
+        upkeepGame.player("sender_id").info(),
+        upkeepGame.ref(5, 5),
+      ),
+      new SpawnExecution(
+        gameID,
+        upkeepGame.player("receiver_id").info(),
+        upkeepGame.ref(20, 20),
+      ),
+    );
+    while (upkeepGame.inSpawnPhase()) {
+      upkeepGame.executeNextTick();
+    }
+    sender = upkeepGame.player("sender_id");
+    receiver = upkeepGame.player("receiver_id");
+
+    const senderTile = firstTile(sender);
+    const receiverTile = firstTile(receiver);
+    srcPort = sender.buildUnit(UnitType.Spaceport, senderTile, {});
+    dstPort = receiver.buildUnit(UnitType.Spaceport, receiverTile, {});
+  });
+
+  /**
+   * Install a pathfinder that always returns NEXT so the freighter never
+   * completes — keeps the execution alive so multiple ticks of upkeep can
+   * be observed without the trade finishing and deleting the unit.
+   */
+  function stubNeverCompletePathFinder(exec: TradeFreighterExecution): void {
+    (exec as any).pathFinder = {
+      next: () => ({ status: PathStatus.NEXT, node: srcPort.tile() }),
+      findPath: (from: TileRef) => [from],
+    };
+  }
+
+  test("drains owner credits by the configured upkeep each tick while active", () => {
+    const exec = new TradeFreighterExecution(sender, srcPort, dstPort);
+    exec.init(upkeepGame, 0);
+    stubNeverCompletePathFinder(exec);
+
+    // First tick builds the freighter, and the post-build upkeep branch
+    // still fires in the same tick. Run that warm-up tick first so the
+    // balance math for the steady-state measurement below is unambiguous.
+    sender.removeCredits(sender.credits());
+    sender.addCredits(10_000_000n);
+    exec.tick(0);
+
+    const upkeep = upkeepGame.config().tradeFreighterUpkeepPerTick(sender);
+    expect(upkeep).toBeGreaterThan(0n);
+
+    const ownerBefore = sender.credits();
+    const TICKS = 5;
+    for (let i = 1; i <= TICKS; i++) {
+      exec.tick(i);
+    }
+
+    expect(sender.credits()).toBe(ownerBefore - upkeep * BigInt(TICKS));
+    expect(exec.isActive()).toBe(true);
+  });
+
+  test("freighter stays active when the owner is bankrupt (upkeep is not a kill switch)", () => {
+    const exec = new TradeFreighterExecution(sender, srcPort, dstPort);
+    exec.init(upkeepGame, 0);
+    stubNeverCompletePathFinder(exec);
+
+    // Force bankruptcy both before and after every tick so `removeCredits`
+    // never has a balance to draw from. The freighter should remain active
+    // despite the owner never being able to pay upkeep — this is the
+    // GDD §3.2 "not a kill switch" contract.
+    sender.removeCredits(sender.credits());
+    for (let i = 0; i < 20; i++) {
+      sender.removeCredits(sender.credits());
+      expect(sender.credits()).toBe(0n);
+      exec.tick(i);
+      sender.removeCredits(sender.credits());
+      expect(sender.credits()).toBe(0n);
+    }
+
+    const freighter = (exec as any).tradeFreighter as Unit;
+    expect(freighter.isActive()).toBe(true);
+    expect(exec.isActive()).toBe(true);
   });
 });

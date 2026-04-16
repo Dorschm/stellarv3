@@ -30,6 +30,15 @@ const DIFFICULTIES: { type: Difficulty; label: string }[] = [
   { type: Difficulty.Impossible, label: "Impossible" },
 ];
 
+// E2E-only: `?e2e=1` URL param enables infiniteCredits + instantBuild so
+// Playwright multiplayer specs can reach border-contact / build-unit
+// milestones without waiting minutes under headless tick throttling.
+// Gated on GAME_ENV !== "prod" so prod bundles drop it.
+const E2E_MODE =
+  process.env.GAME_ENV !== "prod" &&
+  typeof window !== "undefined" &&
+  new URLSearchParams(window.location.search).get("e2e") === "1";
+
 export function HostLobbyModal() {
   const { showPage } = useNavigation();
   const { eventBus, joinLobby, leaveLobby, updateGameConfig } = useClient();
@@ -67,11 +76,16 @@ export function HostLobbyModal() {
       playerTeams: 2,
       difficulty: selectedDifficulty,
       bots,
-      infiniteCredits: false,
+      infiniteCredits: E2E_MODE,
       donateCredits: false,
       donatePopulation: false,
       infinitePopulation: false,
+      // instantBuild deliberately stays false — see SinglePlayerModal for
+      // rationale (bots stockpiling + instant convert overwhelms tests).
       instantBuild: false,
+      // 100M starting pool so raw `credits()` predicates in specs don't
+      // need special-casing for E2E mode.
+      ...(E2E_MODE ? { startingCredits: 100_000_000 } : {}),
       randomSpawn: false,
       nations: "default" as const,
       disabledUnits: [],

@@ -136,6 +136,12 @@ export class GameImpl implements Game {
   private _winner: Player | Team | null = null;
   private _miniDeepSpaceGraph: AbstractGraph | null = null;
   private _miniDeepSpaceHPA: AStarDeepSpaceHierarchical | null = null;
+  // Set by `markDeepSpaceGraphDirty` whenever a void→sector promotion
+  // mutates the terrain buffer — the HPA graph is built once at init and
+  // never rebuilt, so downstream pathfinder calls must fall back to a
+  // fresh `AStarDeepSpace` over the current minimap instead of trusting
+  // the stale cache.
+  private _deepSpaceGraphDirty: boolean = false;
   private _teamGameSpawnAreas: TeamGameSpawnAreas | undefined;
   private _sectorMap: SectorMap;
 
@@ -1369,12 +1375,54 @@ export class GameImpl implements Game {
     this._map.setTerrainType(ref, type);
     if (!wasSector && this._map.isSector(ref)) {
       this._sectorMap.onTileConvertedToSector(ref);
+      // Deep space pathfinder invalidation. Two coupled effects:
+      //   1. Flip the dirty flag so `PathFinding.DeepSpace` falls back to
+      //      a fresh `AStarDeepSpace` instead of the stale HPA cache.
+      //   2. Propagate the promotion to the minimap terrain buffer that
+      //      `AStarDeepSpace` reads directly, via a scoped helper so the
+      //      broader non-sector → sector semantic (needed because the 2×
+      //      downsample can land on a debris bucket) stays isolated from
+      //      `GameMap.setTerrainType` gameplay semantics.
+      this.markDeepSpaceGraphDirty();
+      this.propagateSectorPromotionToMiniMap(ref);
     }
     // Ticket 6 — record terrain mutations for the client sync channel.
     // `packedTileUpdates` only carries packed per-tile state, not terrain,
     // so without this the client's GameMap would keep serving the stale
     // terrain classification after terraforming.
     this.terrainUpdatePairs.push(ref, type);
+  }
+
+  /**
+   * Scoped bridge from a full-map void→sector promotion to the
+   * downsampled minimap obstacle buffer. The minimap is a 2× downscale
+   * (`miniRef = miniMap.ref(floor(fullX/2), floor(fullY/2))`, matching
+   * the `MiniMapTransformer` convention), so the bucket for a promoted
+   * void tile may itself be void OR a non-void debris tile. Using the
+   * dedicated `promoteNonSectorToSector` helper keeps the broader
+   * debris-promotion semantic confined to the minimap path and avoids
+   * changing `GameMap.setTerrainType` gameplay behavior on the primary
+   * map. Idempotent when the minimap tile is already a sector.
+   */
+  private propagateSectorPromotionToMiniMap(ref: TileRef): void {
+    const miniX = Math.floor(this._map.x(ref) / 2);
+    const miniY = Math.floor(this._map.y(ref) / 2);
+    const miniRef = this.miniGameMap.ref(miniX, miniY);
+    if (!this.miniGameMap.isSector(miniRef)) {
+      this.miniGameMap.promoteNonSectorToSector(miniRef);
+    }
+  }
+
+  markDeepSpaceGraphDirty(): void {
+    this._deepSpaceGraphDirty = true;
+  }
+
+  isDeepSpaceGraphDirty(): boolean {
+    return this._deepSpaceGraphDirty;
+  }
+
+  clearDeepSpaceGraphDirty(): void {
+    this._deepSpaceGraphDirty = false;
   }
   forEachTile(fn: (tile: TileRef) => void): void {
     return this._map.forEachTile(fn);

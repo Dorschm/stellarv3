@@ -4,6 +4,7 @@ import {
   isUnit,
   OwnerComp,
   Player,
+  TerrainType,
   Unit,
   UnitParams,
   UnitType,
@@ -291,6 +292,8 @@ export class BattlecruiserExecution implements Execution {
       );
       switch (result.status) {
         case PathStatus.COMPLETE:
+          // Stationary capture: cruiser is already within range so no tile
+          // change happens. Territory only claims on real movement.
           this.battlecruiser
             .owner()
             .captureUnit(this.battlecruiser.targetUnit()!);
@@ -299,6 +302,7 @@ export class BattlecruiserExecution implements Execution {
           return;
         case PathStatus.NEXT:
           this.battlecruiser.move(result.node);
+          this.claimTerritoryRadius();
           break;
         case PathStatus.NOT_FOUND: {
           console.log(`path not found to target`);
@@ -321,16 +325,61 @@ export class BattlecruiserExecution implements Execution {
       this.battlecruiser.targetTile()!,
     );
     switch (result.status) {
-      case PathStatus.COMPLETE:
+      case PathStatus.COMPLETE: {
+        // COMPLETE can fire without any tile change (e.g. cruiser already
+        // stands on its target tile). Only claim when the move actually
+        // advances us to a new tile.
         this.battlecruiser.setTargetTile(undefined);
+        const previousTile = this.battlecruiser.tile();
         this.battlecruiser.move(result.node);
+        if (this.battlecruiser.tile() !== previousTile) {
+          this.claimTerritoryRadius();
+        }
         break;
+      }
       case PathStatus.NEXT:
         this.battlecruiser.move(result.node);
+        this.claimTerritoryRadius();
         break;
       case PathStatus.NOT_FOUND: {
         console.log(`path not found to target`);
         break;
+      }
+    }
+  }
+
+  /**
+   * GDD §14 — the Battlecruiser is a "mobile one-slot planet," so wherever
+   * it travels it leaves a permanent territorial wake. For every tile in
+   * the Euclidean radius around the cruiser's current position we:
+   *   - Promote DeepSpace to AsteroidField (routed through
+   *     `Game.setTerrainType` so SectorMap, the deep-space pathfinder dirty
+   *     flag, and client terrain sync all stay consistent).
+   *   - Conquer unowned sector tiles for the cruiser's owner.
+   * Tiles already owned by the cruiser's owner, its allies, or enemies are
+   * left alone — combat handles territory flips, not presence alone.
+   *
+   * The `isAlive()` guard mirrors ScoutSwarmExecution: `conquer()` adds a
+   * tile to the player, and `PlayerImpl.isAlive()` is defined as
+   * `_tiles.size > 0`. If the owner was eliminated mid-tick, conquering
+   * here would revive them with one tile and break the permadeath
+   * contract. We still terraform void→sector so the map promotion isn't
+   * gated on ownership.
+   */
+  private claimTerritoryRadius(): void {
+    const owner = this.battlecruiser.owner();
+    const radius = this.mg.config().battlecruiserTerritoryRadius();
+    const tiles = this.mg.circleSearch(this.battlecruiser.tile(), radius);
+    for (const tile of tiles) {
+      if (this.mg.isDeepSpace(tile)) {
+        this.mg.setTerrainType(tile, TerrainType.AsteroidField);
+      }
+      if (
+        this.mg.isSector(tile) &&
+        !this.mg.hasOwner(tile) &&
+        owner.isAlive()
+      ) {
+        owner.conquer(tile);
       }
     }
   }

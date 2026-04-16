@@ -193,25 +193,28 @@ export function EventsDisplay(): React.JSX.Element {
       }
     }
 
-    // Filter out expired events
-    let remainingEvents = events.filter((event) => {
-      const shouldKeep =
-        gameView.ticks() - event.createdAt < (event.duration ?? 600) &&
-        !event.shouldDelete?.(gameView);
-      if (!shouldKeep && event.onDelete) {
-        event.onDelete();
+    // Filter out expired events. Use the functional setState form so this
+    // effect doesn't have to depend on `events` — depending on `events` would
+    // re-fire the whole tick handler every time addEvent ran, and because
+    // `gameView.updatesSinceLastTick()` returns the same cached object until
+    // the next tick, every DisplayEvent would be processed N times per tick
+    // and the bundle counter would balloon (e.g. one capture → "99x").
+    setEvents((prev) => {
+      let remaining = prev.filter((event) => {
+        const shouldKeep =
+          gameView.ticks() - event.createdAt < (event.duration ?? 600) &&
+          !event.shouldDelete?.(gameView);
+        if (!shouldKeep && event.onDelete) {
+          event.onDelete();
+        }
+        return shouldKeep;
+      });
+      if (remaining.length > 30) {
+        remaining = remaining.slice(-30);
       }
-      return shouldKeep;
+      return remaining.length === prev.length ? prev : remaining;
     });
-
-    if (remainingEvents.length > 30) {
-      remainingEvents = remainingEvents.slice(-30);
-    }
-
-    if (events.length !== remainingEvents.length) {
-      setEvents(remainingEvents);
-    }
-  }, [tick, gameView, events, isVisible, eventBus]);
+  }, [tick, gameView, isVisible, eventBus]);
 
   const addEvent = (event: GameEvent) => {
     setEvents((prev) => {

@@ -253,12 +253,17 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
       }
 
       const getUsername = getUsernameRef.current;
+      // Use `||` rather than `??` so an empty string (ref-not-yet-populated
+      // race, or user cleared the input) also falls back to an anon name.
+      // The server's Zod schema rejects both missing and empty usernames.
+      // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
+      const resolvedUsername = getUsername?.() || genAnonUsername();
       const handle = joinLobby(eventBus, {
         gameID: lobby.gameID,
         serverConfig: config,
         cosmetics: await getPlayerCosmeticsRefs(),
         turnstileToken: await resolveTurnstileToken(lobby),
-        playerName: getUsername?.() ?? genAnonUsername(),
+        playerName: resolvedUsername,
         playerClanTag: getClanTagRef.current?.() ?? null,
         gameStartInfo: lobby.gameStartInfo ?? lobby.gameRecord?.info,
         gameRecord: lobby.gameRecord,

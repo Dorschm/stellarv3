@@ -96,36 +96,49 @@ describe("SectorBoundaryCoercingTransformer", () => {
       expect(result![result!.length - 1]).toBe(shore2);
     });
 
-    it("returns null when source has no water neighbor", () => {
+    it("coerces inner land source via BFS fallback when no direct water neighbor", () => {
       const mapData = createIslandMap();
       const map = createGameMap(mapData);
       const inner = createMockPathFinder();
       const transformer = new SectorBoundaryCoercingTransformer(inner, map);
 
-      // Center land tile (2,2) has no water neighbors
+      // Center land tile (2,2) has no water neighbors. The transformer
+      // must now BFS outward through surrounding land to find the
+      // nearest deep-space tile — otherwise a Battlecruiser sitting in
+      // the middle of its own claim bubble silently fails to route.
       const land = map.ref(2, 2);
       const water = map.ref(0, 0);
 
       const result = transformer.findPath(land, water);
 
-      expect(result).toBeNull();
-      expect(inner.calls).toHaveLength(0);
+      expect(result).not.toBeNull();
+      expect(inner.calls).toHaveLength(1);
+      // Path should begin with the original land tile we asked for.
+      expect(result![0]).toBe(land);
+      // The coerced start passed to the inner pathfinder must itself
+      // be a deep-space tile (the BFS landing point).
+      const coercedStart = inner.calls[0].from as number;
+      expect(map.isDeepSpace(coercedStart)).toBe(true);
     });
 
-    it("returns null when destination has no water neighbor", () => {
+    it("coerces inner land destination via BFS fallback when no direct water neighbor", () => {
       const mapData = createIslandMap();
       const map = createGameMap(mapData);
       const inner = createMockPathFinder();
       const transformer = new SectorBoundaryCoercingTransformer(inner, map);
 
-      // Center land tile (2,2) has no water neighbors
       const land = map.ref(2, 2);
       const water = map.ref(0, 0);
 
       const result = transformer.findPath(water, land);
 
-      expect(result).toBeNull();
-      expect(inner.calls).toHaveLength(0);
+      expect(result).not.toBeNull();
+      expect(inner.calls).toHaveLength(1);
+      // Destination must be appended so the final tile is still the
+      // original land target the caller asked for.
+      expect(result![result!.length - 1]).toBe(land);
+      const coercedTo = inner.calls[0].to;
+      expect(map.isDeepSpace(coercedTo)).toBe(true);
     });
 
     it("returns null when inner pathfinder returns null", () => {
@@ -152,7 +165,7 @@ describe("SectorBoundaryCoercingTransformer", () => {
       expect(result).toBeNull();
     });
 
-    it("handles multiple sources, filters invalid ones", () => {
+    it("handles multiple sources, coerces each via direct neighbor or BFS fallback", () => {
       const mapData = createIslandMap();
       const map = createGameMap(mapData);
       const inner = createMockPathFinder();
@@ -173,20 +186,32 @@ describe("SectorBoundaryCoercingTransformer", () => {
       expect(result).not.toBeNull();
       expect(inner.calls).toHaveLength(1);
 
+      // All three sources now coerce to water (water passes through,
+      // shore via direct neighbor, inner land via BFS fallback).
       const fromArg = inner.calls[0].from;
       expect(Array.isArray(fromArg)).toBe(true);
-      expect((fromArg as number[]).length).toBe(2);
+      expect((fromArg as number[]).length).toBe(3);
+      for (const coerced of fromArg as number[]) {
+        expect(map.isDeepSpace(coerced)).toBe(true);
+      }
     });
 
-    it("returns null when all sources are invalid", () => {
-      const mapData = createIslandMap();
-      const map = createGameMap(mapData);
+    it("returns null when no deep-space tile is reachable on the map", () => {
+      // All-land map: BFS fallback should exhaust all reachable tiles
+      // without finding deep space, and coerceToWater must still return
+      // null so callers can short-circuit cleanly.
+      // prettier-ignore
+      const map = createGameMap({
+        width: 3, height: 3, grid: [
+          L, L, L,
+          L, L, L,
+          L, L, L,
+        ],
+      });
       const inner = createMockPathFinder();
       const transformer = new SectorBoundaryCoercingTransformer(inner, map);
 
-      const land = map.ref(2, 2);
-
-      const result = transformer.findPath([land], map.ref(0, 0));
+      const result = transformer.findPath([map.ref(1, 1)], map.ref(0, 0));
 
       expect(result).toBeNull();
       expect(inner.calls).toHaveLength(0);

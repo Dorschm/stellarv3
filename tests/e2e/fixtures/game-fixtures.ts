@@ -70,7 +70,12 @@ export async function waitForInGame(page: Page): Promise<void> {
  *      / most HUD components never render.
  */
 export async function startSingleplayerGame(page: Page): Promise<Page> {
-  await page.goto("/");
+  // `?e2e=1` tells SinglePlayerModal to flip infiniteCredits + instantBuild
+  // on in the gameConfig it sends to the worker. Without it, tests that need
+  // large credit pools (Jump Gate build, Antimatter Torpedo) time out under
+  // headless tick throttling. The flag is honored only when
+  // GAME_ENV !== "prod", so the E2E URL has no effect on shipped prod.
+  await page.goto("/?e2e=1");
 
   // The play page renders multiple "solo" entry points (mobile top bar +
   // desktop bottom bar). `getByRole` will match all of them, so pick the
@@ -111,7 +116,7 @@ export async function startSingleplayerGame(page: Page): Promise<Page> {
  */
 export async function spawnLocalPlayer(
   page: Page,
-  preferredQuadrant: "top-left" | "bottom-right" = "top-left",
+  preferredQuadrant: "top-left" | "top-right" | "bottom-right" = "top-left",
 ): Promise<void> {
   // Wait for __gameView and __emitClick to be available.
   await page.waitForFunction(
@@ -204,7 +209,11 @@ export async function startMultiplayerGame(
   // which currently resolves to "Create Lobby" in en.json. The regex
   // intentionally accepts a few historical variants ("Create", "Host Game")
   // so a cosmetic rename doesn't silently break the fixture.
-  await host.goto("/");
+  // `?e2e=1` flips infiniteCredits + instantBuild on in HostLobbyModal so
+  // specs that depend on territory/credits crossing specific thresholds
+  // (attack-enemy-border, build Jump Gate, etc.) don't starve out under
+  // headless tick throttling. Honored only when GAME_ENV !== "prod".
+  await host.goto("/?e2e=1");
   const createButton = host
     .getByRole("button", { name: /^(create( lobby)?|host game)$/i })
     .first();
@@ -264,7 +273,10 @@ export async function startMultiplayerGame(
   // same label. We disambiguate by picking the first visible match for the
   // navigation click and the last visible match (inside the modal) for the
   // confirm click.
-  await guest.goto("/");
+  // Guest uses the host-configured game but navigates with the same flag
+  // so any modal-triggered HUD that reads URLSearchParams on the guest
+  // side picks up E2E mode too.
+  await guest.goto("/?e2e=1");
   const joinButton = guest
     .getByRole("button", { name: /^(join( lobby| game)?)$/i })
     .first();
@@ -453,7 +465,7 @@ export async function rightClickOnGameTile(
  */
 export async function findSpawnTile(
   page: Page,
-  preferredQuadrant: "top-left" | "bottom-right" = "top-left",
+  preferredQuadrant: "top-left" | "top-right" | "bottom-right" = "top-left",
 ): Promise<{ tileX: number; tileY: number } | null> {
   return page.evaluate((quadrant) => {
     const gv = (
@@ -472,12 +484,29 @@ export async function findSpawnTile(
     const h = gv.height();
 
     // Bias the scan direction so two players get different spawn locations.
-    const xStart =
-      quadrant === "top-left" ? Math.floor(w * 0.2) : Math.floor(w * 0.8);
-    const yStart =
-      quadrant === "top-left" ? Math.floor(h * 0.2) : Math.floor(h * 0.8);
-    const xDir = quadrant === "top-left" ? 1 : -1;
-    const yDir = quadrant === "top-left" ? 1 : -1;
+    // `top-right` puts the guest adjacent-enough to the `top-left` host that
+    // territorial expansion borders them within the multiplayer test budget
+    // (~60–90s of real time), without overlapping the initial scan region.
+    let xStart: number;
+    let yStart: number;
+    let xDir: number;
+    let yDir: number;
+    if (quadrant === "top-left") {
+      xStart = Math.floor(w * 0.2);
+      yStart = Math.floor(h * 0.25);
+      xDir = 1;
+      yDir = 1;
+    } else if (quadrant === "top-right") {
+      xStart = Math.floor(w * 0.45);
+      yStart = Math.floor(h * 0.25);
+      xDir = 1;
+      yDir = 1;
+    } else {
+      xStart = Math.floor(w * 0.8);
+      yStart = Math.floor(h * 0.8);
+      xDir = -1;
+      yDir = -1;
+    }
 
     for (const step of [8, 4, 1]) {
       for (let dy = 0; dy < h; dy += step) {
@@ -728,42 +757,105 @@ export async function waitForBorderEnemyTile(
   page: Page,
   timeoutMs = 60_000,
 ): Promise<{ tileX: number; tileY: number; ownerId: string | null } | null> {
-  const start = Date.now();
-  while (Date.now() - start < timeoutMs) {
-    const playerStatus = await page.evaluate(() => {
-      const gv = (
-        window as unknown as {
-          __gameView?: {
-            myPlayer(): {
-              isAlive(): boolean;
-              numTilesOwned(): number;
-            } | null;
-          };
+  // Use page.waitForFunction so the timeout is enforced by Playwright's
+  // evaluation driver. A while-loop with page.evaluate() calls has no
+  // per-call timeout budget — if one evaluate hangs (unresponsive page,
+  // stalled worker), the outer loop's Date.now() gate is never re-checked
+  // and the function runs far longer than `timeoutMs`, past the test
+  // timeout itself. With waitForFunction, a stuck evaluation is bounded
+  // by the `timeout` argument and rejects cleanly.
+  //
+  // The inner script returns one of three shapes encoded as JSON:
+  //   { kind: "tile", tileX, tileY, ownerId } — success
+  //   { kind: "dead" }                         — player eliminated
+  //   null                                     — keep polling
+  try {
+    const handle = await page.waitForFunction(
+      () => {
+        const gv = (
+          window as unknown as {
+            __gameView?: {
+              width(): number;
+              height(): number;
+              ref(x: number, y: number): unknown;
+              owner(ref: unknown): {
+                smallID(): number;
+                id(): string | null;
+                isPlayer(): boolean;
+              };
+              myPlayer(): {
+                isAlive(): boolean;
+                numTilesOwned(): number;
+                smallID(): number;
+              } | null;
+            };
+          }
+        ).__gameView;
+        if (!gv) return null;
+        const mp = gv.myPlayer();
+        if (!mp) return null;
+        if (!mp.isAlive() || mp.numTilesOwned() === 0) {
+          return { kind: "dead" as const };
         }
-      ).__gameView;
-      const mp = gv?.myPlayer();
-      if (!mp) return { exists: false, alive: false, tiles: 0 };
-      return {
-        exists: true,
-        alive: mp.isAlive(),
-        tiles: mp.numTilesOwned(),
-      };
-    });
+        const myID = mp.smallID();
+        const w = gv.width();
+        const h = gv.height();
+        for (const step of [4, 2, 1]) {
+          for (let y = 0; y < h; y += step) {
+            for (let x = 0; x < w; x += step) {
+              const r = gv.ref(x, y);
+              const o = gv.owner(r);
+              if (!o || !o.isPlayer() || o.smallID() === myID) continue;
+              const neighbours: [number, number][] = [
+                [x - 1, y],
+                [x + 1, y],
+                [x, y - 1],
+                [x, y + 1],
+              ];
+              for (const [nx, ny] of neighbours) {
+                if (nx < 0 || nx >= w || ny < 0 || ny >= h) continue;
+                const nr = gv.ref(nx, ny);
+                const no = gv.owner(nr);
+                if (no && no.smallID() === myID) {
+                  return {
+                    kind: "tile" as const,
+                    tileX: x,
+                    tileY: y,
+                    ownerId: o.id(),
+                  };
+                }
+              }
+            }
+          }
+        }
+        return null;
+      },
+      null,
+      { timeout: timeoutMs, polling: 1_000 },
+    );
+    const result = (await handle.jsonValue()) as
+      | { kind: "tile"; tileX: number; tileY: number; ownerId: string | null }
+      | { kind: "dead" };
+    if (result.kind === "dead") return null;
+    return {
+      tileX: result.tileX,
+      tileY: result.tileY,
+      ownerId: result.ownerId,
+    };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    // Benign terminal states — treat all as "no enemy tile found" so the
+    // caller can test.skip without failing the serial chain.
     if (
-      playerStatus.exists &&
-      (!playerStatus.alive || playerStatus.tiles === 0)
+      msg.includes("Timeout") ||
+      msg.includes("Execution context was destroyed") ||
+      msg.includes("frame was detached") ||
+      msg.includes("Target closed")
     ) {
-      // Player died mid-poll — return null so the caller can test.skip
-      // instead of crashing the serial chain.
       return null;
     }
-    const tile = await findEnemyTile(page);
-    if (tile) return tile;
-    await page.waitForTimeout(1_000);
+    throw e;
   }
-  // No attackable enemy tile found within the timeout — return null so
-  // callers can test.skip instead of crashing the serial chain.
-  return null;
 }
 
 /**

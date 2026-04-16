@@ -35,23 +35,33 @@ export interface GameMap {
   cost(ref: TileRef): number;
   terrainType(ref: TileRef): TerrainType;
   /**
-   * Runtime terrain mutation — overwrites the magnitude bits of a sector
-   * tile so `terrainType()` reports the new terrain class. Only valid for
-   * tiles that are already `isSector()`; calling on deep-space or debris
-   * tiles is a no-op (the IS_SECTOR bit is not flipped on, so the tile
-   * remains non-sector).
+   * Runtime terrain mutation. Two supported cases:
+   *   1. Sector tile → magnitude band change (OpenSpace / Nebula /
+   *      AsteroidField). Magnitude is clamped to each band's midpoint
+   *      so subsequent reads remain stable.
+   *   2. Void (`isVoid(ref) === true`) tile → AsteroidField. Flips
+   *      IS_SECTOR on and VOID off, creating a new sector tile at
+   *      AsteroidField magnitude. Scout Swarm terraforming (GDD §4 /
+   *      Ticket 6) drives this.
    *
-   * Used by Scout Swarm terraforming (GDD §4 / Ticket 6): scouts step an
-   * asteroid field up to a nebula, or a nebula up to open space, by
-   * accumulating on a target tile. The magnitude bands implemented in
-   * {@link GameMapImpl.terrainType} are:
-   *   - magnitude < 10  → OpenSpace
-   *   - magnitude < 20  → Nebula
-   *   - magnitude >= 20 → AsteroidField
-   * so this method clamps the magnitude to the midpoint of each band to
-   * keep rendering in sync with the classification.
+   * All other combinations — including non-void non-sector ("debris")
+   * tiles on the full map — are no-ops. The minimap synchronization
+   * path in `GameImpl.setTerrainType` uses the scoped
+   * {@link promoteNonSectorToSector} helper for the downsampled buffer
+   * instead, so arbitrary debris→sector promotion is never performed
+   * on the primary map.
    */
   setTerrainType(ref: TileRef, type: TerrainType): void;
+  /**
+   * Scoped helper used exclusively by the minimap synchronization path
+   * in `GameImpl.setTerrainType`. Unlike `setTerrainType`, this flips a
+   * non-sector tile (void OR non-void debris) into an AsteroidField
+   * sector tile. Intended only for the downsampled minimap buffer so
+   * the obstacle map consumed by `AStarDeepSpace` mirrors void→sector
+   * promotions on the full map; do not call from gameplay logic on the
+   * primary map.
+   */
+  promoteNonSectorToSector(ref: TileRef): void;
   forEachTile(fn: (tile: TileRef) => void): void;
 
   manhattanDist(c1: TileRef, c2: TileRef): number;
@@ -303,27 +313,27 @@ export class GameMapImpl implements GameMap {
    *      magnitude band so there is margin on either side before the band
    *      boundary is crossed again. This keeps subsequent re-reads of
    *      `terrainType()` stable and predictable.
-   *   2. **DeepSpace → AsteroidField promotion** — flips the IS_SECTOR bit
-   *      on and the VOID bit off for a void tile, making it a new sector
-   *      tile at AsteroidField magnitude. Scout-swarm terraforming (GDD §4)
-   *      drives this when accumulated scouts land on a void target.
-   *      Shoreline bits on this tile and its 4 neighbors are recomputed
-   *      because the void/sector boundary has moved. {@link numSectorTiles}
-   *      increments so global tile-count consumers (win checks, leaderboard)
-   *      see the new sector tile.
+   *   2. **Void (DeepSpace) → AsteroidField promotion** — flips the
+   *      IS_SECTOR bit on and the VOID bit off for a void tile, making
+   *      it a new sector tile at AsteroidField magnitude. Scout-swarm
+   *      terraforming (GDD §4) drives this when accumulated scouts land
+   *      on a void target. Shoreline bits on this tile and its 4
+   *      neighbors are recomputed because the void/sector boundary has
+   *      moved. {@link numSectorTiles} increments so global tile-count
+   *      consumers (win checks, leaderboard) see the new sector tile.
    *
-   * Other non-sector transitions (→ DeepSpace, → DebrisField) are no-ops —
-   * scout swarms only terraform *toward* habitability, never away from it,
-   * and LRW damage reduces effective habitability without rewriting the
-   * underlying TerrainType.
+   * All other transitions — including non-void non-sector (debris)
+   * tiles and sector-clearing requests (→ DeepSpace, → DebrisField) —
+   * are no-ops on the primary map. The minimap obstacle buffer uses
+   * {@link promoteNonSectorToSector} for the broader debris case.
    */
   setTerrainType(ref: TileRef, type: TerrainType): void {
-    // DeepSpace → AsteroidField: promote a void tile into a sector tile.
-    if (
-      !this.isSector(ref) &&
-      this.isVoid(ref) &&
-      type === TerrainType.AsteroidField
-    ) {
+    // Void → AsteroidField: promote a deep-space tile into a sector
+    // tile. Intentionally narrow — non-void non-sector (debris) tiles
+    // are NOT promoted here; scout-swarm terraforming only converts
+    // deep-space targets, and broader debris promotion is reserved for
+    // the minimap helper.
+    if (this.isVoid(ref) && type === TerrainType.AsteroidField) {
       const preserved =
         this.terrain[ref] &
         ~((1 << GameMapImpl.VOID_BIT) | GameMapImpl.MAGNITUDE_MASK);
@@ -369,6 +379,34 @@ export class GameMapImpl implements GameMap {
     // overwrite the magnitude bits in place.
     const preserved = this.terrain[ref] & ~GameMapImpl.MAGNITUDE_MASK;
     this.terrain[ref] = preserved | newMagnitude;
+  }
+
+  /**
+   * Scoped promotion of any non-sector tile (void OR non-void debris)
+   * into an AsteroidField sector tile. Exposed as a separate method
+   * from {@link setTerrainType} so the primary map never silently
+   * converts debris tiles during gameplay mutations; only the minimap
+   * synchronization path in `GameImpl.setTerrainType` invokes this on
+   * the downsampled buffer to keep the `AStarDeepSpace` obstacle map
+   * consistent with a full-map void→sector promotion even when the
+   * downsampled bucket lands on a debris tile.
+   *
+   * Already-sector tiles are left untouched (idempotent no-op).
+   */
+  promoteNonSectorToSector(ref: TileRef): void {
+    if (this.isSector(ref)) return;
+    const preserved =
+      this.terrain[ref] &
+      ~((1 << GameMapImpl.VOID_BIT) | GameMapImpl.MAGNITUDE_MASK);
+    this.terrain[ref] =
+      preserved |
+      (1 << GameMapImpl.IS_SECTOR_BIT) |
+      (25 & GameMapImpl.MAGNITUDE_MASK);
+    this.numSectorTiles_++;
+    this.recomputeShorelineBit(ref);
+    for (const n of this.neighbors(ref)) {
+      this.recomputeShorelineBit(n);
+    }
   }
 
   /**

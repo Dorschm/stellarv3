@@ -207,6 +207,14 @@ export interface Config {
   battlecruiserPlasmaBoltAttackRate(): number;
   battlecruiserTargettingRange(): number;
   /**
+   * GDD §14 — Euclidean radius (in tiles) of the territorial "wake" the
+   * Battlecruiser leaves behind as it patrols. On every movement step the
+   * cruiser converts deep-space tiles within this radius into sector
+   * tiles and claims any unowned sector tiles it passes over. Enemy- or
+   * ally-owned tiles are left untouched.
+   */
+  battlecruiserTerritoryRadius(): number;
+  /**
    * GDD §14 — set of structure types that a Battlecruiser may host in its
    * single mobile slot. A Battlecruiser acts as a "mobile one-slot planet",
    * so in principle every ground-buildable structure is hostable. Exposed
@@ -320,15 +328,21 @@ export interface Config {
    */
   scoutSwarmTerraformAccumulation(): number;
   /**
-   * GDD §3.1 — "Population uses: colonize/terraform planets." Fraction
-   * (0..1) of the launcher's population **cap** (not current population)
-   * deducted at scout swarm launch. ScoutSwarmExecution reads this and
-   * computes `maxPopulation(player) * scoutSwarmPopulationFraction()`.
-   * Soft cost: if the launcher has insufficient current population the
-   * launch still succeeds and `removePopulation` simply deducts up to
-   * available.
+   * GDD §4 — scouts terraform a cluster of deep-space tiles centred on
+   * the arrival target. Returned value is the Euclidean radius (in tiles)
+   * passed to {@link Game.circleSearch}. Trail tiles along the scout's
+   * flight path use a fixed 1-tile width and do not read this value.
    */
-  scoutSwarmPopulationFraction(): number;
+  scoutSwarmClusterRadius(): number;
+  /**
+   * GDD §3.1 — "Population uses: colonize/terraform planets." Fixed
+   * population cost deducted at scout swarm launch. ScoutSwarmExecution
+   * calls `launcher.removePopulation(scoutSwarmPopulationCost())` directly
+   * — the cost does NOT scale with empire size or population cap. Soft
+   * cost: if the launcher has insufficient current population the launch
+   * still succeeds and `removePopulation` simply deducts up to available.
+   */
+  scoutSwarmPopulationCost(): number;
 
   // ---- GDD §3.2: Fleet Upkeep ---------------------------------------------
   /**

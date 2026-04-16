@@ -984,6 +984,27 @@ export interface Game extends GameMap {
   miniDeepSpaceGraph(): AbstractGraph | null;
   getDeepSpaceComponent(tile: TileRef): number | null;
   hasDeepSpaceComponent(tile: TileRef, component: number): boolean;
+
+  /**
+   * Deep space pathfinder invalidation flag. Set whenever a void→sector
+   * promotion mutates the terrain buffer so the HPA graph (built once at
+   * game init) is known to be stale. Consumers (`PathFinding.DeepSpace`)
+   * fall back to a fresh `AStarDeepSpace` for the next query rather than
+   * paying a ~50ms HPA rebuild in the hot path. The flag is single-shot:
+   * the first `PathFinding.DeepSpace` query that observes `true` clears
+   * it via `clearDeepSpaceGraphDirty` and latches simple routing for the
+   * remainder of the current tick. Future ticks start from a clean flag
+   * and re-evaluate HPA availability on demand.
+   */
+  markDeepSpaceGraphDirty(): void;
+  isDeepSpaceGraphDirty(): boolean;
+  /**
+   * Clears the dirty flag. Called by `PathFinding.DeepSpace` as soon as
+   * its wrapper selects the fallback path so the next tick can
+   * re-evaluate cleanly; same-tick consistency is preserved via a
+   * wrapper-local tick latch rather than by leaving the flag set.
+   */
+  clearDeepSpaceGraphDirty(): void;
 }
 
 export interface PlayerActions {

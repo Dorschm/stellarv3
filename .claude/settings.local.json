@@ -13,7 +13,8 @@
       "Bash(kill -0 11505)",
       "Bash(kill -0 18545)",
       "Bash(kill -0 20815)",
-      "Bash(kill -0 21672)"
+      "Bash(kill -0 21672)",
+      "Bash(grep -E --line-buffered \"Test Files|failed\\\\\\\\b|FAIL\\\\\\\\b|Duration\")"
     ]
   }
 }

@@ -126,15 +126,14 @@ describe("ScoutSwarmExecution — launch cost", () => {
     expect(swarms[0].isActive()).toBe(true);
   });
 
-  test("deducts the configured fraction of the launcher's population cap at launch", () => {
+  test("deducts the configured fixed population cost at launch", () => {
     // GDD §3.1: scout swarms consume population on launch alongside the
-    // credit cost. The deduction is a fraction of the launcher's
-    // *population cap* (not current population), so the tax scales with
-    // empire size rather than with whatever the current headcount is.
+    // credit cost. The deduction is a fixed configurable amount — it does
+    // NOT scale with population cap or current population — so launches
+    // stay predictable regardless of empire size.
     launcher.addCredits(1_000n);
-    const fraction = game.config().scoutSwarmPopulationFraction();
-    const maxPop = game.config().maxPopulation(launcher);
-    const cost = Math.floor(maxPop * fraction);
+    const cost = game.config().scoutSwarmPopulationCost();
+    expect(cost).toBeGreaterThan(0);
     const popBefore = launcher.population();
     expect(popBefore).toBeGreaterThanOrEqual(cost);
 
@@ -851,6 +850,705 @@ describe("ScoutSwarmExecution — ownership grant (end-to-end, seeded sectors)",
     expect(habSumAfterSecond).toBeCloseTo(
       habSumAfterFirst + (HABITABILITY_OPEN_SPACE - HABITABILITY_NEBULA),
       10,
+    );
+  });
+});
+
+/**
+ * Trail + cluster terraforming (GDD §4, ticket
+ * 76a67e2d-bc7f-49ca-9d57-524957a31875).
+ *
+ * Scouts now terraform:
+ *   1. A 1-tile-wide trail along their flight path — every DeepSpace tile
+ *      the scout steps through bumps the shared per-tile accumulation
+ *      counter, and steps the terrain one band once the threshold is hit.
+ *   2. A cluster of tiles around the arrival target — `circleSearch` within
+ *      `scoutSwarmClusterRadius()` finds every DeepSpace tile near the
+ *      arrival, bumps progress for each, and steps the threshold-trippers.
+ *
+ * These tests use `ocean_and_land` because big_plains has little deep space
+ * at the edges — ocean_and_land is 16×16 with ~120 void tiles, giving
+ * plenty of DeepSpace to exercise the trail and cluster branches.
+ */
+describe("ScoutSwarmExecution — trail terraforming", () => {
+  let gameOL: Game;
+  let launcherOL: Player;
+
+  async function buildOceanGame() {
+    gameOL = await setup("ocean_and_land", {
+      infiniteCredits: false,
+      instantBuild: true,
+    });
+    gameOL.addPlayer(
+      new PlayerInfo(
+        "trail_launcher",
+        PlayerType.Human,
+        null,
+        "trail_launcher",
+      ),
+    );
+    // Find any sector tile for spawning — on ocean_and_land sectors are
+    // scattered. Scan the map for the first sector tile.
+    let spawn: number | null = null;
+    outer: for (let y = 0; y < gameOL.height(); y++) {
+      for (let x = 0; x < gameOL.width(); x++) {
+        const t = gameOL.ref(x, y);
+        if (gameOL.map().isSector(t)) {
+          spawn = t;
+          break outer;
+        }
+      }
+    }
+    if (spawn === null) {
+      throw new Error("no sector tile on ocean_and_land");
+    }
+    gameOL.addExecution(
+      new SpawnExecution(gameID, gameOL.player("trail_launcher").info(), spawn),
+    );
+    while (gameOL.inSpawnPhase()) {
+      gameOL.executeNextTick();
+    }
+    launcherOL = gameOL.player("trail_launcher");
+    launcherOL.buildUnit(UnitType.Spaceport, spawn, {});
+  }
+
+  function findDeepSpaceTile(g: Game): number {
+    for (let y = 0; y < g.height(); y++) {
+      for (let x = 0; x < g.width(); x++) {
+        const t = g.ref(x, y);
+        if (g.map().terrainType(t) === TerrainType.DeepSpace) {
+          return t;
+        }
+      }
+    }
+    throw new Error("no DeepSpace tile on ocean_and_land");
+  }
+
+  beforeEach(async () => {
+    await buildOceanGame();
+  });
+
+  test("tryTerraformTrailTile bumps progress on a DeepSpace tile", () => {
+    const tile = findDeepSpaceTile(gameOL);
+    expect(gameOL.map().terrainType(tile)).toBe(TerrainType.DeepSpace);
+
+    launcherOL.addCredits(1_000n);
+    const exec = new ScoutSwarmExecution(launcherOL, tile);
+    exec.init(gameOL, 0);
+
+    expect(gameOL.scoutSwarmTerraformProgress(tile)).toBe(0);
+    (exec as any).tryTerraformTrailTile(tile);
+    expect(gameOL.scoutSwarmTerraformProgress(tile)).toBe(1);
+    (exec as any).tryTerraformTrailTile(tile);
+    expect(gameOL.scoutSwarmTerraformProgress(tile)).toBe(2);
+  });
+
+  test("tryTerraformTrailTile is a no-op on OpenSpace / DebrisField tiles", () => {
+    // OpenSpace is already fully habitable and DebrisField is not a
+    // valid terraform input — trail passes over either must not bump
+    // the shared counter. AsteroidField and Nebula ARE counted (trail
+    // corridor upgrade) — covered in the corridor-upgrade tests below.
+    const ownedTiles = Array.from(launcherOL.tiles());
+    expect(ownedTiles.length).toBeGreaterThan(0);
+    const openTile = ownedTiles[0];
+    gameOL.map().setTerrainType(openTile, TerrainType.OpenSpace);
+
+    launcherOL.addCredits(1_000n);
+    const exec = new ScoutSwarmExecution(launcherOL, openTile);
+    exec.init(gameOL, 0);
+
+    const progressBefore = gameOL.scoutSwarmTerraformProgress(openTile);
+    (exec as any).tryTerraformTrailTile(openTile);
+    expect(gameOL.scoutSwarmTerraformProgress(openTile)).toBe(progressBefore);
+  });
+
+  test("tryTerraformTrailTile bumps progress on AsteroidField and Nebula so corridors can mature", () => {
+    // Corridor-upgrade contract (Comment 1 fix): once a trail tile has
+    // been promoted from DeepSpace to AsteroidField by earlier scouts,
+    // subsequent passes must keep accumulating so the corridor can
+    // mature into Nebula and eventually OpenSpace. A one-step corridor
+    // that stops after AsteroidField is the regression being guarded.
+    const ownedTiles = Array.from(launcherOL.tiles());
+    expect(ownedTiles.length).toBeGreaterThanOrEqual(2);
+
+    const asteroidTile = ownedTiles[0];
+    gameOL.map().setTerrainType(asteroidTile, TerrainType.AsteroidField);
+    const nebulaTile = ownedTiles[1];
+    gameOL.map().setTerrainType(nebulaTile, TerrainType.Nebula);
+
+    launcherOL.addCredits(1_000n);
+    const exec = new ScoutSwarmExecution(launcherOL, asteroidTile);
+    exec.init(gameOL, 0);
+
+    const asteroidBefore = gameOL.scoutSwarmTerraformProgress(asteroidTile);
+    const nebulaBefore = gameOL.scoutSwarmTerraformProgress(nebulaTile);
+
+    (exec as any).tryTerraformTrailTile(asteroidTile);
+    (exec as any).tryTerraformTrailTile(nebulaTile);
+
+    expect(gameOL.scoutSwarmTerraformProgress(asteroidTile)).toBe(
+      asteroidBefore + 1,
+    );
+    expect(gameOL.scoutSwarmTerraformProgress(nebulaTile)).toBe(
+      nebulaBefore + 1,
+    );
+  });
+
+  test("trail steps AsteroidField → Nebula → OpenSpace across repeated passes", () => {
+    // End-to-end corridor maturation: repeatedly bumping an
+    // AsteroidField trail tile past the threshold must step it to
+    // Nebula, and then bumping again past the threshold must step it
+    // to OpenSpace. Guards against tryTerraformTrailTile returning
+    // early once the tile leaves DeepSpace.
+    const ownedTiles = Array.from(launcherOL.tiles());
+    expect(ownedTiles.length).toBeGreaterThan(0);
+    const tile = ownedTiles[0];
+    gameOL.map().setTerrainType(tile, TerrainType.AsteroidField);
+    gameOL.resetScoutSwarmTerraformProgress(tile);
+
+    launcherOL.addCredits(1_000n);
+    const exec = new ScoutSwarmExecution(launcherOL, tile);
+    exec.init(gameOL, 0);
+
+    const threshold = gameOL.config().scoutSwarmTerraformAccumulation();
+
+    for (let i = 0; i < threshold; i++) {
+      (exec as any).tryTerraformTrailTile(tile);
+    }
+    expect(gameOL.map().terrainType(tile)).toBe(TerrainType.Nebula);
+    expect(gameOL.scoutSwarmTerraformProgress(tile)).toBe(0);
+
+    for (let i = 0; i < threshold; i++) {
+      (exec as any).tryTerraformTrailTile(tile);
+    }
+    expect(gameOL.map().terrainType(tile)).toBe(TerrainType.OpenSpace);
+    expect(gameOL.scoutSwarmTerraformProgress(tile)).toBe(0);
+  });
+
+  test("trail converts DeepSpace → AsteroidField when threshold is reached and grants ownership", () => {
+    const tile = findDeepSpaceTile(gameOL);
+    expect(gameOL.map().terrainType(tile)).toBe(TerrainType.DeepSpace);
+    expect(gameOL.hasOwner(tile)).toBe(false);
+
+    launcherOL.addCredits(1_000n);
+    const exec = new ScoutSwarmExecution(launcherOL, tile);
+    exec.init(gameOL, 0);
+
+    // Pre-seed progress to (threshold - 1) so the next bump trips the
+    // terraform step. Uses the public recordScoutSwarmTerraformProgress
+    // counter shared by trail, cluster, and arrival logic.
+    const threshold = gameOL.config().scoutSwarmTerraformAccumulation();
+    for (let i = 0; i < threshold - 1; i++) {
+      gameOL.recordScoutSwarmTerraformProgress(tile);
+    }
+    expect(gameOL.scoutSwarmTerraformProgress(tile)).toBe(threshold - 1);
+
+    (exec as any).tryTerraformTrailTile(tile);
+
+    expect(gameOL.map().terrainType(tile)).toBe(TerrainType.AsteroidField);
+    expect(gameOL.scoutSwarmTerraformProgress(tile)).toBe(0);
+    // Launcher is alive — unowned DeepSpace promotion conquers the tile.
+    expect(gameOL.hasOwner(tile)).toBe(true);
+    expect(gameOL.owner(tile)).toBe(launcherOL);
+  });
+
+  test("two passes over the same DeepSpace tile accumulate shared progress", () => {
+    const tile = findDeepSpaceTile(gameOL);
+
+    launcherOL.addCredits(1_000n);
+    const first = new ScoutSwarmExecution(launcherOL, tile);
+    first.init(gameOL, 0);
+    (first as any).tryTerraformTrailTile(tile);
+    expect(gameOL.scoutSwarmTerraformProgress(tile)).toBe(1);
+
+    const second = new ScoutSwarmExecution(launcherOL, tile);
+    second.init(gameOL, 0);
+    (second as any).tryTerraformTrailTile(tile);
+    expect(gameOL.scoutSwarmTerraformProgress(tile)).toBe(2);
+  });
+});
+
+describe("ScoutSwarmExecution — destination cluster terraforming", () => {
+  let gameOL: Game;
+  let launcherOL: Player;
+
+  async function buildOceanGame() {
+    gameOL = await setup("ocean_and_land", {
+      infiniteCredits: false,
+      instantBuild: true,
+    });
+    gameOL.addPlayer(
+      new PlayerInfo(
+        "cluster_launcher",
+        PlayerType.Human,
+        null,
+        "cluster_launcher",
+      ),
+    );
+    let spawn: number | null = null;
+    outer: for (let y = 0; y < gameOL.height(); y++) {
+      for (let x = 0; x < gameOL.width(); x++) {
+        const t = gameOL.ref(x, y);
+        if (gameOL.map().isSector(t)) {
+          spawn = t;
+          break outer;
+        }
+      }
+    }
+    if (spawn === null) {
+      throw new Error("no sector tile on ocean_and_land");
+    }
+    gameOL.addExecution(
+      new SpawnExecution(
+        gameID,
+        gameOL.player("cluster_launcher").info(),
+        spawn,
+      ),
+    );
+    while (gameOL.inSpawnPhase()) {
+      gameOL.executeNextTick();
+    }
+    launcherOL = gameOL.player("cluster_launcher");
+    launcherOL.buildUnit(UnitType.Spaceport, spawn, {});
+  }
+
+  /**
+   * Return every DeepSpace tile in the configured cluster radius around
+   * `center`, excluding the center itself. Used to verify cluster coverage.
+   */
+  function deepSpaceNeighborsInRadius(
+    g: Game,
+    center: number,
+    radius: number,
+  ): number[] {
+    const out: number[] = [];
+    for (const t of g.circleSearch(center, radius)) {
+      if (t === center) continue;
+      if (g.map().terrainType(t) === TerrainType.DeepSpace) out.push(t);
+    }
+    return out;
+  }
+
+  beforeEach(async () => {
+    await buildOceanGame();
+  });
+
+  test("arrival bumps cluster progress for DeepSpace tiles within radius", () => {
+    // Pick a DeepSpace tile with DeepSpace neighbours so the cluster has
+    // something to terraform. Scan for the first DeepSpace with at least
+    // one other DeepSpace within radius.
+    const radius = gameOL.config().scoutSwarmClusterRadius();
+    let target: number | null = null;
+    for (let y = 0; y < gameOL.height() && target === null; y++) {
+      for (let x = 0; x < gameOL.width(); x++) {
+        const t = gameOL.ref(x, y);
+        if (gameOL.map().terrainType(t) !== TerrainType.DeepSpace) continue;
+        if (deepSpaceNeighborsInRadius(gameOL, t, radius).length > 0) {
+          target = t;
+          break;
+        }
+      }
+    }
+    if (target === null) throw new Error("no suitable DeepSpace target");
+    const neighbors = deepSpaceNeighborsInRadius(gameOL, target, radius);
+    expect(neighbors.length).toBeGreaterThan(0);
+
+    launcherOL.addCredits(1_000n);
+    const exec = new ScoutSwarmExecution(launcherOL, target);
+    exec.init(gameOL, 0);
+
+    // Put the scout on the target so onArrival's guard (scout !== null) is
+    // satisfied. The cluster branch is what the test cares about; the
+    // single-target terraform bump is incidental.
+    (exec as any).scout.move(target);
+
+    for (const n of neighbors) {
+      expect(gameOL.scoutSwarmTerraformProgress(n)).toBe(0);
+    }
+
+    (exec as any).onArrival(target);
+
+    for (const n of neighbors) {
+      expect(gameOL.scoutSwarmTerraformProgress(n)).toBe(1);
+    }
+  });
+
+  test("cluster ignores non-DeepSpace tiles within the radius", () => {
+    // Target a DeepSpace tile near the launcher's territory so the cluster
+    // spans both sector and void tiles. Any owned sector tile within
+    // radius must NOT have its counter bumped.
+    const radius = gameOL.config().scoutSwarmClusterRadius();
+    const ownedTiles = Array.from(launcherOL.tiles());
+    expect(ownedTiles.length).toBeGreaterThan(0);
+    const anchor = ownedTiles[0];
+
+    // Find a DeepSpace tile within `radius` of the anchor.
+    let target: number | null = null;
+    for (const t of gameOL.circleSearch(anchor, radius)) {
+      if (gameOL.map().terrainType(t) === TerrainType.DeepSpace) {
+        target = t;
+        break;
+      }
+    }
+    if (target === null) {
+      throw new Error("no DeepSpace within cluster radius of owned tile");
+    }
+
+    // Collect every non-DeepSpace tile in the cluster around `target` so
+    // we can assert their counters don't move.
+    const nonDeepSpace: number[] = [];
+    for (const t of gameOL.circleSearch(target, radius)) {
+      if (t === target) continue;
+      if (gameOL.map().terrainType(t) !== TerrainType.DeepSpace) {
+        nonDeepSpace.push(t);
+      }
+    }
+    expect(nonDeepSpace.length).toBeGreaterThan(0);
+
+    launcherOL.addCredits(1_000n);
+    const exec = new ScoutSwarmExecution(launcherOL, target);
+    exec.init(gameOL, 0);
+    (exec as any).scout.move(target);
+
+    const progressBefore = nonDeepSpace.map((t) =>
+      gameOL.scoutSwarmTerraformProgress(t),
+    );
+
+    (exec as any).onArrival(target);
+
+    for (let i = 0; i < nonDeepSpace.length; i++) {
+      expect(gameOL.scoutSwarmTerraformProgress(nonDeepSpace[i])).toBe(
+        progressBefore[i],
+      );
+    }
+  });
+
+  test("cluster steps a DeepSpace neighbor that crosses the threshold", () => {
+    const radius = gameOL.config().scoutSwarmClusterRadius();
+    // Find a DeepSpace target with at least one DeepSpace neighbour.
+    let target: number | null = null;
+    let neighbor: number | null = null;
+    for (let y = 0; y < gameOL.height() && target === null; y++) {
+      for (let x = 0; x < gameOL.width(); x++) {
+        const t = gameOL.ref(x, y);
+        if (gameOL.map().terrainType(t) !== TerrainType.DeepSpace) continue;
+        const ns = deepSpaceNeighborsInRadius(gameOL, t, radius);
+        if (ns.length > 0) {
+          target = t;
+          neighbor = ns[0];
+          break;
+        }
+      }
+    }
+    if (target === null || neighbor === null) {
+      throw new Error("no suitable target/neighbor pair");
+    }
+
+    // Pre-seed the neighbour's counter so onArrival's cluster bump trips
+    // the terraform step on that specific tile.
+    const threshold = gameOL.config().scoutSwarmTerraformAccumulation();
+    for (let i = 0; i < threshold - 1; i++) {
+      gameOL.recordScoutSwarmTerraformProgress(neighbor);
+    }
+    expect(gameOL.map().terrainType(neighbor)).toBe(TerrainType.DeepSpace);
+
+    launcherOL.addCredits(1_000n);
+    const exec = new ScoutSwarmExecution(launcherOL, target);
+    exec.init(gameOL, 0);
+    (exec as any).scout.move(target);
+
+    (exec as any).onArrival(target);
+
+    // Cluster bumped neighbour from (threshold-1) to threshold, terraformed,
+    // then reset. Launcher takes ownership as in the arrival branch.
+    expect(gameOL.map().terrainType(neighbor)).toBe(TerrainType.AsteroidField);
+    expect(gameOL.scoutSwarmTerraformProgress(neighbor)).toBe(0);
+    expect(gameOL.owner(neighbor)).toBe(launcherOL);
+  });
+});
+
+/**
+ * End-to-end tick()-driven tests for the trail + cluster pipeline
+ * (Comments 2 & 3). These drive the full public path — init() → tick()
+ * stepping through deep space → onArrival() — so that ordering effects
+ * between trail bumps, movement, and arrival are exercised together.
+ *
+ * Covers:
+ *   - No destination double-count when the final step of tick() lands on
+ *     the target tile (Comment 2 guard).
+ *   - Multi-scout corridor upgrades across the flight path (Comment 1
+ *     guard): two sequential scouts with enough passes should mature a
+ *     corridor tile at least one extra band beyond AsteroidField.
+ *   - threshold>1 accumulation on intermediate path tiles.
+ *   - Enemy-owned tiles inside the destination cluster retain ownership
+ *     even when terraformed by the arrival cluster.
+ */
+describe("ScoutSwarmExecution — end-to-end tick() movement", () => {
+  let gameOL: Game;
+  let launcherOL: Player;
+  const e2eGameID: GameID = "scout_swarm_e2e_game";
+
+  async function buildOceanGame() {
+    gameOL = await setup("ocean_and_land", {
+      infiniteCredits: false,
+      instantBuild: true,
+    });
+    gameOL.addPlayer(
+      new PlayerInfo("e2e_launcher", PlayerType.Human, null, "e2e_launcher"),
+    );
+    let spawn: number | null = null;
+    outer: for (let y = 0; y < gameOL.height(); y++) {
+      for (let x = 0; x < gameOL.width(); x++) {
+        const t = gameOL.ref(x, y);
+        if (gameOL.map().isSector(t)) {
+          spawn = t;
+          break outer;
+        }
+      }
+    }
+    if (spawn === null) throw new Error("no sector tile on ocean_and_land");
+    gameOL.addExecution(
+      new SpawnExecution(
+        e2eGameID,
+        gameOL.player("e2e_launcher").info(),
+        spawn,
+      ),
+    );
+    while (gameOL.inSpawnPhase()) {
+      gameOL.executeNextTick();
+    }
+    launcherOL = gameOL.player("e2e_launcher");
+    launcherOL.buildUnit(UnitType.Spaceport, spawn, {});
+  }
+
+  /**
+   * Run `game.executeNextTick()` until the launcher has no live scout
+   * swarm, or `maxTicks` ticks have elapsed. Mirrors the bounded-wait
+   * pattern used elsewhere in this file.
+   */
+  function runUntilScoutDissolves(g: Game, p: Player, maxTicks = 4000): void {
+    for (let t = 0; t < maxTicks; t++) {
+      g.executeNextTick();
+      if (p.units(UnitType.ScoutSwarm).length === 0) return;
+    }
+  }
+
+  /**
+   * Find a DeepSpace tile reachable from `from` via a greedy manhattan
+   * descent whose path has at least `minPathLength` steps (so there is
+   * at least `minPathLength - 1` intermediate, non-destination tiles).
+   * Returns null if no such target exists. The greedy-step pather in
+   * ScoutSwarmExecution bails out when it can't find a neighbour that
+   * reduces manhattan distance, so reachable targets are the only ones
+   * worth testing end-to-end.
+   */
+  function findReachableDeepSpaceTarget(
+    g: Game,
+    from: number,
+    minPathLength = 1,
+  ): { target: number; path: number[] } | null {
+    let best: { target: number; path: number[] } | null = null;
+    for (let y = 0; y < g.height(); y++) {
+      for (let x = 0; x < g.width(); x++) {
+        const t = g.ref(x, y);
+        if (t === from) continue;
+        if (g.map().terrainType(t) !== TerrainType.DeepSpace) continue;
+        const path: number[] = [];
+        let cur = from;
+        const limit = g.manhattanDist(from, t) * 4 + 16;
+        let ok = true;
+        for (let i = 0; i < limit; i++) {
+          if (cur === t) break;
+          let bestD = g.manhattanDist(cur, t);
+          let next: number | null = null;
+          for (const n of g.neighbors(cur)) {
+            const d = g.manhattanDist(n, t);
+            if (d < bestD) {
+              bestD = d;
+              next = n;
+            }
+          }
+          if (next === null) {
+            ok = false;
+            break;
+          }
+          path.push(next);
+          cur = next;
+        }
+        if (!ok || cur !== t) continue;
+        if (path.length < minPathLength) continue;
+        // Prefer the longest reachable path so tests have more
+        // intermediate tiles to observe. Ties broken by iteration order.
+        if (best === null || path.length > best.path.length) {
+          best = { target: t, path };
+        }
+      }
+    }
+    return best;
+  }
+
+  beforeEach(async () => {
+    await buildOceanGame();
+  });
+
+  test("tick()-driven arrival does NOT double-count the destination tile", () => {
+    // Regression guard for Comment 2: when the scout's final step lands
+    // on the target tile, tick() must NOT invoke tryTerraformTrailTile
+    // on it — the destination's progression must be handled exactly
+    // once, by onArrival(). With the threshold at 10 and one scout, the
+    // target's counter should read exactly 1 post-arrival; a double-
+    // count bug would show up as 2.
+    const spawn = Array.from(launcherOL.tiles())[0];
+    const found = findReachableDeepSpaceTarget(gameOL, spawn);
+    if (found === null) throw new Error("no reachable DeepSpace target");
+    const { target } = found;
+    expect(gameOL.map().terrainType(target)).toBe(TerrainType.DeepSpace);
+    gameOL.resetScoutSwarmTerraformProgress(target);
+
+    launcherOL.addCredits(10_000n);
+    gameOL.addExecution(new ScoutSwarmExecution(launcherOL, target));
+    runUntilScoutDissolves(gameOL, launcherOL);
+
+    expect(launcherOL.units(UnitType.ScoutSwarm)).toHaveLength(0);
+    // Exactly one bump on the destination tile — proof that the trail
+    // branch skipped it and only onArrival counted.
+    expect(gameOL.scoutSwarmTerraformProgress(target)).toBe(1);
+  });
+
+  test("intermediate path tiles accumulate progress across multiple scouts", () => {
+    // threshold>1 accumulation on path (non-destination) tiles. Two
+    // scouts fired one after the other at the same DeepSpace target
+    // should each bump every shared intermediate path tile once, so
+    // the path tile's counter ends at 2 — well under the default
+    // threshold of 10, so no terraform step fires.
+    const spawn = Array.from(launcherOL.tiles())[0];
+    // Require a path length of at least 2 so `path.slice(0, -1)` (the
+    // non-destination tiles) is non-empty.
+    const found = findReachableDeepSpaceTarget(gameOL, spawn, 2);
+    if (found === null) throw new Error("no reachable DeepSpace target");
+    const { target, path } = found;
+    const intermediates = path
+      .slice(0, -1)
+      .filter((t) => gameOL.map().terrainType(t) === TerrainType.DeepSpace);
+    if (intermediates.length === 0) {
+      throw new Error("path has no intermediate DeepSpace tile");
+    }
+    const pathTile = intermediates[0];
+    gameOL.resetScoutSwarmTerraformProgress(pathTile);
+
+    launcherOL.addCredits(100_000n);
+    for (let i = 0; i < 2; i++) {
+      gameOL.addExecution(new ScoutSwarmExecution(launcherOL, target));
+      runUntilScoutDissolves(gameOL, launcherOL);
+    }
+
+    // Note: the arrival cluster may also bump progress on this tile if
+    // it sits within the cluster radius of `target`. The invariant we
+    // care about is "two scouts → the counter moves by at least two
+    // for a shared path tile" without tripping the threshold.
+    const threshold = gameOL.config().scoutSwarmTerraformAccumulation();
+    const progress = gameOL.scoutSwarmTerraformProgress(pathTile);
+    expect(progress).toBeGreaterThanOrEqual(2);
+    expect(progress).toBeLessThan(threshold);
+  });
+
+  test("repeated scout traffic upgrades a corridor tile beyond AsteroidField", () => {
+    // Multi-scout corridor-upgrade (Comment 1 end-to-end): route enough
+    // scouts through the same corridor that a shared path tile crosses
+    // the threshold more than once. After the first threshold the tile
+    // should be AsteroidField; after the second it should be Nebula (or
+    // stepped further to OpenSpace if the cluster compounded it). The
+    // regression we're guarding is corridors that stall at AsteroidField.
+    const spawn = Array.from(launcherOL.tiles())[0];
+    const found = findReachableDeepSpaceTarget(gameOL, spawn, 2);
+    if (found === null) throw new Error("no reachable DeepSpace target");
+    const { target, path } = found;
+    const intermediates = path
+      .slice(0, -1)
+      .filter((t) => gameOL.map().terrainType(t) === TerrainType.DeepSpace);
+    if (intermediates.length === 0) {
+      throw new Error("path has no intermediate DeepSpace tile");
+    }
+    const pathTile = intermediates[0];
+
+    launcherOL.addCredits(1_000_000n);
+    // Fire enough scouts to cross the threshold at least twice. Each
+    // scout bumps the shared trail counter by 1 per pass on `pathTile`,
+    // plus possibly a cluster bump on the arrival. 3× threshold is a
+    // safe upper bound without ballooning test runtime.
+    const threshold = gameOL.config().scoutSwarmTerraformAccumulation();
+    const launches = threshold * 3;
+    for (let i = 0; i < launches; i++) {
+      launcherOL.addCredits(10_000n);
+      gameOL.addExecution(new ScoutSwarmExecution(launcherOL, target));
+      runUntilScoutDissolves(gameOL, launcherOL);
+    }
+
+    // After multi-threshold traffic the corridor tile must have
+    // matured past AsteroidField. DeepSpace and AsteroidField are the
+    // regression states — anything beyond (Nebula or OpenSpace) is a
+    // correctly maturing corridor.
+    const terrain = gameOL.map().terrainType(pathTile);
+    expect(terrain).not.toBe(TerrainType.DeepSpace);
+    expect(terrain).not.toBe(TerrainType.AsteroidField);
+    expect(
+      terrain === TerrainType.Nebula || terrain === TerrainType.OpenSpace,
+    ).toBe(true);
+  });
+
+  test("enemy-owned tile inside destination cluster keeps its owner after arrival", () => {
+    // Cluster bookkeeping guard: when the destination cluster contains
+    // a tile owned by a different player, the cluster branch must skip
+    // it (non-DeepSpace → no progress bump, no terraform). Even if that
+    // tile *were* DeepSpace, applyTerraformStep's ownerIdBefore branch
+    // must not transfer ownership to the launcher. We cover the
+    // non-DeepSpace case here because onArrival's cluster branch only
+    // touches DeepSpace tiles, matching production behaviour.
+    gameOL.addPlayer(
+      new PlayerInfo("e2e_enemy", PlayerType.Human, null, "e2e_enemy"),
+    );
+    // Find any DeepSpace target near an owned tile, then pick a
+    // DeepSpace neighbour within cluster radius and hand it to the
+    // enemy by first promoting it to AsteroidField (claimable) and
+    // conquering it. onArrival's cluster branch will see a non-
+    // DeepSpace tile and skip it, preserving the enemy's ownership.
+    const radius = gameOL.config().scoutSwarmClusterRadius();
+    const spawn = Array.from(launcherOL.tiles())[0];
+    const found = findReachableDeepSpaceTarget(gameOL, spawn);
+    if (found === null) throw new Error("no reachable DeepSpace target");
+    const { target } = found;
+    let enemyTile: number | null = null;
+    for (const t of gameOL.circleSearch(target, radius)) {
+      if (t === target) continue;
+      if (gameOL.map().terrainType(t) !== TerrainType.DeepSpace) continue;
+      enemyTile = t;
+      break;
+    }
+    if (enemyTile === null) {
+      throw new Error("no DeepSpace tile in destination cluster");
+    }
+    gameOL.map().setTerrainType(enemyTile, TerrainType.AsteroidField);
+    const enemy = gameOL.player("e2e_enemy");
+    enemy.conquer(enemyTile);
+    expect(gameOL.owner(enemyTile)).toBe(enemy);
+
+    const enemyTilesBefore = enemy.numTilesOwned();
+    const launcherTilesBefore = launcherOL.numTilesOwned();
+    const enemyProgressBefore = gameOL.scoutSwarmTerraformProgress(enemyTile);
+
+    launcherOL.addCredits(10_000n);
+    gameOL.addExecution(new ScoutSwarmExecution(launcherOL, target));
+    runUntilScoutDissolves(gameOL, launcherOL);
+
+    // Enemy-owned tile is untouched: same terrain, same owner, same
+    // tile counts on both sides, and no cluster progress bump (the
+    // cluster branch skipped it because terrain !== DeepSpace).
+    expect(gameOL.map().terrainType(enemyTile)).toBe(TerrainType.AsteroidField);
+    expect(gameOL.owner(enemyTile)).toBe(enemy);
+    expect(enemy.numTilesOwned()).toBe(enemyTilesBefore);
+    expect(launcherOL.numTilesOwned()).toBe(launcherTilesBefore);
+    expect(gameOL.scoutSwarmTerraformProgress(enemyTile)).toBe(
+      enemyProgressBefore,
     );
   });
 });

@@ -356,6 +356,24 @@ describe("HostLobbyModal outgoing config payloads", () => {
     );
     expect(createCall).toBeDefined();
 
+    // joinLobby is the very first outbound payload emission path — its
+    // `gameStartInfo.config` must already carry the elimination + permadeath
+    // contract. If a future change diverges this call from
+    // `buildConfigPayload`, the host init contract breaks even though the
+    // later `updateGameConfig` push would still look correct.
+    expect(mocks.joinLobby).toHaveBeenCalledTimes(1);
+    const joinArg = mocks.joinLobby.mock.calls[0]![0] as {
+      gameID: string;
+      source: string;
+      gameStartInfo: { config: HostConfigPayload };
+    };
+    expect(joinArg.source).toBe("host");
+    expect(joinArg.gameStartInfo.config.gameType).toBe(GameType.Private);
+    expect(joinArg.gameStartInfo.config.winCondition).toBe(
+      WinCondition.Elimination,
+    );
+    expect(joinArg.gameStartInfo.config.permadeath).toBe(true);
+
     // updateGameConfig is the authoritative push — assert that the payload
     // carries elimination + permadeath on.
     expect(mocks.updateGameConfig).toHaveBeenCalled();
@@ -367,6 +385,48 @@ describe("HostLobbyModal outgoing config payloads", () => {
     expect(lastConfig.winCondition).toBe(WinCondition.Elimination);
     // GDD §10 — permadeath defaults to ON for private lobbies.
     expect(lastConfig.permadeath).toBe(true);
+  });
+
+  it("reflects a toggled-off permadeath in the joinLobby payload when the host flips the checkbox before opening", async () => {
+    // Render once so the checkbox is reachable and `capturedOnOpen` is
+    // captured by the ModalPage mock. We deliberately do NOT call
+    // `capturedOnOpen` yet — we want the toggle to happen before the first
+    // join so the initial `joinLobby` payload carries the flipped state.
+    beginRender();
+    let tree = renderTree(
+      React.createElement(HostLobbyModal) as unknown as RenderedNode,
+    );
+
+    const checkbox = findCheckbox(tree);
+    expect(checkbox.props.checked).toBe(true);
+    (checkbox.props.onChange as (e: { target: { checked: boolean } }) => void)({
+      target: { checked: false },
+    });
+
+    // Re-render so `buildConfigPayload`'s closure captures the flipped slot
+    // value, and `onOpen` (rebuilt via useCallback) picks up the fresh
+    // builder. Without this re-render, onOpen still closes over the old
+    // payload builder with permadeath=true.
+    beginRender();
+    tree = renderTree(
+      React.createElement(HostLobbyModal) as unknown as RenderedNode,
+    );
+    expect(findCheckbox(tree).props.checked).toBe(false);
+
+    await mocks.capturedOnOpen!();
+    await flushAsync();
+
+    expect(mocks.joinLobby).toHaveBeenCalledTimes(1);
+    const joinArg = mocks.joinLobby.mock.calls[0]![0] as {
+      gameStartInfo: { config: HostConfigPayload };
+    };
+    // Win condition stays elimination — only `permadeath` flips. This covers
+    // the remaining host payload emission path so all three (joinLobby,
+    // updateGameConfig, start_game POST) are asserted consistently.
+    expect(joinArg.gameStartInfo.config.winCondition).toBe(
+      WinCondition.Elimination,
+    );
+    expect(joinArg.gameStartInfo.config.permadeath).toBe(false);
   });
 
   it("pushes an updated payload through updateGameConfig when permadeath is toggled off", async () => {

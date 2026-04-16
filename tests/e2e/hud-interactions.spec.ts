@@ -477,6 +477,12 @@ test.describe("HUD interactions (singleplayer)", () => {
     // click source gate → selectDest status bar → click dest gate → intent
     // emitted + mode reset. Then verify leftClickOpensMenu precedence does
     // not interfere with the gate flow.
+    //
+    // Gate construction alone can take ~240s of wall-clock under headless
+    // tick throttling (~375k credits + 20 ticks each, at ~3 ticks/sec),
+    // which exceeds the 180s describe-level timeout — override for this
+    // specific test so the gate-build wait below can run to completion.
+    test.setTimeout(420_000);
 
     // Step 1: Find two distinct owned tiles for gate construction.
     const gate1 = await findOwnedTile(page);
@@ -565,41 +571,35 @@ test.describe("HUD interactions (singleplayer)", () => {
     expect(emitBuild.ok, `build emit failed: ${emitBuild.reason}`).toBe(true);
 
     // Step 3: Poll until 2 ready (active, constructed) gates exist.
-    // Singleplayer does not use instantBuild — gates take ~20 ticks to
-    // construct and require ~375k credits for the first two. By this point
-    // in the serial chain (>3 min of play) the player typically has enough.
-    // If not, surface a clear error rather than timing out silently.
-    const gatesReady = await page
-      .waitForFunction(
-        () => {
-          const gv = (
-            window as unknown as {
-              __gameView?: {
-                myPlayer(): {
-                  units(type: string): Array<{
-                    isActive(): boolean;
-                    isUnderConstruction(): boolean;
-                  }>;
-                } | null;
-              };
-            }
-          ).__gameView;
-          const mp = gv?.myPlayer();
-          if (!mp) return false;
-          const units = mp.units("Jump Gate");
-          const ready = units.filter(
-            (u) => u.isActive() && !u.isUnderConstruction(),
-          );
-          return ready.length >= 2;
-        },
-        null,
-        { timeout: 60_000 },
-      )
-      .then(() => true)
-      .catch(() => false);
-    test.skip(
-      !gatesReady,
-      "Could not build 2 Jump Gates within 60s (insufficient credits or unsuitable tiles on this run).",
+    // The E2E URL param enables infiniteCredits + startingCredits=100M so
+    // both gates are affordable from turn 0. Construction still runs the
+    // regular ~20-tick duration (instantBuild is intentionally off to keep
+    // bots from stockpiling-then-flash-building), so ~2s of game time
+    // plus a generous buffer for headless tick throttling.
+    await page.waitForFunction(
+      () => {
+        const gv = (
+          window as unknown as {
+            __gameView?: {
+              myPlayer(): {
+                units(type: string): Array<{
+                  isActive(): boolean;
+                  isUnderConstruction(): boolean;
+                }>;
+              } | null;
+            };
+          }
+        ).__gameView;
+        const mp = gv?.myPlayer();
+        if (!mp) return false;
+        const units = mp.units("Jump Gate");
+        const ready = units.filter(
+          (u) => u.isActive() && !u.isUnderConstruction(),
+        );
+        return ready.length >= 2;
+      },
+      null,
+      { timeout: 30_000 },
     );
 
     // Step 4: Find a third owned non-gate tile for the right-click target.

@@ -1,5 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
-import { crazyGamesSDK } from "../../CrazyGamesSDK";
+import { useCallback, useEffect, useState } from "react";
 import { sanitizeClanTag } from "../../../core/Util";
 import {
   MAX_CLAN_TAG_LENGTH,
@@ -9,13 +8,34 @@ import {
   validateClanTag,
   validateUsername,
 } from "../../../core/validations/username";
-import { translateText } from "../../Utils";
 import { genAnonUsername } from "../../AnonUsername";
+import { crazyGamesSDK } from "../../CrazyGamesSDK";
+import { translateText } from "../../Utils";
 import { useClient } from "../contexts/ClientContext";
 
+// Read-or-generate the username synchronously so that first render already
+// has a valid value. Without this, a browser reload on a `/game/<id>` URL
+// races with React state init: `ClientContext`'s URL handler fires
+// `open-join-modal` → `JoinLobbyModal.handleJoin` → `getUsernameRef.current()`
+// all before the async localStorage effect has a chance to run, resulting in
+// an empty `username` being sent to the server and Zod rejecting the join.
+function loadInitialUsername(): string {
+  if (typeof localStorage === "undefined") return genAnonUsername();
+  const stored = (localStorage.getItem("username") ?? "").trim();
+  if (stored) return stored;
+  const fresh = genAnonUsername();
+  localStorage.setItem("username", fresh);
+  return fresh;
+}
+
+function loadInitialClanTag(): string {
+  if (typeof localStorage === "undefined") return "";
+  return localStorage.getItem("clanTag") ?? "";
+}
+
 export function UsernameInput() {
-  const [baseUsername, setBaseUsername] = useState<string>("");
-  const [clanTag, setClanTag] = useState<string>("");
+  const [baseUsername, setBaseUsername] = useState<string>(loadInitialUsername);
+  const [clanTag, setClanTag] = useState<string>(loadInitialClanTag);
   const [validationError, setValidationError] = useState<string>("");
   const client = useClient();
 
@@ -23,8 +43,8 @@ export function UsernameInput() {
   useEffect(() => {
     const initUsername = async () => {
       // Try to load from localStorage
-      let username = localStorage.getItem("username") || "";
-      let tag = localStorage.getItem("clanTag") || "";
+      let username = localStorage.getItem("username") ?? "";
+      const tag = localStorage.getItem("clanTag") ?? "";
 
       // If no username stored, generate anonymous
       if (!username) {
