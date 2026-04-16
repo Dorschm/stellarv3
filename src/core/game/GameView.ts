@@ -1430,6 +1430,9 @@ export class GameView implements GameMap {
   isSectorEdge(ref: TileRef): boolean {
     return this._map.isSectorEdge(ref);
   }
+  promoteNonSectorToSector(ref: TileRef): void {
+    this._map.promoteNonSectorToSector(ref);
+  }
   cost(ref: TileRef): number {
     return this._map.cost(ref);
   }
