@@ -50,10 +50,26 @@ export async function verifyTurnstileToken(
     };
 
     if (!result.success) {
-      const codes = result["error-codes"]?.join(", ") ?? "unknown";
+      const codes = result["error-codes"] ?? [];
+      const codesStr = codes.join(", ") || "unknown";
+      // `timeout-or-duplicate` means the token was already consumed or has
+      // expired. Turnstile issues each token as single-use, so any client
+      // retry path (WS reconnect loop, second click on a lobby card before
+      // a new widget execution, rapid re-join after private-lobby hang)
+      // reuses the prefetched token. Treating this as a hard rejection
+      // bricks reconnects and makes players flap in/out of lobbies. It is
+      // not a bot-signal — fail open and let the client through. Genuine
+      // bad/invalid tokens still hit this branch with different codes
+      // (e.g. `invalid-input-response`) and continue to be rejected.
+      if (codes.includes("timeout-or-duplicate")) {
+        return {
+          status: "error",
+          reason: `Turnstile token reused or expired: ${codesStr}`,
+        };
+      }
       return {
         status: "rejected",
-        reason: `Turnstile token validation failed: ${codes}`,
+        reason: `Turnstile token validation failed: ${codesStr}`,
       };
     }
 
