@@ -27,7 +27,14 @@ interface PatternContent {
 }
 
 export function WinModal(): React.JSX.Element {
-  const { gameView, eventBus } = useGameTick(100);
+  // Destructure `tick` too so the effect below re-runs on every game
+  // tick. `gameView` is a stable reference (comes from context), so
+  // without `tick` in the dep array the death/win check only fires
+  // once at mount — i.e. before the player has spawned and before any
+  // Win update can possibly have been emitted — and never re-runs
+  // when the player later dies or the game ends. The result: the
+  // "You died" / "You won" / "Other won" modal silently never appears.
+  const { gameView, eventBus, tick } = useGameTick(100);
 
   const [isVisible, setIsVisible] = useState(false);
   const [showButtons, setShowButtons] = useState(false);
@@ -210,7 +217,11 @@ export function WinModal(): React.JSX.Element {
         show();
       }
     });
-  }, [gameView, eventBus, hasShownDeathModal, show]);
+    // Depend on `tick` so this effect re-runs on every throttled game
+    // tick. Without it, the effect only sees the initial mount-time
+    // game state (player alive, no Win update yet) and never notices
+    // the player dying or the game ending.
+  }, [gameView, eventBus, hasShownDeathModal, show, tick]);
 
   const renderInnerContent = () => {
     if (isInIframe()) {
