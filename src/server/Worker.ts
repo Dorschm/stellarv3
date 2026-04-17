@@ -539,29 +539,48 @@ export async function startWorker() {
         }
 
         if (config.env() !== GameEnv.Dev) {
-          const turnstileResult = await verifyTurnstileToken(
-            ip,
-            clientMsg.turnstileToken,
-            config.turnstileSecretKey(),
-          );
-          switch (turnstileResult.status) {
-            case "approved":
-              break;
-            case "rejected":
-              log.warn("Unauthorized: Turnstile token rejected", {
-                persistentID: persistentId,
-                gameID: clientMsg.gameID,
-                reason: turnstileResult.reason,
-              });
-              ws.close(1002, "Unauthorized: Turnstile token rejected");
-              return;
-            case "error":
-              // Fail open, allow the client to join.
-              log.error("Turnstile token error", {
-                persistentID: persistentId,
-                gameID: clientMsg.gameID,
-                reason: turnstileResult.reason,
-              });
+          // Host exemption — a client whose persistentID matches the
+          // lobby's recorded creator is already cryptographically
+          // identified via the Bearer token they used on create_game
+          // (see POST /api/create_game/:id). Requiring a second
+          // Turnstile challenge on their own WS join is redundant and
+          // causes flakes: the Turnstile widget's token is single-use,
+          // so by the time the WS handshake arrives the token has
+          // often already been consumed or the widget returned
+          // invalid-input-response on a retry. Cloudflare rejects,
+          // the server returns 1002, and the creator bounces out of
+          // their own lobby. Skip verification for the creator; every
+          // other join (public/private/matchmaking guests) still hits
+          // the full Turnstile pipeline.
+          const hostGame = gm.game(clientMsg.gameID);
+          const isCreator =
+            hostGame !== null &&
+            hostGame.getCreatorPersistentID() === persistentId;
+          if (!isCreator) {
+            const turnstileResult = await verifyTurnstileToken(
+              ip,
+              clientMsg.turnstileToken,
+              config.turnstileSecretKey(),
+            );
+            switch (turnstileResult.status) {
+              case "approved":
+                break;
+              case "rejected":
+                log.warn("Unauthorized: Turnstile token rejected", {
+                  persistentID: persistentId,
+                  gameID: clientMsg.gameID,
+                  reason: turnstileResult.reason,
+                });
+                ws.close(1002, "Unauthorized: Turnstile token rejected");
+                return;
+              case "error":
+                // Fail open, allow the client to join.
+                log.error("Turnstile token error", {
+                  persistentID: persistentId,
+                  gameID: clientMsg.gameID,
+                  reason: turnstileResult.reason,
+                });
+            }
           }
         }
 

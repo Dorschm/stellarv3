@@ -221,6 +221,22 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
       ) {
         return null;
       }
+      // Hosts already authenticated to create_game via a Bearer token,
+      // which stamped their persistentID as the lobby's creator. Their
+      // subsequent WS join is covered by verifyClientToken on the server
+      // — requiring an additional Turnstile challenge is redundant
+      // anti-bot gating that just adds another failure surface. In
+      // practice the Turnstile widget often errors (error 600010,
+      // invalid-input-response on reused tokens, etc.) on the create →
+      // join round-trip, and the server rejects the WS with
+      //   1002 Unauthorized: Turnstile token rejected
+      // even though the creator is cryptographically identified. Skip
+      // it for hosts so their "Create Lobby" flow never bounces. Guests
+      // joining (source "public" | "private" | "matchmaking") still get
+      // the full Turnstile flow.
+      if (lobby.source === "host") {
+        return null;
+      }
 
       const tokenTTL = 3 * 60 * 1000;
 
