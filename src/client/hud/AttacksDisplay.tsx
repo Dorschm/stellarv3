@@ -46,14 +46,26 @@ export function AttacksDisplay(): React.JSX.Element {
   useEffect(() => {
     const myPlayer = gameView.myPlayer();
 
-    if (!isVisible && !gameView.inSpawnPhase()) {
-      setIsVisible(true);
+    // Compute the desired visibility as a single truth value, then set it
+    // at most once. The previous pair of branches — "show when !spawn
+    // phase" followed by "hide when !alive" — ping-ponged isVisible
+    // forever whenever both conditions held (e.g. public lobbies after
+    // the global spawn phase ends but before the local player has
+    // clicked to claim a tile, or whenever the player dies mid-game).
+    // Each setIsVisible call re-ran this effect because isVisible is a
+    // dep, and the two branches saw the opposite state each time. The
+    // cascading re-renders eventually hit React's
+    // "Maximum update depth exceeded" and the page became unresponsive,
+    // which manifested to the user as "clicking the lobby cards does
+    // nothing" — React's event delegation was starved while the loop
+    // ran.
+    const shouldShow =
+      !gameView.inSpawnPhase() && myPlayer !== null && myPlayer.isAlive();
+    if (shouldShow !== isVisible) {
+      setIsVisible(shouldShow);
     }
 
     if (!myPlayer || !myPlayer.isAlive()) {
-      if (isVisible) {
-        setIsVisible(false);
-      }
       return;
     }
 
