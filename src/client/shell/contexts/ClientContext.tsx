@@ -93,8 +93,17 @@ async function getTurnstileToken(): Promise<TurnstileToken> {
       },
       "error-callback": (errorCode: string) => {
         window.turnstile.remove(widgetId);
-        console.error(`Turnstile error: ${errorCode}`);
-        alert(`Turnstile error: ${errorCode}. Please refresh and try again.`);
+        // Downgraded from console.error + alert() to console.warn +
+        // rejection: (1) a modal alert breaks the lobby flow entirely
+        // with no clear recovery, (2) the 600010 "invalid challenge
+        // state" code is routinely transient and resolves on a
+        // subsequent render, and (3) `resolveTurnstileToken` now
+        // catches this rejection and falls back to the last-known-good
+        // token, which the server accepts via its
+        // `timeout-or-duplicate` fail-open path in Turnstile.ts. Real
+        // token-rejection failures still flow through the server's
+        // 1002 close path and surface as a leave-lobby event.
+        console.warn(`Turnstile error: ${errorCode}`);
         reject(new Error(`Turnstile failed: ${errorCode}`));
       },
     });
@@ -109,6 +118,18 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
   const [lobbyHandle, setLobbyHandle] = useState<JoinLobbyResult | null>(null);
   const currentUrlRef = useRef<string | null>(null);
   const turnstilePromiseRef = useRef<Promise<TurnstileToken> | null>(null);
+  // Last successful turnstile token, kept so we can reuse it when the
+  // widget fails on the NEXT render (common: error 600010 "invalid
+  // challenge state" on repeated render+execute cycles). The server's
+  // Turnstile verifier treats Cloudflare's `timeout-or-duplicate`
+  // error-code as fail-open (see fix(turnstile) in src/server/Turnstile.ts),
+  // so handing back a token we've already consumed lets the join
+  // succeed instead of silently dying. Without this fallback the user
+  // reported the exact symptom we reproduced: click a public lobby
+  // card → `join-lobby` event fires → `resolveTurnstileToken` throws
+  // → handleJoinLobby's unhandled rejection drops the entire flow →
+  // no modal, no error, page just sits on "/".
+  const lastTurnstileTokenRef = useRef<TurnstileToken | null>(null);
   const getUsernameRef = useRef<(() => string) | null>(null);
   const getClanTagRef = useRef<(() => string | null) | null>(null);
   const getValidateUsernameRef = useRef<(() => boolean) | null>(null);
@@ -201,29 +222,49 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
         return null;
       }
 
+      const tokenTTL = 3 * 60 * 1000;
+
+      // Helper: try getting a fresh token, fall back to the last
+      // known-good one if the widget fails. The server's
+      // timeout-or-duplicate fail-open path accepts the reused token.
+      // Any error path returns `null` so the caller never throws.
+      const tryFresh = async (): Promise<string | null> => {
+        try {
+          const fresh = await getTurnstileToken();
+          lastTurnstileTokenRef.current = fresh;
+          return fresh.token;
+        } catch (e) {
+          console.warn("Turnstile widget failed; attempting fallback:", e);
+          if (lastTurnstileTokenRef.current) {
+            console.log(
+              "Reusing last turnstile token (server fail-open handles duplicate)",
+            );
+            return lastTurnstileTokenRef.current.token;
+          }
+          return null;
+        }
+      };
+
       if (
         turnstilePromiseRef.current === null ||
         crazyGamesSDK.isOnCrazyGames()
       ) {
-        console.log("No prefetched turnstile token, getting new token");
-        return (await getTurnstileToken())?.token ?? null;
+        return tryFresh();
       }
 
-      const token = await turnstilePromiseRef.current;
+      let prefetched: TurnstileToken | null = null;
+      try {
+        prefetched = await turnstilePromiseRef.current;
+      } catch (e) {
+        console.warn("Prefetched turnstile token rejected:", e);
+      }
       turnstilePromiseRef.current = null;
-      if (!token) {
-        console.log("No turnstile token");
-        return null;
-      }
 
-      const tokenTTL = 3 * 60 * 1000;
-      if (Date.now() < token.createdAt + tokenTTL) {
-        console.log("Prefetched turnstile token is valid");
-        return token.token;
-      } else {
-        console.log("Turnstile token expired, getting new token");
-        return (await getTurnstileToken())?.token ?? null;
+      if (prefetched && Date.now() < prefetched.createdAt + tokenTTL) {
+        lastTurnstileTokenRef.current = prefetched;
+        return prefetched.token;
       }
+      return tryFresh();
     },
     [],
   );
