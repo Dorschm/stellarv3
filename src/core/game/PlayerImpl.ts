@@ -40,6 +40,7 @@ import {
   Relation,
   Structures,
   Team,
+  TerrainType,
   TerraNullius,
   Tick,
   Unit,
@@ -1479,6 +1480,29 @@ export class PlayerImpl implements Player {
       );
     });
     const validSet: Set<TileRef> = new Set(nearbyTiles);
+
+    // AsteroidField is the "Mountain" terrain analog (see the theme table
+    // in CLAUDE.md) and is intentionally unbuildable — AttackExecution
+    // already gives it a 2x slow-conquer cost vs 1x for OpenSpace /
+    // 1.5x for Nebula, treating it as rough/hostile land. The
+    // BattlecruiserExecution territorial wake promotes DeepSpace to
+    // AsteroidField as the cruiser moves, which used to leave the
+    // cruiser-owning player with a strip of buildable territory behind
+    // them (structure BuildMenu only gated on ownership, not terrain).
+    // That made battlecruisers a cheap colony-spreader bypass, and the
+    // user reported seeing nations build on their own wake while the
+    // same visually-identical terrain felt unbuildable to the human.
+    // Filter AsteroidField tiles out so the wake extends territory
+    // (borders, attack frontier, sector ownership) but not buildable
+    // planet-slot ground. The rule applies symmetrically to humans,
+    // bots, and nations since every path through canSpawnUnitType for
+    // structures (Colony / Foundry / Spaceport / JumpGate / the three
+    // defensive structures) routes through here.
+    for (const t of nearbyTiles) {
+      if (this.mg.terrainType(t) === TerrainType.AsteroidField) {
+        validSet.delete(t);
+      }
+    }
 
     const minDistSquared = this.mg.config().structureMinDist() ** 2;
     for (const t of nearbyTiles) {
