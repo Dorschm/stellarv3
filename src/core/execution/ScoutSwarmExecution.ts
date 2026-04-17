@@ -1,6 +1,7 @@
 import {
   Execution,
   Game,
+  MessageType,
   Player,
   TerrainType,
   Unit,
@@ -59,6 +60,13 @@ export class ScoutSwarmExecution implements Execution {
 
     if (!mg.isValidRef(this.target)) {
       console.warn(`ScoutSwarmExecution: invalid target tile ${this.target}`);
+      mg.displayMessage(
+        "events_display.scout_swarm_failed",
+        MessageType.SCOUT_SWARM_FAILED,
+        this.launcher.id(),
+        undefined,
+        { reason: "Invalid target tile" },
+      );
       this.active = false;
       return;
     }
@@ -69,8 +77,18 @@ export class ScoutSwarmExecution implements Execution {
     // a launch that never happens.
     const spawnTile = this.findSpawnTile();
     if (spawnTile === null) {
-      console.warn(
-        `ScoutSwarmExecution: ${this.launcher.displayName()} has no Spaceport or Jump Gate to launch from`,
+      // Before this surfaced a user-visible reason, the scout-swarm
+      // intent silently no-op'd when the launcher had no Spaceport /
+      // Jump Gate — the player saw their credits-or-population tick
+      // *not* deduct (we return before charging) and no swarm appear,
+      // with no explanation. Emit a visible event so the user knows
+      // why the launch failed and how to fix it.
+      mg.displayMessage(
+        "events_display.scout_swarm_failed",
+        MessageType.SCOUT_SWARM_FAILED,
+        this.launcher.id(),
+        undefined,
+        { reason: "Build a Spaceport or Jump Gate to launch Scout Swarms" },
       );
       this.active = false;
       return;

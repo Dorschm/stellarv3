@@ -863,7 +863,8 @@
     "antimatter_torpedo_inbound": "{name} - antimatter torpedo inbound",
     "nova_bomb_inbound": "{name} - nova bomb inbound",
     "jump_gate_teleport": "Jump Gate: {count, plural, one {# unit} other {# units}} teleported",
-    "jump_gate_failed": "Jump Gate failed: {reason}"
+    "jump_gate_failed": "Jump Gate failed: {reason}",
+    "scout_swarm_failed": "Scout Swarm failed: {reason}"
   },
   "player_type": {
     "player": "Player",
