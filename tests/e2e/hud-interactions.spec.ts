@@ -531,11 +531,14 @@ test.describe("HUD interactions (singleplayer)", () => {
       // Walk owned tiles and keep only those where Jump Gate is actually
       // buildable right now. The actions() call is async and mildly
       // expensive, so we cap how many we check per sweep to keep the
-      // test wall-clock bounded.
+      // test wall-clock bounded. We need enough candidates for the
+      // structureMinDist>=15 pair-selection below to have a chance even
+      // on mid-size territories, so MAX_CHECKS is generous and we walk
+      // strides 4 → 2 → 1 if a buildable pair still isn't found.
       const candidates: Array<{ tileX: number; tileY: number }> = [];
-      const MAX_CHECKS = 60;
+      const MAX_CHECKS = 240;
       let checks = 0;
-      sweep: for (const step of [4, 2]) {
+      sweep: for (const step of [4, 2, 1]) {
         for (let y = 0; y < h; y += step) {
           for (let x = 0; x < w; x += step) {
             const r = gv.ref(x, y);
@@ -548,32 +551,43 @@ test.describe("HUD interactions (singleplayer)", () => {
             );
             if (jg && jg.canBuild !== false) {
               candidates.push({ tileX: x, tileY: y });
-              if (candidates.length >= 20) break sweep;
+              if (candidates.length >= 40) break sweep;
             }
           }
         }
       }
 
       // Pick two tiles with maximum separation for visual distinctness.
+      // CRITICAL: the pair must also be at least `structureMinDist` (15)
+      // tiles apart in Euclidean distance. `actions(tile, ["Jump Gate"])`
+      // validates each tile in isolation — it doesn't know we're about to
+      // plant a gate on the *other* candidate too. Once gate1 builds,
+      // validStructureSpawnTiles for gate2 will exclude tiles within
+      // structureMinDist of gate1, silently no-op'ing gate2's
+      // ConstructionExecution and leaving us waiting forever for a
+      // second ready gate. Enforce the >=15 separation here so the
+      // spec's two BuildUnitIntentEvent emits can both land.
       if (candidates.length < 2) return null;
-      let best: [number, number] = [0, 1];
+      const MIN_PAIR_DIST_SQ = 15 * 15; // structureMinDist ** 2
+      let best: [number, number] = [-1, -1];
       let bestDist = -1;
       for (let i = 0; i < candidates.length; i++) {
         for (let j = i + 1; j < candidates.length; j++) {
           const dx = candidates[i].tileX - candidates[j].tileX;
           const dy = candidates[i].tileY - candidates[j].tileY;
           const d = dx * dx + dy * dy;
-          if (d > bestDist) {
+          if (d >= MIN_PAIR_DIST_SQ && d > bestDist) {
             bestDist = d;
             best = [i, j];
           }
         }
       }
+      if (best[0] === -1) return null;
       return { gate1: candidates[best[0]], gate2: candidates[best[1]] };
     });
     test.skip(
       gates === null,
-      "Jump Gate not buildable anywhere in this procedural territory — expected edge case on small/fragmented maps, not a regression",
+      "Jump Gate not buildable at two tiles >= structureMinDist (15) apart in this procedural territory — expected edge case on small/fragmented maps, not a regression",
     );
     const gate1 = gates!.gate1;
     const gate2 = gates!.gate2;
