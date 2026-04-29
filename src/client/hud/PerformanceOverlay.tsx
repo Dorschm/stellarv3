@@ -373,7 +373,7 @@ export function PerformanceOverlay(): React.JSX.Element {
 
   return (
     <div
-      className={`fixed bg-black/80 text-white p-8 rounded font-mono text-sm z-9999 user-select-none ${isDragging ? "opacity-50" : ""}`}
+      className={`fixed bg-black/80 text-white p-8 rounded font-mono text-sm z-[9999] user-select-none ${isDragging ? "opacity-50" : ""}`}
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`,
