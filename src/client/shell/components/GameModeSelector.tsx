@@ -9,6 +9,7 @@ import {
   Trios,
 } from "../../../core/game/Game";
 import type { PublicGameInfo, PublicGames } from "../../../core/Schemas";
+import { LobbyInfoEvent } from "../../../core/Schemas";
 import { crazyGamesSDK } from "../../CrazyGamesSDK";
 import { PublicLobbySocket } from "../../LobbySocket";
 import { terrainMapFileLoader } from "../../TerrainMapFileLoader";
@@ -23,15 +24,24 @@ import {
 import { useClient } from "../contexts/ClientContext";
 import { useNavigation } from "../contexts/NavigationContext";
 
+type JoinStatus = "connecting" | "joined";
+
 const CARD_BG = "bg-sky-950";
 
 export function GameModeSelector() {
   const { showPage } = useNavigation();
-  const { getValidateUsernameRef, joinLobby } = useClient();
+  const { eventBus, getValidateUsernameRef, joinLobby, lobbyHandle } =
+    useClient();
   const [lobbies, setLobbies] = useState<PublicGames | null>(null);
   const [mapAspectRatios, setMapAspectRatios] = useState<
     Map<GameMapType, number>
   >(new Map());
+  // Tracks which public lobby card the user clicked, so we can show
+  // visible feedback ("Connecting..." -> "Waiting for players") on that card.
+  // Without this, clicking a card looked like it did nothing for ~30-60s
+  // until the server-side timer expired and the game actually started.
+  const [joinedGameID, setJoinedGameID] = useState<string | null>(null);
+  const [joinStatus, setJoinStatus] = useState<JoinStatus>("connecting");
   const serverTimeOffsetRef = useRef(0);
   const defaultLobbyTimeRef = useRef(0);
   const socketRef = useRef<PublicLobbySocket | null>(null);
@@ -97,6 +107,33 @@ export function GameModeSelector() {
       document.removeEventListener("stop-game-mode-selector", handler);
   }, []);
 
+  // Promote the optimistic "connecting" state to "joined" once the server
+  // has confirmed the join via LobbyInfoEvent. We only react if the lobby
+  // gameID matches what the user clicked, so other join sources (host /
+  // join-modal flows) don't incorrectly highlight a public card.
+  useEffect(() => {
+    const onLobbyInfo = (e: LobbyInfoEvent) => {
+      setJoinedGameID((current) => {
+        if (current && e.lobby?.gameID === current) {
+          setJoinStatus("joined");
+        }
+        return current;
+      });
+    };
+    eventBus.on(LobbyInfoEvent, onLobbyInfo);
+    return () => eventBus.off(LobbyInfoEvent, onLobbyInfo);
+  }, [eventBus]);
+
+  // Clear the joined-card highlight if the user leaves the lobby (server
+  // kicked them, lobby was full, navigated away, etc). Once lobbyHandle
+  // is null again the card should look unselected.
+  useEffect(() => {
+    if (lobbyHandle === null) {
+      setJoinedGameID(null);
+      setJoinStatus("connecting");
+    }
+  }, [lobbyHandle]);
+
   const openSinglePlayer = useCallback(() => {
     if (!validateUsername()) return;
     showPage("page-single-player");
@@ -120,6 +157,11 @@ export function GameModeSelector() {
   const validateAndJoin = useCallback(
     (lobby: PublicGameInfo) => {
       if (!validateUsername()) return;
+      // Optimistically mark this card as the one we're joining so the user
+      // gets immediate visual feedback. Promoted to "joined" by the
+      // LobbyInfoEvent listener once the server acknowledges.
+      setJoinedGameID(lobby.gameID);
+      setJoinStatus("connecting");
       document.dispatchEvent(
         new CustomEvent("join-lobby", {
           detail: {
@@ -248,10 +290,21 @@ export function GameModeSelector() {
       modifierLabels.sort((a, b) => a.length - b.length);
     }
 
+    const isJoined = joinedGameID === lobby.gameID;
+    const isConfirmed = isJoined && joinStatus === "joined";
+    const joinedBadgeText = isConfirmed
+      ? translateText("public_lobby.waiting_for_players")
+      : translateText("public_lobby.connecting");
+
     return (
       <button
         onClick={() => validateAndJoin(lobby)}
-        className="group relative w-full h-44 sm:h-full text-white uppercase rounded-2xl transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98] bg-sky-950"
+        aria-pressed={isJoined}
+        className={`group relative w-full h-44 sm:h-full text-white uppercase rounded-2xl transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98] bg-sky-950 ${
+          isJoined
+            ? "ring-2 ring-cyan-400 shadow-[0_0_24px_rgba(34,211,238,0.45)]"
+            : ""
+        }`}
       >
         <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none">
           {mapImageSrc && (
@@ -266,7 +319,23 @@ export function GameModeSelector() {
               } [image-rendering:auto]`}
             />
           )}
+          {isJoined && (
+            <div className="absolute inset-0 bg-cyan-500/15 pointer-events-none" />
+          )}
         </div>
+        {isJoined && (
+          <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-center pointer-events-none">
+            <span
+              className={`px-3 py-1.5 rounded-md text-xs sm:text-sm font-bold tracking-widest uppercase shadow-[0_0_16px_rgba(34,211,238,0.6)] ${
+                isConfirmed
+                  ? "bg-cyan-400 text-sky-950"
+                  : "bg-cyan-500/90 text-white animate-pulse"
+              }`}
+            >
+              {joinedBadgeText}
+            </span>
+          </div>
+        )}
         <div className="absolute inset-x-2 top-2 flex items-start justify-between gap-2">
           {modifierLabels.length > 0 ? (
             <div className="flex flex-col items-start gap-1 mt-[2px]">
