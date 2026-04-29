@@ -51,7 +51,8 @@
     "help": "Help",
     "menu": "Menu",
     "troubleshooting": "Troubleshooting",
-    "go_to_troubleshooting": "Go to our troubleshooting page"
+    "go_to_troubleshooting": "Go to our troubleshooting page",
+    "language": "Language"
   },
   "news": {
     "github_link": "on GitHub",
@@ -83,7 +84,19 @@
     "no": "No",
     "unknown": "Unknown",
     "software_rendering": "Software rendering",
-    "canvas_2d_no_gpu": "Canvas 2D (no GPU)"
+    "canvas_2d_no_gpu": "Canvas 2D (no GPU)",
+    "join_discord": "Join our Discord",
+    "still_having_issues": "Still having issues? Reach out:",
+    "tip1_desc": "A hard refresh (Ctrl+Shift+R / Cmd+Shift+R) clears stale cached assets.",
+    "tip1_title": "Refresh the page",
+    "tip2_desc": "WebSocket connections to Stellar.Game require a stable internet connection.",
+    "tip2_title": "Check your network",
+    "tip3_desc": "Stellar.Game targets recent Chrome, Edge, Firefox, and Safari builds.",
+    "tip3_title": "Try a different browser",
+    "tip4_desc": "Ad blockers and privacy extensions can interfere with WebSocket traffic.",
+    "tip4_title": "Disable extensions",
+    "tip5_desc": "Delete cookies and cache for stellar.game, then reload.",
+    "tip5_title": "Clear browser data"
   },
   "help_modal": {
     "video_tutorial": "Video Tutorial",
@@ -185,7 +198,9 @@
     "exit_confirmation": "Are you sure you want to exit the game?",
     "bomb_direction": "Antimatter Torpedo / Nova Bomb arc direction",
     "icon_alt_player_leaderboard": "Player Leaderboard Icon",
-    "icon_alt_team_leaderboard": "Team Leaderboard Icon"
+    "icon_alt_team_leaderboard": "Team Leaderboard Icon",
+    "action_attack_ratio": "Adjust attack ratio",
+    "action_wasd": "Pan camera"
   },
   "single_modal": {
     "random_spawn": "Random spawn",
@@ -234,7 +249,13 @@
     "clear_session": "Clear Session",
     "failed_to_send_recovery_email": "Failed to send recovery email",
     "enter_email_address": "Please enter an email address",
-    "personal_player_id": "Personal Player ID:"
+    "personal_player_id": "Personal Player ID:",
+    "discord_login": "Continue with Discord",
+    "logout": "Log out",
+    "magic_link_failed": "Failed to send magic link. Please try again.",
+    "magic_link_sent": "Magic link sent! Check your email.",
+    "or_email": "or sign in with email",
+    "send_link": "Send magic link"
   },
   "leaderboard_modal": {
     "title": "Leaderboard",
@@ -425,7 +446,9 @@
     "searching": "Searching for game...",
     "waiting_for_game": "Waiting for game to start...",
     "elo": "Your ELO: {elo}",
-    "no_elo": "No ELO yet"
+    "no_elo": "No ELO yet",
+    "link_required": "Linked account required for ranked play",
+    "login_required": "Sign in to play ranked"
   },
   "username": {
     "enter_username": "Enter your username",
@@ -435,7 +458,8 @@
     "invalid_chars": "Username can only contain letters, numbers, spaces, and underscores.",
     "tag": "TAG",
     "tag_too_short": "Clan tag must be 2-5 alphanumeric characters.",
-    "tag_invalid_chars": "Clan tag can only contain letters and numbers."
+    "tag_invalid_chars": "Clan tag can only contain letters and numbers.",
+    "invalid_characters": "Username contains invalid characters"
   },
   "host_modal": {
     "title": "Create Private Lobby",
@@ -801,7 +825,8 @@
     "run_score_player": "Player",
     "run_score_planets": "Planets",
     "run_score_systems": "Systems",
-    "run_score_survived": "Survived"
+    "run_score_survived": "Survived",
+    "run_score": "Run score: {score}"
   },
   "leaderboard": {
     "hide": "Hide",
@@ -815,7 +840,17 @@
     "battlecruisers": "Battlecruisers",
     "colonies": "Colonies",
     "show_control": "Show Control",
-    "show_units": "Show Units"
+    "show_units": "Show Units",
+    "cities": "Colonies",
+    "clan": "Clan",
+    "clans": "Clans",
+    "loading": "Loading leaderboard…",
+    "members": "Members",
+    "no_data": "No leaderboard data yet",
+    "players": "Players",
+    "sams": "SAMs",
+    "score": "Score",
+    "warships": "Warships"
   },
   "events_display": {
     "events": "Events",
@@ -906,7 +941,8 @@
     "kick_confirm": "Kick {name}?\n\nThey won't be able to rejoin this game.",
     "arc_up": "Upward arc",
     "arc_down": "Downward arc",
-    "flip_rocket_trajectory": "Flip rocket trajectory"
+    "flip_rocket_trajectory": "Flip rocket trajectory",
+    "gold": "Gold"
   },
   "kick_reason": {
     "duplicate_session": "Kicked from game (you may have been playing on another tab)",
@@ -990,7 +1026,10 @@
     },
     "select_skin": "Select Skin",
     "selected": "selected",
-    "search": "Search..."
+    "search": "Search...",
+    "no_patterns": "No territory patterns owned",
+    "none": "No pattern",
+    "visit_store": "Visit store"
   },
   "cosmetics": {
     "artist_label": "Artist:"
@@ -998,7 +1037,11 @@
   "flag_input": {
     "title": "Select Flag",
     "button_title": "Pick a flag!",
-    "search_flag": "Search..."
+    "search_flag": "Search...",
+    "cosmetic_flags": "Cosmetic flags",
+    "country_flags": "Country flags",
+    "none": "No flag",
+    "search": "Search flags"
   },
   "radial_menu": {
     "attack": "Attack",
@@ -1085,5 +1128,48 @@
     "description": "(ALPHA)",
     "login_required": "Login to play ranked!",
     "must_login": "You must be logged in to play ranked matchmaking."
+  },
+  "legacy": {
+    "no_runs": "No previous runs",
+    "title": "Previous runs"
+  },
+  "multi_tab": {
+    "detected": "Multiple tabs detected",
+    "explanation": "Stellar.Game can only run in one tab at a time. Other tabs are paused.",
+    "please_wait": "Please wait…",
+    "seconds": "seconds",
+    "warning": "Close other tabs to continue playing here."
+  },
+  "settings": {
+    "alert_frame": "Alert frame",
+    "anonymous_names": "Anonymous nation names",
+    "attack_ratio": "Attack ratio",
+    "basic": "General",
+    "cursor_cost_label": "Show cursor cost",
+    "dark_mode": "Dark mode",
+    "emojis": "Emojis",
+    "fx_layer": "Visual effects",
+    "keybind_attack_ratio_down": "Decrease attack ratio",
+    "keybind_attack_ratio_up": "Increase attack ratio",
+    "keybind_center_camera": "Center camera",
+    "keybind_coordinate_grid": "Toggle coordinate grid",
+    "keybind_game_speed_down": "Decrease game speed",
+    "keybind_game_speed_up": "Increase game speed",
+    "keybind_move_down": "Pan down",
+    "keybind_move_left": "Pan left",
+    "keybind_move_right": "Pan right",
+    "keybind_move_up": "Pan up",
+    "keybind_pause_game": "Pause game",
+    "keybind_reset_gfx": "Reset graphics",
+    "keybind_swap_direction": "Swap rocket direction",
+    "keybind_toggle_view": "Toggle map view",
+    "keybind_zoom_in": "Zoom in",
+    "keybind_zoom_out": "Zoom out",
+    "keybinds": "Keybinds",
+    "keybinds_desc": "Click any keybind row, then press a new key to rebind.",
+    "left_click_opens_menu": "Left-click opens radial menu",
+    "lobby_id_visibility": "Show lobby ID in URL",
+    "performance_overlay": "Performance overlay",
+    "territory_patterns": "Territory patterns"
   }
 }
