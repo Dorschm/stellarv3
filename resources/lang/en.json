@@ -819,6 +819,7 @@
   },
   "events_display": {
     "events": "Events",
+    "empty": "No events yet",
     "retreating": "retreating",
     "alliance_request_status": "{name} {status} your alliance request",
     "alliance_accepted": "accepted",
@@ -1008,8 +1009,7 @@
     "delete_unit_title": "Delete Unit",
     "delete_unit_description": "Click to delete the nearest unit",
     "launch_scout": "Launch Scout",
-    "build_on_capital_ship": "Build on Capital Ship",
-    "jump_gate": "Jump to gate"
+    "build_on_capital_ship": "Build on Capital Ship"
   },
   "discord_user_header": {
     "avatar_alt": "Avatar"
