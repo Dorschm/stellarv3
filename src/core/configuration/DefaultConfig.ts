@@ -1226,25 +1226,38 @@ export class DefaultConfig implements Config {
     const current = player.population();
     if (current >= max) return 0;
 
+    // habShare = (full-hab tiles + 0.5 × partial-hab tiles) / total owned
+    // sector tiles. Partial-hab (Nebula) tiles now contribute half growth
+    // instead of zero — the previous "0% on Nebula" rule made population
+    // growth on space maps feel lethargic because most owned tiles tend to
+    // be partial-hab in practice (e.g. ~94% non-OpenSpace observed on a
+    // live Sol System smoke test).
     const sm = this._sectorMap;
-    let fullShare = 1.0;
+    let habShare = 1.0;
     if (sm !== null) {
       const total = sm.playerOwnedSectorTiles(player);
       if (total > 0) {
-        fullShare = sm.playerFullHabTiles(player) / total;
+        const weighted =
+          sm.playerFullHabTiles(player) +
+          0.5 * sm.playerPartialHabTiles(player);
+        habShare = weighted / total;
       } else {
         // Pre-territory spawn tick: keep a small trickle so a brand-new
         // player isn't stuck at 0 growth before their first sector tile.
-        fullShare = 0.0;
+        habShare = 0.0;
       }
     }
 
-    // 3% per second → 0.3% per tick. Scaled by full-hab share.
-    let perTick = current * 0.003 * fullShare;
+    // 3% per second → 0.3% per tick on the linear-with-current term, scaled
+    // by hab share. Plus a sublinear `pow(current, 0.6) / 8` term that
+    // restores some of the original upstream-OpenFront growth feel — without
+    // it, low and mid populations took uncomfortably long to recover from
+    // attrition because the linear term contributes very little down there.
+    let perTick = current * 0.003 * habShare + Math.pow(current, 0.6) / 8;
 
-    // Idle floor so players with no fully-habitable territory yet still see
-    // some recovery (mirrors the old `10 + …` baseline term). Without this,
-    // a player whose only tiles are Nebula/Asteroid would never recover from
+    // Idle floor so players with no habitable territory yet still see some
+    // recovery (mirrors the old `10 + …` baseline term). Without this, a
+    // player whose only tiles are uninhabitable would never recover from
     // attrition until they terraform.
     perTick += 10;
 
