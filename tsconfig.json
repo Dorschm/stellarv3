@@ -33,6 +33,7 @@
     "proprietary/**/*",
     "generated/**/*",
     "tests/**/*",
+    "prod-smoke/**/*",
     "src/scripts",
     "vite.config.ts"
   ],
