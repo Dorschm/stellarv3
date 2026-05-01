@@ -101,9 +101,18 @@ function summarize(captured: CapturedConsole): {
         : "";
     unexpectedErrors.push(`[${m.type()}] ${text}${where}`);
   }
+  // Page errors don't expose source URL on the message, but the stack does.
+  // Cloudflare Turnstile in particular throws obfuscated TypeErrors whose
+  // .message ("X[q1(...)] is not a function") doesn't mention turnstile but
+  // the stack does come from challenges.cloudflare.com. Filter both.
   const pageErrorTexts = captured.pageErrors
-    .map((e) => `${e.name}: ${e.message}`)
-    .filter((t) => !isExpected(t));
+    .filter((e) => {
+      const text = `${e.name}: ${e.message}`;
+      if (isExpected(text)) return false;
+      if (e.stack && isExpected(e.stack)) return false;
+      return true;
+    })
+    .map((e) => `${e.name}: ${e.message}`);
   return {
     unexpectedErrors,
     pageErrorTexts,
