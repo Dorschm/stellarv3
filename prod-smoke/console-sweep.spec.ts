@@ -192,6 +192,23 @@ test.describe("console-error sweep on https://stellar.game", () => {
       .first();
     await expect(card).toBeVisible({ timeout: 30_000 });
 
+    // If Cloudflare popped an interactive Turnstile challenge over the page,
+    // the lobby card is unclickable and this is a third-party gating issue
+    // we can't programmatically solve (that's the point of Turnstile). Skip
+    // gracefully so a transient anti-bot challenge doesn't fail the deploy
+    // smoke run.
+    const turnstileOverlay = page.locator("#turnstile-container");
+    const turnstileVisible = await turnstileOverlay
+      .isVisible({ timeout: 1_000 })
+      .catch(() => false);
+    if (turnstileVisible) {
+      test.skip(
+        true,
+        "Cloudflare Turnstile interactive challenge is gating page; skipping",
+      );
+      return;
+    }
+
     // Pre-click sanity: aria-pressed should be false.
     await expect(card).toHaveAttribute("aria-pressed", "false");
 

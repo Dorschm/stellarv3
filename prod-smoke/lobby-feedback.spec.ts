@@ -36,6 +36,21 @@ test.describe("public lobby card click feedback (prod smoke)", () => {
       .first();
     await expect(lobbyCard).toBeVisible({ timeout: 30_000 });
 
+    // If Cloudflare popped an interactive Turnstile challenge over the page,
+    // the lobby card is unclickable and this is a third-party gating issue
+    // we can't programmatically solve. Skip gracefully.
+    const turnstileVisible = await page
+      .locator("#turnstile-container")
+      .isVisible({ timeout: 1_000 })
+      .catch(() => false);
+    if (turnstileVisible) {
+      test.skip(
+        true,
+        "Cloudflare Turnstile interactive challenge is gating page; skipping",
+      );
+      return;
+    }
+
     // Username field must be filled so the validate-on-click guard passes.
     // The form auto-fills with "Guest_XXX"; if not, we set one.
     const usernameInput = page.locator(
