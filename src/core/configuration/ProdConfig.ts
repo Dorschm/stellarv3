@@ -14,6 +14,6 @@ export const prodConfig = new (class extends DefaultServerConfig {
     return "stellar.game";
   }
   turnstileSiteKey(): string {
-    return "0x4AAAAAAC-n6hkLOItTKlht";
+    return "0x4AAAAAADGydVOE-WnC3nBk";
   }
 })();
