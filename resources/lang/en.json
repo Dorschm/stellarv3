@@ -844,7 +844,7 @@
     "cities": "Colonies",
     "clan": "Clan",
     "clans": "Clans",
-    "loading": "Loading leaderboard…",
+    "loading": "Loading leaderboard...",
     "members": "Members",
     "no_data": "No leaderboard data yet",
     "players": "Players",
@@ -1136,7 +1136,7 @@
   "multi_tab": {
     "detected": "Multiple tabs detected",
     "explanation": "Stellar.Game can only run in one tab at a time. Other tabs are paused.",
-    "please_wait": "Please wait…",
+    "please_wait": "Please wait...",
     "seconds": "seconds",
     "warning": "Close other tabs to continue playing here."
   },

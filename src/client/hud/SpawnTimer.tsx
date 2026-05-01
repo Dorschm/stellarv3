@@ -69,7 +69,7 @@ export function SpawnTimer(): React.JSX.Element {
   }
 
   return (
-    <div className="w-full h-[7px] flex z-999 fixed top-0 left-0 pointer-events-none">
+    <div className="w-full h-[7px] flex z-[999] fixed top-0 left-0 pointer-events-none">
       {ratios.map((ratio, i) => {
         const color = colors[i] || "rgba(0, 0, 0, 0.5)";
         return (

@@ -63,7 +63,7 @@ export function ImmunityTimer(): React.JSX.Element {
 
   return (
     <div
-      className="w-full h-[7px] flex z-999 fixed left-0 pointer-events-none"
+      className="w-full h-[7px] flex z-[999] fixed left-0 pointer-events-none"
       style={{
         top: `${barOffset}px`,
       }}

@@ -225,15 +225,12 @@ export function WinModal(): React.JSX.Element {
 
   const renderInnerContent = () => {
     if (isInIframe()) {
-      return renderSteamWishlist();
+      return renderDiscordDisplay();
     }
-
     if (!isWin && getGamesPlayed() < 3) {
       return renderYoutubeTutorial();
     }
-    if (rand < 0.25) {
-      return renderSteamWishlist();
-    } else if (rand < 0.5) {
+    if (rand < 0.5) {
       return renderDiscordDisplay();
     } else {
       return renderPatternButton();
@@ -346,19 +343,6 @@ export function WinModal(): React.JSX.Element {
     </div>
   );
 
-  const renderSteamWishlist = () => (
-    <p className="m-0 mb-5 text-center bg-black/30 p-2.5 rounded-sm">
-      <a
-        href="https://store.steampowered.com/app/3560670"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-[#4a9eff] underline font-medium transition-colors duration-200 text-2xl hover:text-[#6db3ff] no-underline"
-      >
-        {translateText("win_modal.wishlist")}
-      </a>
-    </p>
-  );
-
   const renderDiscordDisplay = () => (
     <div className="text-center mb-6 bg-black/30 p-2.5 rounded-sm">
       <h3 className="text-xl font-semibold text-white mb-3">
@@ -378,14 +362,16 @@ export function WinModal(): React.JSX.Element {
     </div>
   );
 
+  if (!isVisible) return <div className="hidden" />;
   return (
-    <div
-      className={
-        isVisible
-          ? "fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gray-800/70 p-6 shrink-0 rounded-lg z-[9999] shadow-2xl backdrop-blur-xs text-white w-87.5 max-w-[90%] md:w-175"
-          : "hidden"
-      }
-    >
+    <>
+      <div
+        className="fixed inset-0 z-[9998] pointer-events-auto"
+        onClick={(e) => e.stopPropagation()}
+      />
+      <div
+        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gray-800/70 p-6 shrink-0 rounded-lg z-[9999] shadow-2xl backdrop-blur-xs text-white w-87.5 max-w-[90%] md:w-175 pointer-events-auto"
+      >
       <h2 className="m-0 mb-4 text-[26px] text-center text-white">{title}</h2>
       {renderRunScore()}
       {renderInnerContent()}
@@ -413,7 +399,8 @@ export function WinModal(): React.JSX.Element {
             : translateText("win_modal.spectate")}
         </button>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
 

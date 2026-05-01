@@ -544,32 +544,16 @@ export class ClientGameRunner {
         this.lastTickReceiveTime = now;
 
         const turn = message.turn;
-        // Mirror the desync-recovery the bulk-turns handler above already
-        // does: silently drop duplicates, and fill any gap with empty turns
-        // so the in-worker sim catches up. Previously this branch dropped
-        // out-of-order turns and logged console.error, which fired on every
-        // public-lobby join and (when an out-of-order live turn arrived
-        // before the rejoinGame replay) could permanently desync the
-        // client.
         if (turn.turnNumber < this.turnsSeen) {
-          // already processed (or rejoin replay caught up past us)
+          // duplicate / replay catch-up; drop
         } else {
           while (turn.turnNumber - 1 > this.turnsSeen) {
-            this.worker.sendTurn({
-              turnNumber: this.turnsSeen,
-              intents: [],
-            });
+            this.worker.sendTurn({ turnNumber: this.turnsSeen, intents: [] });
             this.turnsSeen++;
           }
           this.worker.sendTurn(
-            // Filter out pause intents in replays
             this.gameView.config().isReplay()
-              ? {
-                  ...turn,
-                  intents: turn.intents.filter(
-                    (i) => i.type !== "toggle_pause",
-                  ),
-                }
+              ? { ...turn, intents: turn.intents.filter((i) => i.type !== "toggle_pause") }
               : turn,
           );
           this.turnsSeen++;

@@ -715,18 +715,10 @@ async function startMatchmakingPolling(gm: GameManager) {
         }
       } catch (error) {
         if (error instanceof Error && error.name === "AbortError") {
-          // Abort is expected if no game is scheduled on this worker.
           return;
         }
-        // Suppress ENOTFOUND / ECONNREFUSED spam: these mean the matchmaking
-        // server's hostname (api.${jwtAudience()}) isn't reachable from this
-        // deployment. For self-hosted instances that don't run a separate
-        // matchmaking API, this would fire ~12x per minute per worker
-        // forever. Real surprises (auth failure, 5xx from a real server)
-        // still log loudly via the !response.ok branch above.
         const cause = (error as { cause?: { code?: string } } | null)?.cause;
-        const code = cause?.code;
-        if (code === "ENOTFOUND" || code === "ECONNREFUSED") {
+        if (cause?.code === "ENOTFOUND" || cause?.code === "ECONNREFUSED") {
           return;
         }
         log.error(`Error polling lobby:`, error);

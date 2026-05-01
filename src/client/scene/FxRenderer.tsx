@@ -438,10 +438,6 @@ export function FxRenderer(): React.JSX.Element {
 
           const conquered = game.player(update.conqueredId);
           if (conquered) {
-            // nameLocation() can return undefined for players that were
-            // updated before the worker populated playerNameViewData for
-            // them (e.g. tiny bots eliminated the same tick they spawned).
-            // Skip the fx in that case rather than dereferencing undefined.
             const loc = conquered.nameLocation();
             if (loc) {
               const halfW = game.width() / 2;
@@ -462,9 +458,6 @@ export function FxRenderer(): React.JSX.Element {
 
           const player = game.player(pu.id);
           if (!player) continue;
-          // Same guard as the conquest path above — players sent in this
-          // update may not have a nameLocation yet on the very first tick
-          // they appear.
           const loc = player.nameLocation();
           if (!loc) continue;
           const halfW = game.width() / 2;

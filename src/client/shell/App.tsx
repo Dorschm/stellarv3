@@ -79,7 +79,7 @@ export function App() {
             {/* Turnstile container */}
             <div
               id="turnstile-container"
-              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-99999"
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[99999]"
             />
 
             {/* Main content */}

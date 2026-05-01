@@ -366,7 +366,7 @@ export function PlayerPanel(): React.JSX.Element {
 
   return (
     <div
-      className="fixed inset-0 z-10001 flex items-center justify-center overflow-auto bg-black/15 backdrop-brightness-110 pointer-events-auto"
+      className="fixed inset-0 z-[10001] flex items-center justify-center overflow-auto bg-black/15 backdrop-brightness-110 pointer-events-auto"
       onContextMenu={(e) => e.preventDefault()}
       onWheel={(e) => e.stopPropagation()}
       onClick={() => hidePanel()}

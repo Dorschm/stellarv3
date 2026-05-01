@@ -227,7 +227,7 @@ export function SettingsModal(): React.JSX.Element {
 
   return (
     <div
-      className="modal-overlay pointer-events-auto fixed inset-0 bg-black/60 backdrop-blur-xs z-2000 flex items-center justify-center p-4"
+      className="modal-overlay pointer-events-auto fixed inset-0 bg-black/60 backdrop-blur-xs z-[2000] flex items-center justify-center p-4"
       ref={modalOverlayRef}
       onContextMenu={(e) => e.preventDefault()}
     >
