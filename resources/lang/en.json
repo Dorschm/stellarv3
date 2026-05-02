@@ -1051,6 +1051,9 @@
     "delete_unit_title": "Delete Unit",
     "delete_unit_description": "Click to delete the nearest unit",
     "launch_scout": "Launch Scout",
+    "launch_scout_ready": "Launch a Scout Swarm toward this tile",
+    "launch_scout_needs_structure": "Build a Spaceport or Jump Gate first",
+    "launch_scout_spawn_phase": "Choose a starting location first",
     "build_on_capital_ship": "Build on Capital Ship",
     "move_battlecruiser": "Move Battlecruiser here",
     "select_battlecruiser": "Select battlecruiser to move"

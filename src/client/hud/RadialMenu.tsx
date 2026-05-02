@@ -302,10 +302,44 @@ export function RadialMenu(): React.JSX.Element | null {
   // Ticket 6 — Scout Swarm launch. Launches a temporary swarm from the
   // player's nearest owned tile toward the clicked tile. The ScoutSwarm
   // BuildUnitIntent is wired straight to ConstructionExecution, which
-  // delegates to ScoutSwarmExecution for spawn + cost + travel. We gate
-  // the entry on "player exists and is out of the spawn phase" — the
-  // affordability / target-validity checks are server-authoritative.
-  const canLaunchScout = !!myPlayer && !gameView.inSpawnPhase();
+  // delegates to ScoutSwarmExecution for spawn + cost + travel.
+  //
+  // Pre-flight gates we surface to the user (server still validates):
+  //   1. Player exists and is out of the spawn phase.
+  //   2. Player owns at least one active Spaceport or Jump Gate — without
+  //      one, the server rejects the launch with SCOUT_SWARM_FAILED. That
+  //      message lands in the events panel but is easy to miss during
+  //      gameplay; disabling the button (with a tooltip explaining why)
+  //      makes the requirement discoverable instead of opaque.
+  let hasLaunchStructure = false;
+  if (myPlayer) {
+    for (const u of myPlayer.units(UnitType.Spaceport)) {
+      if (u.isActive() && !u.isUnderConstruction()) {
+        hasLaunchStructure = true;
+        break;
+      }
+    }
+    if (!hasLaunchStructure) {
+      for (const u of myPlayer.units(UnitType.JumpGate)) {
+        if (u.isActive() && !u.isUnderConstruction()) {
+          hasLaunchStructure = true;
+          break;
+        }
+      }
+    }
+  }
+  const canLaunchScout =
+    !!myPlayer && !gameView.inSpawnPhase() && hasLaunchStructure;
+  const launchScoutTooltip = !myPlayer
+    ? undefined
+    : gameView.inSpawnPhase()
+      ? translateText("radial_menu.launch_scout_spawn_phase") ||
+        "Choose a starting location first"
+      : !hasLaunchStructure
+        ? translateText("radial_menu.launch_scout_needs_structure") ||
+          "Build a Spaceport or Jump Gate first"
+        : translateText("radial_menu.launch_scout_ready") ||
+          "Launch a Scout Swarm toward this tile";
   const handleLaunchScout = () => {
     if (!canLaunchScout) return;
     eventBus.emit(new BuildUnitIntentEvent(UnitType.ScoutSwarm, tile));
@@ -571,6 +605,7 @@ export function RadialMenu(): React.JSX.Element | null {
           label={translateText("radial_menu.launch_scout") || "Launch Scout"}
           disabled={!canLaunchScout}
           onClick={handleLaunchScout}
+          tooltip={launchScoutTooltip}
         />
 
         {/*
