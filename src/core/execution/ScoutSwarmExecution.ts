@@ -9,6 +9,22 @@ import {
 } from "../game/Game";
 import { TileRef } from "../game/GameMap";
 
+/** Human-readable name for a TerrainType used in events_display messages. */
+function terrainName(t: TerrainType): string {
+  switch (t) {
+    case TerrainType.OpenSpace:
+      return "Open Space";
+    case TerrainType.Nebula:
+      return "Nebula";
+    case TerrainType.AsteroidField:
+      return "Asteroid Field";
+    case TerrainType.DebrisField:
+      return "Debris Field";
+    case TerrainType.DeepSpace:
+      return "Deep Space";
+  }
+}
+
 /**
  * Scout Swarm execution — GDD §4, §6 and Ticket 6 (Fleet Systems).
  *
@@ -244,9 +260,40 @@ export class ScoutSwarmExecution implements Execution {
     // reached, step the terrain one band and reset the counter.
     const threshold = this.mg.config().scoutSwarmTerraformAccumulation();
     const progress = this.mg.recordScoutSwarmTerraformProgress(tile);
+    const tx = this.mg.x(tile);
+    const ty = this.mg.y(tile);
     if (progress >= threshold) {
+      const beforeTerrain = this.mg.map().terrainType(tile);
       this.applyTerraformStep(tile);
       this.mg.resetScoutSwarmTerraformProgress(tile);
+      const afterTerrain = this.mg.map().terrainType(tile);
+      // Surface the actual terrain step + ownership change so the player
+      // doesn't think "nothing happened". Without this, the only visual
+      // is a single tile color change which is easy to miss on a
+      // ~1500-wide map.
+      this.mg.displayMessage(
+        "events_display.scout_swarm_terraformed",
+        MessageType.SCOUT_SWARM_TERRAFORMED,
+        this.launcher.id(),
+        undefined,
+        {
+          x: tx,
+          y: ty,
+          before: terrainName(beforeTerrain),
+          after: terrainName(afterTerrain),
+        },
+      );
+    } else {
+      // Still accumulating — tell the player how many more arrivals it
+      // needs. Fixes the user-reported "I sent a scout, nothing happened"
+      // perception when the per-tile counter is below the flip threshold.
+      this.mg.displayMessage(
+        "events_display.scout_swarm_progress",
+        MessageType.SCOUT_SWARM_PROGRESS,
+        this.launcher.id(),
+        undefined,
+        { x: tx, y: ty, progress, threshold },
+      );
     }
     // GDD §4 — terraform a cluster of deep-space tiles around the
     // arrival target. circleSearch visits every tile within the

@@ -900,7 +900,9 @@
     "nova_bomb_inbound": "{name} - nova bomb inbound",
     "jump_gate_teleport": "Jump Gate: {count, plural, one {# unit} other {# units}} teleported",
     "jump_gate_failed": "Jump Gate failed: {reason}",
-    "scout_swarm_failed": "Scout Swarm failed: {reason}"
+    "scout_swarm_failed": "Scout Swarm failed: {reason}",
+    "scout_swarm_progress": "Scout arrived at ({x}, {y}) — terraform progress {progress}/{threshold}",
+    "scout_swarm_terraformed": "Scout Swarm terraformed ({x}, {y}): {before} → {after}"
   },
   "player_type": {
     "player": "Player",

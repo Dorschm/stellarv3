@@ -232,7 +232,15 @@ export class ConstructionExecution implements Execution {
     if (!hostable.includes(this.constructionType)) {
       return null;
     }
-    const nearby = this.mg.nearbyUnits(tile, 2, [UnitType.Battlecruiser]);
+    // Radius 32 (was 2) so the host lookup matches a player's expectation
+    // of "build on the cruiser that's near here" rather than requiring
+    // the click to be on the exact tile-square the cruiser currently
+    // occupies. Cruisers patrol within a 100-tile radius of their patrol
+    // center (`battlecruiserPatrolRange`), so 2 was effectively never
+    // matchable in the moments after a build click. 32 is large enough to
+    // cover an entire planet's outer ring without spanning into a
+    // neighbour planet's territory on default-spacing maps.
+    const nearby = this.mg.nearbyUnits(tile, 32, [UnitType.Battlecruiser]);
     for (const { unit } of nearby) {
       if (
         unit.owner() === this.player &&

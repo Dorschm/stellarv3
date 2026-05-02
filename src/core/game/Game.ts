@@ -1098,6 +1098,8 @@ export enum MessageType {
   JUMP_GATE_TELEPORT,
   JUMP_GATE_FAILED,
   SCOUT_SWARM_FAILED,
+  SCOUT_SWARM_PROGRESS,
+  SCOUT_SWARM_TERRAFORMED,
 }
 
 // Message categories used for filtering events in the EventsDisplay
@@ -1140,6 +1142,8 @@ export const MESSAGE_TYPE_CATEGORIES: Record<MessageType, MessageCategory> = {
   [MessageType.JUMP_GATE_TELEPORT]: MessageCategory.ATTACK,
   [MessageType.JUMP_GATE_FAILED]: MessageCategory.ATTACK,
   [MessageType.SCOUT_SWARM_FAILED]: MessageCategory.ATTACK,
+  [MessageType.SCOUT_SWARM_PROGRESS]: MessageCategory.ATTACK,
+  [MessageType.SCOUT_SWARM_TERRAFORMED]: MessageCategory.ATTACK,
 } as const;
 
 /**

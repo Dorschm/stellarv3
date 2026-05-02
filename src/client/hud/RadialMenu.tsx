@@ -352,11 +352,17 @@ export function RadialMenu(): React.JSX.Element | null {
   // `findHostBattlecruiser()` lookup will match. Only shown when such a
   // cruiser actually exists near the clicked tile — otherwise the entry
   // is a dead button.
+  //
+  // Radius MUST stay in sync with ConstructionExecution.findHostBattle
+  // cruiser (server-side resolves the same lookup): 32 tiles, expanded
+  // from 2 so users can right-click anywhere on or around their cruiser's
+  // patrol area instead of having to land within 2 squares of the
+  // currently-rendered position.
   const hostCruiser =
     myPlayer === null
       ? null
       : (gameView
-          .nearbyUnits(tile, 2, [UnitType.Battlecruiser])
+          .nearbyUnits(tile, 32, [UnitType.Battlecruiser])
           .find(({ unit }) => unit.owner() === myPlayer && unit.isActive())
           ?.unit ?? null);
   const canBuildOnCapitalShip =

@@ -76,7 +76,10 @@ const LRW_HABITABILITY_DAMAGE = 0.1;
  *
  * `SCOUT_SWARM_TERRAFORM_ACCUMULATION` is the amount of swarm "size" that
  * has to land on a tile before its terrain magnitude steps down (GDD: "10
- * swarm size/km²"). We treat it as 10 scout-arrivals per tile.
+ * swarm size/km²"). We treat it as 10 scout-arrivals per tile. Players
+ * receive a `SCOUT_SWARM_PROGRESS` events_display message after each
+ * arrival showing N/10 progress so a single scout produces visible
+ * feedback even though the flip itself takes the full ten arrivals.
  *
  * `SCOUT_SWARM_LIFETIME_TICKS` is a safety cap so stranded swarms
  * eventually dissolve — 5 minutes at 10 ticks/sec.
