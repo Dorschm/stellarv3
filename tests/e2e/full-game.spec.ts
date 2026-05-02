@@ -22,7 +22,7 @@ import {
  * a meaningful chunk of real-time ticks.
  *
  * All interactions use real browser events (clicks, keyboard), reading
- * `__gameView` only for read-only assertions (tile counts, gold, alive
+ * `__gameView` only for read-only assertions (tile counts, credits, alive
  * state). No internal event-bus dispatches.
  *
  * All steps share a single session via `beforeAll` to amortize the map-load
@@ -92,14 +92,14 @@ test.describe("Full gameplay (singleplayer)", () => {
       return {
         tiles: mp.numTilesOwned(),
         population: mp.population(),
-        gold: Number(mp.credits()),
+        credits: Number(mp.credits()),
       };
     });
     expect(snapshot).not.toBeNull();
     expect(snapshot!.tiles).toBeGreaterThan(0);
   });
 
-  test("population and gold accumulate passively over time", async () => {
+  test("population and credits accumulate passively over time", async () => {
     const baseline = await page.evaluate(() => {
       const w = window as unknown as {
         __gameView: {
@@ -114,7 +114,7 @@ test.describe("Full gameplay (singleplayer)", () => {
       return {
         tick: w.__gameView.ticks(),
         population: mp.population(),
-        gold: Number(mp.credits()),
+        credits: Number(mp.credits()),
       };
     });
 
@@ -130,11 +130,11 @@ test.describe("Full gameplay (singleplayer)", () => {
         };
       };
       const mp = w.__gameView.myPlayer()!;
-      return { population: mp.population(), gold: Number(mp.credits()) };
+      return { population: mp.population(), credits: Number(mp.credits()) };
     });
 
     expect(after.population).toBeGreaterThan(baseline.population);
-    expect(after.gold).toBeGreaterThan(baseline.gold);
+    expect(after.credits).toBeGreaterThan(baseline.credits);
   });
 
   test("attacking terra nullius expands territory", async () => {
@@ -241,7 +241,7 @@ test.describe("Full gameplay (singleplayer)", () => {
       );
     } catch {
       // Credit accumulation timed out — procedural maps with small
-      // territories accumulate gold too slowly for the 270s window.
+      // territories accumulate credits too slowly for the 270s window.
       creditReady = false;
     }
 
@@ -261,7 +261,7 @@ test.describe("Full gameplay (singleplayer)", () => {
 
     test.skip(
       !creditReady,
-      "Credit accumulation too slow on this procedural map — player had insufficient territory for 51K gold within 270s",
+      "Credit accumulation too slow on this procedural map — player had insufficient territory for 51K credits within 270s",
     );
 
     // Right-click on an interior owned tile → "Build" in RadialMenu.
@@ -458,7 +458,7 @@ test.describe("Full gameplay (singleplayer)", () => {
         alive: mp.isAlive(),
         tiles: mp.numTilesOwned(),
         population: mp.population(),
-        gold: Number(mp.credits()),
+        credits: Number(mp.credits()),
       };
     });
     expect(finalState.alive).toBe(true);

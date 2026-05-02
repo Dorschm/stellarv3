@@ -38,7 +38,6 @@ describe("TradeFreighterExecution", () => {
       canBuild: vi.fn(() => true),
       buildUnit: vi.fn((type, spawn, opts) => tradeFreighter),
       displayName: vi.fn(() => "Origin"),
-      addGold: vi.fn(),
       units: vi.fn(() => [dstPort]),
       unitCount: vi.fn(() => 1),
       id: vi.fn(() => 1),
@@ -54,7 +53,6 @@ describe("TradeFreighterExecution", () => {
 
     dstOwner = {
       id: vi.fn(() => 2),
-      addGold: vi.fn(),
       displayName: vi.fn(() => "Destination"),
       units: vi.fn(() => [dstPort]),
       unitCount: vi.fn(() => 1),
@@ -68,7 +66,6 @@ describe("TradeFreighterExecution", () => {
 
     pirate = {
       id: vi.fn(() => 3),
-      addGold: vi.fn(),
       displayName: vi.fn(() => "Destination"),
       units: vi.fn(() => [piratePort, piratePort2]),
       unitCount: vi.fn(() => 2),
@@ -181,7 +178,7 @@ describe("TradeFreighterExecution", () => {
     expect(tradeFreighter.setTargetUnit).toHaveBeenCalledWith(piratePort);
   });
 
-  it("should complete trade and award gold", () => {
+  it("should complete trade and award credits", () => {
     tradeFreighterExecution["pathFinder"] = {
       next: vi.fn(() => ({ status: PathStatus.COMPLETE, node: 32 })),
       findPath: vi.fn((from: number) => [from]),

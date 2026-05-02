@@ -424,7 +424,6 @@
     "team": "קבוצה",
     "d_troops": "חיילים מגנים",
     "a_troops": "חיילים תוקפים",
-    "gold": "זהב",
     "ports": "נמלים",
     "cities": "ערים",
     "missile_launchers": "משגרי טילים",
@@ -461,7 +460,6 @@
   },
   "control_panel": {
     "pop": "אוכלוסיה",
-    "gold": "זהב",
     "troops": "חיילים",
     "workers": "עובדים",
     "attack_ratio": "יחס תקיפה"

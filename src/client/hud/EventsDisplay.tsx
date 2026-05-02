@@ -20,7 +20,7 @@ import { useGameTick } from "./useGameTick";
 
 const allianceIcon = assetUrl("images/AllianceIconWhite.svg");
 const chatIcon = assetUrl("images/ChatIconWhite.svg");
-const donateGoldIcon = assetUrl("images/DonateGoldIconWhite.svg");
+const donateCreditsIcon = assetUrl("images/DonateCreditsIconWhite.svg");
 const nukeIcon = assetUrl("images/NukeIconWhite.svg");
 const swordIcon = assetUrl("images/SwordIconWhite.svg");
 
@@ -346,7 +346,7 @@ export function EventsDisplay(): React.JSX.Element {
         return { icon: nukeIcon, color: "text-orange-400" };
       case MessageType.SENT_CREDITS_TO_PLAYER:
       case MessageType.RECEIVED_CREDITS_FROM_PLAYER:
-        return { icon: donateGoldIcon, color: "text-yellow-400" };
+        return { icon: donateCreditsIcon, color: "text-yellow-400" };
       case MessageType.CHAT:
         return { icon: chatIcon, color: "text-white" };
       default:
@@ -396,7 +396,7 @@ export function EventsDisplay(): React.JSX.Element {
         <div className="ml-auto flex gap-1">
           {renderToggleButton(swordIcon, MessageCategory.ATTACK)}
           {renderToggleButton(nukeIcon, MessageCategory.NUKE)}
-          {renderToggleButton(donateGoldIcon, MessageCategory.TRADE)}
+          {renderToggleButton(donateCreditsIcon, MessageCategory.TRADE)}
           {renderToggleButton(allianceIcon, MessageCategory.ALLIANCE)}
           {renderToggleButton(chatIcon, MessageCategory.CHAT)}
         </div>

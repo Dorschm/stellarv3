@@ -22,7 +22,7 @@ import { useGameTick } from "./useGameTick";
 const warshipIcon = assetUrl("images/BattleshipIconWhite.svg");
 const cityIcon = assetUrl("images/CityIconWhite.svg");
 const factoryIcon = assetUrl("images/FactoryIconWhite.svg");
-const goldCoinIcon = assetUrl("images/GoldCoinIcon.svg");
+const creditsCoinIcon = assetUrl("images/CreditsCoinIcon.svg");
 const missileSiloIcon = assetUrl("images/MissileSiloIconWhite.svg");
 const portIcon = assetUrl("images/PortIcon.svg");
 const samLauncherIcon = assetUrl("images/SamLauncherIconWhite.svg");
@@ -217,7 +217,7 @@ export function PlayerInfoOverlay(): React.JSX.Element {
               className="flex flex-1 items-center justify-center px-1 py-0.5 border rounded-md border-yellow-400 font-bold text-yellow-400 text-sm lg:gap-1"
               translate="no"
             >
-              <img src={goldCoinIcon} width="13" height="13" alt="" />
+              <img src={creditsCoinIcon} width="13" height="13" alt="" />
               <span className="px-0.5">
                 {renderNumber(Number(playerInfo.credits()))}
               </span>

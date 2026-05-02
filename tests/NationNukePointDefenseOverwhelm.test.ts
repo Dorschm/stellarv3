@@ -82,7 +82,7 @@ describe("NationNukeBehavior - maybeDestroyEnemySam", () => {
       game.addExecution(new OrbitalStrikePlatformExecution(silo));
     }
 
-    // infiniteGold only applies to Human players, so the nation needs gold
+    // infiniteCredits only applies to Human players, so the nation needs credits
     nation.addCredits(1_000_000_000n);
     nation.addPopulation(100_000);
     human.addPopulation(100_000);

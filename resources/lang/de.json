@@ -349,7 +349,7 @@
     "left_click_menu": "Linksklick-Menü",
     "attack_ratio_label": "⚔️ Angriffsverhältnis",
     "attack_ratio_desc": "Prozentsatz deiner Truppen die in den Angriff geschickt werden (1–100 %)",
-    "troop_ratio_desc": "Stelle das Verhältnis zwischen Truppen (für den Kampf) und Arbeitern (für die Goldproduktion) ein (1–100 %)",
+    "troop_ratio_desc": "Stelle das Verhältnis zwischen Truppen (für den Kampf) und Arbeitern (für die Kreditproduktion) ein (1–100 %)",
     "territory_patterns_label": "🏳️ Gebietsmuster",
     "territory_patterns_desc": "Leg fest, ob Gebietsmuster im Spiel angezeigt werden",
     "performance_overlay_label": "Leistungsanzeige",
@@ -566,7 +566,6 @@
     "alliance_timeout": "Bündnis endet in",
     "troops": "Truppen",
     "a_troops": "Angreifende Truppen",
-    "gold": "Gold",
     "ports": "Häfen",
     "cities": "Städte",
     "factories": "Fabriken",
@@ -625,7 +624,6 @@
     "default": "Standard"
   },
   "control_panel": {
-    "gold": "Gold",
     "troops": "Truppen",
     "attack_ratio": "Angriffsverhältnis"
   },

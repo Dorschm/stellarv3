@@ -254,8 +254,6 @@ export class TradeFreighterExecution implements Execution {
       if (populationDelivered > 0) {
         this._dstPort.owner().addPopulation(populationDelivered);
       }
-      // `gold` is a backward-compat alias for locales that still reference
-      // the legacy {gold} placeholder. New locales should use {credits}.
       this.mg.displayMessage(
         "events_display.received_credits_from_trade",
         MessageType.RECEIVED_CREDITS_FROM_TRADE,
@@ -263,7 +261,6 @@ export class TradeFreighterExecution implements Execution {
         creditAmount,
         {
           credits: renderNumber(creditAmount),
-          gold: renderNumber(creditAmount),
           population: renderPopulation(populationDelivered),
           name: this.srcPort.owner().displayName(),
         },
@@ -275,7 +272,6 @@ export class TradeFreighterExecution implements Execution {
         creditAmount,
         {
           credits: renderNumber(creditAmount),
-          gold: renderNumber(creditAmount),
           population: renderPopulation(populationDelivered),
           name: this._dstPort.owner().displayName(),
         },

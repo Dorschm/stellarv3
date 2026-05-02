@@ -87,7 +87,7 @@ test.describe("HUD interactions (singleplayer)", () => {
     }
   });
 
-  test("control panel displays population, gold, and attack ratio", async () => {
+  test("control panel displays population, credits, and attack ratio", async () => {
     // Control panel is only visible once the local player is alive (past
     // spawn phase). The attack ratio slider is a <input type="range">
     // scoped to the HUD overlay. ControlPanel renders both mobile (`lg:hidden`)
@@ -97,14 +97,14 @@ test.describe("HUD interactions (singleplayer)", () => {
     const slider = page.locator("input[type='range']:visible").first();
     await expect(slider).toBeVisible({ timeout: 30_000 });
 
-    // Gold label is tagged with `translate="no"` and renders a number —
+    // Credits label is tagged with `translate="no"` and renders a number —
     // we just assert the HUD overlay contains a visible numeric string.
-    const hasGoldDigits = await page.evaluate(() => {
+    const hasCreditsDigits = await page.evaluate(() => {
       const root = document.getElementById("react-root");
       if (!root) return false;
       return /\d/.test(root.textContent ?? "");
     });
-    expect(hasGoldDigits).toBe(true);
+    expect(hasCreditsDigits).toBe(true);
   });
 
   test("attack ratio slider responds to user input", async () => {

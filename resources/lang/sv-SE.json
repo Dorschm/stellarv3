@@ -447,7 +447,6 @@
     "team": "Lag",
     "d_troops": "Försvarande trupper",
     "a_troops": "Anfallande trupper",
-    "gold": "Guld",
     "ports": "Hamnar",
     "cities": "Städer",
     "factories": "Fabriker",
@@ -498,7 +497,6 @@
   },
   "control_panel": {
     "pop": "Pop",
-    "gold": "Guld",
     "troops": "Trupper",
     "workers": "Arbetare",
     "attack_ratio": "Anfallsskala"

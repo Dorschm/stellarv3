@@ -375,7 +375,6 @@
     "team": "Tým",
     "d_troops": "Obranné jednotky",
     "a_troops": "Útočící jednotky",
-    "gold": "Zlato",
     "ports": "Přístavy",
     "cities": "Města",
     "missile_launchers": "Raketové odpalovače",
@@ -393,7 +392,6 @@
   },
   "control_panel": {
     "pop": "Populace",
-    "gold": "Zlato",
     "troops": "Jednotky",
     "workers": "Pracovníci",
     "attack_ratio": "Poměr útoku"

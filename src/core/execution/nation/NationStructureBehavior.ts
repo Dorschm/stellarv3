@@ -706,7 +706,7 @@ export class NationStructureBehavior {
       unitToCluster.set(station.unit, station.getCluster());
     }
 
-    const maxTradeGold = Math.max(
+    const maxTradeCredits = Math.max(
       Number(game.config().frigateCredits("ally", 0)),
       1,
     );
@@ -718,7 +718,7 @@ export class NationStructureBehavior {
 
     // Own structures — weighted by "self" trade credits.
     const selfWeight =
-      Number(game.config().frigateCredits("self", 0)) / maxTradeGold;
+      Number(game.config().frigateCredits("self", 0)) / maxTradeCredits;
     for (const unit of player.units(
       UnitType.Colony,
       UnitType.Spaceport,
@@ -744,7 +744,7 @@ export class NationStructureBehavior {
           ? "ally"
           : "other";
       const weight =
-        Number(game.config().frigateCredits(relType, 0)) / maxTradeGold;
+        Number(game.config().frigateCredits(relType, 0)) / maxTradeCredits;
       for (const unit of neighbor.units(
         UnitType.Colony,
         UnitType.Spaceport,

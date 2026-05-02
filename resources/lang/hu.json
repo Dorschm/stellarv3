@@ -502,7 +502,6 @@
     "alliance_timeout": "Szövetség felbomlik",
     "troops": "Katonák",
     "a_troops": "Támadó katonák",
-    "gold": "Arany",
     "ports": "Kikötők",
     "cities": "Városok",
     "factories": "Gyárak",
@@ -553,7 +552,6 @@
     "default": "Alapértelmezett"
   },
   "control_panel": {
-    "gold": "Arany",
     "troops": "Katonák",
     "attack_ratio": "Támadási ráta"
   },

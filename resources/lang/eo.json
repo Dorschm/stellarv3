@@ -502,7 +502,6 @@
     "alliance_timeout": "Alianco finiĝas en",
     "troops": "Trupoj",
     "a_troops": "Atakante trupoj",
-    "gold": "Oro",
     "ports": "Havenoj",
     "cities": "Urboj",
     "factories": "Fabrikoj",
@@ -553,7 +552,6 @@
     "default": "Defaŭlta"
   },
   "control_panel": {
-    "gold": "Oro",
     "troops": "Trupoj",
     "attack_ratio": "Atakkvociento"
   },

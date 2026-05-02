@@ -35,34 +35,35 @@ describe("AttackStats", () => {
     }
   });
 
-  test("should increase war gold stat when a player is eliminated", () => {
+  test("should increase war credits stat when a player is eliminated", () => {
     expect(player1.sharesBorderWith(player2)).toBeTruthy();
-    // Player2 must attack to be considered active (otherwise gold won't transfer)
+    // Player2 must attack to be considered active (otherwise credits won't transfer)
     game.addExecution(
       new AttackExecution(1, player2, game.terraNullius().id()),
     );
     game.executeNextTick();
     performAttack(game, player1, player2);
-    expectWarGoldStatIsIncreasedAfterKill(game, player1, player2);
+    expectWarCreditsStatIsIncreasedAfterKill(game, player1, player2);
   });
 
-  test("should NOT increase war gold stat when a inactive player is eliminated", () => {
+  test("should NOT increase war credits stat when a inactive player is eliminated", () => {
     expect(player1.sharesBorderWith(player2)).toBeTruthy();
 
     const attackerStatsBefore = game.stats().stats()[player1.clientID()!];
-    const warGoldBefore =
+    const warCreditsBefore =
       attackerStatsBefore?.credits?.[CREDITS_INDEX_WAR] ?? 0n;
 
     performAttack(game, player1, player2);
 
     const attackerStatsAfter = game.stats().stats()[player1.clientID()!];
-    const warGoldAfter = attackerStatsAfter?.credits?.[CREDITS_INDEX_WAR] ?? 0n;
+    const warCreditsAfter =
+      attackerStatsAfter?.credits?.[CREDITS_INDEX_WAR] ?? 0n;
 
-    expect(warGoldAfter).toBe(warGoldBefore);
+    expect(warCreditsAfter).toBe(warCreditsBefore);
   });
 
-  test("should increase war gold stat when elimination occurs via territory annexation", () => {
-    // Player2 must attack to be considered active (otherwise gold won't transfer)
+  test("should increase war credits stat when elimination occurs via territory annexation", () => {
+    // Player2 must attack to be considered active (otherwise credits won't transfer)
     game.addExecution(
       new AttackExecution(1, player2, game.terraNullius().id()),
     );
@@ -84,11 +85,11 @@ describe("AttackStats", () => {
     }
 
     performAttack(game, player1, player2);
-    expectWarGoldStatIsIncreasedAfterKill(game, player1, player2);
+    expectWarCreditsStatIsIncreasedAfterKill(game, player1, player2);
   });
 });
 
-function expectWarGoldStatIsIncreasedAfterKill(
+function expectWarCreditsStatIsIncreasedAfterKill(
   game: Game,
   attacker: Player,
   defender: Player,
@@ -100,7 +101,7 @@ function expectWarGoldStatIsIncreasedAfterKill(
   const attackerStats = game.stats().stats()[attacker.clientID()!];
   const defenderStats = game.stats().stats()[defender.clientID()!];
 
-  // Verify that all defender's gold was recorded as war gold in the attacker's stats
+  // Verify that all defender's credits were recorded as war credits in the attacker's stats
   expect(attackerStats?.credits?.[CREDITS_INDEX_WAR]).toBeDefined();
   expect(defenderStats?.credits?.[CREDITS_INDEX_WORK]).toBeDefined();
   expect(attackerStats?.credits?.[CREDITS_INDEX_WAR]).toBe(

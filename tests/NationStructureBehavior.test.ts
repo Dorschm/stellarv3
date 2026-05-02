@@ -4,16 +4,16 @@ import { Difficulty, PlayerType } from "../src/core/game/Game";
 import { Cluster } from "../src/core/game/TradeHub";
 import { PseudoRandom } from "../src/core/PseudoRandom";
 
-// ── Fixed trade-gold values matching DefaultConfig ──────────────────────────
+// ── Fixed trade-credits values matching DefaultConfig ──────────────────────────
 
-const TRAIN_GOLD: Record<string, bigint> = {
+const TRAIN_CREDITS: Record<string, bigint> = {
   self: 10_000n,
   team: 25_000n,
   ally: 35_000n,
   other: 25_000n,
 };
 
-const MAX_TRADE_GOLD = Number(TRAIN_GOLD.ally); // denominator
+const MAX_TRADE_CREDITS = Number(TRAIN_CREDITS.ally); // denominator
 
 // ── Factory helpers ──────────────────────────────────────────────────────────
 
@@ -28,7 +28,8 @@ function makeStation(unit: any, cluster: Cluster | null = null): any {
 function makeGame(stations: any[] = []): any {
   return {
     config: () => ({
-      trainGold: (rel: string, _citiesVisited: number) => TRAIN_GOLD[rel] ?? 0n,
+      frigateCredits: (rel: string, _citiesVisited: number) =>
+        TRAIN_CREDITS[rel] ?? 0n,
     }),
     railNetwork: () => ({
       stationManager: () => ({ getAll: () => new Set(stations) }),
@@ -145,10 +146,10 @@ describe("NationStructureBehavior.shouldUseConnectivityScore", () => {
 // ── buildReachableStations ───────────────────────────────────────────────────
 
 describe("NationStructureBehavior.buildReachableStations", () => {
-  const selfWeight = Number(TRAIN_GOLD.self) / MAX_TRADE_GOLD;
-  const allyWeight = Number(TRAIN_GOLD.ally) / MAX_TRADE_GOLD;
-  const teamWeight = Number(TRAIN_GOLD.team) / MAX_TRADE_GOLD;
-  const otherWeight = Number(TRAIN_GOLD.other) / MAX_TRADE_GOLD;
+  const selfWeight = Number(TRAIN_CREDITS.self) / MAX_TRADE_CREDITS;
+  const allyWeight = Number(TRAIN_CREDITS.ally) / MAX_TRADE_CREDITS;
+  const teamWeight = Number(TRAIN_CREDITS.team) / MAX_TRADE_CREDITS;
+  const otherWeight = Number(TRAIN_CREDITS.other) / MAX_TRADE_CREDITS;
 
   it("includes own registered units with self weight and correct cluster", () => {
     const cluster = new Cluster();

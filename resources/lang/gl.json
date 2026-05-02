@@ -459,7 +459,6 @@
     "team": "Equipo",
     "d_troops": "Tropas defensoras",
     "a_troops": "Tropas atacantes",
-    "gold": "Ouro",
     "ports": "Portos",
     "cities": "Cidades",
     "factories": "Fábricas",
@@ -510,7 +509,6 @@
     "default": "Predeterminada"
   },
   "control_panel": {
-    "gold": "Ouro",
     "troops": "Tropas",
     "attack_ratio": "Proporción de ataque"
   },

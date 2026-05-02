@@ -76,7 +76,7 @@ describe("PlayerImpl", () => {
     );
     expect(cityToUpgrade).toBe(false);
   });
-  test("Unit cannot be upgraded when not enough gold", () => {
+  test("Unit cannot be upgraded when not enough credits", () => {
     player.buildUnit(UnitType.Colony, game.ref(0, 0), {});
     player.removeCredits(BigInt(1000000));
     const cityToUpgrade = player.findUnitToUpgrade(

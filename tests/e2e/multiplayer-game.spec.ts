@@ -27,7 +27,7 @@ import {
  */
 test.describe.configure({ mode: "serial" });
 
-// Generous timeout — gold accrual + multiple real-time waits. 420s
+// Generous timeout — credit accrual + multiple real-time waits. 420s
 // accommodates waitForImmunityEnd (up to 60s) + waitForBorderEnemyTile
 // (up to 180s) + attack resolution + margin under headless tick throttling.
 test.setTimeout(420_000);

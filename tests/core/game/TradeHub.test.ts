@@ -32,7 +32,7 @@ describe("TradeHub", () => {
     game = {
       ticks: vi.fn().mockReturnValue(123),
       config: vi.fn().mockReturnValue({
-        trainGold: (rel: string, _tradeStopsVisited: number) =>
+        frigateCredits: (rel: string, _tradeStopsVisited: number) =>
           rel !== "other" ? BigInt(1000) : BigInt(500),
       }),
       addUpdate: vi.fn(),
@@ -89,18 +89,18 @@ describe("TradeHub", () => {
     );
   });
 
-  it("passes tradeStopsVisited to trainGold", () => {
+  it("passes tradeStopsVisited to frigateCredits", () => {
     unit.type.mockReturnValue(UnitType.Colony);
-    const trainGoldSpy = vi.fn().mockReturnValue(500n);
+    const frigateCreditsSpy = vi.fn().mockReturnValue(500n);
     (game.config as any).mockReturnValue({
-      trainGold: trainGoldSpy,
+      frigateCredits: frigateCreditsSpy,
     });
     (trainExecution as any).tradeStopsVisited = vi.fn().mockReturnValue(3);
     const station = new TradeHub(game, unit);
 
     station.onFrigateStop(trainExecution);
 
-    expect(trainGoldSpy).toHaveBeenCalledWith(expect.any(String), 3);
+    expect(frigateCreditsSpy).toHaveBeenCalledWith(expect.any(String), 3);
   });
 
   it("checks trade availability (same owner)", () => {
@@ -163,7 +163,7 @@ describe("TradeHub", () => {
   });
 });
 
-describe("DefaultConfig.trainGold trade stop penalty", () => {
+describe("DefaultConfig.frigateCredits trade stop penalty", () => {
   let config: DefaultConfig;
 
   beforeEach(() => {
@@ -192,18 +192,18 @@ describe("DefaultConfig.trainGold trade stop penalty", () => {
     );
   });
 
-  it("returns full base gold within free window (stops 0-9)", () => {
+  it("returns full base credits within free window (stops 0-9)", () => {
     // first 10 stops (0-9) are free — no penalty
     expect(config.frigateCredits("self", 0)).toBe(10_000n);
     expect(config.frigateCredits("self", 9)).toBe(10_000n);
   });
 
-  it("reduces gold by 5k per stop after the free window", () => {
+  it("reduces credits by 5k per stop after the free window", () => {
     // stop 10: effective = 10-9 = 1 -> 10k - 5k = 5k
     expect(config.frigateCredits("self", 10)).toBe(5_000n);
   });
 
-  it("floors at 5k when penalty exceeds base gold", () => {
+  it("floors at 5k when penalty exceeds base credits", () => {
     // stop 12: effective = 3 -> 10k - 15k -> floor at 5k
     expect(config.frigateCredits("self", 12)).toBe(5_000n);
   });
@@ -213,12 +213,12 @@ describe("DefaultConfig.trainGold trade stop penalty", () => {
     expect(config.frigateCredits("ally", 20)).toBe(5_000n);
   });
 
-  it("ally base gold reduces correctly after free window", () => {
+  it("ally base credits reduces correctly after free window", () => {
     // ally base 35k, stop 11: effective = 2 -> 35k - 10k = 25k
     expect(config.frigateCredits("ally", 11)).toBe(25_000n);
   });
 
-  it("other/team base gold reduces correctly after free window", () => {
+  it("other/team base credits reduces correctly after free window", () => {
     // other base 25k, stop 10: effective = 1 -> 25k - 5k = 20k
     expect(config.frigateCredits("other", 10)).toBe(20_000n);
     expect(config.frigateCredits("team", 10)).toBe(20_000n);

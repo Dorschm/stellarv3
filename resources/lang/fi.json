@@ -496,7 +496,6 @@
     "team": "Joukkue",
     "d_troops": "Puolustavia joukkoja",
     "a_troops": "Hyökkääviä joukkoja",
-    "gold": "Kultaa",
     "ports": "Satamia",
     "cities": "Kaupunkeja",
     "factories": "Tehtaita",
@@ -547,7 +546,6 @@
     "default": "Oletus"
   },
   "control_panel": {
-    "gold": "Kultaa",
     "troops": "Joukkoja",
     "attack_ratio": "Hyökkäyksen osuus"
   },

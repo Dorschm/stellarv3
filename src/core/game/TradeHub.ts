@@ -16,7 +16,7 @@ class TradeStationStopHandler implements FrigateStopHandler {
   onStop(mg: Game, station: TradeHub, trainExecution: FrigateExecution): void {
     const stationOwner = station.unit.owner();
     const trainOwner = trainExecution.owner();
-    const gold = mg
+    const credits = mg
       .config()
       .frigateCredits(
         rel(trainOwner, stationOwner),
@@ -24,11 +24,11 @@ class TradeStationStopHandler implements FrigateStopHandler {
       );
     // Share revenue with the station owner if it's not the current player
     if (trainOwner !== stationOwner) {
-      stationOwner.addCredits(gold, station.tile());
-      mg.stats().frigateExternalTrade(trainOwner, gold);
+      stationOwner.addCredits(credits, station.tile());
+      mg.stats().frigateExternalTrade(trainOwner, credits);
     }
-    trainOwner.addCredits(gold, station.tile());
-    mg.stats().frigateSelfTrade(trainOwner, gold);
+    trainOwner.addCredits(credits, station.tile());
+    mg.stats().frigateSelfTrade(trainOwner, credits);
   }
 }
 

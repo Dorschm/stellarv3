@@ -39,7 +39,7 @@ describe("Alliance Donation", () => {
     }
   });
 
-  test("Can donate gold after alliance formed by reply", () => {
+  test("Can donate credits after alliance formed by reply", () => {
     game.addExecution(new AllianceRequestExecution(player1, player2.id()));
     game.executeNextTick();
 
@@ -52,10 +52,10 @@ describe("Alliance Donation", () => {
     expect(player2.isFriendly(player1)).toBeTruthy();
 
     expect(player1.canDonateCredits(player2)).toBeTruthy();
-    const goldBefore = player2.credits();
+    const creditsBefore = player2.credits();
     const success = player1.donateCredits(player2, 100n);
     expect(success).toBeTruthy();
-    expect(player2.credits()).toBe(goldBefore + 100n);
+    expect(player2.credits()).toBe(creditsBefore + 100n);
   });
 
   test("Can donate population after alliance formed by reply", () => {
@@ -75,7 +75,7 @@ describe("Alliance Donation", () => {
     expect(player2.population()).toBe(populationBefore + 100);
   });
 
-  test("Can donate gold after alliance formed by mutual request", () => {
+  test("Can donate credits after alliance formed by mutual request", () => {
     game.addExecution(new AllianceRequestExecution(player1, player2.id()));
     game.executeNextTick();
 
@@ -88,10 +88,10 @@ describe("Alliance Donation", () => {
     expect(player2.isFriendly(player1)).toBeTruthy();
 
     expect(player1.canDonateCredits(player2)).toBeTruthy();
-    const goldBefore = player2.credits();
+    const creditsBefore = player2.credits();
     const success = player1.donateCredits(player2, 100n);
     expect(success).toBeTruthy();
-    expect(player2.credits()).toBe(goldBefore + 100n);
+    expect(player2.credits()).toBe(creditsBefore + 100n);
   });
 
   test("Can donate population after alliance formed by mutual request", () => {
@@ -115,7 +115,7 @@ describe("Alliance Donation", () => {
     game.addExecution(new AllianceRequestExecution(player1, player2.id()));
     game.executeNextTick();
 
-    const goldBefore = player2.credits();
+    const creditsBefore = player2.credits();
     game.addExecution(new AllianceRequestExecution(player2, player1.id()));
     game.addExecution(new DonateCreditsExecution(player1, player2.id(), 100));
 
@@ -127,6 +127,6 @@ describe("Alliance Donation", () => {
     game.executeNextTick();
 
     // Donation should have succeeded
-    expect(player2.credits()).toBe(goldBefore + 100n);
+    expect(player2.credits()).toBe(creditsBefore + 100n);
   });
 });

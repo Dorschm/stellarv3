@@ -205,7 +205,7 @@ export class AiAttackBehavior {
     borderingFriends: Player[],
     borderingEnemies: Player[],
   ) {
-    // In games with high starting gold, nations will quickly build a lot of cities
+    // In games with high starting credits, nations will quickly build a lot of cities
     // This causes them to expand slowly (cities increase max population), and bots will steal their structures
     // In this case: Attack bots before ratio checks
     if (this.hasNeighboringBotWithStructures()) {

@@ -459,7 +459,6 @@
     "team": "Tím",
     "d_troops": "Brániace vojsko",
     "a_troops": "Útočiace vojsko",
-    "gold": "Kredity",
     "ports": "Vesmírne prístavy",
     "cities": "Kolónie",
     "factories": "Továrne",
@@ -510,7 +509,6 @@
     "default": "Základný"
   },
   "control_panel": {
-    "gold": "Kredity",
     "troops": "Vojská",
     "attack_ratio": "Pomer útoku"
   },

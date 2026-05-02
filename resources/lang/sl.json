@@ -502,7 +502,6 @@
     "alliance_timeout": "Zavezništvo poteče čez",
     "troops": "Enote",
     "a_troops": "Napadalne enote",
-    "gold": "Zlato",
     "ports": "Luka",
     "cities": "Mesta",
     "factories": "Tovarne",
@@ -553,7 +552,6 @@
     "default": "Privzeto"
   },
   "control_panel": {
-    "gold": "Zlato",
     "troops": "Enote",
     "attack_ratio": "Napadalno razmerje"
   },

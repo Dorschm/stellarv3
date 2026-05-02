@@ -71,8 +71,8 @@ describe("Donate population to an ally", () => {
   });
 });
 
-describe("Donate gold to an ally", () => {
-  it("Gold should be successfully donated", async () => {
+describe("Donate credits to an ally", () => {
+  it("Credits should be successfully donated", async () => {
     const game = await setup("ocean_and_land", {
       infiniteCredits: false,
       donateCredits: true,
@@ -123,8 +123,8 @@ describe("Donate gold to an ally", () => {
 
     // Ensure donor can actually donate the requested amount
     donor.addCredits(6000n);
-    const donorGoldBefore = donor.credits();
-    const recipientGoldBefore = recipient.credits();
+    const donorCreditsBefore = donor.credits();
+    const recipientCreditsBefore = recipient.credits();
     game.addExecution(
       new DonateCreditsExecution(donor, recipientInfo.id, 5000),
     );
@@ -133,8 +133,8 @@ describe("Donate gold to an ally", () => {
       game.executeNextTick();
     }
 
-    expect(donor.credits() < donorGoldBefore).toBe(true);
-    expect(recipient.credits() > recipientGoldBefore).toBe(true);
+    expect(donor.credits() < donorCreditsBefore).toBe(true);
+    expect(recipient.credits() > recipientCreditsBefore).toBe(true);
   });
 });
 
@@ -201,8 +201,8 @@ describe("Donate population to a non ally", () => {
   });
 });
 
-describe("Donate Gold to a non ally", () => {
-  it("Gold should not be donated", async () => {
+describe("Donate Credits to a non ally", () => {
+  it("Credits should not be donated", async () => {
     const game = await setup("ocean_and_land", {
       infiniteCredits: false,
       donateCredits: true,
@@ -250,16 +250,16 @@ describe("Donate Gold to a non ally", () => {
       allianceRequest.reject();
     }
 
-    const donorGoldBefore = donor.credits();
-    const recipientGoldBefore = donor.credits();
+    const donorCreditsBefore = donor.credits();
+    const recipientCreditsBefore = donor.credits();
 
     game.addExecution(
       new DonateCreditsExecution(donor, recipientInfo.id, 5000),
     );
     game.executeNextTick();
 
-    // Gold should not be donated since they are not allies
-    expect(donor.credits() >= donorGoldBefore).toBe(true);
-    expect(recipient.credits() >= recipientGoldBefore).toBe(true);
+    // Credits should not be donated since they are not allies
+    expect(donor.credits() >= donorCreditsBefore).toBe(true);
+    expect(recipient.credits() >= recipientCreditsBefore).toBe(true);
   });
 });

@@ -39,7 +39,7 @@ import { useGameTick } from "./useGameTick";
 
 const allianceIcon = assetUrl("images/AllianceIconWhite.svg");
 const chatIcon = assetUrl("images/ChatIconWhite.svg");
-const donateCreditsIcon = assetUrl("images/DonateGoldIconWhite.svg");
+const donateCreditsIcon = assetUrl("images/DonateCreditsIconWhite.svg");
 const donateTroopIcon = assetUrl("images/DonateTroopIconWhite.svg");
 const emojiIcon = assetUrl("images/EmojiIconWhite.svg");
 const shieldIcon = assetUrl("images/ShieldIconWhite.svg");
@@ -454,7 +454,7 @@ export function PlayerPanel(): React.JSX.Element {
                 {renderNumber(other.credits() ?? 0)}
               </span>
               <span className="text-zinc-200 whitespace-nowrap">
-                {translateText("player_panel.gold")}
+                {translateText("player_panel.credits")}
               </span>
             </div>
 
@@ -551,7 +551,7 @@ export function PlayerPanel(): React.JSX.Element {
                 title={translateText("player_panel.send_credits")}
               >
                 <img src={donateCreditsIcon} alt="" className="w-4 h-4" />
-                {translateText("player_panel.gold")}
+                {translateText("player_panel.credits")}
               </button>
             )}
           </div>

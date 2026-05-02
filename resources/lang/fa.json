@@ -566,7 +566,6 @@
     "alliance_timeout": "اتحاد به پایان می رسد در",
     "troops": "نیروها",
     "a_troops": "سربازان مهاجم",
-    "gold": "طلا",
     "ports": "بندرها",
     "cities": "شهرها",
     "factories": "کارخانه ها",
@@ -625,7 +624,6 @@
     "default": "پیش فرض"
   },
   "control_panel": {
-    "gold": "طلا",
     "troops": "نیروها",
     "attack_ratio": "نسبت نیرو ها"
   },

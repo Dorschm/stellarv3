@@ -28,9 +28,9 @@ export class DonateCreditsExecution implements Execution {
   constructor(
     private sender: Player,
     private recipientID: PlayerID,
-    goldNum: number | null,
+    creditsAmount: number | null,
   ) {
-    this.credits = toInt(goldNum ?? 0);
+    this.credits = toInt(creditsAmount ?? 0);
   }
 
   init(mg: Game, ticks: number): void {
@@ -90,7 +90,7 @@ export class DonateCreditsExecution implements Execution {
     this.active = false;
   }
 
-  private getGoldChunkSize(): number {
+  private getCreditsChunkSize(): number {
     const { difficulty } = this.mg.config().gameConfig();
     switch (difficulty) {
       case Difficulty.Easy:
@@ -107,7 +107,7 @@ export class DonateCreditsExecution implements Execution {
   }
 
   private calculateRelationUpdate(creditsSent: Credits, ticks: number): number {
-    const chunkSize = this.getGoldChunkSize();
+    const chunkSize = this.getCreditsChunkSize();
     // For every 5 minutes that pass, multiply the chunk size to scale with game progression
     const chunkSizeMultiplier =
       ticks / (3000 + this.mg.config().numSpawnPhaseTurns());

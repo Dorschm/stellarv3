@@ -44,7 +44,7 @@ describe("Construction economy", () => {
     other = game.player(otherInfo.id);
   });
 
-  test("City charges gold once and no refund thereafter (allow passive income)", () => {
+  test("City charges credits once and no refund thereafter (allow passive income)", () => {
     const target = game.ref(0, 10);
     const cost = game.unitInfo(UnitType.Colony).cost(game, player);
     player.addCredits(cost);
@@ -60,7 +60,7 @@ describe("Construction economy", () => {
     game.executeNextTick();
     const afterBuild = player.credits();
     const ticksAfterBuild = BigInt(game.ticks() - startTick);
-    const passivePerTick = 100n; // DefaultConfig goldAdditionRate for humans
+    const passivePerTick = 100n; // DefaultConfig creditsAdditionRate for humans
     expect(afterBuild < cost).toBe(true); // cost was deducted
     expect(afterBuild <= ticksAfterBuild * passivePerTick).toBe(true); // only passive income allowed
 
@@ -68,11 +68,11 @@ describe("Construction economy", () => {
     const duration = game.unitInfo(UnitType.Colony).constructionDuration ?? 0;
     for (let i = 0; i <= duration + 2; i++) game.executeNextTick();
 
-    const finalGold = player.credits();
+    const finalCredits = player.credits();
     const ticksElapsed = BigInt(game.ticks() - startTick);
     // Ensure no refund equal to cost snuck back in; only passive income accumulated
-    expect(finalGold < cost).toBe(true);
-    expect(finalGold <= ticksElapsed * passivePerTick).toBe(true);
+    expect(finalCredits < cost).toBe(true);
+    expect(finalCredits <= ticksElapsed * passivePerTick).toBe(true);
 
     // Structure exists and is active
     expect(player.units(UnitType.Colony)).toHaveLength(1);

@@ -73,8 +73,8 @@ describe("Hydrogen Bomb and MIRV flows", () => {
     const siloTile = gameWithConstruction.ref(7, 7);
     playerWithConstruction.conquer(siloTile);
 
-    // Capture gold before starting silo construction
-    const goldBeforeSilo = playerWithConstruction.credits();
+    // Capture credits before starting silo construction
+    const creditsBeforeSilo = playerWithConstruction.credits();
     const siloCost = gameWithConstruction
       .unitInfo(UnitType.OrbitalStrikePlatform)
       .cost(gameWithConstruction, playerWithConstruction);
@@ -97,9 +97,9 @@ describe("Hydrogen Bomb and MIRV flows", () => {
     const silo = silos[0];
     expect(silo.isUnderConstruction()).toBe(true);
 
-    // Capture gold after construction started
-    const goldAfterConstruction = playerWithConstruction.credits();
-    expect(goldAfterConstruction).toBeLessThan(goldBeforeSilo + siloCost);
+    // Capture credits after construction started
+    const creditsAfterConstruction = playerWithConstruction.credits();
+    expect(creditsAfterConstruction).toBeLessThan(creditsBeforeSilo + siloCost);
 
     // Attempt to launch NovaBomb while silo is under construction
     const targetTile = gameWithConstruction.ref(10, 10);
@@ -131,8 +131,8 @@ describe("Hydrogen Bomb and MIRV flows", () => {
     expect(hydrogenBombCountAfter).toBe(hydrogenBombCountBefore);
 
     // Assert no refunds during construction
-    const goldDuringConstruction = playerWithConstruction.credits();
-    expect(goldDuringConstruction >= goldAfterConstruction).toBe(true);
+    const creditsDuringConstruction = playerWithConstruction.credits();
+    expect(creditsDuringConstruction >= creditsAfterConstruction).toBe(true);
 
     // Advance ticks to complete construction
     const constructionDuration =
@@ -148,7 +148,7 @@ describe("Hydrogen Bomb and MIRV flows", () => {
     )[0];
     expect(completedSilo.isUnderConstruction()).toBe(false);
 
-    // Now launch should succeed - ensure we have gold and target is conquered
+    // Now launch should succeed - ensure we have credits and target is conquered
     playerWithConstruction.conquer(targetTile);
     const hydrogenBombCost = gameWithConstruction
       .unitInfo(UnitType.NovaBomb)

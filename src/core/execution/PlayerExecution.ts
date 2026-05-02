@@ -423,9 +423,9 @@ export class PlayerExecution implements Execution {
 
   private removeOnDeath(): void {
     // Player (bot, human, nation) has no tiles
-    // Delete any remaining gold, non-nuke units and alliances
-    const gold = this.player.credits();
-    this.player.removeCredits(gold);
+    // Delete any remaining credits, non-nuke units and alliances
+    const credits = this.player.credits();
+    this.player.removeCredits(credits);
 
     this.player.units().forEach((u) => {
       if (

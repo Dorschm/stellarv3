@@ -459,7 +459,6 @@
     "team": "Hold",
     "d_troops": "Forsvarende tropper",
     "a_troops": "Angribende tropper",
-    "gold": "Guld",
     "ports": "Havne",
     "cities": "Byer",
     "factories": "Fabrikker",
@@ -510,7 +509,6 @@
     "default": "Standard"
   },
   "control_panel": {
-    "gold": "Guld",
     "troops": "Tropper",
     "attack_ratio": "Angrebsforhold"
   },

@@ -17,7 +17,7 @@ import { useGameTick } from "./useGameTick";
 const warshipIcon = assetUrl("images/BattleshipIconWhite.svg");
 const cityIcon = assetUrl("images/CityIconWhite.svg");
 const factoryIcon = assetUrl("images/FactoryIconWhite.svg");
-const goldCoinIcon = assetUrl("images/GoldCoinIcon.svg");
+const creditsCoinIcon = assetUrl("images/CreditsCoinIcon.svg");
 const mirvIcon = assetUrl("images/MIRVIcon.svg");
 const missileSiloIcon = assetUrl("images/MissileSiloIconWhite.svg");
 const hydrogenBombIcon = assetUrl("images/MushroomCloudIconWhite.svg");
@@ -269,7 +269,7 @@ export function UnitDisplay(): React.JSX.Element {
             </div>
             <div className="p-2">{translateText(`build_menu.desc.${key}`)}</div>
             <div className="flex items-center justify-center gap-1">
-              <img src={goldCoinIcon} width="13" height="13" alt="" />
+              <img src={creditsCoinIcon} width="13" height="13" alt="" />
               <span className="text-yellow-300">{renderNumber(cost)}</span>
             </div>
           </div>

@@ -71,7 +71,7 @@ describe("Nation MIRV Retaliation", () => {
       game.addExecution(new OrbitalStrikePlatformExecution(nationSilo));
     }
 
-    // Give both players enough gold for MIRVs
+    // Give both players enough credits for MIRVs
     attacker.addCredits(1_000_000_000n);
     nation.addCredits(1_000_000_000n);
     // Verify preconditions
@@ -236,7 +236,7 @@ describe("Nation MIRV Retaliation", () => {
       }
     }
 
-    // Give both players enough gold for MIRVs
+    // Give both players enough credits for MIRVs
     dominantPlayer.addCredits(100_000_000n);
     nation.addCredits(100_000_000n);
 
@@ -406,7 +406,7 @@ describe("Nation MIRV Retaliation", () => {
       }
     }
 
-    // Give all players enough gold for MIRVs
+    // Give all players enough credits for MIRVs
     steamroller.addCredits(100_000_000n);
     secondPlayer.addCredits(100_000_000n);
     nation.addCredits(100_000_000n);
@@ -559,7 +559,7 @@ describe("Nation MIRV Retaliation", () => {
       }
     }
 
-    // Give all players enough gold for MIRVs
+    // Give all players enough credits for MIRVs
     steamroller.addCredits(100_000_000n);
     secondPlayer.addCredits(100_000_000n);
     nation.addCredits(100_000_000n);
@@ -693,7 +693,7 @@ describe("Nation MIRV Retaliation", () => {
       }
     }
 
-    // Give all players enough gold for MIRVs
+    // Give all players enough credits for MIRVs
     teamPlayer1.addCredits(100_000_000n);
     teamPlayer2.addCredits(100_000_000n);
     nation.addCredits(100_000_000n);

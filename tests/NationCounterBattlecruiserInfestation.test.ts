@@ -73,7 +73,7 @@ describe("Counter Battlecruiser Infestation", () => {
     const coastTile = game.ref(6, 4); // Should be land next to ocean
     nation.buildUnit(UnitType.Spaceport, coastTile, {});
 
-    // Give nation plenty of gold to be one of the richest
+    // Give nation plenty of credits to be one of the richest
     nation.addCredits(10_000_000_000n);
 
     // Build 11+ warships for the enemy on ocean tiles (x=8-15)
@@ -243,7 +243,7 @@ describe("Counter Battlecruiser Infestation", () => {
     const coastTile = game.ref(3, 4);
     nation.buildUnit(UnitType.Spaceport, coastTile, {});
 
-    // Give nation plenty of gold to be one of the richest
+    // Give nation plenty of credits to be one of the richest
     nation.addCredits(10_000_000_000n);
 
     // Build warships for enemy team on ocean tiles: total > 15 to trigger team threshold

@@ -375,7 +375,6 @@
     "team": "Equipo",
     "d_troops": "Tropa defensoras",
     "a_troops": "Tropas atacantes",
-    "gold": "Oro",
     "ports": "Puerto",
     "cities": "Ciudades",
     "missile_launchers": "Lanzamisiles",
@@ -393,7 +392,6 @@
   },
   "control_panel": {
     "pop": "Población",
-    "gold": "Oro",
     "troops": "Tropas",
     "workers": "Trabajadores",
     "attack_ratio": "Ratio de ataque"

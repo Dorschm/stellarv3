@@ -941,8 +941,7 @@
     "kick_confirm": "Kick {name}?\n\nThey won't be able to rejoin this game.",
     "arc_up": "Upward arc",
     "arc_down": "Downward arc",
-    "flip_rocket_trajectory": "Flip rocket trajectory",
-    "gold": "Gold"
+    "flip_rocket_trajectory": "Flip rocket trajectory"
   },
   "kick_reason": {
     "duplicate_session": "Kicked from game (you may have been playing on another tab)",
@@ -1052,7 +1051,9 @@
     "delete_unit_title": "Delete Unit",
     "delete_unit_description": "Click to delete the nearest unit",
     "launch_scout": "Launch Scout",
-    "build_on_capital_ship": "Build on Capital Ship"
+    "build_on_capital_ship": "Build on Capital Ship",
+    "move_battlecruiser": "Move Battlecruiser here",
+    "select_battlecruiser": "Select battlecruiser to move"
   },
   "discord_user_header": {
     "avatar_alt": "Avatar"

@@ -6,7 +6,7 @@ import { AttackRatioEvent } from "../InputHandler";
 import { renderNumber, renderPopulation } from "../Utils";
 import { useGameTick } from "./useGameTick";
 
-const goldCoinIcon = assetUrl("images/GoldCoinIcon.svg");
+const creditsCoinIcon = assetUrl("images/CreditsCoinIcon.svg");
 const soldierIcon = assetUrl("images/SoldierIcon.svg");
 const swordIcon = assetUrl("images/SwordIcon.svg");
 
@@ -135,7 +135,7 @@ export function ControlPanel(): React.JSX.Element {
             className="flex items-center justify-center p-1 gap-0.5 border rounded-md border-yellow-400 font-bold text-yellow-400 text-xs w-1/5 shrink-0"
             translate="no"
           >
-            <img src={goldCoinIcon} width="13" height="13" alt="" />
+            <img src={creditsCoinIcon} width="13" height="13" alt="" />
             <span className="px-0.5">{renderNumber(troopData.credits)}</span>
           </div>
           {/* Population bar */}
@@ -309,7 +309,7 @@ export function ControlPanel(): React.JSX.Element {
             translate="no"
           >
             <img
-              src={goldCoinIcon}
+              src={creditsCoinIcon}
               width="13"
               height="13"
               className="shrink-0"

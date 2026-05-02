@@ -51,9 +51,9 @@ type ModifierKey =
   | "isCompact"
   | "isCrowded"
   | "isHardNations"
-  | "startingGold1M"
-  | "startingGold5M"
-  | "startingGold25M"
+  | "startingCredits1M"
+  | "startingCredits5M"
+  | "startingCredits25M"
   | "creditMultiplier"
   | "isAlliancesDisabled"
   | "isSpaceportsDisabled"
@@ -67,9 +67,9 @@ const SPECIAL_MODIFIER_POOL: ModifierKey[] = [
   ...Array<ModifierKey>(5).fill("isCompact"),
   ...Array<ModifierKey>(2).fill("isCrowded"),
   ...Array<ModifierKey>(1).fill("isHardNations"),
-  ...Array<ModifierKey>(3).fill("startingGold1M"),
-  ...Array<ModifierKey>(5).fill("startingGold5M"),
-  ...Array<ModifierKey>(1).fill("startingGold25M"),
+  ...Array<ModifierKey>(3).fill("startingCredits1M"),
+  ...Array<ModifierKey>(5).fill("startingCredits5M"),
+  ...Array<ModifierKey>(1).fill("startingCredits25M"),
   ...Array<ModifierKey>(4).fill("creditMultiplier"),
   ...Array<ModifierKey>(1).fill("isAlliancesDisabled"),
   ...Array<ModifierKey>(1).fill("isSpaceportsDisabled"),
@@ -80,10 +80,10 @@ const SPECIAL_MODIFIER_POOL: ModifierKey[] = [
 
 // Modifiers that cannot be active at the same time.
 const MUTUALLY_EXCLUSIVE_MODIFIERS: [ModifierKey, ModifierKey][] = [
-  ["startingGold5M", "startingGold25M"],
-  ["startingGold5M", "startingGold1M"],
-  ["startingGold25M", "startingGold1M"],
-  ["isHardNations", "startingGold25M"],
+  ["startingCredits5M", "startingCredits25M"],
+  ["startingCredits5M", "startingCredits1M"],
+  ["startingCredits25M", "startingCredits1M"],
+  ["isHardNations", "startingCredits25M"],
   ["isNukesDisabled", "isPointDefenseDisabled"],
 ];
 
@@ -174,7 +174,7 @@ export class MapPlaylist {
       excludedModifiers.push("isHardNations");
     }
     if (playerTeams === HumansVsNations) {
-      excludedModifiers.push("startingGold25M"); // Nations are disabled if that modifier is active (Because of PVP immunity)
+      excludedModifiers.push("startingCredits25M"); // Nations are disabled if that modifier is active (Because of PVP immunity)
       excludedModifiers.push("isPeaceTime"); // Nations don't have PVP immunity
     }
 
@@ -245,7 +245,7 @@ export class MapPlaylist {
 
     const nations: GameConfig["nations"] =
       (mode === GameMode.Team && playerTeams !== HumansVsNations) ||
-      // Nations don't have PVP immunity, so 25M starting gold wouldn't work well with them
+      // Nations don't have PVP immunity, so 25M starting credits wouldn't work well with them
       (startingCredits !== undefined && startingCredits >= 25_000_000)
         ? "disabled"
         : "default";
@@ -487,11 +487,11 @@ export class MapPlaylist {
       isCompact: selected.has("isCompact") || undefined,
       isCrowded: selected.has("isCrowded") || undefined,
       isHardNations: selected.has("isHardNations") || undefined,
-      startingCredits: selected.has("startingGold25M")
+      startingCredits: selected.has("startingCredits25M")
         ? 25_000_000
-        : selected.has("startingGold5M")
+        : selected.has("startingCredits5M")
           ? 5_000_000
-          : selected.has("startingGold1M")
+          : selected.has("startingCredits1M")
             ? 1_000_000
             : undefined,
       creditMultiplier: selected.has("creditMultiplier") ? 2 : undefined,
@@ -564,18 +564,18 @@ export class MapPlaylist {
   /**
    * Centralised spawn-immunity duration logic.
    * - HumansVsNations: always 5s (nations can't benefit from longer PVP immunity)
-   * - 25M starting gold: 2:30min (extra time to compensate for high gold)
-   * - 5M starting gold: SAM build time + 15s (enough to build a SAM)
+   * - 25M starting credits: 2:30min (extra time to compensate for high credits)
+   * - 5M starting credits: SAM build time + 15s (enough to build a SAM)
    * - Default: 5s
    */
   private getSpawnImmunityDuration(
     playerTeams?: TeamCountConfig,
-    startingGold?: number,
+    startingCredits?: number,
   ): number {
     if (playerTeams === HumansVsNations) return 5 * 10;
-    if (startingGold !== undefined && startingGold >= 25_000_000)
+    if (startingCredits !== undefined && startingCredits >= 25_000_000)
       return 150 * 10;
-    if (startingGold) return POINT_DEFENSE_CONSTRUCTION_TICKS + 15 * 10;
+    if (startingCredits) return POINT_DEFENSE_CONSTRUCTION_TICKS + 15 * 10;
     return 5 * 10;
   }
 

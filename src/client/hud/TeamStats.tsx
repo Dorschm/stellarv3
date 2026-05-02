@@ -13,7 +13,7 @@ interface TeamEntry {
   teamName: string;
   isMyTeam: boolean;
   totalScoreStr: string;
-  totalGold: string;
+  totalCredits: string;
   totalMaxPopulation: string;
   totalSAMs: string;
   totalLaunchers: string;
@@ -83,7 +83,7 @@ function TeamStats({ visible }: TeamStatsProps): React.JSX.Element {
         const translated = translateText(key);
         const teamName = translated !== key ? translated : String(rawTeam);
 
-        let totalGold = 0n;
+        let totalCredits = 0n;
         let totalMaxPopulation = 0;
         let totalScoreSort = 0;
         let totalSAMs = 0;
@@ -94,7 +94,7 @@ function TeamStats({ visible }: TeamStatsProps): React.JSX.Element {
         for (const p of teamPlayers) {
           if (p.isAlive()) {
             totalMaxPopulation += gameView.config().maxPopulation(p);
-            totalGold += p.credits();
+            totalCredits += p.credits();
             totalScoreSort += p.numTilesOwned();
             totalLaunchers += p.totalUnitLevels(UnitType.OrbitalStrikePlatform);
             totalSAMs += p.totalUnitLevels(UnitType.PointDefenseArray);
@@ -112,7 +112,7 @@ function TeamStats({ visible }: TeamStatsProps): React.JSX.Element {
           isMyTeam: rawTeam === currentMyTeam,
           totalScoreStr: formatPercentage(totalScorePercent),
           totalScoreSort,
-          totalGold: renderNumber(totalGold),
+          totalCredits: renderNumber(totalCredits),
           totalMaxPopulation: renderPopulation(totalMaxPopulation),
           players: teamPlayers,
           totalLaunchers: renderNumber(totalLaunchers),
@@ -213,7 +213,7 @@ function TeamStats({ visible }: TeamStatsProps): React.JSX.Element {
                 {team.totalScoreStr}
               </div>
               <div className="py-1.5 border-b border-slate-500">
-                {team.totalGold}
+                {team.totalCredits}
               </div>
               <div className="py-1.5 border-b border-slate-500">
                 {team.totalMaxPopulation}

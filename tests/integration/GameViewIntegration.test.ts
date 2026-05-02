@@ -214,9 +214,9 @@ describe("GameView Integration — Player State", () => {
     expect(population).toBeGreaterThan(0);
   });
 
-  test("gold() returns a bigint value", () => {
-    const gold = h.gameView.myPlayer()!.credits();
-    expect(typeof gold).toBe("bigint");
+  test("credits() returns a bigint value", () => {
+    const credits = h.gameView.myPlayer()!.credits();
+    expect(typeof credits).toBe("bigint");
   });
 
   test("isAlive() is true for active player", () => {
