@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { ColorPalette, Pattern } from "../../core/CosmeticSchemas";
 import { RankedType, RunScore } from "../../core/game/Game";
-import { GameUpdateType } from "../../core/game/GameUpdates";
+import { GameUpdateType, WinUpdate } from "../../core/game/GameUpdates";
 import { getUserMe } from "../Api";
 import {
   fetchCosmetics,
@@ -9,6 +9,7 @@ import {
   patternRelationship,
 } from "../Cosmetics";
 import { crazyGamesSDK } from "../CrazyGamesSDK";
+import { SceneTickEvent } from "../InputHandler";
 import { Platform } from "../Platform";
 import { saveRunScore } from "../RunHistory";
 import { pushRunScore } from "../RunHistoryApi";
@@ -27,14 +28,13 @@ interface PatternContent {
 }
 
 export function WinModal(): React.JSX.Element {
-  // Destructure `tick` too so the effect below re-runs on every game
-  // tick. `gameView` is a stable reference (comes from context), so
-  // without `tick` in the dep array the death/win check only fires
-  // once at mount — i.e. before the player has spawned and before any
-  // Win update can possibly have been emitted — and never re-runs
-  // when the player later dies or the game ends. The result: the
-  // "You died" / "You won" / "Other won" modal silently never appears.
-  const { gameView, eventBus, tick } = useGameTick(100);
+  // Death detection re-runs on every tick (no throttle). Cost is
+  // negligible while the modal is hidden — render returns early. The
+  // win path is handled separately via a SceneTickEvent listener
+  // (see effect below) because polling updatesSinceLastTick() under
+  // throttled re-renders silently drops Win updates during catch-up
+  // ticks (the lastUpdate buffer is overwritten before React renders).
+  const { gameView, eventBus, tick } = useGameTick(0);
 
   const [isVisible, setIsVisible] = useState(false);
   const [showButtons, setShowButtons] = useState(false);
@@ -119,7 +119,10 @@ export function WinModal(): React.JSX.Element {
     window.location.href = "/?requeue";
   }, [hide]);
 
-  // Monitor game state for win/death conditions
+  // Death detection: re-runs every tick via the `tick` dep. Once the
+  // local player has spawned and is no longer alive, fire the modal.
+  // `isAlive()` latches false after death, so a single observation is
+  // enough — no race with tick batching.
   useEffect(() => {
     const myPlayer = gameView.myPlayer();
     if (
@@ -133,10 +136,16 @@ export function WinModal(): React.JSX.Element {
       setTitle(translateText("win_modal.died"));
       show();
     }
+  }, [gameView, hasShownDeathModal, show, tick]);
 
-    const updates = gameView.updatesSinceLastTick();
-    const winUpdates = updates !== null ? updates[GameUpdateType.Win] : [];
-    winUpdates.forEach((wu) => {
+  // Win detection: subscribe to SceneTickEvent so every tick's updates
+  // are observed exactly once, even during reconnects or catch-up where
+  // multiple ticks land between React renders. Polling
+  // updatesSinceLastTick() from a throttled re-render dropped these
+  // Win events, leaving the end-game modal silently absent for some
+  // players.
+  const handleWinUpdate = useCallback(
+    (wu: WinUpdate) => {
       if (wu.runScore) {
         setRunScore(wu.runScore);
         // GDD §10 — persist run score to localStorage. Note: when
@@ -216,12 +225,22 @@ export function WinModal(): React.JSX.Element {
         history.replaceState(null, "", `${window.location.pathname}?replay`);
         show();
       }
-    });
-    // Depend on `tick` so this effect re-runs on every throttled game
-    // tick. Without it, the effect only sees the initial mount-time
-    // game state (player alive, no Win update yet) and never notices
-    // the player dying or the game ending.
-  }, [gameView, eventBus, hasShownDeathModal, show, tick]);
+    },
+    [gameView, eventBus, show],
+  );
+
+  useEffect(() => {
+    const handler = (event: SceneTickEvent) => {
+      const winUpdates = event.updates[GameUpdateType.Win];
+      if (winUpdates && winUpdates.length > 0) {
+        winUpdates.forEach(handleWinUpdate);
+      }
+    };
+    eventBus.on(SceneTickEvent, handler);
+    return () => {
+      eventBus.off(SceneTickEvent, handler);
+    };
+  }, [eventBus, handleWinUpdate]);
 
   const renderInnerContent = () => {
     if (isInIframe()) {
@@ -369,36 +388,36 @@ export function WinModal(): React.JSX.Element {
         className="fixed inset-0 z-[9998] pointer-events-auto"
         onClick={(e) => e.stopPropagation()}
       />
-      <div
-        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gray-800/70 p-6 shrink-0 rounded-lg z-[9999] shadow-2xl backdrop-blur-xs text-white w-87.5 max-w-[90%] md:w-175 pointer-events-auto"
-      >
-      <h2 className="m-0 mb-4 text-[26px] text-center text-white">{title}</h2>
-      {renderRunScore()}
-      {renderInnerContent()}
-      <div className={showButtons ? "flex justify-between gap-2.5" : "hidden"}>
-        <button
-          onClick={handleExit}
-          className="flex-1 px-3 py-3 text-base cursor-pointer bg-blue-500/60 text-white border-0 rounded-sm transition-all duration-200 hover:bg-blue-500/80 hover:-translate-y-px active:translate-y-px"
+      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gray-800/70 p-6 shrink-0 rounded-lg z-[9999] shadow-2xl backdrop-blur-xs text-white w-87.5 max-w-[90%] md:w-175 pointer-events-auto">
+        <h2 className="m-0 mb-4 text-[26px] text-center text-white">{title}</h2>
+        {renderRunScore()}
+        {renderInnerContent()}
+        <div
+          className={showButtons ? "flex justify-between gap-2.5" : "hidden"}
         >
-          {translateText("win_modal.exit")}
-        </button>
-        {isRankedGame ? (
           <button
-            onClick={handleRequeue}
-            className="flex-1 px-3 py-3 text-base cursor-pointer bg-purple-600 text-white border-0 rounded-sm transition-all duration-200 hover:bg-purple-500 hover:-translate-y-px active:translate-y-px"
+            onClick={handleExit}
+            className="flex-1 px-3 py-3 text-base cursor-pointer bg-blue-500/60 text-white border-0 rounded-sm transition-all duration-200 hover:bg-blue-500/80 hover:-translate-y-px active:translate-y-px"
           >
-            {translateText("win_modal.requeue")}
+            {translateText("win_modal.exit")}
           </button>
-        ) : null}
-        <button
-          onClick={hide}
-          className="flex-1 px-3 py-3 text-base cursor-pointer bg-blue-500/60 text-white border-0 rounded-sm transition-all duration-200 hover:bg-blue-500/80 hover:-translate-y-px active:translate-y-px"
-        >
-          {gameView?.myPlayer()?.isAlive()
-            ? translateText("win_modal.keep")
-            : translateText("win_modal.spectate")}
-        </button>
-      </div>
+          {isRankedGame ? (
+            <button
+              onClick={handleRequeue}
+              className="flex-1 px-3 py-3 text-base cursor-pointer bg-purple-600 text-white border-0 rounded-sm transition-all duration-200 hover:bg-purple-500 hover:-translate-y-px active:translate-y-px"
+            >
+              {translateText("win_modal.requeue")}
+            </button>
+          ) : null}
+          <button
+            onClick={hide}
+            className="flex-1 px-3 py-3 text-base cursor-pointer bg-blue-500/60 text-white border-0 rounded-sm transition-all duration-200 hover:bg-blue-500/80 hover:-translate-y-px active:translate-y-px"
+          >
+            {gameView?.myPlayer()?.isAlive()
+              ? translateText("win_modal.keep")
+              : translateText("win_modal.spectate")}
+          </button>
+        </div>
       </div>
     </>
   );
