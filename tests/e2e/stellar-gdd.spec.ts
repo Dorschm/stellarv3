@@ -281,6 +281,10 @@ test.describe("Stellar GDD v0.1 feature coverage", () => {
       enemyTile === null,
       "No attackable enemy border tile found — player territory never reached an enemy within 60s on this procedural map",
     );
+    // test.skip() above stops the test at runtime; this redundant guard
+    // narrows `enemyTile` from `EnemyTile | null` to `EnemyTile` so TS
+    // accepts the .tileX/.tileY accesses below without a non-null assert.
+    if (enemyTile === null) return;
 
     const baselineAttacks = await page.evaluate(() => {
       const mp = (

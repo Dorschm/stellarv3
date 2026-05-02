@@ -13,6 +13,7 @@ import {
   Game,
   MessageType,
   Player,
+  PlayerBuildableUnitType,
   PlayerInfo,
   PlayerType,
   Unit,
@@ -106,7 +107,15 @@ describe("Capital Ship — expanded hosting whitelist", () => {
   );
 
   test("config lists every structure type as hostable by default", () => {
-    const hostable = game.config().battlecruiserHostableStructures();
+    // The interface returns `readonly UnitType[]` (broader than the union
+    // accepted by `buildableUnits(units)`), but every member of the list
+    // is guaranteed to be a `PlayerBuildableUnitType`, so a narrowing
+    // cast is safe here. (Source-level narrowing would cascade into
+    // `ConstructionExecution`'s `.includes(constructionType: UnitType)`
+    // call which expects the broader element type.)
+    const hostable = game
+      .config()
+      .battlecruiserHostableStructures() as readonly PlayerBuildableUnitType[];
     expect(hostable).toEqual(
       expect.arrayContaining([
         UnitType.Spaceport,
@@ -381,7 +390,15 @@ describe("Capital Ship — build menu buildability on deep space", () => {
     expect(bc.slottedStructure()).toBeUndefined();
 
     // Baseline: ground mode returns canBuild=false for every hostable type.
-    const hostable = game.config().battlecruiserHostableStructures();
+    // The interface returns `readonly UnitType[]` (broader than the union
+    // accepted by `buildableUnits(units)`), but every member of the list
+    // is guaranteed to be a `PlayerBuildableUnitType`, so a narrowing
+    // cast is safe here. (Source-level narrowing would cascade into
+    // `ConstructionExecution`'s `.includes(constructionType: UnitType)`
+    // call which expects the broader element type.)
+    const hostable = game
+      .config()
+      .battlecruiserHostableStructures() as readonly PlayerBuildableUnitType[];
     const groundBuildables = pilot.buildableUnits(voidTile, hostable);
     for (const bu of groundBuildables) {
       expect(bu.canBuild).toBe(false);
@@ -408,7 +425,15 @@ describe("Capital Ship — build menu buildability on deep space", () => {
     const colony = pilot.buildUnit(UnitType.Colony, voidTile, {});
     bc.setSlottedStructure(colony);
 
-    const hostable = game.config().battlecruiserHostableStructures();
+    // The interface returns `readonly UnitType[]` (broader than the union
+    // accepted by `buildableUnits(units)`), but every member of the list
+    // is guaranteed to be a `PlayerBuildableUnitType`, so a narrowing
+    // cast is safe here. (Source-level narrowing would cascade into
+    // `ConstructionExecution`'s `.includes(constructionType: UnitType)`
+    // call which expects the broader element type.)
+    const hostable = game
+      .config()
+      .battlecruiserHostableStructures() as readonly PlayerBuildableUnitType[];
     const buildables = pilot.buildableUnits(voidTile, hostable, {
       capitalShipMode: true,
     });
