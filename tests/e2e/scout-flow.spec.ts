@@ -320,9 +320,83 @@ test.describe("ScoutSwarm end-to-end terraform", () => {
       `target tile (${targetTile!.x}, ${targetTile!.y}) initial terrain ${TERRAIN_LABEL[initialTerrain]} (expected AsteroidField=2)`,
     ).toBe(TerrainType.AsteroidField);
 
-    // ── Screenshot 1: state BEFORE launch ──────────────────────────────
+    // Compute a screen-space clip rectangle that frames both the
+    // Spaceport and the AsteroidField target tile so the saved
+    // screenshots actually show the action (a single tile flip is ~1px
+    // at full-map zoom; clipping to the action zone makes scouts and
+    // tile color changes legible).
+    const clip = await page.evaluate(
+      ([sx, sy, tx, ty]) => {
+        const canvas = document.querySelector("canvas");
+        if (!canvas) return null;
+        const rect = canvas.getBoundingClientRect();
+        const gv = (
+          window as unknown as {
+            __gameView?: { width(): number; height(): number };
+          }
+        ).__gameView;
+        const cam = (
+          window as unknown as {
+            __threeCamera?: {
+              updateMatrixWorld(force?: boolean): void;
+              matrixWorldInverse: { elements: number[] };
+              projectionMatrix: { elements: number[] };
+            };
+          }
+        ).__threeCamera;
+        if (!gv || !cam) return null;
+        const mapW = gv.width();
+        const mapH = gv.height();
+        cam.updateMatrixWorld(true);
+        const project = (tx: number, ty: number) => {
+          const wx = tx - mapW / 2;
+          const wy = -(ty - mapH / 2);
+          const vm = cam.matrixWorldInverse.elements;
+          const pm = cam.projectionMatrix.elements;
+          const vx = vm[0] * wx + vm[4] * wy + vm[12];
+          const vy = vm[1] * wx + vm[5] * wy + vm[13];
+          const vz = vm[2] * wx + vm[6] * wy + vm[14];
+          const vw = vm[3] * wx + vm[7] * wy + vm[15];
+          const ppx = pm[0] * vx + pm[4] * vy + pm[8] * vz + pm[12] * vw;
+          const ppy = pm[1] * vx + pm[5] * vy + pm[9] * vz + pm[13] * vw;
+          const ppw = pm[3] * vx + pm[7] * vy + pm[11] * vz + pm[15] * vw;
+          return {
+            x: ((ppx / ppw + 1) / 2) * rect.width + rect.left,
+            y: ((1 - ppy / ppw) / 2) * rect.height + rect.top,
+          };
+        };
+        const a = project(sx, sy);
+        const b = project(tx, ty);
+        // Padding around the action zone so flight path + nearby map
+        // structures are visible.
+        const pad = 80;
+        const x0 = Math.max(0, Math.min(a.x, b.x) - pad);
+        const y0 = Math.max(0, Math.min(a.y, b.y) - pad);
+        const x1 = Math.min(rect.right, Math.max(a.x, b.x) + pad);
+        const y1 = Math.min(rect.bottom, Math.max(a.y, b.y) + pad);
+        return {
+          x: Math.floor(x0),
+          y: Math.floor(y0),
+          width: Math.ceil(x1 - x0),
+          height: Math.ceil(y1 - y0),
+        };
+      },
+      [spaceport.x, spaceport.y, targetTile!.x, targetTile!.y] as [
+        number,
+        number,
+        number,
+        number,
+      ],
+    );
+    expect(
+      clip,
+      "could not project Spaceport+target tile to screen for clipped screenshot",
+    ).not.toBeNull();
+
+    // ── Screenshot 1: state BEFORE launch (clipped to action zone) ─────
     await page.screenshot({
       path: "test-results/scout-flow-01-before-scout-launch.png",
+      clip: clip!,
     });
 
     // ── 4. Launch N scouts at the AsteroidField tile ───────────────────
@@ -405,6 +479,7 @@ test.describe("ScoutSwarm end-to-end terraform", () => {
     await page.waitForTimeout(5_000);
     await page.screenshot({
       path: "test-results/scout-flow-02-scouts-in-flight.png",
+      clip: clip!,
     });
 
     // ── 5. Wait for the AsteroidField tile to step toward habitability ─
@@ -441,6 +516,7 @@ test.describe("ScoutSwarm end-to-end terraform", () => {
     await page.waitForTimeout(1_000);
     await page.screenshot({
       path: "test-results/scout-flow-03-after-tile-flip.png",
+      clip: clip!,
     });
 
     console.log(
