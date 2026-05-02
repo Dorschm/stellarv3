@@ -42,7 +42,39 @@ function mountain(mag = 22) {
 }
 
 /**
+ * Deterministic per-planet PRNG. Seeded from the planet's coordinates so
+ * regenerating the map produces the same terrain (the binary outputs are
+ * checked into the repo), but each planet on a map gets its own stream so
+ * shape, banding, and pocket layout vary independently.
+ *
+ * Uses Mulberry32 — small, fast, well-distributed for our use, no deps.
+ */
+function planetSeed(cx, cy) {
+  // Mix the two coordinates with two large odd primes so adjacent planets
+  // produce very different seeds rather than near-identical streams.
+  return (Math.imul(cx | 0, 73856093) ^ Math.imul(cy | 0, 19349663)) >>> 0;
+}
+function makeRng(seed) {
+  let s = seed >>> 0;
+  return () => {
+    s = (s + 0x6d2b79f5) >>> 0;
+    let t = s;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/**
  * Generate a terrain map with planetary zones.
+ *
+ * Each planet is drawn with seeded variance: its effective radius, outline
+ * shape (sinusoidal angular wobble), inner/middle/outer band thresholds,
+ * mountain scatter pattern, and void-pocket layout all derive from a
+ * per-planet PRNG. Players can no longer memorize a single "best spawn
+ * radius" because each map's planets carry distinct shapes and band sizes
+ * while still respecting the canonical inner-plains / middle-highland /
+ * outer-mountain / edge-plains rule.
  *
  * @param {number} width - Map width
  * @param {number} height - Map height
@@ -58,76 +90,142 @@ function generateMap(width, height, nations, planetRadius) {
     data[i] = deepSpace(5);
   }
 
-  // Second pass: draw planetary circles for each nation
+  // Second pass: draw planetary blobs for each nation
   for (const nation of nations) {
     const [cx, cy] = nation.coordinates;
-    const r = planetRadius;
-    // Vary planet radii slightly for visual interest
-    const rSq = r * r;
+    const rng = makeRng(planetSeed(cx, cy));
 
-    const xMin = Math.max(0, Math.floor(cx - r - 1));
-    const xMax = Math.min(width - 1, Math.ceil(cx + r + 1));
-    const yMin = Math.max(0, Math.floor(cy - r - 1));
-    const yMax = Math.min(height - 1, Math.ceil(cy + r + 1));
+    // Effective radius varies ±15% from the map's base radius. The bounding
+    // box still reserves room for the maximum (1.15 + max wobble) so we
+    // never clip a planet whose noise pushes its outline outward.
+    const radiusMul = 0.85 + rng() * 0.3;
+    const baseR = planetRadius * radiusMul;
+
+    // Angular outline noise — two sinusoids of different frequencies
+    // combined to give an organic, non-circular blob. Amplitudes stay below
+    // the safety margin used for the bounding box so the iterated tile
+    // window always covers any extruded section of the planet.
+    const lobesA = 3 + Math.floor(rng() * 4); // 3-6 lobes
+    const lobesB = 5 + Math.floor(rng() * 6); // 5-10 lobes
+    const phaseA = rng() * Math.PI * 2;
+    const phaseB = rng() * Math.PI * 2;
+    const ampA = 0.06 + rng() * 0.07; // 6-13% wobble
+    const ampB = 0.03 + rng() * 0.05; // 3-8% wobble
+    const localR = (angle) =>
+      baseR *
+      (1 +
+        ampA * Math.sin(angle * lobesA + phaseA) +
+        ampB * Math.sin(angle * lobesB + phaseB));
+
+    // Per-planet band thresholds. Each band's edge is a normalized fraction
+    // of `localR(angle)`, so the same rule (plains < highland < mountain)
+    // holds even though the absolute pixel widths differ between planets.
+    const innerEdge = 0.48 + rng() * 0.14; // 0.48-0.62
+    const middleEdge = innerEdge + 0.18 + rng() * 0.1; // ~0.66-0.90
+    const outerEdge = Math.min(0.96, middleEdge + 0.05 + rng() * 0.06);
+
+    // Mountain scatter density and seed for the per-tile hash. Different
+    // density per planet means some have rocky rims and others mostly clear
+    // outer edges.
+    const mountainDensity = 25 + Math.floor(rng() * 35); // 25-59 % of outer ring
+    const mountainSeedA = 1 + Math.floor(rng() * 65535);
+    const mountainSeedB = 1 + Math.floor(rng() * 65535);
+
+    // Bounding-box safety: enclose the maximum possible outline plus 2px of
+    // anti-clipping margin.
+    const maxR = baseR * (1 + ampA + ampB) + 2;
+    const xMin = Math.max(0, Math.floor(cx - maxR));
+    const xMax = Math.min(width - 1, Math.ceil(cx + maxR));
+    const yMin = Math.max(0, Math.floor(cy - maxR));
+    const yMax = Math.min(height - 1, Math.ceil(cy + maxR));
 
     for (let y = yMin; y <= yMax; y++) {
       for (let x = xMin; x <= xMax; x++) {
         const dx = x - cx;
         const dy = y - cy;
-        const distSq = dx * dx + dy * dy;
-        const dist = Math.sqrt(distSq);
-        const normDist = dist / r; // 0 at center, 1 at edge
+        if (dx === 0 && dy === 0) {
+          // Exact center is forced to plains by the safety pass below; skip
+          // expensive band math here.
+          data[y * width + x] = plains(0);
+          continue;
+        }
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const angle = Math.atan2(dy, dx);
+        const r = localR(angle);
+        const normDist = dist / r;
 
         if (normDist <= 1.0) {
           const idx = y * width + x;
 
-          // Terrain variety based on distance from center
-          if (normDist < 0.55) {
-            // Inner zone: plains (magnitude 0-9)
-            const mag = Math.floor(normDist * 16); // 0-8
+          if (normDist < innerEdge) {
+            // Inner zone: plains. Scale magnitude across the inner band so
+            // the edge of plains still rises gently into the highland step.
+            const mag = Math.floor((normDist / innerEdge) * 9);
             data[idx] = plains(Math.min(mag, 9));
-          } else if (normDist < 0.80) {
-            // Middle ring: highland (magnitude 10-19)
-            const mag = 10 + Math.floor((normDist - 0.55) * 36); // 10-18
-            data[idx] = highland(Math.min(mag, 19));
-          } else if (normDist < 0.90) {
-            // Outer ring: scattered mountain peaks (magnitude 20-25)
-            // Use a pseudo-random pattern based on position
-            const hash = ((x * 7919 + y * 6271) % 100);
-            if (hash < 40) {
-              const mag = 20 + Math.floor((normDist - 0.80) * 50);
+          } else if (normDist < middleEdge) {
+            // Middle ring: highland. Magnitude 10-18 spread across the ring.
+            const span = middleEdge - innerEdge;
+            const mag = 10 + Math.floor(((normDist - innerEdge) / span) * 9);
+            data[idx] = highland(Math.min(mag, 18));
+          } else if (normDist < outerEdge) {
+            // Outer ring: mountain peaks scattered over highland filler.
+            // Hash mixes per-tile coordinates with the per-planet seeds so
+            // the speckle pattern differs across planets.
+            const hash =
+              (((x * mountainSeedA + y * mountainSeedB) % 100) + 100) % 100;
+            const span = outerEdge - middleEdge;
+            if (hash < mountainDensity) {
+              const mag = 20 + Math.floor(((normDist - middleEdge) / span) * 5);
               data[idx] = mountain(Math.min(mag, 25));
             } else {
-              const mag = 10 + Math.floor((normDist - 0.80) * 90);
+              const mag = 15 + Math.floor(((normDist - middleEdge) / span) * 4);
               data[idx] = highland(Math.min(mag, 19));
             }
           } else {
-            // Edge: plains transitioning to space
-            const mag = Math.floor((1.0 - normDist) * 90); // 0-9
-            data[idx] = plains(Math.min(Math.max(mag, 0), 9));
+            // Edge: plains feathering back into deep space. Drop to mag 0
+            // exactly at the outline so the SHORELINE pass picks this rim
+            // up cleanly.
+            const span = 1.0 - outerEdge;
+            const mag = Math.max(
+              0,
+              Math.floor((1.0 - normDist) * (9 / Math.max(span, 0.01))),
+            );
+            data[idx] = plains(Math.min(mag, 9));
           }
         }
       }
     }
   }
 
-  // Third pass: add void pockets (lakes) scattered on planets
-  // Small circular voids within planet terrain for gameplay variety
+  // Third pass: add void pockets (lakes) scattered on planets. Per-planet
+  // PRNG drives count, position, and size so two identical-looking planets
+  // will still play differently around their pocket layout.
   for (const nation of nations) {
     const [cx, cy] = nation.coordinates;
+    // Re-derive the planet's PRNG. We deliberately don't reuse the loop
+    // variable from the band pass so future refactors that split the
+    // generator into per-planet chunks stay correct.
+    const rng = makeRng(planetSeed(cx, cy) ^ 0xa5a5a5a5);
     const r = planetRadius;
-    // Place 2-4 small void pockets per planet
-    const numVoids = 2 + ((cx * 31 + cy * 17) % 3);
+    const numVoids = 1 + Math.floor(rng() * 5); // 1-5 pockets
     for (let v = 0; v < numVoids; v++) {
-      // Deterministic "random" positions within the planet
-      const angle = (v * 2.39996 + cx * 0.01 + cy * 0.007); // golden angle offset
-      const voidDist = r * (0.3 + (v * 0.15) % 0.35);
+      const angle = rng() * Math.PI * 2;
+      const voidDist = r * (0.2 + rng() * 0.55); // 20-75% out from center
       const vx = Math.round(cx + Math.cos(angle) * voidDist);
       const vy = Math.round(cy + Math.sin(angle) * voidDist);
-      const voidR = Math.max(3, Math.floor(r * 0.05));
+      // Pocket radius: 3-9% of planet radius, minimum 2 tiles.
+      const voidR = Math.max(2, Math.floor(r * (0.03 + rng() * 0.06)));
 
-      for (let y = Math.max(0, vy - voidR); y <= Math.min(height - 1, vy + voidR); y++) {
-        for (let x = Math.max(0, vx - voidR); x <= Math.min(width - 1, vx + voidR); x++) {
+      for (
+        let y = Math.max(0, vy - voidR);
+        y <= Math.min(height - 1, vy + voidR);
+        y++
+      ) {
+        for (
+          let x = Math.max(0, vx - voidR);
+          x <= Math.min(width - 1, vx + voidR);
+          x++
+        ) {
           const dx = x - vx;
           const dy = y - vy;
           if (dx * dx + dy * dy <= voidR * voidR) {
@@ -309,7 +407,9 @@ const maps = [
 ];
 
 for (const mapDef of maps) {
-  console.log(`\nGenerating ${mapDef.name} (${mapDef.width}x${mapDef.height})...`);
+  console.log(
+    `\nGenerating ${mapDef.name} (${mapDef.width}x${mapDef.height})...`,
+  );
 
   const { data: mapData, numLand: mapLand } = generateMap(
     mapDef.width,
@@ -322,9 +422,15 @@ for (const mapDef of maps) {
   const map4x = downsample(mapData, mapDef.width, mapDef.height, 2);
   const map16x = downsample(mapData, mapDef.width, mapDef.height, 4);
 
-  console.log(`  map.bin: ${mapDef.width}x${mapDef.height} = ${mapData.length} bytes, ${mapLand} land tiles`);
-  console.log(`  map4x.bin: ${map4x.width}x${map4x.height} = ${map4x.data.length} bytes, ${map4x.numLand} land tiles`);
-  console.log(`  map16x.bin: ${map16x.width}x${map16x.height} = ${map16x.data.length} bytes, ${map16x.numLand} land tiles`);
+  console.log(
+    `  map.bin: ${mapDef.width}x${mapDef.height} = ${mapData.length} bytes, ${mapLand} land tiles`,
+  );
+  console.log(
+    `  map4x.bin: ${map4x.width}x${map4x.height} = ${map4x.data.length} bytes, ${map4x.numLand} land tiles`,
+  );
+  console.log(
+    `  map16x.bin: ${map16x.width}x${map16x.height} = ${map16x.data.length} bytes, ${map16x.numLand} land tiles`,
+  );
 
   // Verify nations are on land
   for (const nation of mapDef.nations) {
@@ -333,7 +439,9 @@ for (const mapDef of maps) {
     const b = mapData[idx];
     const onLand = Boolean(b & IS_LAND);
     if (!onLand) {
-      console.error(`  ERROR: ${nation.name} at (${x},${y}) is NOT on land! byte=0x${b.toString(16)}`);
+      console.error(
+        `  ERROR: ${nation.name} at (${x},${y}) is NOT on land! byte=0x${b.toString(16)}`,
+      );
       process.exit(1);
     }
   }
@@ -350,9 +458,21 @@ for (const mapDef of maps) {
   // Write manifest
   const manifest = {
     name: mapDef.name,
-    map: { width: mapDef.width, height: mapDef.height, num_land_tiles: mapLand },
-    map4x: { width: map4x.width, height: map4x.height, num_land_tiles: map4x.numLand },
-    map16x: { width: map16x.width, height: map16x.height, num_land_tiles: map16x.numLand },
+    map: {
+      width: mapDef.width,
+      height: mapDef.height,
+      num_land_tiles: mapLand,
+    },
+    map4x: {
+      width: map4x.width,
+      height: map4x.height,
+      num_land_tiles: map4x.numLand,
+    },
+    map16x: {
+      width: map16x.width,
+      height: map16x.height,
+      num_land_tiles: map16x.numLand,
+    },
     nations: mapDef.nations,
   };
   fs.writeFileSync(
@@ -365,15 +485,50 @@ for (const mapDef of maps) {
   if (!fs.existsSync(thumbPath)) {
     // Create minimal RIFF/WEBP container (just needs to exist and be non-empty)
     const minimalWebp = Buffer.from([
-      0x52, 0x49, 0x46, 0x46, // "RIFF"
-      0x24, 0x00, 0x00, 0x00, // File size - 8
-      0x57, 0x45, 0x42, 0x50, // "WEBP"
-      0x56, 0x50, 0x38, 0x4C, // "VP8L"
-      0x14, 0x00, 0x00, 0x00, // Chunk size
-      0x2F, 0x00, 0x00, 0x00, // Signature
-      0x00, 0x00, 0x00, 0x00, // Width/height
-      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x52,
+      0x49,
+      0x46,
+      0x46, // "RIFF"
+      0x24,
+      0x00,
+      0x00,
+      0x00, // File size - 8
+      0x57,
+      0x45,
+      0x42,
+      0x50, // "WEBP"
+      0x56,
+      0x50,
+      0x38,
+      0x4c, // "VP8L"
+      0x14,
+      0x00,
+      0x00,
+      0x00, // Chunk size
+      0x2f,
+      0x00,
+      0x00,
+      0x00, // Signature
+      0x00,
+      0x00,
+      0x00,
+      0x00, // Width/height
+      0x00,
+      0x00,
+      0x00,
+      0x00,
+      0x00,
+      0x00,
+      0x00,
+      0x00,
+      0x00,
+      0x00,
+      0x00,
+      0x00,
+      0x00,
+      0x00,
+      0x00,
+      0x00,
     ]);
     fs.writeFileSync(thumbPath, minimalWebp);
   }

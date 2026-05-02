@@ -27,6 +27,7 @@ export default [
             "__mocks__/fileMock.js",
             "eslint.config.js",
             "scripts/sync-assets.mjs",
+            "scripts/generate-space-maps.mjs",
           ],
         },
         tsconfigRootDir: import.meta.dirname,

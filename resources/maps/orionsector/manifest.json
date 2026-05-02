@@ -3,96 +3,66 @@
   "map": {
     "width": 3000,
     "height": 2000,
-    "num_land_tiles": 702489
+    "num_land_tiles": 677962
   },
   "map4x": {
     "width": 1500,
     "height": 1000,
-    "num_land_tiles": 176305
+    "num_land_tiles": 170239
   },
   "map16x": {
     "width": 750,
     "height": 500,
-    "num_land_tiles": 43941
+    "num_land_tiles": 42480
   },
   "nations": [
     {
-      "coordinates": [
-        500,
-        400
-      ],
+      "coordinates": [500, 400],
       "flag": "",
       "name": "Betelgeuse Empire"
     },
     {
-      "coordinates": [
-        1500,
-        400
-      ],
+      "coordinates": [1500, 400],
       "flag": "",
       "name": "Rigel Consortium"
     },
     {
-      "coordinates": [
-        2500,
-        400
-      ],
+      "coordinates": [2500, 400],
       "flag": "",
       "name": "Bellatrix Union"
     },
     {
-      "coordinates": [
-        400,
-        1000
-      ],
+      "coordinates": [400, 1000],
       "flag": "",
       "name": "Saiph Republic"
     },
     {
-      "coordinates": [
-        1200,
-        1000
-      ],
+      "coordinates": [1200, 1000],
       "flag": "",
       "name": "Mintaka Alliance"
     },
     {
-      "coordinates": [
-        2000,
-        1000
-      ],
+      "coordinates": [2000, 1000],
       "flag": "",
       "name": "Alnilam Federation"
     },
     {
-      "coordinates": [
-        2700,
-        1000
-      ],
+      "coordinates": [2700, 1000],
       "flag": "",
       "name": "Alnitak Dominion"
     },
     {
-      "coordinates": [
-        700,
-        1600
-      ],
+      "coordinates": [700, 1600],
       "flag": "",
       "name": "Meissa Collective"
     },
     {
-      "coordinates": [
-        1700,
-        1600
-      ],
+      "coordinates": [1700, 1600],
       "flag": "",
       "name": "Hatsya Station"
     },
     {
-      "coordinates": [
-        2500,
-        1600
-      ],
+      "coordinates": [2500, 1600],
       "flag": "",
       "name": "Tabit Outpost"
     }
