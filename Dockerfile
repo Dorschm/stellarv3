@@ -70,8 +70,8 @@ COPY --from=build /usr/src/app/static ./static
 COPY resources ./resources
 
 # Strip map binary data from the image (~12 MB), but keep manifest.json
-# files. The server reads num_land_tiles from each manifest in
-# MapLandTiles.ts when sizing newly-created games; without the manifests
+# files. The server reads num_sector_tiles from each manifest in
+# MapSectorTiles.ts when sizing newly-created games; without the manifests
 # the catch falls back to a 1_000_000 default which both spams the
 # error log and produces incorrect game balancing for non-procedural
 # maps. Manifests total ~12 KB.

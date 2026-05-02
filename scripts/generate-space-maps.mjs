@@ -8,9 +8,9 @@
  *   Bits 0-4     = magnitude (0-31)
  *
  * TerrainType classification (from GameMap.terrainType):
- *   Plains:   land + magnitude 0-9
- *   Highland: land + magnitude 10-19
- *   Mountain: land + magnitude 20-31
+ *   Plains:   sector tile + magnitude 0-9
+ *   Highland: sector tile + magnitude 10-19
+ *   Mountain: sector tile + magnitude 20-31
  *   Ocean:    water + ocean bit set
  *   Lake:     water + ocean bit clear
  */
@@ -83,7 +83,7 @@ function makeRng(seed) {
  */
 function generateMap(width, height, nations, planetRadius) {
   const data = new Uint8Array(width * height);
-  let numLand = 0;
+  let numSectorTiles = 0;
 
   // First pass: fill everything with deep space
   for (let i = 0; i < data.length; i++) {
@@ -95,10 +95,14 @@ function generateMap(width, height, nations, planetRadius) {
     const [cx, cy] = nation.coordinates;
     const rng = makeRng(planetSeed(cx, cy));
 
-    // Effective radius varies ±15% from the map's base radius. The bounding
-    // box still reserves room for the maximum (1.15 + max wobble) so we
-    // never clip a planet whose noise pushes its outline outward.
-    const radiusMul = 0.85 + rng() * 0.3;
+    // Effective radius is at least 100% of the map's base radius and can
+    // grow up to 150%. Floor-at-1.0 means no planet ever ends up smaller
+    // than the deterministic baseline, but each planet rolls its own
+    // multiplier so a map mixes baseline-sized planets with notably
+    // larger ones. The bounding-box computation below derives `maxR`
+    // from this `baseR` directly, so the safety margin tracks
+    // automatically — no manual update needed when this range moves.
+    const radiusMul = 1.0 + rng() * 0.5;
     const baseR = planetRadius * radiusMul;
 
     // Angular outline noise — two sinusoids of different frequencies
@@ -230,7 +234,7 @@ function generateMap(width, height, nations, planetRadius) {
           const dy = y - vy;
           if (dx * dx + dy * dy <= voidR * voidR) {
             const idx = y * width + x;
-            // Only place void if currently land
+            // Only place void if currently a sector tile
             if (data[idx] & IS_LAND) {
               data[idx] = 0x00; // Lake/Void: water, no ocean bit, magnitude 0
             }
@@ -246,7 +250,7 @@ function generateMap(width, height, nations, planetRadius) {
       const idx = y * width + x;
       const isLand = Boolean(data[idx] & IS_LAND);
 
-      // Check 4-connected neighbors for land/water boundary
+      // Check 4-connected neighbors for sector/deep-space boundary
       const neighbors = [
         y > 0 ? data[(y - 1) * width + x] : null,
         y < height - 1 ? data[(y + 1) * width + x] : null,
@@ -270,7 +274,7 @@ function generateMap(width, height, nations, planetRadius) {
     }
   }
 
-  // Ensure all nation coordinates are on land (plains at center)
+  // Ensure all nation coordinates are on a sector tile (plains at center)
   for (const nation of nations) {
     const [x, y] = nation.coordinates;
     if (x >= 0 && x < width && y >= 0 && y < height) {
@@ -282,13 +286,13 @@ function generateMap(width, height, nations, planetRadius) {
     }
   }
 
-  // Count land tiles
-  numLand = 0;
+  // Count sector tiles
+  numSectorTiles = 0;
   for (let i = 0; i < data.length; i++) {
-    if (data[i] & IS_LAND) numLand++;
+    if (data[i] & IS_LAND) numSectorTiles++;
   }
 
-  return { data, numLand };
+  return { data, numSectorTiles };
 }
 
 /**
@@ -299,11 +303,11 @@ function downsample(srcData, srcWidth, srcHeight, factor) {
   const dstWidth = Math.floor(srcWidth / factor);
   const dstHeight = Math.floor(srcHeight / factor);
   const dst = new Uint8Array(dstWidth * dstHeight);
-  let numLand = 0;
+  let numSectorTiles = 0;
 
   for (let dy = 0; dy < dstHeight; dy++) {
     for (let dx = 0; dx < dstWidth; dx++) {
-      let landCount = 0;
+      let sectorCount = 0;
       let oceanCount = 0;
       let lakeCount = 0;
       let totalMag = 0;
@@ -321,7 +325,7 @@ function downsample(srcData, srcWidth, srcHeight, factor) {
           const isShoreline = Boolean(b & SHORELINE);
           const mag = b & 0x1f;
 
-          if (isLand) landCount++;
+          if (isLand) sectorCount++;
           else if (isOcean) oceanCount++;
           else lakeCount++;
 
@@ -332,10 +336,10 @@ function downsample(srcData, srcWidth, srcHeight, factor) {
 
       const avgMag = Math.round(totalMag / total);
 
-      if (landCount >= total / 2) {
+      if (sectorCount >= total / 2) {
         // Majority land
         dst[dy * dstWidth + dx] = IS_LAND | (avgMag & 0x1f);
-        numLand++;
+        numSectorTiles++;
       } else if (lakeCount > oceanCount) {
         dst[dy * dstWidth + dx] = avgMag & 0x1f; // Lake
       } else {
@@ -348,7 +352,7 @@ function downsample(srcData, srcWidth, srcHeight, factor) {
     }
   }
 
-  return { data: dst, width: dstWidth, height: dstHeight, numLand };
+  return { data: dst, width: dstWidth, height: dstHeight, numSectorTiles };
 }
 
 // Map definitions
@@ -411,7 +415,7 @@ for (const mapDef of maps) {
     `\nGenerating ${mapDef.name} (${mapDef.width}x${mapDef.height})...`,
   );
 
-  const { data: mapData, numLand: mapLand } = generateMap(
+  const { data: mapData, numSectorTiles: mapSectorTiles } = generateMap(
     mapDef.width,
     mapDef.height,
     mapDef.nations,
@@ -423,16 +427,16 @@ for (const mapDef of maps) {
   const map16x = downsample(mapData, mapDef.width, mapDef.height, 4);
 
   console.log(
-    `  map.bin: ${mapDef.width}x${mapDef.height} = ${mapData.length} bytes, ${mapLand} land tiles`,
+    `  map.bin: ${mapDef.width}x${mapDef.height} = ${mapData.length} bytes, ${mapSectorTiles} sector tiles`,
   );
   console.log(
-    `  map4x.bin: ${map4x.width}x${map4x.height} = ${map4x.data.length} bytes, ${map4x.numLand} land tiles`,
+    `  map4x.bin: ${map4x.width}x${map4x.height} = ${map4x.data.length} bytes, ${map4x.numSectorTiles} sector tiles`,
   );
   console.log(
-    `  map16x.bin: ${map16x.width}x${map16x.height} = ${map16x.data.length} bytes, ${map16x.numLand} land tiles`,
+    `  map16x.bin: ${map16x.width}x${map16x.height} = ${map16x.data.length} bytes, ${map16x.numSectorTiles} sector tiles`,
   );
 
-  // Verify nations are on land
+  // Verify nations are on a sector tile
   for (const nation of mapDef.nations) {
     const [x, y] = nation.coordinates;
     const idx = y * mapDef.width + x;
@@ -440,12 +444,14 @@ for (const mapDef of maps) {
     const onLand = Boolean(b & IS_LAND);
     if (!onLand) {
       console.error(
-        `  ERROR: ${nation.name} at (${x},${y}) is NOT on land! byte=0x${b.toString(16)}`,
+        `  ERROR: ${nation.name} at (${x},${y}) is NOT on a sector tile! byte=0x${b.toString(16)}`,
       );
       process.exit(1);
     }
   }
-  console.log(`  All ${mapDef.nations.length} nations verified on land.`);
+  console.log(
+    `  All ${mapDef.nations.length} nations verified on sector tiles.`,
+  );
 
   // Write files
   const mapDir = path.join(MAPS_DIR, mapDef.dir);
@@ -461,17 +467,17 @@ for (const mapDef of maps) {
     map: {
       width: mapDef.width,
       height: mapDef.height,
-      num_land_tiles: mapLand,
+      num_sector_tiles: mapSectorTiles,
     },
     map4x: {
       width: map4x.width,
       height: map4x.height,
-      num_land_tiles: map4x.numLand,
+      num_sector_tiles: map4x.numSectorTiles,
     },
     map16x: {
       width: map16x.width,
       height: map16x.height,
-      num_land_tiles: map16x.numLand,
+      num_sector_tiles: map16x.numSectorTiles,
     },
     nations: mapDef.nations,
   };

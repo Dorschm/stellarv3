@@ -5,7 +5,7 @@ import { logger } from "./Logger";
 
 let mapLoader: GameMapLoader | null = null;
 
-const log = logger.child({ component: "MapLandTiles" });
+const log = logger.child({ component: "MapSectorTiles" });
 
 // Gets or creates the map loader, uses FetchGameMapLoader pointing to the master server.
 function getMapLoader(): GameMapLoader {
@@ -13,14 +13,15 @@ function getMapLoader(): GameMapLoader {
   return mapLoader;
 }
 
-// Gets the number of land tiles for a map
+// Gets the number of sector tiles for a map (i.e. tiles that are part of any
+// habitable Sector — not DeepSpace — see CLAUDE.md theme reference).
 // FetchGameMapLoader already caches maps, so no need for additional caching here.
-export async function getMapLandTiles(map: GameMapType): Promise<number> {
+export async function getMapSectorTiles(map: GameMapType): Promise<number> {
   try {
     const loader = getMapLoader();
     const mapData = loader.getMapData(map);
     const manifest = await mapData.manifest();
-    return manifest.map.num_land_tiles;
+    return manifest.map.num_sector_tiles;
   } catch (error) {
     log.error(`Failed to load manifest for ${map}: ${error}`, { map });
     return 1_000_000; // Default fallback

@@ -121,17 +121,17 @@ export function generateProceduralMapData(
     map: {
       width,
       height,
-      num_land_tiles: result.numSectorTiles,
+      num_sector_tiles: result.numSectorTiles,
     },
     map4x: {
       width: w4x,
       height: h4x,
-      num_land_tiles: countSectorTiles(result4x),
+      num_sector_tiles: countSectorTiles(result4x),
     },
     map16x: {
       width: w16x,
       height: h16x,
-      num_land_tiles: countSectorTiles(result16x),
+      num_sector_tiles: countSectorTiles(result16x),
     },
     nations,
   };

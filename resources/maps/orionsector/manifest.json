@@ -3,17 +3,17 @@
   "map": {
     "width": 3000,
     "height": 2000,
-    "num_land_tiles": 677962
+    "num_sector_tiles": 1052696
   },
   "map4x": {
     "width": 1500,
     "height": 1000,
-    "num_land_tiles": 170239
+    "num_sector_tiles": 264062
   },
   "map16x": {
     "width": 750,
     "height": 500,
-    "num_land_tiles": 42480
+    "num_sector_tiles": 65933
   },
   "nations": [
     {

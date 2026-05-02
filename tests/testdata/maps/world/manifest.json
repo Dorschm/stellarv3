@@ -1,17 +1,17 @@
 {
   "map": {
     "height": 1000,
-    "num_land_tiles": 651761,
+    "num_sector_tiles": 651761,
     "width": 2000
   },
   "map16x": {
     "height": 250,
-    "num_land_tiles": 37185,
+    "num_sector_tiles": 37185,
     "width": 500
   },
   "map4x": {
     "height": 500,
-    "num_land_tiles": 157860,
+    "num_sector_tiles": 157860,
     "width": 1000
   },
   "name": "World",

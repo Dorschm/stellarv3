@@ -14,7 +14,7 @@ const loadedMaps = new Map<string, TerrainMapData>();
 export interface MapMetadata {
   width: number;
   height: number;
-  num_land_tiles: number;
+  num_sector_tiles: number;
 }
 
 export interface MapManifest {
@@ -104,6 +104,6 @@ export async function genTerrainFromBin(
     mapData.width,
     mapData.height,
     data,
-    mapData.num_land_tiles,
+    mapData.num_sector_tiles,
   );
 }

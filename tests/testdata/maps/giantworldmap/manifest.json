@@ -1,17 +1,17 @@
 {
   "map": {
     "height": 1948,
-    "num_land_tiles": 2317767,
+    "num_sector_tiles": 2317767,
     "width": 4108
   },
   "map16x": {
     "height": 487,
-    "num_land_tiles": 128871,
+    "num_sector_tiles": 128871,
     "width": 1027
   },
   "map4x": {
     "height": 974,
-    "num_land_tiles": 556211,
+    "num_sector_tiles": 556211,
     "width": 2054
   },
   "name": "Giant_World_Map",

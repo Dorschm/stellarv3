@@ -17,7 +17,7 @@ import {
 import { PseudoRandom } from "../core/PseudoRandom";
 import { GameConfig, PublicGameType, TeamCountConfig } from "../core/Schemas";
 import { logger } from "./Logger";
-import { getMapLandTiles } from "./MapLandTiles";
+import { getMapSectorTiles } from "./MapSectorTiles";
 
 const log = logger.child({});
 const ARCADE_MAPS = new Set<GameMapType>();
@@ -510,8 +510,8 @@ export class MapPlaylist {
     map: GameMapType,
     playerTeams: TeamCountConfig,
   ): Promise<boolean> {
-    const landTiles = await getMapLandTiles(map);
-    const [l, , s] = this.calculateMapPlayerCounts(landTiles);
+    const sectorTiles = await getMapSectorTiles(map);
+    const [l, , s] = this.calculateMapPlayerCounts(sectorTiles);
     // Worst case: smallest tier with team mode 1.5x multiplier, capped at l
     let p = Math.min(Math.ceil(s * 1.5), l);
     // Apply compact 75% player reduction, then cap for performance
@@ -583,8 +583,8 @@ export class MapPlaylist {
     map: GameMapType,
     isCompact: boolean,
   ): Promise<number | undefined> {
-    const landTiles = await getMapLandTiles(map);
-    const [rawFirstPlayerCount] = this.calculateMapPlayerCounts(landTiles);
+    const sectorTiles = await getMapSectorTiles(map);
+    const [rawFirstPlayerCount] = this.calculateMapPlayerCounts(sectorTiles);
     const firstPlayerCount = Math.min(rawFirstPlayerCount, MAX_PLAYER_COUNT);
     if (firstPlayerCount <= 60) {
       return isCompact ? 60 : MAX_PLAYER_COUNT;
@@ -598,8 +598,8 @@ export class MapPlaylist {
     numPlayerTeams: TeamCountConfig | undefined,
     isCompactMap?: boolean,
   ): Promise<number> {
-    const landTiles = await getMapLandTiles(map);
-    const [l, m, s] = this.calculateMapPlayerCounts(landTiles);
+    const sectorTiles = await getMapSectorTiles(map);
+    const [l, m, s] = this.calculateMapPlayerCounts(sectorTiles);
     const r = Math.random();
     const base = r < 0.3 ? l : r < 0.6 ? m : s;
     let p = Math.min(mode === GameMode.Team ? Math.ceil(base * 1.5) : base, l);
@@ -646,11 +646,11 @@ export class MapPlaylist {
    * All values are rounded to the nearest 5
    */
   private calculateMapPlayerCounts(
-    landTiles: number,
+    sectorTiles: number,
   ): [number, number, number] {
     const roundToNearest5 = (n: number) => Math.round(n / 5) * 5;
 
-    const base = Math.max(roundToNearest5((landTiles / 1_000_000) * 50), 5);
+    const base = Math.max(roundToNearest5((sectorTiles / 1_000_000) * 50), 5);
     return [base, roundToNearest5(base * 0.75), roundToNearest5(base * 0.5)];
   }
 }

@@ -51,7 +51,7 @@ describe("ProceduralMapGen", () => {
     expect(sectorCount).toBeGreaterThan(0);
 
     const manifest = await mapData.manifest();
-    expect(manifest.map.num_land_tiles).toBe(sectorCount);
+    expect(manifest.map.num_sector_tiles).toBe(sectorCount);
 
     // Should have a mix of terrain types
     expect(openSpace).toBeGreaterThan(0);
@@ -144,8 +144,8 @@ describe("ProceduralMapGen", () => {
     expect(map16x.length).toBe(25 * 25);
 
     // Downsampled maps should have some sector tiles
-    expect(manifest.map4x.num_land_tiles).toBeGreaterThan(0);
-    expect(manifest.map16x.num_land_tiles).toBeGreaterThan(0);
+    expect(manifest.map4x.num_sector_tiles).toBeGreaterThan(0);
+    expect(manifest.map16x.num_sector_tiles).toBeGreaterThan(0);
   });
 
   it("works with SectorMap (BFS integration)", async () => {
@@ -167,7 +167,7 @@ describe("ProceduralMapGen", () => {
       manifest.map.width,
       manifest.map.height,
       terrain,
-      manifest.map.num_land_tiles,
+      manifest.map.num_sector_tiles,
     );
 
     const seeds = manifest.nations.map((n) => ({

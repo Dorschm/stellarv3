@@ -52,10 +52,10 @@ const DEBRIS = 0;
 
 /**
  * Builds a `GameMapImpl` from a flat row-major terrain byte array. The
- * `num_land_tiles` field is computed by counting tiles with the SECTOR_BIT
- * set, matching how `genTerrainFromBin` populates real maps. (The JSON
- * manifest key `num_land_tiles` is preserved as-is — it is part of the
- * binary map data format contract, not a code-identifier rename target.)
+ * `num_sector_tiles` field is computed by counting tiles with the SECTOR_BIT
+ * set, matching how `genTerrainFromBin` populates real maps. (Both the
+ * code identifier and the JSON manifest key were renamed from "land" to
+ * "sector" to match the rest of the space-themed codebase.)
  */
 function buildMap(
   width: number,
