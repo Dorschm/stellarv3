@@ -15,6 +15,7 @@ import {
 } from "../InputHandler";
 import {
   BuildUnitIntentEvent,
+  MoveBattlecruiserIntentEvent,
   SendAttackIntentEvent,
   SendJumpGateTeleportIntentEvent,
   SendShuttleAttackIntentEvent,
@@ -71,6 +72,13 @@ export function RadialMenu(): React.JSX.Element | null {
     sourceGateTile: number;
     destinations: Array<{ tile: number; label: string }>;
   } | null>(null);
+  // State for the battlecruiser picker shown when the player owns multiple
+  // cruisers and clicks "Move Battlecruiser here" — they pick which cruiser
+  // should head to the destination tile.
+  const [cruiserPicker, setCruiserPicker] = useState<{
+    destinationTile: number;
+    cruisers: Array<{ unitId: number; label: string }>;
+  } | null>(null);
 
   const hide = useCallback(() => {
     setIsVisible(false);
@@ -78,6 +86,7 @@ export function RadialMenu(): React.JSX.Element | null {
     setTile(null);
     setActions(null);
     setGatePicker(null);
+    setCruiserPicker(null);
   }, []);
 
   // -- Listen for context-menu clicks from SpaceMapPlane ---------------------
@@ -374,6 +383,96 @@ export function RadialMenu(): React.JSX.Element | null {
     }
   };
 
+  // Move Battlecruiser — collect the local player's active battlecruisers so
+  // the entry can be shown when they own at least one. The menu offers a
+  // single click to redirect the cruiser when there's exactly one, otherwise
+  // a sub-picker (mirroring the Jump Gate destination chooser) lets the
+  // player pick which cruiser to move.
+  const myCruisers: UnitView[] = [];
+  if (myPlayer) {
+    for (const c of myPlayer.units(UnitType.Battlecruiser)) {
+      if (c.isActive()) myCruisers.push(c);
+    }
+  }
+  const canMoveCruiser = myCruisers.length > 0 && !gameView.inSpawnPhase();
+  const moveCruiserTooltip =
+    myCruisers.length === 0
+      ? "Build a Battlecruiser first (hotkey 7)"
+      : myCruisers.length === 1
+        ? undefined
+        : `Pick from ${myCruisers.length} battlecruisers`;
+  const handleMoveCruiser = () => {
+    if (!canMoveCruiser || tile === null) return;
+    if (myCruisers.length === 1) {
+      eventBus.emit(new MoveBattlecruiserIntentEvent(myCruisers[0].id(), tile));
+      hide();
+      return;
+    }
+    setCruiserPicker({
+      destinationTile: tile,
+      cruisers: myCruisers.map((c) => ({
+        unitId: c.id(),
+        label: `Battlecruiser at (${gameView.x(c.tile())}, ${gameView.y(
+          c.tile(),
+        )})`,
+      })),
+    });
+  };
+
+  // -- Battlecruiser picker --------------------------------------------------
+  if (cruiserPicker !== null) {
+    return (
+      <div
+        className="fixed inset-0 z-[9500] pointer-events-auto"
+        onClick={hide}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          hide();
+        }}
+        style={{ background: "rgba(0,0,0,0.18)" }}
+      >
+        <div
+          className="absolute flex flex-col gap-2 p-3 rounded-xl bg-zinc-900/95 ring-1 ring-white/10 shadow-2xl shadow-black/50 min-w-48"
+          style={{
+            left: anchor!.x,
+            top: anchor!.y,
+            transform: "translate(-50%, -50%)",
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="text-xs font-semibold text-zinc-400 uppercase tracking-wider pb-1 border-b border-white/10">
+            {translateText("radial_menu.select_battlecruiser") ||
+              "Select battlecruiser to move"}
+          </div>
+          {cruiserPicker.cruisers.map((c) => (
+            <button
+              key={c.unitId}
+              className="flex items-center gap-2 px-3 py-2 rounded text-white text-sm bg-zinc-800 hover:bg-zinc-700 cursor-pointer transition-colors"
+              onClick={() => {
+                eventBus.emit(
+                  new MoveBattlecruiserIntentEvent(
+                    c.unitId,
+                    cruiserPicker.destinationTile,
+                  ),
+                );
+                hide();
+              }}
+            >
+              <img src={battlecruiserIcon} alt="" className="w-5 h-5" />
+              <span>{c.label}</span>
+            </button>
+          ))}
+          <button
+            className="flex items-center gap-2 px-3 py-2 rounded text-zinc-400 text-sm bg-zinc-800/50 hover:bg-zinc-700/50 cursor-pointer transition-colors mt-1"
+            onClick={hide}
+          >
+            <span>Cancel</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // -- Destination gate picker -----------------------------------------------
   if (gatePicker !== null) {
     return (
@@ -538,6 +637,26 @@ export function RadialMenu(): React.JSX.Element | null {
           onClick={handleJumpGate}
           tooltip={jumpGateTooltip}
         />
+
+        {/*
+         * Battlecruiser direct-control. Shown whenever the local player owns
+         * at least one active cruiser so the entry is discoverable; sends a
+         * MoveBattlecruiserIntent which the server resolves into a new
+         * patrol target. With multiple cruisers the click opens a sub-picker
+         * so the player chooses which cruiser to redirect.
+         */}
+        {myCruisers.length > 0 && (
+          <RadialButton
+            icon={battlecruiserIcon}
+            label={
+              translateText("radial_menu.move_battlecruiser") ||
+              "Move Battlecruiser here"
+            }
+            disabled={!canMoveCruiser}
+            onClick={handleMoveCruiser}
+            tooltip={moveCruiserTooltip}
+          />
+        )}
       </div>
     </div>
   );
