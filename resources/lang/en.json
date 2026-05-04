@@ -902,7 +902,9 @@
     "jump_gate_failed": "Jump Gate failed: {reason}",
     "scout_swarm_failed": "Scout Swarm failed: {reason}",
     "scout_swarm_progress": "Scout arrived at ({x}, {y}) — terraform progress {progress}/{threshold}",
-    "scout_swarm_terraformed": "Scout Swarm terraformed ({x}, {y}): {before} → {after}"
+    "scout_swarm_terraformed": "Scout Swarm terraformed ({x}, {y}): {before} → {after}",
+    "emoji_sent": "You sent {emoji} to {recipient}",
+    "emoji_received": "{sender} sent you {emoji}"
   },
   "player_type": {
     "player": "Player",
