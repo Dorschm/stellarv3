@@ -2,6 +2,7 @@ import { Stars } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import React, { Suspense } from "react";
 import { CameraController } from "./CameraController";
+import { EmojiRenderer } from "./EmojiRenderer";
 import { FxRenderer } from "./FxRenderer";
 import { JumpGateHighlightRenderer } from "./JumpGateHighlightRenderer";
 import { PlanetLandmarks } from "./PlanetLandmarks";
@@ -100,6 +101,7 @@ export function SpaceScene(): React.JSX.Element {
         <WarpLaneRenderer />
         <UnitRenderer />
         <FxRenderer />
+        <EmojiRenderer />
         <JumpGateHighlightRenderer />
       </Suspense>
 
