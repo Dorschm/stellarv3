@@ -153,6 +153,37 @@ export interface Config {
    * driven.
    */
   shipHostedFoundryCreditsPerTick(): number;
+  /**
+   * Radius (in tiles) of the heal aura emitted by a Battlecruiser-hosted
+   * Foundry. Per locked decision (plans/here-is-a-list-twinkly-dragonfly.md
+   * §5.4) this is kept tight enough that the cap ship must actively
+   * shepherd friendly ships to keep them topped up — long-range fleet
+   * regen would trivialise attrition.
+   */
+  foundryHealRadius(): number;
+  /**
+   * Per-tick HP restored to each friendly ship inside `foundryHealRadius`
+   * of a Battlecruiser-hosted Foundry. Mirrors the Spaceport-heals-cruiser
+   * cadence (+1 HP/tick) so the two auras stack into a noticeable but not
+   * overpowering regen.
+   */
+  foundryHealPerTick(): number;
+  /**
+   * Whether a Battlecruiser with NO slotted structure should fire its
+   * legacy plasma-bolt anti-ship weapon and intercept LRW shots on its
+   * own. Per locked decision (plans/here-is-a-list-twinkly-dragonfly.md
+   * §5.2) cap-ship combat is entirely platform-driven, so this returns
+   * `false` — the flag exists as a single switch in case the policy is
+   * later flipped without surgery on `BattlecruiserExecution.tick`.
+   */
+  battlecruiserHasDefaultWeapon(): boolean;
+  /**
+   * Health damage applied to a ship target by an
+   * OrbitalStrikePlatform-equipped Battlecruiser's LRW shot.
+   * Plans §5.2: tuned to one-shot AssaultShuttles and hit Battlecruisers
+   * for ~2x the plasma-bolt damage so 2–3 LRW hits are lethal.
+   */
+  lrwShipDamage(): number;
   shuttleAttackAmount(
     attacker: Player,
     defender: Player | TerraNullius,
@@ -160,10 +191,12 @@ export interface Config {
   plasmaBoltLifetime(): number;
   shuttleMaxNumber(): number;
   /**
-   * GDD §6 — Assault Fleet travel speed expressed as the integer number of
-   * ticks needed to traverse a single tile. With AU=100 and 1 AU/min this
-   * resolves to 6 ticks/tile, slowing the shuttle's pathfinder roughly 6x
-   * relative to the legacy 1-tile/tick pace.
+   * Assault Fleet travel speed expressed as the integer number of ticks
+   * needed to traverse a single tile. Per locked decision
+   * (plans/here-is-a-list-twinkly-dragonfly.md §3.4) shuttles match the
+   * Battlecruiser's 1 tile/tick patrol pace — an intentional DEVIATION
+   * from GDD §6 ("Assault Fleet 1 AU/min" → 6 ticks/tile at AU=100). See
+   * stellar-gdd-gap-report.md for the deviation note.
    */
   assaultShuttleTicksPerTile(): number;
   allianceDuration(): Tick;
@@ -379,11 +412,12 @@ export interface Config {
   // ---- Ticket 8: Habitability-gated structure slot limits -----------------
   /**
    * Maximum number of player structures a sector can host given the
-   * placement tile's *effective* habitability (post any LRW damage). The
-   * GDD §4 mapping is:
+   * placement tile's *effective* habitability (post any LRW damage).
+   * Per locked decision (plans/here-is-a-list-twinkly-dragonfly.md §3.2)
+   * the cap is lifted on any habitable terrain so the only remaining gate
+   * is the uninhabitable floor:
    *   - hab ≤ 0.3 (AsteroidField): 0 — must terraform first.
-   *   - hab ≤ 0.6 (Nebula):        1 structure per sector.
-   *   - hab > 0.6 (OpenSpace):     2 structures per sector.
+   *   - hab > 0.3 (Nebula / OpenSpace): unlimited.
    * Returns 0 for negative or NaN inputs.
    */
   maxStructuresForHabitability(habitability: number): number;

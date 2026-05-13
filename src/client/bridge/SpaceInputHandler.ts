@@ -1,5 +1,6 @@
 import { EventBus } from "../../core/EventBus";
 import { PlayerBuildableUnitType, UnitType } from "../../core/game/Game";
+import { GameView } from "../../core/game/GameView";
 import { UserSettings } from "../../core/game/UserSettings";
 import { ShowSettingsModalEvent } from "../hud/events";
 import {
@@ -23,7 +24,22 @@ import {
   ZoomEvent,
 } from "../InputHandler";
 import { Platform } from "../Platform";
+import { BuildUnitIntentEvent } from "../Transport";
+import { translateText } from "../Utils";
 import { useHUDStore } from "./HUDStore";
+
+/** Fire a transient toast via the HeadsUpMessage CustomEvent channel. */
+function showToast(
+  message: string,
+  color: "green" | "red" = "green",
+  duration = 2000,
+): void {
+  window.dispatchEvent(
+    new CustomEvent("show-message", {
+      detail: { message, color, duration },
+    }),
+  );
+}
 
 /**
  * Minimal shape of a pointer-like event we need for modifier checks. Kept
@@ -158,7 +174,26 @@ export class SpaceInputHandler {
   private readonly ZOOM_SPEED = 10;
   private readonly userSettings: UserSettings = new UserSettings();
 
+  /**
+   * Optional GameView reference. ClientGameRunner injects this via
+   * `setGameView()` once the game session is initialised, enabling
+   * features that need to inspect live game state from the keyboard
+   * handler (currently: hotkey-build routing through a selected
+   * Battlecruiser per plans §4.1).
+   */
+  private gameView: GameView | null = null;
+
   constructor(private eventBus: EventBus) {}
+
+  /**
+   * Inject the live GameView so the hotkey-build flow can resolve the
+   * selected cap ship and its slot state. Called by ClientGameRunner
+   * after the GameView is constructed. Safe to call repeatedly; the
+   * latest reference wins.
+   */
+  setGameView(gameView: GameView): void {
+    this.gameView = gameView;
+  }
 
   initialize(): void {
     this.loadKeybinds();
@@ -281,6 +316,18 @@ export class SpaceInputHandler {
 
     if (e.code === "Escape") {
       e.preventDefault();
+
+      // Capital-ship selection takes precedence over every other Esc
+      // behaviour — the user expects Esc to undo whatever transient
+      // selection state they're in before falling back to closing
+      // overlays / opening settings. (plans/here-is-a-list-twinkly-
+      // dragonfly.md §4.1 step 5.)
+      const cruiserBeforeEsc =
+        useHUDStore.getState().selectedBattlecruiserUnitId;
+      if (cruiserBeforeEsc !== null) {
+        useHUDStore.getState().setSelectedBattlecruiser(null);
+        return;
+      }
 
       // Snapshot gate mode before CloseViewEvent (which synchronously
       // resets it via ClientGameRunner.onCloseView).
@@ -418,7 +465,18 @@ export class SpaceInputHandler {
     const matchedBuild = this.resolveBuildKeybind(e.code);
     if (matchedBuild !== null) {
       e.preventDefault();
-      this.setGhostStructure(matchedBuild);
+      // Cap-ship-build routing (plans §4.1, §7). When a friendly
+      // Battlecruiser is selected AND the bound structure is in
+      // the cruiser's hostable list, the hotkey fires
+      // `BuildUnitIntentEvent` at the cruiser's tile instead of
+      // entering ground-placement. The server's
+      // `ConstructionExecution.findHostBattlecruiser` already
+      // auto-slots the structure for any build intent landing
+      // within 32 tiles of a cap ship, so no server-side change
+      // is needed here.
+      if (!this.tryBuildOnSelectedCapShip(matchedBuild)) {
+        this.setGhostStructure(matchedBuild);
+      }
     }
 
     if (e.code === this.keybinds.swapDirection) {
@@ -452,6 +510,64 @@ export class SpaceInputHandler {
 
   private setGhostStructure(gs: PlayerBuildableUnitType | null): void {
     this.eventBus.emit(new GhostStructureChangedEvent(gs));
+  }
+
+  /**
+   * If a friendly Battlecruiser is currently selected AND the bound
+   * structure is in `battlecruiserHostableStructures()`, dispatch a
+   * `BuildUnitIntentEvent` at the cruiser's tile and return true so the
+   * caller skips the normal ground-placement flow. Returns false (no
+   * side effects) when the precondition is not met. If the cruiser's
+   * slot is already occupied, surfaces a "Slot occupied" toast and
+   * returns true (the hotkey is "claimed" — no ghost placement either).
+   */
+  private tryBuildOnSelectedCapShip(
+    matchedBuild: PlayerBuildableUnitType,
+  ): boolean {
+    const gameView = this.gameView;
+    if (gameView === null) return false;
+    const selectedId = useHUDStore.getState().selectedBattlecruiserUnitId;
+    if (selectedId === null) return false;
+    const cruiser = gameView.unit?.(selectedId);
+    const myPlayer = gameView.myPlayer();
+    if (
+      cruiser === undefined ||
+      !cruiser.isActive() ||
+      cruiser.type() !== UnitType.Battlecruiser ||
+      cruiser.owner() !== myPlayer
+    ) {
+      return false;
+    }
+
+    const hostable = gameView.config().battlecruiserHostableStructures();
+    if (!hostable.includes(matchedBuild)) {
+      // Not a hostable structure (e.g. Battlecruiser, ClusterWarhead) —
+      // fall through to normal ground placement.
+      return false;
+    }
+
+    // Slot-occupancy probe: `syncSlottedStructure` moves the hosted
+    // structure's tile to match the cruiser's every tick, so any
+    // structure owned by the player within 2 tiles of the cruiser
+    // is the slotted occupant. UnitView doesn't expose
+    // `slottedStructure()` directly, so we infer from spatial overlap.
+    const cruiserTile = cruiser.tile();
+    const slotOccupied =
+      gameView
+        .nearbyUnits(cruiserTile, 2, hostable as UnitType[])
+        .find(({ unit }) => unit.owner() === myPlayer && unit.isActive()) !==
+      undefined;
+
+    if (slotOccupied) {
+      const msg =
+        translateText("hud.cruiser_slot_occupied") ??
+        "Slot occupied — destroy hosted structure first";
+      showToast(msg, "red");
+      return true;
+    }
+
+    this.eventBus.emit(new BuildUnitIntentEvent(matchedBuild, cruiserTile));
+    return true;
   }
 
   // -- Build keybind resolution (same logic as old InputHandler) --

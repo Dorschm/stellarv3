@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { AssaultShuttleExecution } from "../src/core/execution/AssaultShuttleExecution";
 import { AttackExecution } from "../src/core/execution/AttackExecution";
 import { BattlecruiserExecution } from "../src/core/execution/BattlecruiserExecution";

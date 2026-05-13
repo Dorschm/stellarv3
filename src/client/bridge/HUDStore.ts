@@ -89,6 +89,16 @@ export interface HUDState {
   /** The source gate tile after first click in gate selection mode. */
   jumpGateSourceTile: TileRef | null;
 
+  // -- Battlecruiser selection (plans/here-is-a-list-twinkly-dragonfly.md §4.1)
+  /**
+   * The unit id of the currently-selected friendly Battlecruiser, if any.
+   * Set by left-click on the unit / map. While non-null, the next
+   * left-click on the map issues a `MoveBattlecruiserIntentEvent` and
+   * the cursor switches to the move-target reticle. Cleared on Esc,
+   * right-click, ship destruction, or after a move is issued.
+   */
+  selectedBattlecruiserUnitId: number | null;
+
   // -- Game phase --
   /** Whether the game is in the spawn phase (before main play begins). */
   inSpawnPhase: boolean;
@@ -108,6 +118,7 @@ export interface HUDState {
   setRocketDirectionUp: (up: boolean) => void;
   setJumpGateMode: (mode: "idle" | "selectSource" | "selectDest") => void;
   setJumpGateSourceTile: (tile: TileRef | null) => void;
+  setSelectedBattlecruiser: (unitId: number | null) => void;
   setInSpawnPhase: (inSpawnPhase: boolean) => void;
   setWinner: (winner: WinUpdate | null) => void;
   addMessages: (newMessages: MessageSnapshot[]) => void;
@@ -134,6 +145,7 @@ const INITIAL_STATE = {
   rocketDirectionUp: true,
   jumpGateMode: "idle" as "idle" | "selectSource" | "selectDest",
   jumpGateSourceTile: null as TileRef | null,
+  selectedBattlecruiserUnitId: null as number | null,
   inSpawnPhase: false,
   winner: null as WinUpdate | null,
   messages: [] as MessageSnapshot[],
@@ -154,6 +166,8 @@ export const useHUDStore = create<HUDState>((set) => ({
   setRocketDirectionUp: (up) => set({ rocketDirectionUp: up }),
   setJumpGateMode: (mode) => set({ jumpGateMode: mode }),
   setJumpGateSourceTile: (tile) => set({ jumpGateSourceTile: tile }),
+  setSelectedBattlecruiser: (unitId) =>
+    set({ selectedBattlecruiserUnitId: unitId }),
   setInSpawnPhase: (inSpawnPhase) => set({ inSpawnPhase }),
   setWinner: (winner) => set({ winner }),
   addMessages: (newMessages) =>

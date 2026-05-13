@@ -32,6 +32,16 @@ async function buildGame() {
     infiniteCredits: true,
     instantBuild: true,
   });
+  // plans/here-is-a-list-twinkly-dragonfly.md §5.2 — cap-ship LRW
+  // intercept now lives behind `battlecruiserHasDefaultWeapon()` so the
+  // default policy is "platform-driven combat, no default weapon". This
+  // suite tests the legacy intercept code path, so opt in explicitly.
+  // The method is kept callable / private precisely so this test can
+  // continue to pin behaviour for the case a future revert of the
+  // policy reactivates the default weapon.
+  (game.config() as unknown as {
+    battlecruiserHasDefaultWeapon: () => boolean;
+  }).battlecruiserHasDefaultWeapon = () => true;
   game.addPlayer(
     new PlayerInfo("pilot_id", PlayerType.Human, null, "pilot_id"),
   );
@@ -179,6 +189,15 @@ describe("Battlecruiser LRW intercept (GDD §8)", () => {
       infiniteCredits: true,
       instantBuild: true,
     });
+    // Test-specific game rebuild — re-apply the legacy default-weapon
+    // flag override that beforeEach sets on the per-suite `game`. Without
+    // this the new game uses the production default (no default weapon)
+    // and the intercept path doesn't run.
+    (
+      game.config() as unknown as {
+        battlecruiserHasDefaultWeapon: () => boolean;
+      }
+    ).battlecruiserHasDefaultWeapon = () => true;
     game.addPlayer(
       new PlayerInfo("pilot_id", PlayerType.Human, null, "pilot_id"),
     );

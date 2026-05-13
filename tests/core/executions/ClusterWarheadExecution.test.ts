@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { MirvExecution } from "../../../src/core/execution/ClusterWarheadExecution";
 import {
   Game,

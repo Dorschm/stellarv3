@@ -427,15 +427,28 @@ describe("Config.maxStructuresForHabitability", () => {
     expect(cfg.maxStructuresForHabitability(0.0)).toBe(0);
   });
 
-  test("Nebula tier (0.3 < hab ≤ 0.6) → 10 slots", () => {
-    expect(cfg.maxStructuresForHabitability(0.6)).toBe(10);
-    expect(cfg.maxStructuresForHabitability(0.5)).toBe(10);
-    expect(cfg.maxStructuresForHabitability(0.31)).toBe(10);
+  // Plans §3.2 lifted the per-sector slot cap on habitable terrain. Both
+  // Nebula and OpenSpace tiers now return Infinity so any number of
+  // structures may be stacked there.
+  test("Nebula tier (0.3 < hab ≤ 0.6) → unlimited slots", () => {
+    expect(cfg.maxStructuresForHabitability(0.6)).toBe(
+      Number.POSITIVE_INFINITY,
+    );
+    expect(cfg.maxStructuresForHabitability(0.5)).toBe(
+      Number.POSITIVE_INFINITY,
+    );
+    expect(cfg.maxStructuresForHabitability(0.31)).toBe(
+      Number.POSITIVE_INFINITY,
+    );
   });
 
-  test("OpenSpace tier (hab > 0.6) → 20 slots", () => {
-    expect(cfg.maxStructuresForHabitability(1.0)).toBe(20);
-    expect(cfg.maxStructuresForHabitability(0.7)).toBe(20);
+  test("OpenSpace tier (hab > 0.6) → unlimited slots", () => {
+    expect(cfg.maxStructuresForHabitability(1.0)).toBe(
+      Number.POSITIVE_INFINITY,
+    );
+    expect(cfg.maxStructuresForHabitability(0.7)).toBe(
+      Number.POSITIVE_INFINITY,
+    );
   });
 
   test("Non-finite habitability → 0 slots", () => {

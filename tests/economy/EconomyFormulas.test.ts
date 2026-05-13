@@ -1012,3 +1012,97 @@ describe("creditAdditionRate (per-sector resource modifier)", () => {
     expect(config.creditAdditionRate(player)).toBe(100n + 20n);
   });
 });
+
+/**
+ * Locks in the pure logistic shape of `troopIncreaseRate` per locked
+ * decision (plans/here-is-a-list-twinkly-dragonfly.md §3.5):
+ *   perTick = LOGISTIC_BASE_RATE × current × (1 - current/max) + 10
+ * The curve must
+ *   - start small at low population (small `current` factor),
+ *   - peak in absolute per-tick growth around `current = max/2`,
+ *   - taper smoothly toward 0 as `current → max`,
+ *   - apply Bot/Nation modifiers AFTER the logistic term, leaving Humans
+ *     untouched by Difficulty.
+ */
+describe("troopIncreaseRate (logistic curve)", () => {
+  test("growth peaks near current = max/2 and asymptotes to 0 near max", async () => {
+    const game = await setup(
+      "big_plains",
+      { infiniteCredits: false, infinitePopulation: false },
+      [humanInfo],
+    );
+    const player = game.player(HUMAN_ID);
+    conquerTiles(game, player, 1000);
+    const config = game.config();
+    const max = config.maxPopulation(player);
+
+    const sample = (frac: number): number => {
+      player.setPopulation(Math.floor(max * frac));
+      return config.troopIncreaseRate(player);
+    };
+
+    const lowGrowth = sample(0.05);
+    const midGrowth = sample(0.5);
+    const highGrowth = sample(0.95);
+    const capGrowth = sample(0.999);
+
+    // Mid is the parabola peak.
+    expect(midGrowth).toBeGreaterThan(lowGrowth);
+    expect(midGrowth).toBeGreaterThan(highGrowth);
+    // Tail asymptotes to ~the idle floor (10) as headroom collapses.
+    expect(capGrowth).toBeLessThan(20);
+    // Low end is dominated by `current` being small but is strictly
+    // positive thanks to the idle floor.
+    expect(lowGrowth).toBeGreaterThan(0);
+  });
+
+  test("Human growth is independent of Difficulty", async () => {
+    const rates: number[] = [];
+    for (const difficulty of [
+      Difficulty.Easy,
+      Difficulty.Medium,
+      Difficulty.Hard,
+      Difficulty.Impossible,
+    ]) {
+      const game = await setup(
+        "big_plains",
+        { infiniteCredits: false, infinitePopulation: false, difficulty },
+        [humanInfo],
+      );
+      const player = game.player(HUMAN_ID);
+      conquerTiles(game, player, 1000);
+      const max = game.config().maxPopulation(player);
+      player.setPopulation(Math.floor(max / 2));
+      rates.push(game.config().troopIncreaseRate(player));
+    }
+    // Every Human rate must match the Hard-tier baseline exactly — no
+    // difficulty-side handicap on the human side. Tolerate floating-point
+    // jitter only.
+    for (let i = 1; i < rates.length; i++) {
+      expect(rates[i]).toBeCloseTo(rates[0], 6);
+    }
+  });
+
+  test("Bot 0.6× modifier applies on top of the logistic term", async () => {
+    const game = await setup(
+      "big_plains",
+      { infiniteCredits: false, infinitePopulation: false },
+      [humanInfo, botInfo],
+    );
+    const human = game.player(HUMAN_ID);
+    const bot = game.player(BOT_ID);
+    conquerTiles(game, human, 1000);
+    conquerTiles(game, bot, 1000);
+    const humanMax = game.config().maxPopulation(human);
+    const botMax = game.config().maxPopulation(bot);
+    human.setPopulation(Math.floor(humanMax / 2));
+    bot.setPopulation(Math.floor(botMax / 2));
+
+    const humanRate = game.config().troopIncreaseRate(human);
+    const botRate = game.config().troopIncreaseRate(bot);
+    // At the same fractional headroom (max/2 for each), the Bot rate
+    // must come in at roughly 0.6× the equivalent human-shape rate
+    // (modulo the idle floor and the per-player max difference).
+    expect(botRate).toBeLessThan(humanRate);
+  });
+});

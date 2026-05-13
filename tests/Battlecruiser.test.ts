@@ -7,10 +7,24 @@ import {
   PlayerInfo,
   PlayerType,
   TerrainType,
+  Unit,
   UnitType,
 } from "../src/core/game/Game";
 import { setup } from "./util/Setup";
 import { executeTicks } from "./util/utils";
+
+/**
+ * Slot a Colony on the given Battlecruiser so its territorial-wake gate
+ * (plans/here-is-a-list-twinkly-dragonfly.md §5.3) passes. The Colony is
+ * built at the cruiser's current tile and immediately attached; the
+ * cruiser's own `syncSlottedStructure` then keeps the Colony glued to
+ * the cruiser as it patrols.
+ */
+function slotColonyOn(bc: Unit, owner: Player): Unit {
+  const colony = owner.buildUnit(UnitType.Colony, bc.tile(), {});
+  bc.setSlottedStructure(colony);
+  return colony;
+}
 
 const coastX = 7;
 let game: Game;
@@ -425,6 +439,7 @@ describe("Battlecruiser — territory anchor", () => {
     const bc = cruiserOwner.buildUnit(UnitType.Battlecruiser, patrolTile, {
       patrolTile,
     });
+    slotColonyOn(bc, cruiserOwner);
     anchorGame.addExecution(new BattlecruiserExecution(bc));
     // Force real patrol movement through deep space by retargeting the
     // cruiser — this guarantees PathStatus.NEXT ticks drive claimTerritory.
@@ -455,6 +470,7 @@ describe("Battlecruiser — territory anchor", () => {
     const bc = cruiserOwner.buildUnit(UnitType.Battlecruiser, patrolTile, {
       patrolTile,
     });
+    slotColonyOn(bc, cruiserOwner);
     anchorGame.addExecution(new BattlecruiserExecution(bc));
     anchorGame.addExecution(
       new MoveBattlecruiserExecution(
@@ -495,6 +511,7 @@ describe("Battlecruiser — territory anchor", () => {
     const bc = cruiserOwner.buildUnit(UnitType.Battlecruiser, patrolTile, {
       patrolTile,
     });
+    slotColonyOn(bc, cruiserOwner);
     anchorGame.addExecution(new BattlecruiserExecution(bc));
     // Route the cruiser past the enemy tile so enemyTile is repeatedly
     // within claim radius during NEXT-branch movement ticks.
@@ -519,6 +536,7 @@ describe("Battlecruiser — territory anchor", () => {
     const bc = cruiserOwner.buildUnit(UnitType.Battlecruiser, patrolTile, {
       patrolTile,
     });
+    slotColonyOn(bc, cruiserOwner);
     anchorGame.addExecution(new BattlecruiserExecution(bc));
     anchorGame.addExecution(
       new MoveBattlecruiserExecution(
@@ -556,6 +574,7 @@ describe("Battlecruiser — territory anchor", () => {
     const bc = cruiserOwner.buildUnit(UnitType.Battlecruiser, patrolTile, {
       patrolTile,
     });
+    slotColonyOn(bc, cruiserOwner);
     anchorGame.addExecution(new BattlecruiserExecution(bc));
     anchorGame.addExecution(
       new MoveBattlecruiserExecution(
@@ -605,6 +624,10 @@ describe("Battlecruiser — territory anchor", () => {
     const bc = cruiserOwner.buildUnit(UnitType.Battlecruiser, startTile, {
       patrolTile: startTile,
     });
+    // Slot a Colony so the gate at `claimTerritoryRadius()` (plans §5.3)
+    // permits the wake — the regression here is path-stalling AFTER a
+    // bubble forms, which only happens when the wake actually fires.
+    slotColonyOn(bc, cruiserOwner);
     anchorGame.addExecution(new BattlecruiserExecution(bc));
 
     // Seed the cruiser with an initial patrol target so it moves off
@@ -635,11 +658,15 @@ describe("Battlecruiser — territory anchor", () => {
     // targetTile, so the next patrol() call picks a new random target
     // and invokes findPath() fresh from the cruiser's fully-enclosed
     // tile — hitting the BFS fallback branch in coerceToWater.
+    // Map is 16×16 — half_land_half_ocean. Original retarget list used
+    // coordinates beyond y=15 / x=15, which throw `Invalid coordinates`
+    // before the test even runs. Clamped to valid bounds while preserving
+    // the spread/direction of the original retargets.
     const visitedTiles = new Set<number>([postBubbleTile]);
     const retargets = [
-      anchorGame.ref(coastX + 8, 18),
-      anchorGame.ref(coastX + 3, 17),
-      anchorGame.ref(coastX + 10, 20),
+      anchorGame.ref(coastX + 8, 15),
+      anchorGame.ref(coastX + 3, 15),
+      anchorGame.ref(coastX + 7, 14),
       anchorGame.ref(coastX + 2, 14),
     ];
     for (const target of retargets) {
@@ -671,6 +698,7 @@ describe("Battlecruiser — territory anchor", () => {
     const bc = cruiserOwner.buildUnit(UnitType.Battlecruiser, patrolTile, {
       patrolTile,
     });
+    slotColonyOn(bc, cruiserOwner);
     anchorGame.addExecution(new BattlecruiserExecution(bc));
 
     // Freighter positioned within the 5-tile capture range of the
@@ -721,5 +749,72 @@ describe("Battlecruiser — territory anchor", () => {
       expect(anchorGame.owner(tile) === cruiserOwner).toBe(wasOwned);
     }
     expect(cruiserOwner.numTilesOwned()).toBe(ownedBefore);
+  });
+
+  // ── Colony-slot gate (plans §5.3 / issue #9) ─────────────────────────
+  // The cruiser's territorial wake fires only when (a) the cruiser is
+  // sitting on a deep-space tile AND (b) a Colony is slotted on it.
+  // Both regressions below pin those gates so future refactors can't
+  // accidentally re-enable wake behaviour for cruisers that are bare or
+  // patrolling inside a sector.
+
+  test("does NOT claim territory when no Colony is slotted (plans §5.3)", () => {
+    const patrolTile = anchorGame.ref(coastX + 1, 10);
+    expect(anchorGame.isDeepSpace(patrolTile)).toBe(true);
+
+    const bc = cruiserOwner.buildUnit(UnitType.Battlecruiser, patrolTile, {
+      patrolTile,
+    });
+    // NOTE: no Colony slotted — the wake gate must reject the claim.
+    anchorGame.addExecution(new BattlecruiserExecution(bc));
+    anchorGame.addExecution(
+      new MoveBattlecruiserExecution(
+        cruiserOwner,
+        bc.id(),
+        anchorGame.ref(coastX + 5, 15),
+      ),
+    );
+
+    const tilesBefore = cruiserOwner.numTilesOwned();
+    executeTicks(anchorGame, 20);
+
+    // The cruiser moved through deep space, but no terraform / conquer
+    // should have fired — the cruiser is a pure combat platform without
+    // a Colony.
+    expect(cruiserOwner.numTilesOwned()).toBe(tilesBefore);
+    const radius = anchorGame.config().battlecruiserTerritoryRadius();
+    for (const tile of anchorGame.circleSearch(bc.tile(), radius)) {
+      // The cruiser's current tile may have been "carved out" by other
+      // systems we don't control here, so we only require that none of
+      // the radius tiles were CLAIMED by the cruiser owner.
+      expect(anchorGame.owner(tile)).not.toBe(cruiserOwner);
+    }
+  });
+
+  test("claimTerritoryRadius is a no-op while the cruiser stands on a sector tile (plans §5.3)", () => {
+    // Stand the cruiser ON a sector tile and slot a Colony. The wake
+    // gate's first precondition (`isDeepSpace(cruiser.tile())`) must
+    // still suppress the claim even though the Colony precondition is
+    // met. We don't issue a Move intent: that lets the deep-space
+    // pathfinder fail (NOT_FOUND from a sector start) so the cruiser
+    // never moves and we exercise only the gate, not the full patrol
+    // loop. Without the gate, claimTerritoryRadius would conquer
+    // tiles around the cruiser's sector position; with the gate it
+    // returns early.
+    const sectorTile = anchorGame.ref(2, 10);
+    expect(anchorGame.isSector(sectorTile)).toBe(true);
+
+    const bc = cruiserOwner.buildUnit(UnitType.Battlecruiser, sectorTile, {
+      patrolTile: sectorTile,
+    });
+    slotColonyOn(bc, cruiserOwner);
+    anchorGame.addExecution(new BattlecruiserExecution(bc));
+
+    const tilesBefore = cruiserOwner.numTilesOwned();
+    executeTicks(anchorGame, 3);
+
+    // The cruiser is sitting on a sector tile — the deep-space gate must
+    // suppress every wake call. Tile count is unchanged.
+    expect(cruiserOwner.numTilesOwned()).toBe(tilesBefore);
   });
 });

@@ -22,10 +22,10 @@ const malusForRetreat = 25;
 export class AssaultShuttleExecution implements Execution {
   private active = true;
 
-  // GDD §6 — Assault Fleet travel speed (1 AU/min). Resolved from
+  // Assault Fleet travel speed. Resolved from
   // Config.assaultShuttleTicksPerTile() in init() once the Game ref is
-  // available; the field default is the legacy "1 tick/tile" pace so any
-  // pre-init access still behaves sensibly.
+  // available — currently 1 tick/tile, matching Battlecruiser pace per
+  // plans/here-is-a-list-twinkly-dragonfly.md §3.4 (DEVIATION from GDD §6).
   private ticksPerMove = 1;
   private lastMove: number;
 
@@ -191,9 +191,9 @@ export class AssaultShuttleExecution implements Execution {
     }
     // GDD §3.2 — recurring fleet upkeep charged every tick to the
     // shuttle's current owner. Must be deducted before the ticksPerMove
-    // gate so slow-moving shuttles (6 ticks/tile) still pay upkeep on
-    // the intervening ticks. `removeCredits` caps at available balance,
-    // so a bankrupt owner keeps their shuttle.
+    // gate so any future slowdown still pays upkeep on the intervening
+    // ticks. `removeCredits` caps at available balance, so a bankrupt
+    // owner keeps their shuttle.
     const shuttleOwnerForUpkeep = this.shuttle.owner();
     const upkeep = this.mg
       .config()

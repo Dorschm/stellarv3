@@ -14,9 +14,10 @@ import {
   SRGBColorSpace,
   UnsignedByteType,
 } from "three";
-import { TerrainType } from "../../core/game/Game";
+import { TerrainType, UnitType } from "../../core/game/Game";
 import { TileRef } from "../../core/game/GameMap";
 import { UserSettings } from "../../core/game/UserSettings";
+import { MoveBattlecruiserIntentEvent } from "../Transport";
 import {
   AutoUpgradeEvent,
   ContextMenuEvent,
@@ -38,6 +39,17 @@ import {
   loadKeybinds,
 } from "../bridge/keybindModifiers";
 import { resolveLeftClickAction } from "./jumpGateClickPrecedence";
+
+/**
+ * Radius (in tiles) used when checking whether a left-click landed on or
+ * near a player-owned Battlecruiser. Mirrors the radius used by
+ * `RadialMenu` and `ConstructionExecution.findHostBattlecruiser` so the
+ * three call-sites stay in sync.
+ */
+const CAP_SHIP_CLICK_RADIUS = 32;
+/** CSS body class toggled while a cap ship is selected. Drives the
+ *  move-target cursor (see styles.css). */
+const CAP_SHIP_SELECTED_BODY_CLASS = "cap-ship-selected";
 
 // ─── Space-themed terrain palette ────────────────────────────────────────────
 // Ocean  → deep space (very dark blues / near-black)
@@ -494,6 +506,45 @@ export function SpaceMapPlane(): React.JSX.Element | null {
         const { tileX, tileY } = uvToTile(e.uv);
         const native = e.nativeEvent;
 
+        // ── Battlecruiser select-then-move (plans §4.1) ───────────────
+        // Precedes every other left-click action: clicking a friendly
+        // cap ship selects/swaps; with a selection active, the next
+        // left-click anywhere issues a move and clears the selection.
+        const clickTile = game.ref(tileX, tileY);
+        const myPlayer = game.myPlayer();
+        const hudState = useHUDStore.getState();
+        if (myPlayer !== null) {
+          const cruiserUnderClick =
+            game
+              .nearbyUnits(clickTile, CAP_SHIP_CLICK_RADIUS, [
+                UnitType.Battlecruiser,
+              ])
+              .find(
+                ({ unit }) =>
+                  unit.owner() === myPlayer && unit.isActive(),
+              )?.unit ?? null;
+
+          if (cruiserUnderClick !== null) {
+            // Friendly cap ship under the click → select / swap. Never
+            // issues a move on the same click even if another cruiser
+            // was previously selected.
+            hudState.setSelectedBattlecruiser(cruiserUnderClick.id());
+            return;
+          }
+
+          if (hudState.selectedBattlecruiserUnitId !== null) {
+            // Selection active and click is not on a cruiser → move.
+            eventBus.emit(
+              new MoveBattlecruiserIntentEvent(
+                hudState.selectedBattlecruiserUnitId,
+                clickTile,
+              ),
+            );
+            hudState.setSelectedBattlecruiser(null);
+            return;
+          }
+        }
+
         // Resolve which click action wins given the current HUD / settings
         // snapshot. Extracted as a pure helper so the precedence rules
         // (gate mode > modifier > alt > leftClickOpensMenu > default) can be
@@ -525,7 +576,7 @@ export function SpaceMapPlane(): React.JSX.Element | null {
       }
       // Right-click (button === 2) is handled exclusively by onContextMenu
     },
-    [eventBus, uvToTile, keybinds],
+    [eventBus, uvToTile, keybinds, game],
   );
 
   const onPointerMove = useCallback(
@@ -654,6 +705,45 @@ export function SpaceMapPlane(): React.JSX.Element | null {
     };
   }, []);
 
+  // ── Cap-ship selection: cursor + cleanup ────────────────────────────────
+  // Mirror `selectedBattlecruiserUnitId` to a body-level CSS class so the
+  // map cursor switches to the move-target reticle while a selection is
+  // active. Also drop the selection automatically if the cap ship gets
+  // destroyed (becomes inactive) so the cursor doesn't get stuck on a
+  // ghost id.
+  const selectedCruiserId = useHUDStore(
+    (s) => s.selectedBattlecruiserUnitId,
+  );
+  useEffect(() => {
+    if (selectedCruiserId !== null) {
+      document.body.classList.add(CAP_SHIP_SELECTED_BODY_CLASS);
+    } else {
+      document.body.classList.remove(CAP_SHIP_SELECTED_BODY_CLASS);
+    }
+    return () => {
+      document.body.classList.remove(CAP_SHIP_SELECTED_BODY_CLASS);
+    };
+  }, [selectedCruiserId]);
+
+  // Subscribe to scene ticks to detect cap-ship death — once the unit is
+  // gone (or no longer owned by the local player), clear the selection
+  // so the cursor reverts and a stray click doesn't dispatch a move
+  // intent against a stale id.
+  useEffect(() => {
+    if (selectedCruiserId === null) return;
+    const handler = () => {
+      const unit = game.unit?.(selectedCruiserId);
+      const myPlayer = game.myPlayer();
+      if (!unit || !unit.isActive() || unit.owner() !== myPlayer) {
+        useHUDStore.getState().setSelectedBattlecruiser(null);
+      }
+    };
+    eventBus.on(SceneTickEvent, handler);
+    return () => {
+      eventBus.off(SceneTickEvent, handler);
+    };
+  }, [eventBus, game, selectedCruiserId]);
+
   const onContextMenu = useCallback(
     (e: ThreeEvent<MouseEvent>) => {
       e.nativeEvent.preventDefault();
@@ -666,6 +756,15 @@ export function SpaceMapPlane(): React.JSX.Element | null {
         hudState.setJumpGateMode("idle");
         hudState.setJumpGateSourceTile(null);
         return;
+      }
+
+      // Battlecruiser selection: right-click cancels the selection so the
+      // ensuing radial menu opens unencumbered. Mirrors plans §4.1 step 6
+      // — selection persists until Esc / right-click / move.
+      if (hudState.selectedBattlecruiserUnitId !== null) {
+        hudState.setSelectedBattlecruiser(null);
+        // Fall through so the radial menu still opens — losing the
+        // selection isn't a reason to also swallow the right-click.
       }
 
       // Mirror legacy InputHandler.onContextMenu: if a ghost structure is

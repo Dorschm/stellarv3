@@ -7,7 +7,7 @@ not silently reopen the question in a PR; supersede the entry here first.
 
 | Field        | Value                                                        |
 | ------------ | ------------------------------------------------------------ |
-| Last updated | 2026-04-11                                                   |
+| Last updated | 2026-05-13                                                   |
 | Related      | `stellar-gdd-gap-report.md`, `docs/ADR-0001-combat-model.md` |
 
 ---
@@ -121,3 +121,65 @@ The only artifact of this decision log is:
 
 Any future change that wants to _remove_ one of these entities must land
 a new entry here explaining the reversal and supersede the current row.
+
+---
+
+## 2026-05 — 11-issue Stellar fix batch
+
+Locked in `chat:baa2648e-c415-4204-81db-b1bca9a860c2` and tracked in
+`plans/here-is-a-list-twinkly-dragonfly.md`. Decisions that materially
+change game rules:
+
+- **Ground build limits removed on habitable terrain.**
+  `Config.maxStructuresForHabitability` now returns
+  `Number.POSITIVE_INFINITY` for partial / full habitability tiles
+  (Nebula / OpenSpace). AsteroidField stays at 0 — terraforming is
+  still a prerequisite for any structure. `Config.shuttleMaxNumber` is
+  lifted to infinity as well.
+  Battlecruiser slot count (1) is **unchanged**.
+- **Capital-ship combat is entirely platform-driven.**
+  A Battlecruiser with no slotted structure (or a non-weapon slot like
+  Colony / Foundry / Spaceport / JumpGate) has **no anti-ship plasma
+  bolt and no LRW intercept**. Combat capability now comes from the
+  slot:
+    - `OrbitalStrikePlatform` → cruiser fires LRW shots at enemy ships.
+    - `DefenseStation` → mobile plasma-bolt anti-ship behaviour.
+    - `PointDefenseArray` → mobile missile intercept.
+  The legacy default-weapon code path is preserved behind a single
+  config flag (`battlecruiserHasDefaultWeapon`, default `false`) so the
+  policy is reversible without surgery. Two tests
+  (`PlasmaBoltRandom.test.ts`, `BattlecruiserLrwIntercept.test.ts`)
+  opt into the flag to keep coverage of the legacy methods.
+- **Foundry-on-cruiser emits a heal aura.**
+  Same-owner only, radius `Config.foundryHealRadius` (default 30
+  tiles), rate `Config.foundryHealPerTick` (default +1 HP/tick).
+  Heals Battlecruisers, AssaultShuttles, TradeFreighters, and
+  ScoutSwarms within range.
+- **Territory wake requires a Colony.**
+  `BattlecruiserExecution.claimTerritoryRadius` now requires (a) the
+  cruiser sits on a deep-space tile AND (b) a Colony is slotted. The
+  cruiser in sector tiles or without a Colony lays no wake.
+- **Logistic population growth, no habitability weighting.**
+  `Config.troopIncreaseRate` replaced the previous
+  `current × 0.003 × habShare + pow(current, 0.6)/8 + 10` formula with
+  pure logistic
+  `LOGISTIC_BASE_RATE × current × (1 − current/max) + 10`
+  (`LOGISTIC_BASE_RATE = 0.006`). Habitability still drives
+  `maxPopulation` but the curve itself is uniform regardless of where
+  tiles sit.
+- **Shuttle travel speed lifted to 1 tile/tick.**
+  Intentional deviation from GDD §6 — see
+  `stellar-gdd-gap-report.md` row 6 / Assault Fleet.
+- **No human-side difficulty handicaps.**
+  Per the audit in `docs/difficulty-audit-2026-05.md` no
+  human-affecting `Difficulty` branch was found that scales economy,
+  combat, or build cost.
+  `DonatePopulationExecution.getMinPopulationForRelationUpdate`
+  collapsed to the Hard-tier baseline for consistency. The Nation-only
+  multipliers (Easy 0.5× pop cap → Impossible 1.25×) are kept as-is.
+- **MRV cluster bomb performance.**
+  Pure perf — submunition count (350), spread radius, and damage are
+  unchanged. The single-tick spawn spike of 350 NukeExecutions is now
+  drained over 7 ticks (50/tick) and `isOverlapping` was replaced with
+  a spatial hash grid. The per-MIRV `PseudoRandom` sequence is
+  preserved exactly so existing deterministic tests stay green.

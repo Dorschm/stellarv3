@@ -6,6 +6,7 @@ import { EmojiRenderer } from "./EmojiRenderer";
 import { FxRenderer } from "./FxRenderer";
 import { JumpGateHighlightRenderer } from "./JumpGateHighlightRenderer";
 import { PlanetLandmarks } from "./PlanetLandmarks";
+import { SelectedBattlecruiserHighlight } from "./SelectedBattlecruiserHighlight";
 import { SpaceMapPlane } from "./SpaceMapPlane";
 import { UnitRenderer } from "./UnitRenderer";
 import { WarpLaneRenderer } from "./WarpLaneRenderer";
@@ -103,6 +104,7 @@ export function SpaceScene(): React.JSX.Element {
         <FxRenderer />
         <EmojiRenderer />
         <JumpGateHighlightRenderer />
+        <SelectedBattlecruiserHighlight />
       </Suspense>
 
       {/* Camera controller: pan, zoom, GoTo via EventBus */}

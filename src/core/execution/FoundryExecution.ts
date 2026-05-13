@@ -31,6 +31,31 @@ export class FoundryExecution implements Execution {
     if (this.game.isVoid(this.factory.tile())) {
       const add = this.game.config().shipHostedFoundryCreditsPerTick();
       this.factory.owner().addCredits(BigInt(add));
+
+      // Plans/here-is-a-list-twinkly-dragonfly.md §5.4 — friendly heal
+      // aura emitted by a cap-ship-hosted Foundry. Picks up the owner's
+      // Battlecruisers, AssaultShuttles, TradeFreighters, and ScoutSwarms
+      // within `foundryHealRadius`; same-owner only (per locked
+      // decision) so the aura can't accidentally repair an ally's fleet.
+      const owner = this.factory.owner();
+      const healRate = this.game.config().foundryHealPerTick();
+      if (healRate > 0) {
+        const heals = this.game.nearbyUnits(
+          this.factory.tile(),
+          this.game.config().foundryHealRadius(),
+          [
+            UnitType.Battlecruiser,
+            UnitType.AssaultShuttle,
+            UnitType.TradeFreighter,
+            UnitType.ScoutSwarm,
+          ],
+        );
+        for (const { unit } of heals) {
+          if (unit.owner() === owner && unit.hasHealth()) {
+            unit.modifyHealth(healRate);
+          }
+        }
+      }
     }
   }
 

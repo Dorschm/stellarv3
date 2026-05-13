@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { BattlecruiserExecution } from "../src/core/execution/BattlecruiserExecution";
 import { DefenseStationExecution } from "../src/core/execution/DefenseStationExecution";
 import { PlasmaBoltExecution } from "../src/core/execution/PlasmaBoltExecution";
@@ -35,6 +36,13 @@ describe("Shell Random Damage", () => {
 
     player1 = game.player("player_1_id");
     player2 = game.player("player_2_id");
+
+    // plans/here-is-a-list-twinkly-dragonfly.md §5.2 — cap-ship combat
+    // is platform-driven by default. These tests exercise the legacy
+    // anti-ship plasma-bolt path, so opt into the legacy flag.
+    (game.config() as unknown as {
+      battlecruiserHasDefaultWeapon: () => boolean;
+    }).battlecruiserHasDefaultWeapon = () => true;
   });
 
   test("Shell damage varies randomly between 200-300 base damage", () => {

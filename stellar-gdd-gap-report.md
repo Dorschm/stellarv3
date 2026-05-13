@@ -7,7 +7,7 @@ every Tier.
 
 **Repo:** `C:\Users\dorsc\Desktop\OpenFront`
 **Branch surveyed:** `main`
-**Last updated:** 2026-04-11
+**Last updated:** 2026-05-13
 **Theme status:** Rebrand from naval/terrestrial RTS to space/sci-fi RTS
 complete. The codebase's primitives now include Habitability, SectorMap,
 Scout Swarm terraforming, Jump Gates, procedural maps, permadeath rejoin
@@ -94,7 +94,7 @@ Legend:
 | 5     | Exponential cost scaling                                      | MATCH     | `2^n × base` used consistently                                                                                                                                                |
 | 5     | Colony / Foundry / PointDefenseArray                          | DEVIATION | Not in GDD v0.1 — explicit keep decisions in `docs/product-decisions.md`                                                                                                      |
 | 6     | Scout Fleet (temporary)                                       | MATCH     | ScoutSwarm                                                                                                                                                                    |
-| 6     | Assault Fleet 100k pop + 100k res, 1 AU/min                   | PARTIAL   | AssaultShuttle cost + speed close; tuning sweep pending                                                                                                                       |
+| 6     | Assault Fleet 100k pop + 100k res, 1 AU/min                   | DEVIATION | Cost matches; speed lifted to 1 tile/tick (≈6 AU/min) to match Battlecruiser patrol pace per `plans/here-is-a-list-twinkly-dragonfly.md` §3.4 — gameplay decision, not a TODO. |
 | 6     | 1:1 attrition with stacking                                   | DEVIATION | See `docs/ADR-0001-combat-model.md`                                                                                                                                           |
 | 6     | Frigate + AntimatterTorpedo/NovaBomb/ClusterWarhead           | DEVIATION | Extra unit tier — explicit keep decisions in `docs/product-decisions.md`                                                                                                      |
 | 7     | Trade between Star Ports via fleets                           | MATCH     | `TradeFreighter`                                                                                                                                                              |
@@ -162,8 +162,9 @@ Ticket 5 in the active work plan.
   Moves with §A; drops in once the Planet entity exists.
 - **Population transport on trade fleets (GDD §7).** Fleets currently
   transport resources only. Non-blocking for the GDD's win/lose loop.
-- **Assault Fleet cost/speed tuning sweep (GDD §6).** Close to spec but
-  not exactly; lands with a general balance pass.
+- ~~**Assault Fleet cost/speed tuning sweep (GDD §6).**~~ Resolved by the
+  speed deviation in `plans/here-is-a-list-twinkly-dragonfly.md` §3.4 — see
+  the §3 row above marked DEVIATION.
 - **Server-side ramp precision (GDD §10).** Wall-clock approximation is a
   deliberate deviation — see `GameServer.ts::maybeAdjustTickRate`.
 

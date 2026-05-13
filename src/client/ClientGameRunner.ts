@@ -311,6 +311,9 @@ export class ClientGameRunner {
     private gameView: GameView,
   ) {
     this.lastMessageTime = Date.now();
+    // Inject the GameView so SpaceInputHandler can route hotkey builds
+    // through a selected Battlecruiser's slot (plans §4.1 / §7.1).
+    this.input.setGameView(gameView);
   }
 
   /**

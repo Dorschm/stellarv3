@@ -442,3 +442,105 @@ describe("Capital Ship — build menu buildability on deep space", () => {
     }
   });
 });
+
+/**
+ * Tests for plans/here-is-a-list-twinkly-dragonfly.md §5.2 — Battlecruiser
+ * combat is entirely platform-driven. With no slot or a non-weapon slot
+ * (Colony / Foundry / Spaceport / JumpGate) the cruiser does not engage
+ * nearby ships and does not auto-intercept LRW impacts.
+ */
+describe("Capital Ship — platform-driven combat (plans §5.2)", () => {
+  let enemy: Player;
+
+  async function buildEnemyGame() {
+    game = await setup("half_land_half_ocean", {
+      infiniteCredits: true,
+      instantBuild: true,
+    });
+    game.addPlayer(new PlayerInfo("pilot", PlayerType.Human, null, "pilot"));
+    game.addPlayer(new PlayerInfo("enemy", PlayerType.Human, null, "enemy"));
+    game.addExecution(
+      new SpawnExecution(gameID, game.player("pilot").info(), game.ref(3, 3)),
+      new SpawnExecution(gameID, game.player("enemy").info(), game.ref(2, 2)),
+    );
+    while (game.inSpawnPhase()) {
+      game.executeNextTick();
+    }
+    pilot = game.player("pilot");
+    enemy = game.player("enemy");
+  }
+
+  beforeEach(async () => {
+    await buildEnemyGame();
+  });
+
+  test("config flag battlecruiserHasDefaultWeapon defaults to false", () => {
+    expect(game.config().battlecruiserHasDefaultWeapon()).toBe(false);
+  });
+
+  test("cruiser without a weapon slot does NOT lock on to a nearby enemy AssaultShuttle", () => {
+    const voidTile = game.ref(10, 10);
+    expect(game.isDeepSpace(voidTile)).toBe(true);
+
+    const bc = spawnBattlecruiser(voidTile);
+    // Enemy shuttle within `battlecruiserTargettingRange` of the cruiser.
+    enemy.buildUnit(UnitType.AssaultShuttle, game.ref(11, 10), {
+      population: 100,
+    });
+
+    executeTicks(game, 5);
+    expect(bc.targetUnit()).toBeUndefined();
+  });
+
+  test("Foundry-on-cruiser heals nearby owned ships within `foundryHealRadius`", () => {
+    // Park the cruiser in deep space so the Foundry's slot-on-cruiser
+    // branch fires.
+    const voidTile = game.ref(10, 10);
+    const bc = spawnBattlecruiser(voidTile);
+    const foundry = pilot.buildUnit(UnitType.Foundry, voidTile, {});
+    bc.setSlottedStructure(foundry);
+    game.addExecution(new FoundryExecution(foundry));
+
+    // Wounded friendly Battlecruiser within the heal radius. We use a
+    // second cap ship as the heal target because Battlecruiser is the
+    // only ship type that ships a configured `maxHealth` today
+    // (AssaultShuttle / TradeFreighter / ScoutSwarm omit it, so
+    // `hasHealth()` returns false and the heal loop skips them — see
+    // plans §10 note about forward-compat list membership).
+    const friend = pilot.buildUnit(UnitType.Battlecruiser, game.ref(11, 10), {
+      patrolTile: game.ref(11, 10),
+    });
+    expect(friend.hasHealth()).toBe(true);
+    const healthBefore = friend.health();
+    friend.modifyHealth(-100);
+    const healthInjured = friend.health();
+    expect(healthInjured).toBeLessThan(healthBefore);
+
+    executeTicks(game, 3);
+
+    expect(friend.health()).toBeGreaterThan(healthInjured);
+  });
+
+  test("Foundry-on-cruiser does NOT heal enemy ships within radius", () => {
+    const voidTile = game.ref(10, 10);
+    const bc = spawnBattlecruiser(voidTile);
+    const foundry = pilot.buildUnit(UnitType.Foundry, voidTile, {});
+    bc.setSlottedStructure(foundry);
+    game.addExecution(new FoundryExecution(foundry));
+
+    // Wounded ENEMY Battlecruiser in the heal radius — must stay wounded.
+    const enemyCruiser = enemy.buildUnit(
+      UnitType.Battlecruiser,
+      game.ref(11, 10),
+      { patrolTile: game.ref(11, 10) },
+    );
+    expect(enemyCruiser.hasHealth()).toBe(true);
+    const baseline = enemyCruiser.health();
+    enemyCruiser.modifyHealth(-100);
+    const wounded = enemyCruiser.health();
+    expect(wounded).toBeLessThan(baseline);
+
+    executeTicks(game, 5);
+    expect(enemyCruiser.health()).toBe(wounded);
+  });
+});

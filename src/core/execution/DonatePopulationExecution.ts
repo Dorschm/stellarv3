@@ -1,5 +1,4 @@
 import {
-  Difficulty,
   Execution,
   Game,
   Player,
@@ -7,7 +6,6 @@ import {
   PlayerType,
 } from "../game/Game";
 import { PseudoRandom } from "../PseudoRandom";
-import { assertNever } from "../Util";
 import { EmojiExecution } from "./EmojiExecution";
 import {
   EMOJI_DONATION_TOO_SMALL,
@@ -87,39 +85,19 @@ export class DonatePopulationExecution implements Execution {
   }
 
   private getMinPopulationForRelationUpdate(): number {
-    const { difficulty } = this.mg.config().gameConfig();
+    // Per locked decision (plans/here-is-a-list-twinkly-dragonfly.md §3.3
+    // and docs/difficulty-audit-2026-05.md): collapse the per-Difficulty
+    // bands to the Hard tier so a donation to / from a human player gets
+    // a difficulty-independent relation threshold. This removes the
+    // indirect handicap path that previously made AI relations cheaper to
+    // unlock on Easy and dearer on Impossible.
     const recipientMaxPopulation = this.mg
       .config()
       .maxPopulation(this.recipient);
-
-    switch (difficulty) {
-      // ~7.7k - ~9.1k population (for 100k population)
-      case Difficulty.Easy:
-        return this.random.nextInt(
-          recipientMaxPopulation / 13,
-          recipientMaxPopulation / 11,
-        );
-      // ~9.1k - ~11.1k population (for 100k population)
-      case Difficulty.Medium:
-        return this.random.nextInt(
-          recipientMaxPopulation / 11,
-          recipientMaxPopulation / 9,
-        );
-      // ~11.1k - ~14.3k population (for 100k population)
-      case Difficulty.Hard:
-        return this.random.nextInt(
-          recipientMaxPopulation / 9,
-          recipientMaxPopulation / 7,
-        );
-      // ~14.3k - ~20k population (for 100k population)
-      case Difficulty.Impossible:
-        return this.random.nextInt(
-          recipientMaxPopulation / 7,
-          recipientMaxPopulation / 5,
-        );
-      default:
-        assertNever(difficulty);
-    }
+    return this.random.nextInt(
+      recipientMaxPopulation / 9,
+      recipientMaxPopulation / 7,
+    );
   }
 
   isActive(): boolean {

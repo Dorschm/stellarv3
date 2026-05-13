@@ -74,6 +74,19 @@ export class BattlecruiserExecution implements Execution {
       this.battlecruiser.modifyHealth(1);
     }
 
+    // Plans §5.2 — cap-ship combat is entirely platform-driven. With
+    // `battlecruiserHasDefaultWeapon()` returning `false` (the locked
+    // policy) the cruiser no longer auto-fires plasma bolts at nearby
+    // ships or auto-intercepts LRW impacts on its own. Combat for OSP /
+    // DefenseStation / PointDefenseArray slots is handled by their own
+    // executions, which `syncSlottedStructure()` keeps glued to the
+    // cruiser's tile every tick.
+    //
+    // Trade-freighter capture is NOT a weapon — it routes through
+    // `huntDownTradeFreighter` (which uses the cruiser's pathfinder, not
+    // a plasma bolt). We always evaluate that target branch so capture
+    // mechanics stay untouched. Only the anti-ship plasma bolt and
+    // LRW-intercept paths are gated behind the legacy flag.
     this.battlecruiser.setTargetUnit(this.findTargetUnit());
     if (this.battlecruiser.targetUnit()?.type() === UnitType.TradeFreighter) {
       this.huntDownTradeFreighter();
@@ -81,18 +94,18 @@ export class BattlecruiserExecution implements Execution {
       return;
     }
 
-    // Evaluate ship targeting / LRW intercept against the start-of-tick
-    // position BEFORE patrol movement — otherwise a cruiser that began
-    // the tick inside intercept range could patrol out of range and miss
-    // a valid same-tick intercept. Ship targets still take priority over
-    // LRW intercept (cruiser is primarily a combat ship). Patrol only
-    // runs when no intercept shot was fired, so the intercept isn't
-    // immediately undone by a movement step.
+    const hasDefaultWeapon = this.mg.config().battlecruiserHasDefaultWeapon();
     let intercepted = false;
-    if (this.battlecruiser.targetUnit() !== undefined) {
-      this.shootTarget();
+    if (hasDefaultWeapon) {
+      if (this.battlecruiser.targetUnit() !== undefined) {
+        this.shootTarget();
+      } else {
+        intercepted = this.tryInterceptLrw();
+      }
     } else {
-      intercepted = this.tryInterceptLrw();
+      // Clear any non-freighter target so the cruiser doesn't visually
+      // "lock on" to ships it can't fire at.
+      this.battlecruiser.setTargetUnit(undefined);
     }
 
     if (!intercepted) {
@@ -350,8 +363,18 @@ export class BattlecruiserExecution implements Execution {
 
   /**
    * GDD §14 — the Battlecruiser is a "mobile one-slot planet," so wherever
-   * it travels it leaves a permanent territorial wake. For every tile in
-   * the Euclidean radius around the cruiser's current position we:
+   * it travels it leaves a permanent territorial wake.
+   *
+   * Per locked decision (plans/here-is-a-list-twinkly-dragonfly.md §5.3)
+   * the wake only fires when BOTH of these hold:
+   *   (a) the cruiser is currently sitting on a deep-space tile, AND
+   *   (b) a Colony is slotted on it.
+   * In sectors / over planets the cruiser is just passing through; it
+   * never flips territory there regardless of slot. Without a Colony the
+   * cruiser is a pure combat platform and leaves no wake either.
+   *
+   * When the gate passes, for every tile in the Euclidean radius around
+   * the cruiser's current position we:
    *   - Promote DeepSpace to AsteroidField (routed through
    *     `Game.setTerrainType` so SectorMap, the deep-space pathfinder dirty
    *     flag, and client terrain sync all stay consistent).
@@ -367,6 +390,12 @@ export class BattlecruiserExecution implements Execution {
    * gated on ownership.
    */
   private claimTerritoryRadius(): void {
+    if (!this.mg.isDeepSpace(this.battlecruiser.tile())) return;
+    if (
+      this.battlecruiser.slottedStructure()?.type() !== UnitType.Colony
+    ) {
+      return;
+    }
     const owner = this.battlecruiser.owner();
     const radius = this.mg.config().battlecruiserTerritoryRadius();
     const tiles = this.mg.circleSearch(this.battlecruiser.tile(), radius);

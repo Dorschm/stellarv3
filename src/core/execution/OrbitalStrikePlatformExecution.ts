@@ -1,4 +1,4 @@
-import { Execution, Game, Player, Unit } from "../game/Game";
+import { Execution, Game, Player, Unit, UnitType } from "../game/Game";
 import { TileRef } from "../game/GameMap";
 
 /**
@@ -9,6 +9,11 @@ import { TileRef } from "../game/GameMap";
  * a Unit — there is no model to render and no PDA-style intercept path,
  * so spawning a Unit would just bloat updates without changing behaviour.
  * See Ticket 5: Structure Alignment.
+ *
+ * Per plans §5.2 the OSP can also fire at SHIPS when slotted on a
+ * Battlecruiser. In that case `targetUnitId` carries the ship's unit id
+ * and the impact applies a fixed health-damage chunk instead of the
+ * tile-bombardment (pop + habitability) effect.
  */
 interface PendingLrwImpact {
   targetTile: TileRef;
@@ -17,6 +22,13 @@ interface PendingLrwImpact {
   // GDD §8 / Ticket 8 — handle into the Game-level LRW impact registry,
   // used by DefenseStation intercepts to cancel a pending impact mid-flight.
   registryToken: number;
+  /**
+   * When set, the shot is targeting this specific ship (cap-ship-hosted
+   * OSP per plans §5.2). The reference is held directly on this private
+   * queue so we don't depend on a `Game.unit(id)` lookup (which doesn't
+   * exist as a top-level Game API).
+   */
+  targetUnit?: Unit;
 }
 
 export class OrbitalStrikePlatformExecution implements Execution {
@@ -134,7 +146,14 @@ export class OrbitalStrikePlatformExecution implements Execution {
       return;
     }
 
-    const target = this.findLongRangeWeaponTarget();
+    // plans §5.2 — when the OSP is slotted on a Battlecruiser the
+    // platform sits on a deep-space (void) tile (sync from
+    // BattlecruiserExecution.syncSlottedStructure). In that mode it
+    // targets enemy ships instead of enemy territory. Ground-placed OSPs
+    // keep the original tile-bombardment behaviour.
+    const target = this.mg.isVoid(this.platform.tile())
+      ? this.findLongRangeWeaponShipTarget()
+      : this.findLongRangeWeaponTarget();
     if (target === null) {
       return;
     }
@@ -164,17 +183,29 @@ export class OrbitalStrikePlatformExecution implements Execution {
       targetSmallID: target.smallID,
       impactTick,
       registryToken,
+      targetUnit: (target as { unit?: Unit }).unit,
     });
   }
 
   /**
-   * Apply LRW impact effects: 10% population damage to the target player
-   * (subtracted from current population) and 10% habitability damage to the
-   * impacted tile via the SectorMap overlay. Both ratios are configured
-   * by `Config.longRangeWeapon*` so they can be tuned in one place.
+   * Apply LRW impact effects.
+   *
+   * Two flavours:
+   *   - **Ship impact** (plans §5.2 — cap-ship-hosted OSP):
+   *     `impact.targetUnitId` is set. Apply a flat health damage chunk
+   *     (`Config.lrwShipDamage`) to the target ship if it's still alive
+   *     and still hostile.
+   *   - **Tile impact** (legacy ground OSP behaviour):
+   *     10% population damage to the target player + 10% habitability
+   *     damage to the impacted tile.
    */
   private applyLrwImpact(impact: PendingLrwImpact): void {
     const config = this.mg.config();
+    if (impact.targetUnit !== undefined) {
+      this.applyLrwShipImpact(impact, config.lrwShipDamage());
+      return;
+    }
+
     const target = this.mg.playerBySmallID(impact.targetSmallID);
     if (!target.isPlayer()) {
       return;
@@ -204,6 +235,75 @@ export class OrbitalStrikePlatformExecution implements Execution {
         config.longRangeWeaponHabitabilityDamage(),
         ownerSmallID,
       );
+  }
+
+  /**
+   * Apply an LRW projectile's impact to a specific ship target. The ship
+   * is looked up by unit id at impact time so an intervening
+   * destruction / capture is handled cleanly. Friendly-fire is
+   * additionally guarded — if the target became allied or got captured
+   * by the OSP owner mid-flight, the shot fizzles silently.
+   *
+   * plans §5.2 — implemented as `modifyHealth(-damage)`, which clamps
+   * to zero / triggers the unit's normal destruction path. No habitability
+   * damage is applied (the target may not even be on a sector tile).
+   */
+  private applyLrwShipImpact(
+    impact: PendingLrwImpact,
+    damage: number,
+  ): void {
+    const target = impact.targetUnit;
+    if (target === undefined || !target.isActive() || !target.hasHealth()) {
+      return;
+    }
+    const owner = this.platform.owner();
+    const tOwner = target.owner();
+    if (tOwner === owner || tOwner.isFriendly(owner)) {
+      return;
+    }
+    target.modifyHealth(-damage, owner);
+  }
+
+  /**
+   * Pick the closest enemy SHIP within `longRangeWeaponMaxRange` of the
+   * platform. Used when the OSP is slotted on a Battlecruiser (its tile
+   * sits in deep space). Returns `null` when no eligible ship is within
+   * range. Mirrors the structure of `findLongRangeWeaponTarget` but
+   * scans `nearbyUnits` for ship types instead of doing a square ring
+   * sweep over tiles.
+   */
+  private findLongRangeWeaponShipTarget(): {
+    tile: TileRef;
+    smallID: number;
+    unit: Unit;
+  } | null {
+    const owner = this.platform.owner();
+    const maxRange = this.mg.config().longRangeWeaponMaxRange();
+    const candidates = this.mg.nearbyUnits(this.platform.tile(), maxRange, [
+      UnitType.AssaultShuttle,
+      UnitType.Battlecruiser,
+      UnitType.TradeFreighter,
+    ]);
+
+    let best: { tile: TileRef; smallID: number; unit: Unit } | null = null;
+    let bestDist = Infinity;
+    for (const { unit, distSquared } of candidates) {
+      const u = unit.owner();
+      if (u === owner) continue;
+      if (u.isFriendly(owner)) continue;
+      if (!owner.canAttackPlayer(u, true)) continue;
+      if (!unit.isActive()) continue;
+      if (unit === this.platform) continue;
+      if (distSquared < bestDist) {
+        bestDist = distSquared;
+        best = {
+          tile: unit.tile(),
+          smallID: u.smallID(),
+          unit,
+        };
+      }
+    }
+    return best;
   }
 
   /**

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { MirvExecution } from "../src/core/execution/ClusterWarheadExecution";
 import { NationExecution } from "../src/core/execution/NationExecution";
 import { OrbitalStrikePlatformExecution } from "../src/core/execution/OrbitalStrikePlatformExecution";
