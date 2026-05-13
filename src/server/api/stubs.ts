@@ -23,11 +23,15 @@ const __dirname = path.dirname(__filename);
 export function createCosmeticsRouter(): Router {
   const router = Router();
   // Empty cosmetics catalog. The client validates with `CosmeticsSchema`
-  // (src/core/CosmeticSchemas.ts) which accepts empty pattern/flag arrays.
+  // (src/core/CosmeticSchemas.ts) which expects `patterns` and `flags` to
+  // be records (keyed by name), not arrays — an empty record is `{}`. The
+  // previous stub returned `[]` here and tripped the client's schema
+  // validation on every page load, logging "Invalid cosmetics: ..." and
+  // failing the E2E console-error assertions.
   router.get("/cosmetics.json", (_req, res) => {
     res.json({
-      patterns: [],
-      flags: [],
+      patterns: {},
+      flags: {},
     });
   });
   return router;

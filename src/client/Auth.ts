@@ -190,9 +190,20 @@ async function doRefreshJwt(): Promise<void> {
     });
     if (response.status !== 200) {
       // Real HTTP failure from a reachable auth service: keep the error
-      // log so real deployments can diagnose backend problems.
-      console.error("Refresh failed", response);
-      logOut();
+      // log so real deployments can diagnose backend problems. Do NOT
+      // call logOut() here — that clears `player_persistent_id` from
+      // localStorage, so a brand-new anonymous UUID is generated on every
+      // subsequent `getPlayToken()` call. The self-hosted backend (see
+      // src/server/api/auth.ts) returns 401 (no refresh cookie) or 503
+      // (no JWT secret configured) for anonymous sessions, which would
+      // otherwise re-roll the persistent ID on every refresh attempt
+      // and break creator-only flows (start_game, cancel_game) whose
+      // server-side check compares the create-time persistent ID against
+      // the start-time one.
+      if (response.status !== 401) {
+        console.error("Refresh failed", response);
+      }
+      __jwt = null;
       return;
     }
     const json = await response.json();

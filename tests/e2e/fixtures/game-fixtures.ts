@@ -939,6 +939,18 @@ export function trackConsoleErrors(page: Page): void {
     // Auth/cosmetics APIs unavailable in local dev
     if (/Refresh failed|doRefreshJwt|refreshJwt/i.test(text)) return;
     if (/Error getting cosmetics|fetchCosmetics/i.test(text)) return;
+    // Browser-level "Failed to load resource" for the anonymous auth
+    // refresh endpoint. The dev server returns 401 when there's no
+    // refresh cookie or JWT secret — expected for anonymous sessions, and
+    // the auth code already handles it silently. Chromium still logs the
+    // 401 as a console.error at the network layer, which would otherwise
+    // fail the empty-errors assertion on every singleplayer page load.
+    if (
+      /Failed to load resource: the server responded with a status of 401/i.test(
+        text,
+      )
+    )
+      return;
     // CORS for third-party analytics in dev
     if (/cloudflareinsights|CORS policy/i.test(text)) return;
     // React empty-src warning (cosmetic assets not loaded in dev)
@@ -956,7 +968,11 @@ export function trackConsoleErrors(page: Page): void {
     // accepted its listener, surfacing a 3-attempt browser-level
     // WebSocket failure + "Max WebSocket attempts reached". Cosmetic dev
     // noise — once the worker is up, normal lobby fetches proceed.
-    if (/WebSocket connection to .* failed: Connection closed before receiving a handshake response/i.test(text))
+    if (
+      /WebSocket connection to .* failed: Connection closed before receiving a handshake response/i.test(
+        text,
+      )
+    )
       return;
     if (/^WebSocket error: Event$/i.test(text)) return;
     if (/Max WebSocket attempts reached/i.test(text)) return;

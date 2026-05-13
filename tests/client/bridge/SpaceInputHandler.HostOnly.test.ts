@@ -1,5 +1,90 @@
-// @vitest-environment jsdom
+// @vitest-environment node
+//
+// Why a node env with a hand-rolled window stub instead of jsdom: the
+// project's jsdom environment is currently incompatible with its Node
+// toolchain (html-encoding-sniffer requires `@exodus/bytes` as CJS while
+// that package ships ESM-only). The HostLobbyModal test takes the same
+// approach.
+
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+
+// -- Minimal globals SpaceInputHandler.initialize() reaches for ----------
+// localStorage (for `settings.keybinds`), CustomEvent, KeyboardEvent, and
+// a window with addEventListener/dispatchEvent. SpaceInputHandler also
+// uses `setInterval` for the pan/zoom movement loop — node provides that
+// natively, so we leave it alone.
+
+class FakeEventTarget {
+  private listeners = new Map<string, Set<(e: any) => void>>();
+  addEventListener(type: string, fn: (e: any) => void): void {
+    if (!this.listeners.has(type)) this.listeners.set(type, new Set());
+    this.listeners.get(type)!.add(fn);
+  }
+  removeEventListener(type: string, fn: (e: any) => void): void {
+    this.listeners.get(type)?.delete(fn);
+  }
+  dispatchEvent(event: { type: string }): boolean {
+    const set = this.listeners.get(event.type);
+    if (!set) return true;
+    for (const fn of set) fn(event);
+    return true;
+  }
+}
+
+class FakeKeyboardEvent {
+  type: string;
+  code: string;
+  repeat: boolean;
+  altKey: boolean;
+  ctrlKey: boolean;
+  metaKey: boolean;
+  shiftKey: boolean;
+  target: any;
+  constructor(type: string, init: any = {}) {
+    this.type = type;
+    this.code = init.code ?? "";
+    this.repeat = init.repeat ?? false;
+    this.altKey = init.altKey ?? false;
+    this.ctrlKey = init.ctrlKey ?? false;
+    this.metaKey = init.metaKey ?? false;
+    this.shiftKey = init.shiftKey ?? false;
+    this.target = init.target ?? null;
+  }
+  preventDefault(): void {}
+}
+
+class FakeCustomEvent<T = any> {
+  type: string;
+  detail: T;
+  constructor(type: string, init: { detail: T }) {
+    this.type = type;
+    this.detail = init.detail;
+  }
+}
+
+const fakeWindow = new FakeEventTarget() as unknown as Window;
+(fakeWindow as any).innerWidth = 1024;
+(fakeWindow as any).innerHeight = 768;
+
+(globalThis as any).window = fakeWindow;
+(globalThis as any).KeyboardEvent = FakeKeyboardEvent as any;
+(globalThis as any).CustomEvent = FakeCustomEvent as any;
+(globalThis as any).localStorage = {
+  getItem: () => null,
+  setItem: () => {},
+  removeItem: () => {},
+};
+// `translateText` reaches for `document.querySelector("lang-selector")` to
+// pick the active locale. We don't care which locale runs in this test —
+// just that *some* string comes back — so stub a document with a no-op
+// querySelector. The translation falls back to the literal key when no
+// selector element is found, which is what we assert against.
+(globalThis as any).document = {
+  querySelector: () => null,
+};
+
+// Imports after the globals are defined so the modules' top-level reads
+// (Platform.isMac, etc.) see the stubs.
 import {
   PlayerSnapshot,
   UnitSnapshot,
@@ -16,12 +101,6 @@ import { PlayerType, UnitType } from "../../../src/core/game/Game";
  * dispatches a "Not enough money" rejection toast when the player cannot
  * afford the hosted structure, instead of silently bouncing on the server
  * (its previous behavior — see the verification comment on issue #7).
- *
- * We exercise the real `onKeyUp` handler via a dispatched KeyboardEvent so
- * the production code path (hotkey resolution + HUDStore read + dispatch)
- * is covered end-to-end. The HUDStore is preloaded with a selected
- * empty-slot Battlecruiser owned by the local player and a cost map that
- * exceeds the player's credit balance.
  */
 
 const CRUISER_ID = 7777;
@@ -67,7 +146,7 @@ function preloadHUD(opts: {
   const hud = useHUDStore.getState();
   hud.reset();
   hud.setMyPlayer(makeMyPlayer(opts.credits));
-  const units = new Map<number, any>();
+  const units = new Map<number, UnitSnapshot>();
   units.set(CRUISER_ID, makeCruiser({ occupied: opts.occupied === true }));
   hud.setUnits(units);
   hud.setSelectedBattlecruiser(CRUISER_ID);
@@ -98,52 +177,52 @@ describe("SpaceInputHandler — selected-cruiser host-only hotkey feedback", () 
     );
 
     toastSpy = vi.fn();
-    window.addEventListener("show-message", toastSpy as EventListener);
+    (window as any).addEventListener("show-message", toastSpy);
   });
 
   afterEach(() => {
     handler.destroy();
-    window.removeEventListener("show-message", toastSpy as EventListener);
+    (window as any).removeEventListener("show-message", toastSpy);
     useHUDStore.getState().reset();
   });
 
+  function pressDigit1() {
+    (window as any).dispatchEvent(
+      new (globalThis as any).KeyboardEvent("keyup", { code: "Digit1" }),
+    );
+  }
+
   test("insufficient credits dispatches a rejection toast and skips ghost fallback", () => {
     preloadHUD({ credits: 1n, cost: COST });
-
-    // Digit1 = buildColony per default keybinds.
-    window.dispatchEvent(new KeyboardEvent("keyup", { code: "Digit1" }));
+    pressDigit1();
 
     expect(toastSpy).toHaveBeenCalledTimes(1);
-    const evt = toastSpy.mock.calls[0][0] as CustomEvent;
+    const evt = toastSpy.mock.calls[0][0] as any;
     expect(evt.detail.color).toBe("red");
     expect(typeof evt.detail.message).toBe("string");
     expect(evt.detail.message.length).toBeGreaterThan(0);
 
-    // No build intent was fired and no ground-placement ghost was set.
     expect(buildIntents).toHaveLength(0);
     expect(ghostChanges).toHaveLength(0);
   });
 
   test("sufficient credits emits the host-only BuildUnitIntent and no toast", () => {
     preloadHUD({ credits: COST, cost: COST });
-
-    window.dispatchEvent(new KeyboardEvent("keyup", { code: "Digit1" }));
+    pressDigit1();
 
     expect(toastSpy).toHaveBeenCalledTimes(0);
     expect(buildIntents).toHaveLength(1);
     expect(buildIntents[0].unit).toBe(UnitType.Colony);
-    // host-only path passes the cruiser id along
     expect((buildIntents[0] as any).hostBattlecruiserId).toBe(CRUISER_ID);
     expect(ghostChanges).toHaveLength(0);
   });
 
   test("full slot still wins over affordability (Slot occupied toast)", () => {
     preloadHUD({ credits: 1n, cost: COST, occupied: true });
-
-    window.dispatchEvent(new KeyboardEvent("keyup", { code: "Digit1" }));
+    pressDigit1();
 
     expect(toastSpy).toHaveBeenCalledTimes(1);
-    const msg = (toastSpy.mock.calls[0][0] as CustomEvent).detail.message;
+    const msg = (toastSpy.mock.calls[0][0] as any).detail.message;
     expect(String(msg)).toMatch(/slot/i);
     expect(buildIntents).toHaveLength(0);
     expect(ghostChanges).toHaveLength(0);
