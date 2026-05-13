@@ -1,4 +1,12 @@
-import { Execution, Game, Player, Tick, Unit, UnitType } from "../game/Game";
+import {
+  Execution,
+  Game,
+  MessageType,
+  Player,
+  Tick,
+  Unit,
+  UnitType,
+} from "../game/Game";
 import { TileRef } from "../game/GameMap";
 import { BattlecruiserExecution } from "./BattlecruiserExecution";
 import { MirvExecution } from "./ClusterWarheadExecution";
@@ -24,6 +32,14 @@ export class ConstructionExecution implements Execution {
     private constructionType: UnitType,
     private tile: TileRef,
     private rocketDirectionUp?: boolean,
+    /**
+     * Issue #7 — host-only path for capital-ship hotkey builds. When
+     * provided, the construction must host on this specific Battlecruiser
+     * (looked up by unit id). If the cruiser is missing, not owned by the
+     * player, not active, or already has a slotted structure, the execution
+     * deactivates without falling back to ground placement.
+     */
+    private hostBattlecruiserId?: number,
   ) {}
 
   init(mg: Game, ticks: number): void {
@@ -50,7 +66,68 @@ export class ConstructionExecution implements Execution {
       // For non-structure units (nukes/battlecruiser), charge once and delegate to specialized executions.
       const isStructure = this.isStructure(this.constructionType);
       if (!isStructure) {
+        // Issue #7 — host-only builds only make sense for hostable
+        // structures. Reject non-structure host-only intents so a malformed
+        // intent can't accidentally host a nuke / battlecruiser.
+        if (this.hostBattlecruiserId !== undefined) {
+          console.warn(
+            `host-only build rejected: ${this.constructionType} is not a hostable structure`,
+          );
+          this.active = false;
+          return;
+        }
         // Defer validation and credit deduction to the specific execution
+        this.completeConstruction();
+        this.active = false;
+        return;
+      }
+
+      // Issue #7 — host-only path for capital-ship hotkey builds. When a
+      // specific Battlecruiser id was named in the intent, only host on
+      // that exact cruiser. Any mismatch (not owned, destroyed, slot
+      // occupied, type unhostable, insufficient credits) deactivates the
+      // execution without falling back to ground placement so a full-slot
+      // cruiser can never silently produce an unintended ground structure.
+      if (this.hostBattlecruiserId !== undefined) {
+        const targetedCruiser = this.findCruiserById(this.hostBattlecruiserId);
+        if (targetedCruiser === null) {
+          this.active = false;
+          return;
+        }
+        const hostable = this.mg
+          .config()
+          .battlecruiserHostableStructures();
+        if (!hostable.includes(this.constructionType)) {
+          this.active = false;
+          return;
+        }
+        const hostCost = this.mg
+          .unitInfo(this.constructionType)
+          .cost(this.mg, this.player);
+        if (this.player.credits() < hostCost) {
+          // Surface a user-visible event so the owning player sees the
+          // rejection in the events panel instead of only a console
+          // trace. The client-side toast in SpaceInputHandler catches
+          // this *before* the intent ships, but the server-side display
+          // event is the authoritative source-of-truth fallback for any
+          // case the client missed (stale cost snapshot, cost change
+          // mid-flight, third-party UIs sending host-only intents).
+          this.mg.displayMessage(
+            "events_display.host_build_rejected",
+            MessageType.HOST_BUILD_REJECTED,
+            this.player.id(),
+            undefined,
+            { reason: "Not enough money" },
+          );
+          this.active = false;
+          return;
+        }
+        this.structure = this.player.buildUnit(
+          this.constructionType,
+          targetedCruiser.tile(),
+          {},
+        );
+        targetedCruiser.setSlottedStructure(this.structure);
         this.completeConstruction();
         this.active = false;
         return;
@@ -227,6 +304,24 @@ export class ConstructionExecution implements Execution {
    * Otherwise returns `null` so the caller falls back to ground-based
    * structure placement.
    */
+  /**
+   * Issue #7 — locate a player-owned, active Battlecruiser by unit id whose
+   * one-slot structure mount is empty. Returns `null` if the cruiser is
+   * missing, captured by a different player, destroyed/inactive, or already
+   * has a slotted structure. The host-only intent path uses this to enforce
+   * the same "no fallback" contract the client promised to the user.
+   */
+  private findCruiserById(unitId: number): Unit | null {
+    for (const u of this.player.units(UnitType.Battlecruiser)) {
+      if (u.id() !== unitId) continue;
+      if (!u.isActive()) return null;
+      if (u.owner() !== this.player) return null;
+      if (u.slottedStructure() !== undefined) return null;
+      return u;
+    }
+    return null;
+  }
+
   private findHostBattlecruiser(tile: TileRef): Unit | null {
     const hostable = this.mg.config().battlecruiserHostableStructures();
     if (!hostable.includes(this.constructionType)) {

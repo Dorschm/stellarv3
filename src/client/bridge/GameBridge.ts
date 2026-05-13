@@ -1,5 +1,5 @@
 import { EventBus } from "../../core/EventBus";
-import { PlayerID } from "../../core/game/Game";
+import { Credits, PlayerID, UnitType } from "../../core/game/Game";
 import { TileRef } from "../../core/game/GameMap";
 import { GameUpdateType } from "../../core/game/GameUpdates";
 import { GameView } from "../../core/game/GameView";
@@ -131,9 +131,32 @@ export class GameBridge {
         level: u.level(),
         isActive: u.isActive(),
         health: u.hasHealth() ? u.health() : undefined,
+        hasSlottedStructure: u.hasSlottedStructure(),
       });
     }
     store.setUnits(unitMap);
+
+    // -- Hostable structure costs (issue #7) --
+    // Snapshot the per-tick cost of every Battlecruiser-hostable structure
+    // for the local player so SpaceInputHandler can show a "Not enough
+    // money" toast immediately when a selected-cruiser hotkey is pressed
+    // without funds, instead of the host-only intent silently bouncing on
+    // the server.
+    const costMap = new Map<UnitType, Credits>();
+    if (myPlayer !== null) {
+      const hostable = this.gameView.config().battlecruiserHostableStructures();
+      for (const t of hostable) {
+        try {
+          costMap.set(
+            t,
+            this.gameView.unitInfo(t).cost(this.gameView as any, myPlayer as any),
+          );
+        } catch {
+          // Defensive: a missing unitInfo entry shouldn't break the tick.
+        }
+      }
+    }
+    store.setCruiserHostableCosts(costMap);
 
     // -- Updates since last tick (winner, display messages) --
     const updates = this.gameView.updatesSinceLastTick();

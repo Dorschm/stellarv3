@@ -31,6 +31,28 @@ export class FoundryExecution implements Execution {
     if (this.game.isVoid(this.factory.tile())) {
       const add = this.game.config().shipHostedFoundryCreditsPerTick();
       this.factory.owner().addCredits(BigInt(add));
+
+      // Issue #10 — heal aura. Same-owner ships within radius receive
+      // `foundryHealPerTick` HP each tick. `Unit.modifyHealth` clamps to
+      // each unit's maxHealth so we don't need an explicit cap check.
+      // Stacks intentionally with the Spaceport-owner +1HP/tick regen on
+      // the cruiser itself, because the Foundry slot is doing real work.
+      const radius = this.game.config().foundryHealRadius();
+      const heal = this.game.config().foundryHealPerTick();
+      if (heal > 0 && radius > 0) {
+        const owner = this.factory.owner();
+        const nearby = this.game.nearbyUnits(this.factory.tile(), radius, [
+          UnitType.Battlecruiser,
+          UnitType.AssaultShuttle,
+          UnitType.TradeFreighter,
+          UnitType.ScoutSwarm,
+        ]);
+        for (const { unit } of nearby) {
+          if (unit.owner() === owner) {
+            unit.modifyHealth(heal);
+          }
+        }
+      }
     }
   }
 

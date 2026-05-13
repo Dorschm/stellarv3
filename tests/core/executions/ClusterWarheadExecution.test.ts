@@ -1,4 +1,5 @@
 import { MirvExecution } from "../../../src/core/execution/ClusterWarheadExecution";
+import { NukeExecution } from "../../../src/core/execution/NukeExecution";
 import {
   Game,
   MessageType,
@@ -278,6 +279,62 @@ describe("ClusterWarheadExecution", () => {
     expect(player.isTraitor()).toBe(false);
   });
 
+  test("submunitions originate from the separation tile, not the silo tile", async () => {
+    // Issue #5 verification — when the MRV separates, the tick-spread drain
+    // must construct each `NukeExecution` with the warhead's *separation*
+    // tile as `src` (the 4th constructor arg). Earlier optimization passes
+    // accidentally re-used `this.spawnTile` (the silo), which shrank the
+    // submunition's flight to silo→target and changed time-to-impact and
+    // interception windows.
+    for (let x = 75; x < 200; x++) {
+      for (let y = 75; y < 200; y++) {
+        const tile = game.ref(x, y);
+        if (game.map().isSector(tile)) {
+          otherPlayer.conquer(tile);
+        }
+      }
+    }
+
+    const targetTile = game.ref(110, 110);
+    const mirvExec = new MirvExecution(player, targetTile);
+    game.addExecution(mirvExec);
+
+    // Burn ticks until the warhead exists so we can read its current tile
+    // each tick and capture the actual separation tile observed in flight.
+    executeTicks(game, 2);
+    const warhead = player.units(UnitType.ClusterWarhead)[0];
+    expect(warhead).toBeDefined();
+
+    let separationTile = warhead.tile();
+    while (warhead.isActive()) {
+      separationTile = warhead.tile();
+      game.executeNextTick();
+    }
+    // Capture one more tile read in case the final move landed on the same
+    // tick as the deletion — separationTile must be the warhead's last
+    // observed position.
+    expect(separationTile).toBeDefined();
+
+    // Spy on `NukeExecution` constructors going forward so the next call to
+    // `drainPendingSpawns` records the `src` argument we're verifying.
+    const addExecSpy = vi.spyOn(game, "addExecution");
+    executeTicks(game, 1);
+    const submunitionExecs = addExecSpy.mock.calls
+      .flatMap((call) => call)
+      .filter((e): e is NukeExecution => e instanceof NukeExecution);
+    expect(submunitionExecs.length).toBeGreaterThan(0);
+
+    // The 4th constructor arg (`src`) must equal the separation tile, not
+    // the silo. Read it via the private field — we don't expose it
+    // publicly because no production code needs it.
+    const siloTile = (mirvExec as unknown as { spawnTile: number }).spawnTile;
+    for (const exec of submunitionExecs) {
+      const src = (exec as unknown as { src: number | null | undefined }).src;
+      expect(src).toBe(separationTile);
+      expect(src).not.toBe(siloTile);
+    }
+  });
+
   test("MIRV should launch when targeting own territory without breaking alliances", async () => {
     const playerTile = Array.from(player.tiles())[0];
     const mirvExec = new MirvExecution(player, playerTile);
@@ -288,5 +345,111 @@ describe("ClusterWarheadExecution", () => {
     // Expect MIRV to launch successfully without marking player as traitor
     expect(player.units(UnitType.ClusterWarhead)).toHaveLength(1);
     expect(player.isTraitor()).toBe(false);
+  });
+
+  test("MIRV deterministic contract: total count, ordering, per-batch drain, separation src", async () => {
+    // Issue #5 — deterministic MRV verification.
+    //
+    // With a fixed setup (sufficient enemy territory to allow the full
+    // 350-warhead payload to find non-overlapping targets) and the seeded
+    // `PseudoRandom` used inside `MirvExecution`, the destination set is
+    // fully determined by the game state at separation. Lock in:
+    //   1. Total submunition count equals `warheadCount = 350`.
+    //   2. Destinations are sorted by Manhattan distance from `dst`
+    //      descending — i.e. the furthest target spawns first so the
+    //      arrival window roughly converges on the centre.
+    //   3. The tick-spread drain spawns at most `MIRV_SPAWN_PER_TICK`
+    //      (= 50) NukeExecutions per tick across the drain window, and
+    //      drains to zero in exactly `ceil(total / 50) = 7` ticks.
+    //   4. Every spawned `NukeExecution` uses the captured separation
+    //      tile as its `src` argument (not the silo). This is the
+    //      original regression in Issue #5 and remains the load-bearing
+    //      part of the contract.
+    for (let x = 75; x < 200; x++) {
+      for (let y = 75; y < 200; y++) {
+        const tile = game.ref(x, y);
+        if (game.map().isSector(tile)) {
+          otherPlayer.conquer(tile);
+        }
+      }
+    }
+
+    const targetTile = game.ref(110, 110);
+    const mirvExec = new MirvExecution(player, targetTile);
+    game.addExecution(mirvExec);
+
+    // Burn through init + spawn so the warhead unit exists.
+    executeTicks(game, 2);
+    const warhead = player.units(UnitType.ClusterWarhead)[0];
+    expect(warhead).toBeDefined();
+
+    // Run the cruise leg until separation begins; capture the last
+    // observed warhead tile as the expected separation source.
+    let separationTile = warhead.tile();
+    while (warhead.isActive()) {
+      separationTile = warhead.tile();
+      game.executeNextTick();
+    }
+    expect(separationTile).toBeDefined();
+
+    // Spy on every NukeExecution spawned by the drain window.
+    const addExecSpy = vi.spyOn(game, "addExecution");
+
+    // Drive the spread-drain. With MIRV_SPAWN_PER_TICK = 50 and
+    // warheadCount = 350, the drain takes exactly 7 ticks. Track per-tick
+    // batch sizes via the spy's call count delta and assert the cap.
+    const PER_TICK_CAP = 50;
+    const TOTAL = 350;
+    const batchSizes: number[] = [];
+    let prevCount = 0;
+    let drainTicks = 0;
+    while (mirvExec.isActive() && drainTicks < 20) {
+      game.executeNextTick();
+      drainTicks++;
+      const nukeCount = addExecSpy.mock.calls
+        .flatMap((call) => call)
+        .filter((e): e is NukeExecution => e instanceof NukeExecution).length;
+      const delta = nukeCount - prevCount;
+      if (delta > 0) batchSizes.push(delta);
+      prevCount = nukeCount;
+    }
+
+    // Per-batch drain: no tick spawns more than 50 submunitions.
+    for (const sz of batchSizes) {
+      expect(sz).toBeLessThanOrEqual(PER_TICK_CAP);
+    }
+
+    // Total submunition count: exactly `warheadCount`.
+    const submunitionExecs = addExecSpy.mock.calls
+      .flatMap((call) => call)
+      .filter((e): e is NukeExecution => e instanceof NukeExecution);
+    expect(submunitionExecs.length).toBe(TOTAL);
+
+    // Drain window: ceil(350 / 50) = 7 ticks.
+    expect(batchSizes.length).toBe(Math.ceil(TOTAL / PER_TICK_CAP));
+
+    // Source-tile invariant: every spawned NukeExecution's `src` must
+    // equal the captured separation tile, not the silo.
+    const siloTile = (mirvExec as unknown as { spawnTile: number }).spawnTile;
+    for (const exec of submunitionExecs) {
+      const src = (exec as unknown as { src: number | null | undefined }).src;
+      expect(src).toBe(separationTile);
+      expect(src).not.toBe(siloTile);
+    }
+
+    // Destination ordering: targets sorted by Manhattan distance from
+    // `dst` descending. The first-spawned submunition (furthest from
+    // `dst`) must have a larger Manhattan distance than the last-spawned.
+    const firstDst = (
+      submunitionExecs[0]! as unknown as { dst: number }
+    ).dst;
+    const lastDst = (
+      submunitionExecs[submunitionExecs.length - 1]! as unknown as {
+        dst: number;
+      }
+    ).dst;
+    expect(game.manhattanDist(firstDst, targetTile)).toBeGreaterThanOrEqual(
+      game.manhattanDist(lastDst, targetTile),
+    );
   });
 });

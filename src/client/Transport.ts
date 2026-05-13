@@ -86,6 +86,14 @@ export class BuildUnitIntentEvent implements GameEvent {
     public readonly unit: UnitType,
     public readonly tile: TileRef,
     public readonly rocketDirectionUp?: boolean,
+    /**
+     * Issue #7 — when set, the server must host this construction on the
+     * Battlecruiser whose unit id matches `hostBattlecruiserId`. If that
+     * cruiser is not owned by the player, is no longer active, or already
+     * has a slotted structure, the construction is rejected without
+     * falling back to ground-based placement.
+     */
+    public readonly hostBattlecruiserId?: number,
   ) {}
 }
 
@@ -603,6 +611,7 @@ export class Transport {
       unit: event.unit,
       tile: event.tile,
       rocketDirectionUp: event.rocketDirectionUp,
+      hostBattlecruiserId: event.hostBattlecruiserId,
     });
   }
 

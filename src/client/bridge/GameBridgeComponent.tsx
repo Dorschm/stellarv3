@@ -77,6 +77,7 @@ function syncStoreFromGameView(gameView: GameView): void {
       level: u.level(),
       isActive: u.isActive(),
       health: u.health(),
+      hasSlottedStructure: u.hasSlottedStructure(),
     });
   }
   store.setUnits(unitsMap);

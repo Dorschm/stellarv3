@@ -42,6 +42,13 @@ export interface UnitSnapshot {
   level: number;
   isActive: boolean;
   health: number | undefined;
+  /**
+   * Issue #7 — `true` when this unit is a Battlecruiser whose one-slot
+   * structure mount is currently occupied. Surfaced so the hotkey path can
+   * render immediate "slot occupied" feedback. Always `false` for non-
+   * Battlecruiser units.
+   */
+  hasSlottedStructure: boolean;
 }
 
 /** Lightweight game message for the EventsDisplay / ChatDisplay. */
@@ -73,6 +80,15 @@ export interface HUDState {
   /** All active units keyed by unit id. */
   units: Map<number, UnitSnapshot>;
 
+  /**
+   * Issue #7 — per-tick cost snapshot for the local player of every
+   * Battlecruiser-hostable structure type. Lets the selected-cruiser hotkey
+   * path in `SpaceInputHandler` give immediate "Not enough money" feedback
+   * before sending an intent the server would silently reject. Empty when
+   * spectating or before the first player snapshot.
+   */
+  cruiserHostableCosts: Map<UnitType, Credits>;
+
   // -- UI interaction --
   /** Currently selected tile (for context menus, build UI, etc.). */
   selectedTile: TileRef | null;
@@ -89,6 +105,15 @@ export interface HUDState {
   /** The source gate tile after first click in gate selection mode. */
   jumpGateSourceTile: TileRef | null;
 
+  // -- Capital Ship selection (issue #4) --
+  /**
+   * Unit id of the currently selected friendly Battlecruiser, or `null` if
+   * none. While set, left-clicks on the map issue a move order; number-key
+   * builds (1–0) auto-host on this cruiser; the cursor swaps to a
+   * move-target reticle.
+   */
+  selectedBattlecruiserUnitId: number | null;
+
   // -- Game phase --
   /** Whether the game is in the spawn phase (before main play begins). */
   inSpawnPhase: boolean;
@@ -102,12 +127,14 @@ export interface HUDState {
   setMyPlayer: (player: PlayerSnapshot | null) => void;
   setPlayers: (players: Map<PlayerID, PlayerSnapshot>) => void;
   setUnits: (units: Map<number, UnitSnapshot>) => void;
+  setCruiserHostableCosts: (costs: Map<UnitType, Credits>) => void;
   setSelectedTile: (tile: TileRef | null) => void;
   setAttackRatio: (ratio: number) => void;
   setGhostStructure: (gs: UnitType | null) => void;
   setRocketDirectionUp: (up: boolean) => void;
   setJumpGateMode: (mode: "idle" | "selectSource" | "selectDest") => void;
   setJumpGateSourceTile: (tile: TileRef | null) => void;
+  setSelectedBattlecruiser: (unitId: number | null) => void;
   setInSpawnPhase: (inSpawnPhase: boolean) => void;
   setWinner: (winner: WinUpdate | null) => void;
   addMessages: (newMessages: MessageSnapshot[]) => void;
@@ -128,12 +155,14 @@ const INITIAL_STATE = {
   myPlayer: null as PlayerSnapshot | null,
   players: new Map<PlayerID, PlayerSnapshot>(),
   units: new Map<number, UnitSnapshot>(),
+  cruiserHostableCosts: new Map<UnitType, Credits>(),
   selectedTile: null as TileRef | null,
   attackRatio: 20,
   ghostStructure: null as UnitType | null,
   rocketDirectionUp: true,
   jumpGateMode: "idle" as "idle" | "selectSource" | "selectDest",
   jumpGateSourceTile: null as TileRef | null,
+  selectedBattlecruiserUnitId: null as number | null,
   inSpawnPhase: false,
   winner: null as WinUpdate | null,
   messages: [] as MessageSnapshot[],
@@ -148,12 +177,15 @@ export const useHUDStore = create<HUDState>((set) => ({
   setMyPlayer: (player) => set({ myPlayer: player }),
   setPlayers: (players) => set({ players }),
   setUnits: (units) => set({ units }),
+  setCruiserHostableCosts: (costs) => set({ cruiserHostableCosts: costs }),
   setSelectedTile: (tile) => set({ selectedTile: tile }),
   setAttackRatio: (ratio) => set({ attackRatio: ratio }),
   setGhostStructure: (gs) => set({ ghostStructure: gs }),
   setRocketDirectionUp: (up) => set({ rocketDirectionUp: up }),
   setJumpGateMode: (mode) => set({ jumpGateMode: mode }),
   setJumpGateSourceTile: (tile) => set({ jumpGateSourceTile: tile }),
+  setSelectedBattlecruiser: (unitId) =>
+    set({ selectedBattlecruiserUnitId: unitId }),
   setInSpawnPhase: (inSpawnPhase) => set({ inSpawnPhase }),
   setWinner: (winner) => set({ winner }),
   addMessages: (newMessages) =>
@@ -167,6 +199,7 @@ export const useHUDStore = create<HUDState>((set) => ({
       // session cannot leak through.
       players: new Map(),
       units: new Map(),
+      cruiserHostableCosts: new Map(),
       messages: [],
     }),
 }));

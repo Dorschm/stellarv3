@@ -30,7 +30,7 @@ export function LeaderboardModal() {
     const token = ++loadTokenRef.current;
     setIsLoading(true);
     try {
-      const res = await fetch(`${getApiBase()}/leaderboard/players`);
+      const res = await fetch(`${getApiBase()}/api/leaderboard/players`);
       if (token !== loadTokenRef.current) return;
       if (res.ok) {
         const data = await res.json();
@@ -53,7 +53,7 @@ export function LeaderboardModal() {
     const token = ++loadTokenRef.current;
     setIsLoading(true);
     try {
-      const res = await fetch(`${getApiBase()}/leaderboard/clans`);
+      const res = await fetch(`${getApiBase()}/api/leaderboard/clans`);
       if (token !== loadTokenRef.current) return;
       if (res.ok) {
         const data = await res.json();

@@ -125,14 +125,24 @@ test.describe("End-game modal (WinModal)", () => {
     // is not enough — the runner replaces `data` from PlayerUpdate
     // payloads every tick. WinModal's death detection runs on every
     // tick (useGameTick(0)), so the modal should appear shortly after.
+    //
+    // Also force `inSpawnPhase()` to false on the GameView. The death
+    // gate in WinModal explicitly skips while in spawn phase, and a
+    // headless game can still be inside `numSpawnPhaseTurns()` ticks
+    // when this test runs even though the player has been alive for
+    // several ticks (the spawn click lands quickly but the game-wide
+    // spawn-phase counter only ends on its own clock). Without this
+    // override the death modal never fires regardless of isAlive.
     await page.evaluate(() => {
       const w = window as unknown as {
         __gameView: {
           myPlayer(): { isAlive: () => boolean } | null;
+          inSpawnPhase: () => boolean;
         };
       };
       const mp = w.__gameView.myPlayer();
       if (mp) mp.isAlive = () => false;
+      w.__gameView.inSpawnPhase = () => false;
     });
 
     // Headless is slower than headed (less frequent rAF + tick events),

@@ -1,4 +1,4 @@
-import { Execution, Game, Player, Unit } from "../game/Game";
+import { Execution, Game, Player, Unit, UnitType } from "../game/Game";
 import { TileRef } from "../game/GameMap";
 
 /**
@@ -17,7 +17,21 @@ interface PendingLrwImpact {
   // GDD §8 / Ticket 8 — handle into the Game-level LRW impact registry,
   // used by DefenseStation intercepts to cancel a pending impact mid-flight.
   registryToken: number;
+  // Issue #8 — when the OSP is hosted on a Battlecruiser, the LRW targets
+  // a ship rather than a ground tile. We carry a reference to the target
+  // unit so the impact applies flat damage on the ship and skips the
+  // habitability-overlay path. The Unit may have been destroyed between
+  // fire and impact; `isActive()` guards that case at impact time.
+  targetShip?: Unit;
 }
+
+/** OSP target kinds — ground (legacy ground-tile bombardment) or ship
+ * (anti-ship LRW used when the OSP is slotted on a Battlecruiser). */
+const SHIP_TARGETABLE_TYPES: UnitType[] = [
+  UnitType.Battlecruiser,
+  UnitType.AssaultShuttle,
+  UnitType.TradeFreighter,
+];
 
 export class OrbitalStrikePlatformExecution implements Execution {
   private active = true;
@@ -134,8 +148,18 @@ export class OrbitalStrikePlatformExecution implements Execution {
       return;
     }
 
-    const target = this.findLongRangeWeaponTarget();
-    if (target === null) {
+    // Issue #8 — when the OSP is slotted on a Battlecruiser its LRW fires
+    // at enemy SHIPS rather than ground tiles. We detect host status via
+    // the explicit `hostBattlecruiser()` back-reference rather than just
+    // "is on a void tile" so an OSP that happens to overhang deep space
+    // (e.g. a coastal sector boundary) still uses ground targeting.
+    const hostedOnCapShip =
+      this.platform.hostBattlecruiser() !== undefined &&
+      this.platform.hostBattlecruiser()!.type() === UnitType.Battlecruiser;
+
+    const shipTarget = hostedOnCapShip ? this.findShipTargetInRange() : null;
+    const groundTarget = hostedOnCapShip ? null : this.findLongRangeWeaponTarget();
+    if (shipTarget === null && groundTarget === null) {
       return;
     }
 
@@ -145,7 +169,8 @@ export class OrbitalStrikePlatformExecution implements Execution {
 
     // Schedule the impact based on the projectile's tile-per-tick speed.
     const speed = config.longRangeWeaponProjectileSpeed();
-    const distance = this.mg.manhattanDist(this.platform.tile(), target.tile);
+    const targetTile = shipTarget !== null ? shipTarget.tile : groundTarget!.tile;
+    const distance = this.mg.manhattanDist(this.platform.tile(), targetTile);
     // At least 1 tick of travel so the impact never resolves on the same
     // tick the shot was fired (gives the cooldown a sane lower bound).
     const flightTicks = Math.max(1, Math.ceil(distance / Math.max(1, speed)));
@@ -156,14 +181,18 @@ export class OrbitalStrikePlatformExecution implements Execution {
     const registryToken = this.mg.registerPendingLrwImpact(
       owner.smallID(),
       this.platform.tile(),
-      target.tile,
+      targetTile,
       impactTick,
     );
     this.pendingImpacts.push({
-      targetTile: target.tile,
-      targetSmallID: target.smallID,
+      targetTile,
+      targetSmallID:
+        shipTarget !== null
+          ? shipTarget.ownerSmallID
+          : groundTarget!.smallID,
       impactTick,
       registryToken,
+      targetShip: shipTarget?.unit,
     });
   }
 
@@ -175,6 +204,18 @@ export class OrbitalStrikePlatformExecution implements Execution {
    */
   private applyLrwImpact(impact: PendingLrwImpact): void {
     const config = this.mg.config();
+
+    // Issue #8 — ship-target impact path. When the OSP fired at a ship,
+    // apply flat ship damage and skip the habitability overlay (the impact
+    // tile is a deep-space void, not a ground tile).
+    if (impact.targetShip !== undefined) {
+      const ship = impact.targetShip;
+      if (ship.isActive()) {
+        ship.modifyHealth(-config.lrwShipDamage());
+      }
+      return;
+    }
+
     const target = this.mg.playerBySmallID(impact.targetSmallID);
     if (!target.isPlayer()) {
       return;
@@ -204,6 +245,53 @@ export class OrbitalStrikePlatformExecution implements Execution {
         config.longRangeWeaponHabitabilityDamage(),
         ownerSmallID,
       );
+  }
+
+  /**
+   * Issue #8 — find the nearest enemy ship in LRW range. Used only when
+   * the OSP is hosted on a Battlecruiser; ground OSPs continue to use
+   * {@link findLongRangeWeaponTarget}. Returns `null` if no eligible ship
+   * is in range.
+   */
+  private findShipTargetInRange(): {
+    tile: TileRef;
+    ownerSmallID: number;
+    unit: Unit;
+  } | null {
+    const config = this.mg.config();
+    const maxRange = config.longRangeWeaponMaxRange();
+    const owner = this.platform.owner();
+    const nearby = this.mg.nearbyUnits(
+      this.platform.tile(),
+      maxRange,
+      SHIP_TARGETABLE_TYPES,
+    );
+    let bestUnit: Unit | null = null;
+    let bestDist = Infinity;
+    for (const { unit, distSquared } of nearby) {
+      const u = unit;
+      if (!u.isActive()) continue;
+      const shipOwner = u.owner();
+      if (shipOwner === owner) continue;
+      // Issue #8 — gate ship targeting on the same `canAttackPlayer` check
+      // ground bombardment uses (via `canAttack`). This catches spawn
+      // immunity for human / nation targets — without it, a hosted LRW
+      // could fire on an enemy ship whose owner is still under the
+      // post-spawn immunity window, breaking the same protection the
+      // ground-target path already honors.
+      if (!shipOwner.isPlayer()) continue;
+      if (!owner.canAttackPlayer(shipOwner)) continue;
+      if (distSquared < bestDist) {
+        bestDist = distSquared;
+        bestUnit = u;
+      }
+    }
+    if (bestUnit === null) return null;
+    return {
+      tile: bestUnit.tile(),
+      ownerSmallID: bestUnit.owner().smallID(),
+      unit: bestUnit,
+    };
   }
 
   /**

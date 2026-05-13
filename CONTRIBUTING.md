@@ -1,15 +1,6 @@
-# Contributing to OpenFront.io
+# Contributing
 
-First off, thank you for considering contributing to OpenFront.io! It's people like you that make OpenFront such a great game.
-
-We welcome contributions from everyone. By participating in this project, you agree to abide by our code of conduct and treat all community members with respect.
-
-## Quick Links
-
-- **Game**: [https://openfront.io/](https://openfront.io/)
-- **Discord**: [Join the Development Discord](https://discord.gg/K9zernJB5z)
-- **Translations**: [Crowdin Project](https://crowdin.com/project/openfront-mls)
-- **Issues**: [GitHub Issues](https://github.com/openfrontio/OpenFrontIO/issues)
+Thank you for considering contributing to OpenFront. Contributions are welcome — by participating in this project, you agree to treat all community members with respect.
 
 ## Getting Started
 
@@ -129,15 +120,10 @@ Before submitting, ensure you have:
 - [ ] Processed text through `translateText()` and added strings to `en.json`.
 - [ ] Added/Updated tests in the `tests/` directory.
 - [ ] Verified that `npm test` passes.
-- [ ] Provided your Discord username in the PR description for communication.
 
 ## Translations
 
-We use Crowdin for translations. If you want to help translate OpenFront.io:
-
-1. Join the [Translation Discord](https://discord.gg/3zZzacjWFr).
-2. Visit our [Crowdin Project](https://crowdin.com/project/openfront-mls).
-3. Select your language or request a new one.
+Locale strings live in `resources/lang/`. `en.json` is the canonical source — add new keys there first, then translate into the other locale files as needed.
 
 ## Project Structure
 

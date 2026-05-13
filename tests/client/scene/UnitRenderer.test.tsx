@@ -169,12 +169,14 @@ describe("renderKeyFor", () => {
       UnitType.NovaBomb,
       UnitType.ClusterWarhead,
       UnitType.ClusterWarheadSubmunition,
+      UnitType.ScoutSwarm,
       UnitType.Colony,
       UnitType.Spaceport,
       UnitType.Foundry,
       UnitType.OrbitalStrikePlatform,
       UnitType.DefenseStation,
       UnitType.PointDefenseArray,
+      UnitType.JumpGate,
     ];
     expect(new Set(ALL_RENDER_KEYS)).toEqual(new Set(expected));
     expect(ALL_RENDER_KEYS.length).toBe(expected.length);

@@ -18,7 +18,7 @@ export function NewsModal() {
     if (initialized.current) return;
     initialized.current = true;
     try {
-      const response = await fetch(`${getApiBase()}/changelog.md`);
+      const response = await fetch(`${getApiBase()}/api/changelog.md`);
       if (response.ok) {
         const text = await response.text();
         setMarkdown(normalizeMarkdown(text));

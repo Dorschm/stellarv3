@@ -1,5 +1,6 @@
 import React from "react";
 import { AlertFrame } from "./AlertFrame";
+import { CapitalShipSelectedHint } from "./CapitalShipSelectedHint";
 import { AttacksDisplay } from "./AttacksDisplay";
 import { BuildMenu } from "./BuildMenu";
 import { ChatDisplay } from "./ChatDisplay";
@@ -96,6 +97,7 @@ export function HUDOverlay(): React.JSX.Element {
       <PerformanceOverlay />
       <PlayerInfoOverlay />
       <HeadsUpMessage />
+      <CapitalShipSelectedHint />
       <JumpGateStatusBar />
       <InGamePromo />
       <PlayerModerationModal />

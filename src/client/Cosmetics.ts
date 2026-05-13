@@ -50,7 +50,7 @@ export async function fetchCosmetics(): Promise<Cosmetics | null> {
   }
   __cosmetics = (async () => {
     try {
-      const response = await fetch(`${getApiBase()}/cosmetics.json`);
+      const response = await fetch(`${getApiBase()}/api/cosmetics.json`);
       if (!response.ok) {
         console.error(`HTTP error! status: ${response.status}`);
         return null;

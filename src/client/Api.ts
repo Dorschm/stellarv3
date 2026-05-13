@@ -20,7 +20,7 @@ export async function fetchPlayerById(
     if (!userAuthResult) return false;
     const { jwt } = userAuthResult;
 
-    const url = `${getApiBase()}/player/${encodeURIComponent(playerId)}`;
+    const url = `${getApiBase()}/api/player/${encodeURIComponent(playerId)}`;
 
     const res = await fetch(url, {
       headers: {
@@ -64,7 +64,7 @@ export async function getUserMe(): Promise<UserMeResponse | false> {
       const { jwt } = userAuthResult;
 
       // Get the user object
-      const response = await fetch(getApiBase() + "/users/@me", {
+      const response = await fetch(getApiBase() + "/api/users/@me", {
         headers: {
           authorization: `Bearer ${jwt}`,
         },
@@ -95,7 +95,7 @@ export async function createCheckoutSession(
 ): Promise<string | false> {
   try {
     const response = await fetch(
-      `${getApiBase()}/stripe/create-checkout-session`,
+      `${getApiBase()}/api/stripe/create-checkout-session`,
       {
         method: "POST",
         headers: {
@@ -125,18 +125,33 @@ export async function createCheckoutSession(
   }
 }
 
+/**
+ * Resolve the base URL for the backend API.
+ *
+ * Resolution order:
+ *   1. `process.env.API_DOMAIN` injected at build time (Vite `define`) — set
+ *      it when the API is hosted on a different domain than the game.
+ *   2. `localStorage.apiHost` — a per-browser override useful for local dev
+ *      against a tunneled backend without rebuilding.
+ *   3. Empty string — same-origin. The Node server in `src/server/Master.ts`
+ *      hosts the API endpoints next to the game client, so relative URLs
+ *      like `/users/@me` resolve correctly in production AND in `npm run
+ *      dev` (Vite proxies them to the Node server on :3000).
+ */
 export function getApiBase() {
-  const domainname = getAudience();
-
-  if (domainname === "localhost") {
-    const apiDomain = process?.env?.API_DOMAIN;
-    if (apiDomain) {
-      return `https://${apiDomain}`;
-    }
-    return localStorage.getItem("apiHost") ?? "http://localhost:8787";
+  const apiDomain = process?.env?.API_DOMAIN;
+  if (apiDomain && apiDomain.length > 0) {
+    const scheme = apiDomain.startsWith("localhost") ? "http" : "https";
+    return `${scheme}://${apiDomain}`;
   }
-
-  return `https://api.${domainname}`;
+  try {
+    const override = localStorage.getItem("apiHost");
+    if (override) return override;
+  } catch {
+    // `localStorage` is unavailable in some embeds (server-side rendering,
+    // sandbox iframes). Fall through to same-origin.
+  }
+  return "";
 }
 
 export function getAudience() {
@@ -160,7 +175,7 @@ export async function fetchGameById(
   gameId: string,
 ): Promise<AnalyticsRecord | false> {
   try {
-    const url = `${getApiBase()}/game/${encodeURIComponent(gameId)}`;
+    const url = `${getApiBase()}/api/game/${encodeURIComponent(gameId)}`;
     const res = await fetch(url, {
       headers: {
         Accept: "application/json",
@@ -194,7 +209,7 @@ export async function fetchClanLeaderboard(): Promise<
   ClanLeaderboardResponse | false
 > {
   try {
-    const res = await fetch(`${getApiBase()}/public/clans/leaderboard`, {
+    const res = await fetch(`${getApiBase()}/api/public/clans/leaderboard`, {
       headers: { Accept: "application/json" },
     });
 
@@ -228,7 +243,7 @@ export async function fetchPlayerLeaderboard(
   page: number,
 ): Promise<RankedLeaderboardResponse | "reached_limit" | false> {
   try {
-    const url = new URL(`${getApiBase()}/leaderboard/ranked`);
+    const url = new URL(`${getApiBase()}/api/leaderboard/ranked`);
     url.searchParams.set("page", String(page));
     const res = await fetch(url.toString(), {
       headers: { Accept: "application/json" },

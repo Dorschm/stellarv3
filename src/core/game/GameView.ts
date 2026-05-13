@@ -209,6 +209,14 @@ export class UnitView {
   isLoaded(): boolean | undefined {
     return this.data.loaded;
   }
+  /**
+   * Issue #7 — `true` iff this Battlecruiser currently has a slotted
+   * structure attached. Returns `false` for other unit types so callers can
+   * treat a missing slot as "available" without a type check.
+   */
+  hasSlottedStructure(): boolean {
+    return this.data.hasSlottedStructure === true;
+  }
 }
 
 export class PlayerView {

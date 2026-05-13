@@ -7,7 +7,7 @@ every Tier.
 
 **Repo:** `C:\Users\dorsc\Desktop\OpenFront`
 **Branch surveyed:** `main`
-**Last updated:** 2026-04-11
+**Last updated:** 2026-05-13
 **Theme status:** Rebrand from naval/terrestrial RTS to space/sci-fi RTS
 complete. The codebase's primitives now include Habitability, SectorMap,
 Scout Swarm terraforming, Jump Gates, procedural maps, permadeath rejoin
@@ -81,7 +81,7 @@ Legend:
 | 2     | Dual currency (population + resources)                        | PARTIAL   | Troops + Credits exist; rename to `Population` / `Resources` is Ticket 5 (§B below)                                                                                           |
 | 2     | Limited slots per planet, stackable levels                    | PARTIAL   | Upgrade levels MATCH; per-planet slot cap lands with Planet entity (§A)                                                                                                       |
 | 3.1   | Starting pop 100,000                                          | MATCH     | Config rewired to spec                                                                                                                                                        |
-| 3.1   | +3%/s growth on habitable, 0% on partial                      | MATCH     | `SectorMap` bucket counters drive formulas; see `EconomyFormulas` tests                                                                                                       |
+| 3.1   | +3%/s growth on habitable, 0% on partial                      | DEVIATION | May 2026 balance pass replaced the flat +3%/s curve with a pure logistic term `perTick = LOGISTIC_BASE_RATE × current × (1 - current / max)` (peaks at `current = max/2`, zero at `current = 0` and `current ≥ max`); see `EconomyFormulas` tests. |
 | 3.1   | Caps 100/km² full, 25/km² partial                             | MATCH     | `maxTroops = 100 × full + 25 × partial`                                                                                                                                       |
 | 3.2   | +1 resource per km³/s on habitable+partial                    | MATCH     | `creditGen` sums bucket counters per tick                                                                                                                                     |
 | 4     | Scout swarms, ~10% res launch cost, 2 AU/min                  | MATCH     | `ScoutSwarmExecution` + `UnitType.ScoutSwarm`                                                                                                                                 |
@@ -94,7 +94,7 @@ Legend:
 | 5     | Exponential cost scaling                                      | MATCH     | `2^n × base` used consistently                                                                                                                                                |
 | 5     | Colony / Foundry / PointDefenseArray                          | DEVIATION | Not in GDD v0.1 — explicit keep decisions in `docs/product-decisions.md`                                                                                                      |
 | 6     | Scout Fleet (temporary)                                       | MATCH     | ScoutSwarm                                                                                                                                                                    |
-| 6     | Assault Fleet 100k pop + 100k res, 1 AU/min                   | PARTIAL   | AssaultShuttle cost + speed close; tuning sweep pending                                                                                                                       |
+| 6     | Assault Fleet 100k pop + 100k res, 1 AU/min                   | DEVIATION | AssaultShuttle cost matches; speed intentionally raised to match Battlecruiser cadence (1 tick/tile) — see Issue Batch May 12–13 2026 plan §3.4. Legacy `ASSAULT_SHUTTLE_AU_PER_MINUTE` kept for traceability only. |
 | 6     | 1:1 attrition with stacking                                   | DEVIATION | See `docs/ADR-0001-combat-model.md`                                                                                                                                           |
 | 6     | Frigate + AntimatterTorpedo/NovaBomb/ClusterWarhead           | DEVIATION | Extra unit tier — explicit keep decisions in `docs/product-decisions.md`                                                                                                      |
 | 7     | Trade between Star Ports via fleets                           | MATCH     | `TradeFreighter`                                                                                                                                                              |
@@ -114,6 +114,8 @@ Legend:
 | 12    | Permadeath / legacy score                                     | MATCH     | See §1 + RunHistory                                                                                                                                                           |
 | 13    | Web target, 1–8 multiplayer                                   | MATCH     |                                                                                                                                                                               |
 | 14    | Capital Ships as mobile one-slot planets                      | MATCH     | `Battlecruiser.setSlottedStructure` — Ticket 6                                                                                                                                |
+| 14    | Capital Ship combat driven by hosted platform (no default weapon) | DEVIATION | Battlecruisers carry no default plasma / LRW intercept. All combat (LRW, intercept, point defense, repair) is provided by the slotted structure (DefenseStation, OrbitalStrikePlatform, PointDefenseArray, Foundry). Documented in `docs/product-decisions.md`.                  |
+| 14    | Colony-gated territory expansion                              | DEVIATION | Players can only own/claim tiles inside a sector that already hosts a friendly Colony; deep-space / unsectored tiles are non-claimable. Documented in `docs/product-decisions.md`.                                                                                              |
 
 ---
 
@@ -162,8 +164,10 @@ Ticket 5 in the active work plan.
   Moves with §A; drops in once the Planet entity exists.
 - **Population transport on trade fleets (GDD §7).** Fleets currently
   transport resources only. Non-blocking for the GDD's win/lose loop.
-- **Assault Fleet cost/speed tuning sweep (GDD §6).** Close to spec but
-  not exactly; lands with a general balance pass.
+- ~~**Assault Fleet cost/speed tuning sweep (GDD §6).**~~ Resolved —
+  AssaultShuttle speed was deliberately raised to 1 tick/tile to match
+  Battlecruiser cadence; cost already matches GDD spec. See the
+  `DEVIATION` row in §3 and `docs/product-decisions.md`.
 - **Server-side ramp precision (GDD §10).** Wall-clock approximation is a
   deliberate deviation — see `GameServer.ts::maybeAdjustTickRate`.
 

@@ -29,20 +29,6 @@ export function TroubleshootingModal() {
               <p className="text-white/60 text-sm">{tip.desc}</p>
             </div>
           ))}
-
-          <div className="mt-4 p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
-            <p className="text-white/70 text-sm">
-              {translateText("troubleshooting.still_having_issues")}
-            </p>
-            <a
-              href="https://discord.gg/openfront"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block mt-2 px-4 py-2 rounded-lg bg-[#5865F2] hover:bg-[#4752C4] transition-colors text-white text-sm font-medium"
-            >
-              {translateText("troubleshooting.join_discord")}
-            </a>
-          </div>
         </div>
       </ModalContainer>
     </ModalPage>

@@ -14,9 +14,10 @@ import {
   SRGBColorSpace,
   UnsignedByteType,
 } from "three";
-import { TerrainType } from "../../core/game/Game";
+import { TerrainType, UnitType } from "../../core/game/Game";
 import { TileRef } from "../../core/game/GameMap";
 import { UserSettings } from "../../core/game/UserSettings";
+import { MoveBattlecruiserIntentEvent } from "../Transport";
 import {
   AutoUpgradeEvent,
   ContextMenuEvent,
@@ -494,6 +495,40 @@ export function SpaceMapPlane(): React.JSX.Element | null {
         const { tileX, tileY } = uvToTile(e.uv);
         const native = e.nativeEvent;
 
+        // Issue #4 — Capital Ship selection precedence. Highest priority
+        // (above modifier/alt/leftClickOpensMenu) so a selected cruiser's
+        // move command can't be hijacked by the build/emoji menus.
+        //   - If the click landed on (or very close to) an owned cap ship,
+        //     select-or-swap: set the selection to the clicked ship. A
+        //     same-click on the already-selected ship preserves selection
+        //     (it does NOT deselect). Clicking another friendly cap ship
+        //     swaps the selection to that ship.
+        //   - Else if a cap ship is already selected, issue a move order
+        //     to the clicked tile.
+        const hud = useHUDStore.getState();
+        const clickedUnitId = findOwnedBattlecruiserAtClick(
+          hud,
+          game,
+          tileX,
+          tileY,
+        );
+        if (clickedUnitId !== null) {
+          // Select-or-swap: always set to the clicked id. Same-click
+          // preserves selection; clicking another friendly cruiser swaps.
+          hud.setSelectedBattlecruiser(clickedUnitId);
+          return;
+        }
+        if (hud.selectedBattlecruiserUnitId !== null) {
+          const clickedTile = game.ref(tileX, tileY);
+          eventBus.emit(
+            new MoveBattlecruiserIntentEvent(
+              hud.selectedBattlecruiserUnitId,
+              clickedTile,
+            ),
+          );
+          return;
+        }
+
         // Resolve which click action wins given the current HUD / settings
         // snapshot. Extracted as a pure helper so the precedence rules
         // (gate mode > modifier > alt > leftClickOpensMenu > default) can be
@@ -525,7 +560,7 @@ export function SpaceMapPlane(): React.JSX.Element | null {
       }
       // Right-click (button === 2) is handled exclusively by onContextMenu
     },
-    [eventBus, uvToTile, keybinds],
+    [eventBus, uvToTile, keybinds, game],
   );
 
   const onPointerMove = useCallback(
@@ -631,6 +666,52 @@ export function SpaceMapPlane(): React.JSX.Element | null {
     pointerDownRef.current = null;
     windowDragCleanupRef.current?.();
   }, []);
+
+  // Issue #4 — toggle a body class while a Capital Ship is selected so the
+  // global CSS cursor swaps to a move-target reticle. Subscribes to the
+  // HUD store rather than reading via useState selector so the effect
+  // doesn't re-run on unrelated store changes (units / players / etc.).
+  useEffect(() => {
+    const apply = (selected: number | null): void => {
+      document.body.classList.toggle("cap-ship-selected", selected !== null);
+    };
+    apply(useHUDStore.getState().selectedBattlecruiserUnitId);
+    const unsub = useHUDStore.subscribe((s, prev) => {
+      if (s.selectedBattlecruiserUnitId !== prev.selectedBattlecruiserUnitId) {
+        apply(s.selectedBattlecruiserUnitId);
+      }
+    });
+    return () => {
+      unsub();
+      document.body.classList.remove("cap-ship-selected");
+    };
+  }, []);
+
+  // Issue #4 — auto-clear stale cap-ship selection. The selection must be
+  // dropped whenever the cruiser is no longer a valid hostable target for
+  // the local player. This guards against destroyed cruisers, captured
+  // cruisers (ownership flipped to another player), and the rare case
+  // where the snapshot replaces the cruiser with a non-Battlecruiser unit
+  // sharing the same id. Without this guard a stale selection can fall
+  // back into ground-build ghost mode on the next hotkey press.
+  const units = useHUDStore((s) => s.units);
+  const myPlayer = useHUDStore((s) => s.myPlayer);
+  const selectedBattlecruiserId = useHUDStore(
+    (s) => s.selectedBattlecruiserUnitId,
+  );
+  useEffect(() => {
+    if (selectedBattlecruiserId === null) return;
+    const cruiser = units.get(selectedBattlecruiserId);
+    if (
+      cruiser === undefined ||
+      cruiser.type !== UnitType.Battlecruiser ||
+      !cruiser.isActive ||
+      myPlayer === null ||
+      cruiser.ownerSmallID !== myPlayer.smallID
+    ) {
+      useHUDStore.getState().setSelectedBattlecruiser(null);
+    }
+  }, [units, selectedBattlecruiserId, myPlayer]);
 
   // Window-level cleanup: ensure `pointerDownRef` is reset even when the
   // release lands outside the mesh (mesh-scoped onPointerUp may never fire
@@ -762,4 +843,39 @@ function compositePixel(
     );
     out[i + 3] = Math.round(outA * 255);
   }
+}
+
+/**
+ * Issue #4 — Capital Ship click hit-test. Returns the unit id of an owned
+ * Battlecruiser whose tile lies within a small radius of the click, or
+ * `null` if no owned cap ship is near the click. Reads the live unit
+ * snapshot from the HUD store (no game-tick dependency).
+ */
+const BATTLECRUISER_CLICK_RADIUS_TILES = 5;
+function findOwnedBattlecruiserAtClick(
+  hud: ReturnType<typeof useHUDStore.getState>,
+  game: { x(t: TileRef): number; y(t: TileRef): number; ref(x: number, y: number): TileRef },
+  clickTileX: number,
+  clickTileY: number,
+): number | null {
+  const myPlayer = hud.myPlayer;
+  if (myPlayer === null) return null;
+  let bestId: number | null = null;
+  let bestDistSq = Infinity;
+  const r2 = BATTLECRUISER_CLICK_RADIUS_TILES * BATTLECRUISER_CLICK_RADIUS_TILES;
+  for (const unit of hud.units.values()) {
+    if (unit.type !== UnitType.Battlecruiser) continue;
+    if (!unit.isActive) continue;
+    if (unit.ownerSmallID !== myPlayer.smallID) continue;
+    const ux = game.x(unit.tile);
+    const uy = game.y(unit.tile);
+    const dx = ux - clickTileX;
+    const dy = uy - clickTileY;
+    const d2 = dx * dx + dy * dy;
+    if (d2 <= r2 && d2 < bestDistSq) {
+      bestDistSq = d2;
+      bestId = unit.id;
+    }
+  }
+  return bestId;
 }

@@ -33,6 +33,19 @@ const DEFENSE_DEBUFF_DECAY_RATE = Math.LN2 / 50000;
 const DEFAULT_SPAWN_IMMUNITY_TICKS = 5 * 10;
 
 /**
+ * Per-tick coefficient for the logistic population-growth curve introduced
+ * by the May 2026 balance pass (issue #6):
+ *
+ *   perTick = LOGISTIC_BASE_RATE × current × (1 - current / max)
+ *
+ * Tuned so the curve's peak (at `current = max/2`) reproduces the prior
+ * "+3% per second" rate: 0.012 × max/4 = 0.3% of max per tick = 3% / s at
+ * 10 ticks/s. Past the inflection point growth tapers smoothly toward zero
+ * instead of cliff-clamping at the cap. See `troopIncreaseRate`.
+ */
+const LOGISTIC_BASE_RATE = 0.012;
+
+/**
  * Tiles-per-AU conversion. The GDD expresses every long-range distance
  * (LRW projectile speed, scout patrol radius, hyperspace lane reach) in
  * astronomical units. The Sol System map is 1500x1500 tiles, so at
@@ -118,19 +131,23 @@ const ASSAULT_SHUTTLE_UPKEEP_PER_TICK: Credits = 50n;
 const TRADE_FREIGHTER_UPKEEP_PER_TICK: Credits = 10n;
 
 /**
- * GDD §6 — Assault Fleet travel speed: 1 AU per minute. Resolved at module
- * load via {@link AU_IN_TILES} for the same reason as the LRW/scout speeds.
+ * Assault Shuttle travel speed.
  *
- * The Assault Shuttle's pathfinder steps one tile at a time, so we express
- * the speed as an integer "ticks per tile" (the reciprocal of tiles/tick).
- * With AU=100 and 1 AU/min: 100 tiles per 60 seconds = 100 tiles per 600
- * ticks → 6 ticks per tile.
+ * The GDD §6 figure is "1 AU/min" (the {@link ASSAULT_SHUTTLE_AU_PER_MINUTE}
+ * constant below), but the May 2026 balance pass (#3) intentionally deviates
+ * from that — shuttles now move at the same one-tick-per-tile cadence as a
+ * Battlecruiser so they don't feel like a slog out to a target. The GDD gap
+ * report tracks this as a DEVIATION.
+ *
+ * The legacy AU constant is kept around so anyone grepping the GDD against
+ * the codebase still finds it, but it is no longer wired into the speed.
+ *
+ * @deprecated Use {@link ASSAULT_SHUTTLE_TICKS_PER_TILE} directly. The
+ * AU-per-minute value is retained for traceability against GDD §6 only.
  */
 const ASSAULT_SHUTTLE_AU_PER_MINUTE = 1;
-const ASSAULT_SHUTTLE_TICKS_PER_TILE = Math.max(
-  1,
-  Math.round((60 * 10) / (ASSAULT_SHUTTLE_AU_PER_MINUTE * AU_IN_TILES)),
-);
+void ASSAULT_SHUTTLE_AU_PER_MINUTE;
+const ASSAULT_SHUTTLE_TICKS_PER_TILE = 1;
 
 /**
  * GDD §14 — Battlecruiser structure slot count. A Battlecruiser can host
@@ -483,19 +500,39 @@ export class DefaultConfig implements Config {
     return BATTLECRUISER_STRUCTURE_SLOT_COUNT;
   }
 
+  // ---- Issue #8 — Platform-driven cap-ship combat -------------------------
+  // Default OFF: the cap ship's plasma bolt + LRW intercept only fire when
+  // an appropriate weapon platform is slotted. Flipping this back to true
+  // restores the legacy "always shoots" behavior with no other code change.
+  battlecruiserHasDefaultWeapon(): boolean {
+    return false;
+  }
+
+  lrwShipDamage(): number {
+    // Roughly 2× a plasma-bolt's per-shot damage; tuned to make an OSP-on-BC
+    // a credible-but-not-overwhelming anti-ship weapon. See plan §5.2.
+    return 50;
+  }
+
+  // ---- Issue #10 — Foundry-on-cap-ship heal aura --------------------------
+  foundryHealRadius(): number {
+    return 30;
+  }
+
+  foundryHealPerTick(): number {
+    return 1;
+  }
+
   // ---- Ticket 8: Habitability-gated structure slot limits -----------------
-  // Buckets line up with the SectorMap habitability constants:
-  //   AsteroidField (0.3)  → 0 (must be terraformed before any build)
-  //   Nebula        (0.6)  → 10
-  //   OpenSpace     (1.0)  → 20
-  // The numeric thresholds use "≤" so a tile sitting exactly at the boundary
-  // gets the more restrictive cap, matching how partially-terraformed tiles
-  // (e.g. an Asteroid hit by one terraform tick) should still feel uninhabit-
-  // able until they cleanly cross into the next bucket.
+  // AsteroidField tier (hab ≤ 0.3) still blocks all construction — the tile
+  // must be terraformed up to Nebula/OpenSpace before anything can be built.
+  // Once habitable, the slot count is uncapped: per the May 2026 balance pass
+  // (issue #1) we no longer constrain ground builds by tier, so habitable
+  // tiles all return Infinity. PlayerImpl.canBuild's `count < slotLimit`
+  // check naturally short-circuits to true for finite structure counts.
   maxStructuresForHabitability(habitability: number): number {
     if (!Number.isFinite(habitability) || habitability <= 0.3) return 0;
-    if (habitability <= 0.6) return 10;
-    return 20;
+    return Number.POSITIVE_INFINITY;
   }
 
   // ---- Ticket 7: Dynamic tick-rate scaling --------------------------------
@@ -1221,38 +1258,27 @@ export class DefaultConfig implements Config {
   }
 
   troopIncreaseRate(player: Player): number {
-    // GDD §3 — population grows +3%/s, but only on fully-habitable tiles.
-    // Partial (Nebula) and uninhabitable (Asteroid) tiles contribute 0%.
-    // We weight the growth by the share of the player's owned sector tiles
-    // that are fully habitable, then convert to per-tick (10 ticks/s).
+    // May 2026 balance pass (issue #6) — logistic population growth.
+    //
+    //   perTick = LOGISTIC_BASE_RATE × current × (1 - current / max)
+    //
+    // The curve peaks at `current ≈ max / 2` and tapers smoothly to 0 as
+    // `current → max`, replacing the previous flat `+0.3%/tick` formula
+    // that cliff-clamped to zero. LOGISTIC_BASE_RATE is tuned so the peak
+    // per-tick rate (at the inflection point) matches the legacy "+3%/s on
+    // a fully-habitable player at cap" feel: with base = 0.012, the
+    // inflection peak is 0.012 × max/4 = 0.3% of max per tick, identical
+    // to the old peak rate. Habitability weighting is removed — the curve
+    // applies uniformly regardless of where tiles are.
+    //
+    // Difficulty multipliers (0.9× → 1.05×) remain Nation-only, applied
+    // AFTER the logistic term so the human-side invariant in
+    // HumanDifficultyInvariants.test.ts continues to hold.
     const max = this.maxPopulation(player);
     const current = player.population();
     if (current >= max) return 0;
 
-    const sm = this._sectorMap;
-    let habShare = 1.0;
-    if (sm !== null) {
-      const total = sm.playerOwnedSectorTiles(player);
-      if (total > 0) {
-        const weighted =
-          sm.playerFullHabTiles(player) +
-          0.5 * sm.playerPartialHabTiles(player);
-        habShare = weighted / total;
-      } else {
-        // Pre-territory spawn tick: keep a small trickle so a brand-new
-        // player isn't stuck at 0 growth before their first sector tile.
-        habShare = 0.0;
-      }
-    }
-
-    // 3% per second → 0.3% per tick. Scaled by full-hab share.
-    let perTick = current * 0.003 * habShare + Math.pow(current, 0.6) / 8;
-
-    // Idle floor so players with no fully-habitable territory yet still see
-    // some recovery (mirrors the old `10 + …` baseline term). Without this,
-    // a player whose only tiles are Nebula/Asteroid would never recover from
-    // attrition until they terraform.
-    perTick += 10;
+    let perTick = LOGISTIC_BASE_RATE * current * (1 - current / max);
 
     if (player.type() === PlayerType.Bot) {
       perTick *= 0.6;
@@ -1277,7 +1303,7 @@ export class DefaultConfig implements Config {
       }
     }
 
-    return Math.min(current + perTick, max) - current;
+    return Math.max(0, Math.min(current + perTick, max) - current);
   }
 
   creditAdditionRate(player: Player): Credits {

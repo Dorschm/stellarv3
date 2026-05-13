@@ -160,10 +160,17 @@ export interface Config {
   plasmaBoltLifetime(): number;
   shuttleMaxNumber(): number;
   /**
-   * GDD §6 — Assault Fleet travel speed expressed as the integer number of
-   * ticks needed to traverse a single tile. With AU=100 and 1 AU/min this
-   * resolves to 6 ticks/tile, slowing the shuttle's pathfinder roughly 6x
-   * relative to the legacy 1-tile/tick pace.
+   * Assault Fleet travel speed expressed as the integer number of ticks
+   * needed to traverse a single tile.
+   *
+   * GDD §6 nominally specifies Assault Fleet speed at 1 AU/min, which
+   * with the project's AU = 100 tiles convention would resolve to roughly
+   * 6 ticks/tile (10 ticks/s × 60 s/min ÷ 100 tiles/AU). This is a
+   * **deliberate deviation**: the shipped configuration uses 1 tick/tile
+   * so AssaultShuttles travel at the same cadence as the Battlecruiser
+   * they often accompany, keeping fleet movement readable and combat
+   * pacing tight. See the AssaultShuttle row in `stellar-gdd-gap-report.md`
+   * (`DEVIATION`) and `docs/product-decisions.md` for the rationale.
    */
   assaultShuttleTicksPerTile(): number;
   allianceDuration(): Tick;
@@ -376,14 +383,43 @@ export interface Config {
    */
   battlecruiserStructureSlotCount(): number;
 
+  /**
+   * Whether the Battlecruiser fires its own plasma bolt and intercepts LRW
+   * shots from its hull. The May 2026 balance pass (issue #8) flipped this
+   * to `false`: the cruiser is defenseless without a slotted weapon
+   * platform (DefenseStation / OrbitalStrikePlatform / PointDefenseArray).
+   * Kept as a config method so the policy is reversible without surgery.
+   */
+  battlecruiserHasDefaultWeapon(): boolean;
+
+  /**
+   * Long-range weapon damage applied to a ship directly when an OSP
+   * hosted on a Battlecruiser shoots an enemy ship. Used in place of the
+   * per-tile habitability damage when the LRW projectile impacts a unit
+   * rather than a ground tile.
+   */
+  lrwShipDamage(): number;
+
+  /**
+   * Radius (tiles) of the heal aura emitted by a Foundry slotted on a
+   * Battlecruiser. Same-owner ships within this distance receive
+   * {@link foundryHealPerTick} HP per tick.
+   */
+  foundryHealRadius(): number;
+
+  /**
+   * Per-tick HP healed by a Battlecruiser-hosted Foundry on each
+   * eligible same-owner ship in {@link foundryHealRadius}.
+   */
+  foundryHealPerTick(): number;
+
   // ---- Ticket 8: Habitability-gated structure slot limits -----------------
   /**
    * Maximum number of player structures a sector can host given the
-   * placement tile's *effective* habitability (post any LRW damage). The
-   * GDD §4 mapping is:
+   * placement tile's *effective* habitability (post any LRW damage).
    *   - hab ≤ 0.3 (AsteroidField): 0 — must terraform first.
-   *   - hab ≤ 0.6 (Nebula):        1 structure per sector.
-   *   - hab > 0.6 (OpenSpace):     2 structures per sector.
+   *   - habitable (Nebula / OpenSpace): uncapped (Number.POSITIVE_INFINITY)
+   *     since the May 2026 balance pass (#1) removed the per-tier cap.
    * Returns 0 for negative or NaN inputs.
    */
   maxStructuresForHabitability(habitability: number): number;

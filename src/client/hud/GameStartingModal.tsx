@@ -68,14 +68,6 @@ export function GameStartingModal(): React.JSX.Element {
         <div className="text-base font-medium tracking-wider uppercase text-white/40 mb-3">
           © OpenFront and Contributors
         </div>
-        <a
-          href="https://github.com/openfrontio/OpenFrontIO/blob/main/CREDITS.md"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block mb-4 text-lg font-medium tracking-wider uppercase text-sky-400 no-underline transition-colors duration-200 hover:text-sky-300"
-        >
-          {translateText("game_starting_modal.credits")}
-        </a>
         <p className="text-base text-white/40 mb-4">
           {translateText("game_starting_modal.code_license")}
         </p>

@@ -23,7 +23,26 @@ import {
   ZoomEvent,
 } from "../InputHandler";
 import { Platform } from "../Platform";
+import { BuildUnitIntentEvent } from "../Transport";
+import { translateText } from "../Utils";
 import { useHUDStore } from "./HUDStore";
+
+/**
+ * Issue #7 — structures that can be built directly onto a selected cap
+ * ship via the number-key hotkeys. Mirrors
+ * `Config.battlecruiserHostableStructures` but the client can't read the
+ * authoritative server config at this layer, so we keep a parallel list.
+ * If the server config diverges, a stale entry simply falls through to
+ * the existing ghost-structure flow (no breakage, just no auto-host).
+ */
+const BATTLECRUISER_HOSTABLE_CLIENT: ReadonlySet<UnitType> = new Set([
+  UnitType.Colony,
+  UnitType.Foundry,
+  UnitType.Spaceport,
+  UnitType.DefenseStation,
+  UnitType.OrbitalStrikePlatform,
+  UnitType.PointDefenseArray,
+]);
 
 /**
  * Minimal shape of a pointer-like event we need for modifier checks. Kept
@@ -286,6 +305,15 @@ export class SpaceInputHandler {
       // resets it via ClientGameRunner.onCloseView).
       const wasInGateMode = useHUDStore.getState().jumpGateMode !== "idle";
 
+      // Issue #4 — Esc clears Capital Ship selection BEFORE the
+      // ghost-structure clear path so a player who selected a cruiser by
+      // accident can dismiss it without also discarding their ghost.
+      const hud = useHUDStore.getState();
+      if (hud.selectedBattlecruiserUnitId !== null) {
+        hud.setSelectedBattlecruiser(null);
+        return;
+      }
+
       // Close any open overlays first (RadialMenu, BuildMenu, etc.).
       this.eventBus.emit(new CloseViewEvent());
 
@@ -418,6 +446,89 @@ export class SpaceInputHandler {
     const matchedBuild = this.resolveBuildKeybind(e.code);
     if (matchedBuild !== null) {
       e.preventDefault();
+
+      // Issue #7 — when a Capital Ship is selected and the resolved
+      // structure is hostable on a cap ship, route the build through the
+      // host-only intent path. We validate ownership, liveness, and slot
+      // occupancy on the client so the player gets immediate feedback,
+      // then pass `hostBattlecruiserId` along so the server rejects rather
+      // than falling back to ground placement if state diverges in flight.
+      const hud = useHUDStore.getState();
+      const selectedId = hud.selectedBattlecruiserUnitId;
+      const isHostable = BATTLECRUISER_HOSTABLE_CLIENT.has(matchedBuild);
+      if (selectedId !== null && isHostable) {
+        const cruiser = hud.units.get(selectedId);
+        const myPlayer = hud.myPlayer;
+        const stale =
+          cruiser === undefined ||
+          cruiser.type !== UnitType.Battlecruiser ||
+          !cruiser.isActive ||
+          myPlayer === null ||
+          cruiser.ownerSmallID !== myPlayer.smallID;
+        if (stale) {
+          // Selection stale (cruiser destroyed / captured / spectating).
+          // Clear the selection and consume the hotkey — do NOT fall
+          // through to the ground-build ghost flow, otherwise a stale
+          // selected-cruiser hotkey could silently build on the ground.
+          hud.setSelectedBattlecruiser(null);
+          window.dispatchEvent(
+            new CustomEvent("show-message", {
+              detail: {
+                message: "Capital ship no longer available",
+                color: "red",
+                duration: 2000,
+              },
+            }),
+          );
+          return;
+        }
+        if (cruiser!.hasSlottedStructure) {
+          // Slot occupied — show an immediate toast and consume the
+          // hotkey. Don't fall through to ground placement, otherwise a
+          // selected-cruiser hotkey could silently build on the ground.
+          window.dispatchEvent(
+            new CustomEvent("show-message", {
+              detail: {
+                message: "Slot occupied",
+                color: "red",
+                duration: 2000,
+              },
+            }),
+          );
+          return;
+        }
+        // Issue #7 — affordability feedback. Without this, a player
+        // hitting a structure hotkey on a selected empty-slot cruiser
+        // while broke would see *nothing*: the server-side host-only
+        // path rejects without falling back to ground placement, and
+        // the only trace was a `console.warn`. Reuse the BuildMenu
+        // wording so the rejection feels consistent.
+        const cost = hud.cruiserHostableCosts.get(matchedBuild);
+        if (cost !== undefined && myPlayer!.credits < cost) {
+          window.dispatchEvent(
+            new CustomEvent("show-message", {
+              detail: {
+                message: translateText("build_menu.not_enough_money"),
+                color: "red",
+                duration: 2000,
+              },
+            }),
+          );
+          return;
+        }
+        this.eventBus.emit(
+          new BuildUnitIntentEvent(
+            matchedBuild,
+            cruiser!.tile,
+            undefined,
+            cruiser!.id,
+          ),
+        );
+        return;
+      }
+
+      // Non-hostable hotkey, or no capital ship selected — fall through
+      // to the existing ghost-structure flow for ground placement.
       this.setGhostStructure(matchedBuild);
     }
 

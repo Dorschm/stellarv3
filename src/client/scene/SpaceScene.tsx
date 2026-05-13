@@ -2,6 +2,7 @@ import { Stars } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import React, { Suspense } from "react";
 import { CameraController } from "./CameraController";
+import { CapitalShipSelectionRing } from "./CapitalShipSelectionRing";
 import { EmojiRenderer } from "./EmojiRenderer";
 import { FxRenderer } from "./FxRenderer";
 import { JumpGateHighlightRenderer } from "./JumpGateHighlightRenderer";
@@ -103,6 +104,7 @@ export function SpaceScene(): React.JSX.Element {
         <FxRenderer />
         <EmojiRenderer />
         <JumpGateHighlightRenderer />
+        <CapitalShipSelectionRing />
       </Suspense>
 
       {/* Camera controller: pan, zoom, GoTo via EventBus */}

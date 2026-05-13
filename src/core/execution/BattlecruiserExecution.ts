@@ -88,11 +88,19 @@ export class BattlecruiserExecution implements Execution {
     // LRW intercept (cruiser is primarily a combat ship). Patrol only
     // runs when no intercept shot was fired, so the intercept isn't
     // immediately undone by a movement step.
+    //
+    // Issue #8 — gate the cruiser's own plasma + LRW intercept behind
+    // `battlecruiserHasDefaultWeapon`. With the default `false`, the cap
+    // ship is defenseless on its own; slotted DefenseStation /
+    // OrbitalStrikePlatform / PointDefenseArray executions still fire from
+    // the cruiser's tile via `syncSlottedStructure` and do their own work.
     let intercepted = false;
-    if (this.battlecruiser.targetUnit() !== undefined) {
-      this.shootTarget();
-    } else {
-      intercepted = this.tryInterceptLrw();
+    if (this.mg.config().battlecruiserHasDefaultWeapon()) {
+      if (this.battlecruiser.targetUnit() !== undefined) {
+        this.shootTarget();
+      } else {
+        intercepted = this.tryInterceptLrw();
+      }
     }
 
     if (!intercepted) {
@@ -179,8 +187,6 @@ export class BattlecruiserExecution implements Execution {
     const config = mg.config();
     const owner = this.battlecruiser.owner();
     const hasPort = owner.unitCount(UnitType.Spaceport) > 0;
-    const patrolTile = this.battlecruiser.patrolTile()!;
-    const patrolRangeSquared = config.battlecruiserPatrolRange() ** 2;
 
     const ships = mg.nearbyUnits(
       this.battlecruiser.tile()!,
@@ -216,13 +222,8 @@ export class BattlecruiserExecution implements Execution {
         ) {
           continue;
         }
-        if (
-          mg.euclideanDistSquared(patrolTile, unit.tile()) > patrolRangeSquared
-        ) {
-          // Prevent battlecruiser from chasing trade freighter that is too far
-          // from the patrol tile to prevent battlecruisers from wandering.
-          continue;
-        }
+        // Capital ships have no maximum travel distance, so a freighter
+        // anywhere within the cruiser's targetting envelope is fair game.
       }
 
       const typePriority =
@@ -367,6 +368,21 @@ export class BattlecruiserExecution implements Execution {
    * gated on ownership.
    */
   private claimTerritoryRadius(): void {
+    // Issue #9 — Colony-gated territory flipping. The cap ship terraforms
+    // and conquers ONLY when it is carrying a Colony AND is currently in
+    // deep space. Both terraform (DeepSpace → AsteroidField) and the
+    // unowned-sector conquer are downstream of this gate, so a single
+    // early return covers both. This makes the Colony slot a meaningful
+    // choice (Colony-carriers act as mobile sector-claimers; OSP/Defense
+    // carriers are pure combat).
+    const slotted = this.battlecruiser.slottedStructure();
+    if (slotted === undefined || slotted.type() !== UnitType.Colony) {
+      return;
+    }
+    if (!this.mg.isDeepSpace(this.battlecruiser.tile())) {
+      return;
+    }
+
     const owner = this.battlecruiser.owner();
     const radius = this.mg.config().battlecruiserTerritoryRadius();
     const tiles = this.mg.circleSearch(this.battlecruiser.tile(), radius);
@@ -449,12 +465,30 @@ export class BattlecruiserExecution implements Execution {
       }
       return tile;
     }
-    console.warn(
-      `Failed to find random tile for battlecruiser for ${this.battlecruiser.owner().name()}`,
-    );
     if (!allowShoreline) {
       // If we failed to find a tile in deep space, try again but allow boundary
       return this.randomTile(true);
+    }
+    // Last-resort fallback: capital ships have no maximum travel distance,
+    // so before giving up scan the entire map for any reachable void tile
+    // in the cruiser's current deep-space component. This keeps the cruiser
+    // moving even when its patrol radius is starved of viable destinations
+    // (e.g. it has wandered far from any free void).
+    const mapWidth = this.mg.width();
+    const mapHeight = this.mg.height();
+    for (let attempt = 0; attempt < 200; attempt++) {
+      const x = this.random.nextInt(0, mapWidth);
+      const y = this.random.nextInt(0, mapHeight);
+      if (!this.mg.isValidCoord(x, y)) continue;
+      const tile = this.mg.ref(x, y);
+      if (!this.mg.isVoid(tile)) continue;
+      if (
+        battlecruiserComponent !== null &&
+        !this.mg.hasDeepSpaceComponent(tile, battlecruiserComponent)
+      ) {
+        continue;
+      }
+      return tile;
     }
     return undefined;
   }

@@ -6,7 +6,7 @@ import { PersistedRunScore } from "../core/game/Game";
 import { getApiBase } from "./Api";
 import { userAuth } from "./Auth";
 
-const RUN_HISTORY_PATH = "/users/@me/runs";
+const RUN_HISTORY_PATH = "/api/users/@me/runs";
 
 export async function fetchRunHistory(): Promise<PersistedRunScore[] | false> {
   try {

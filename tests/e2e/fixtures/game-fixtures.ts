@@ -951,6 +951,15 @@ export function trackConsoleErrors(page: Page): void {
     // WebSocket auto-reconnect chatter during worker hot-reload or lobby
     // transition — not indicative of a client bug.
     if (/attempting reconnect/i.test(text)) return;
+    // PublicLobbySocket startup race in dev: the play-page lobby browser
+    // sometimes opens `/w*/lobbies` before the just-spawned worker has
+    // accepted its listener, surfacing a 3-attempt browser-level
+    // WebSocket failure + "Max WebSocket attempts reached". Cosmetic dev
+    // noise — once the worker is up, normal lobby fetches proceed.
+    if (/WebSocket connection to .* failed: Connection closed before receiving a handshake response/i.test(text))
+      return;
+    if (/^WebSocket error: Event$/i.test(text)) return;
+    if (/Max WebSocket attempts reached/i.test(text)) return;
     errors.push(text);
   });
 

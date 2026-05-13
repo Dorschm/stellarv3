@@ -12,7 +12,12 @@ export default defineConfig({
   testDir: "tests/e2e",
   // Run all E2E specs in the test directory.
   testMatch: /\.spec\./,
-  timeout: 60_000,
+  // 60s used to be enough but the procedural map generator + sector-map
+  // habitability bake-in + 3rd-game cumulative bundle/JIT load can push a
+  // single `startSingleplayerGame` to ~30-60s in headless Chromium. Tests
+  // that do startSingleplayerGame → action → assertion need headroom on
+  // top of that. 120s keeps the suite robust without hiding real hangs.
+  timeout: 120_000,
   expect: {
     timeout: 15_000,
   },

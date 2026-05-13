@@ -7,6 +7,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { GameEnv } from "../core/configuration/Config";
 import { getServerConfigFromServer } from "../core/configuration/ConfigLoader";
+import { mountSelfHostedApi } from "./api";
 import { logger } from "./Logger";
 import { MapPlaylist } from "./MapPlaylist";
 import { MasterLobbyService } from "./MasterLobbyService";
@@ -80,6 +81,10 @@ app.use("/api", (_req, res, next) => {
   setNoStoreHeaders(res);
   next();
 });
+
+// Self-hosted REST API (auth, user profile, run history, cosmetics, etc.).
+// Mounted before the SPA fallback so specific routes win over the catch-all.
+mountSelfHostedApi(app);
 
 // Start the master process
 export async function startMaster() {

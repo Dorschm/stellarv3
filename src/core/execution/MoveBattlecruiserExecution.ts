@@ -65,18 +65,21 @@ export class MoveBattlecruiserExecution implements Execution {
 
 /**
  * Spiral outward from `origin` and return the first void tile encountered,
- * or null if no void tile exists within `MAX_SEARCH_RADIUS` tiles.
+ * or null only if the entire map contains no void tile (an unreachable
+ * pathological case for any real space map).
  *
  * Used by MoveBattlecruiserExecution to clamp a click on a sector (planet)
  * tile to a navigable void tile so the cruiser can actually path to a
- * sensible nearby destination instead of getting wedged.
+ * sensible nearby destination instead of getting wedged. Capital ships have
+ * no maximum travel distance, so the search bound is the map itself rather
+ * than a fixed radius.
  */
 function findNearestVoid(mg: Game, origin: TileRef): TileRef | null {
   if (mg.isVoid(origin)) return origin;
   const ox = mg.x(origin);
   const oy = mg.y(origin);
-  const MAX_SEARCH_RADIUS = 100;
-  for (let r = 1; r <= MAX_SEARCH_RADIUS; r++) {
+  const maxRadius = Math.max(mg.width(), mg.height());
+  for (let r = 1; r <= maxRadius; r++) {
     for (let dy = -r; dy <= r; dy++) {
       for (let dx = -r; dx <= r; dx++) {
         // Only check the perimeter of each ring to avoid re-scanning.

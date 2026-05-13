@@ -7,6 +7,7 @@ import {
   PlayerInfo,
   PlayerType,
   TerrainType,
+  Unit,
   UnitType,
 } from "../src/core/game/Game";
 import { setup } from "./util/Setup";
@@ -372,14 +373,26 @@ describe("Battlecruiser — upkeep drain", () => {
 });
 
 describe("Battlecruiser — territory anchor", () => {
-  // GDD §14 — the Battlecruiser is a mobile one-slot planet. Every
-  // movement step, it converts deep-space tiles within
-  // `battlecruiserTerritoryRadius()` into AsteroidField and claims any
-  // unowned sector tiles. Enemy-owned and ally-owned tiles are left
-  // alone, and an eliminated owner cannot be revived by the claim.
+  // GDD §14 + Issue #9 — the Battlecruiser is a mobile one-slot planet. The
+  // May 2026 balance pass gates the wake (deep-space terraform + unowned
+  // tile conquer) on the cruiser carrying a Colony in its slot. These
+  // tests slot a real Colony unit on the cruiser before each run so they
+  // continue to exercise the claim path. Enemy-owned and ally-owned tiles
+  // are left alone, and an eliminated owner cannot be revived by the claim.
   let anchorGame: Game;
   let cruiserOwner: Player;
   let rival: Player;
+
+  function slotColonyOnCruiser(bc: Unit): void {
+    // Park the Colony off-map (we don't care where for these tests); the
+    // cruiser-side claim path only reads `slottedStructure().type()`.
+    const colony = cruiserOwner.buildUnit(
+      UnitType.Colony,
+      anchorGame.ref(0, 0),
+      {},
+    );
+    bc.setSlottedStructure(colony);
+  }
 
   beforeEach(async () => {
     anchorGame = await setup(
@@ -425,6 +438,7 @@ describe("Battlecruiser — territory anchor", () => {
     const bc = cruiserOwner.buildUnit(UnitType.Battlecruiser, patrolTile, {
       patrolTile,
     });
+    slotColonyOnCruiser(bc);
     anchorGame.addExecution(new BattlecruiserExecution(bc));
     // Force real patrol movement through deep space by retargeting the
     // cruiser — this guarantees PathStatus.NEXT ticks drive claimTerritory.
@@ -455,6 +469,7 @@ describe("Battlecruiser — territory anchor", () => {
     const bc = cruiserOwner.buildUnit(UnitType.Battlecruiser, patrolTile, {
       patrolTile,
     });
+    slotColonyOnCruiser(bc);
     anchorGame.addExecution(new BattlecruiserExecution(bc));
     anchorGame.addExecution(
       new MoveBattlecruiserExecution(
@@ -556,6 +571,7 @@ describe("Battlecruiser — territory anchor", () => {
     const bc = cruiserOwner.buildUnit(UnitType.Battlecruiser, patrolTile, {
       patrolTile,
     });
+    slotColonyOnCruiser(bc);
     anchorGame.addExecution(new BattlecruiserExecution(bc));
     anchorGame.addExecution(
       new MoveBattlecruiserExecution(
@@ -605,6 +621,7 @@ describe("Battlecruiser — territory anchor", () => {
     const bc = cruiserOwner.buildUnit(UnitType.Battlecruiser, startTile, {
       patrolTile: startTile,
     });
+    slotColonyOnCruiser(bc);
     anchorGame.addExecution(new BattlecruiserExecution(bc));
 
     // Seed the cruiser with an initial patrol target so it moves off

@@ -21,6 +21,10 @@ function makeMockGameView(): any {
     myPlayer: () => null,
     units: () => [],
     updatesSinceLastTick: () => null,
+    config: () => ({
+      battlecruiserHostableStructures: () => [],
+    }),
+    unitInfo: () => ({ cost: () => 0n }),
   };
 }
 

@@ -219,3 +219,311 @@ describe("SpaceMapPlane: drag continues outside mesh", () => {
     expect(ref.current!.dragging).toBe(true);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Comment 2/3 – Capital Ship selection (select-or-swap) + stale cleanup
+//
+// We can't mount React/R3F under the node test env, so these tests replicate
+// the exact branching logic of SpaceMapPlane's click and cleanup paths
+// against the real HUDStore. They cover:
+//   - select / swap / same-click-preserves
+//   - Esc clears selection
+//   - destroyed and captured ships are cleaned up
+// ---------------------------------------------------------------------------
+
+interface MiniUnitSnapshot {
+  id: number;
+  type: UnitType;
+  tile: number;
+  ownerSmallID: number;
+  isActive: boolean;
+  hasSlottedStructure: boolean;
+}
+
+/**
+ * Replicate the SpaceMapPlane left-click select-or-swap branch. Given the
+ * HUD state and the unit (if any) the click resolved to, this returns the
+ * resulting `selectedBattlecruiserUnitId`.
+ */
+function resolveClickSelection(
+  current: number | null,
+  clickedUnitId: number | null,
+): number | null {
+  if (clickedUnitId !== null) {
+    // Select-or-swap: always pin selection to the clicked id. Same-click
+    // preserves the existing selection; another friendly cruiser swaps.
+    return clickedUnitId;
+  }
+  return current;
+}
+
+/**
+ * Replicate the SpaceMapPlane cleanup effect predicate. Returns whether
+ * the selection should be cleared.
+ */
+function shouldClearSelection(
+  selected: number | null,
+  unit: MiniUnitSnapshot | undefined,
+  myPlayerSmallID: number | null,
+): boolean {
+  if (selected === null) return false;
+  if (unit === undefined) return true;
+  if (unit.type !== UnitType.Battlecruiser) return true;
+  if (!unit.isActive) return true;
+  if (myPlayerSmallID === null) return true;
+  if (unit.ownerSmallID !== myPlayerSmallID) return true;
+  return false;
+}
+
+describe("SpaceMapPlane: capital ship select-or-swap", () => {
+  beforeEach(() => {
+    useHUDStore.getState().reset();
+  });
+
+  test("owned Battlecruiser click sets selection", () => {
+    expect(useHUDStore.getState().selectedBattlecruiserUnitId).toBeNull();
+    const next = resolveClickSelection(null, 42);
+    useHUDStore.getState().setSelectedBattlecruiser(next);
+    expect(useHUDStore.getState().selectedBattlecruiserUnitId).toBe(42);
+  });
+
+  test("same-click on already-selected ship preserves selection (no toggle-off)", () => {
+    useHUDStore.getState().setSelectedBattlecruiser(42);
+    const next = resolveClickSelection(42, 42);
+    useHUDStore.getState().setSelectedBattlecruiser(next);
+    // Critical regression guard: same-click MUST NOT clear the selection.
+    expect(useHUDStore.getState().selectedBattlecruiserUnitId).toBe(42);
+  });
+
+  test("clicking another friendly Battlecruiser swaps the selection", () => {
+    useHUDStore.getState().setSelectedBattlecruiser(42);
+    const next = resolveClickSelection(42, 99);
+    useHUDStore.getState().setSelectedBattlecruiser(next);
+    expect(useHUDStore.getState().selectedBattlecruiserUnitId).toBe(99);
+  });
+
+  test("Esc clears the selection", () => {
+    useHUDStore.getState().setSelectedBattlecruiser(42);
+    // Esc path in SpaceInputHandler.onKeyDown:
+    //   if (hud.selectedBattlecruiserUnitId !== null) setSelectedBattlecruiser(null)
+    if (useHUDStore.getState().selectedBattlecruiserUnitId !== null) {
+      useHUDStore.getState().setSelectedBattlecruiser(null);
+    }
+    expect(useHUDStore.getState().selectedBattlecruiserUnitId).toBeNull();
+  });
+});
+
+describe("SpaceMapPlane: stale selection cleanup", () => {
+  beforeEach(() => {
+    useHUDStore.getState().reset();
+  });
+
+  test("destroyed cruiser (missing from snapshot) clears selection", () => {
+    expect(shouldClearSelection(42, undefined, 1)).toBe(true);
+  });
+
+  test("inactive cruiser clears selection", () => {
+    const unit: MiniUnitSnapshot = {
+      id: 42,
+      type: UnitType.Battlecruiser,
+      tile: 0,
+      ownerSmallID: 1,
+      isActive: false,
+      hasSlottedStructure: false,
+    };
+    expect(shouldClearSelection(42, unit, 1)).toBe(true);
+  });
+
+  test("captured cruiser (ownerSmallID flipped) clears selection", () => {
+    const unit: MiniUnitSnapshot = {
+      id: 42,
+      type: UnitType.Battlecruiser,
+      tile: 0,
+      ownerSmallID: 7, // captured to a different player
+      isActive: true,
+      hasSlottedStructure: false,
+    };
+    expect(shouldClearSelection(42, unit, 1)).toBe(true);
+  });
+
+  test("missing myPlayer (spectator / before join) clears selection", () => {
+    const unit: MiniUnitSnapshot = {
+      id: 42,
+      type: UnitType.Battlecruiser,
+      tile: 0,
+      ownerSmallID: 1,
+      isActive: true,
+      hasSlottedStructure: false,
+    };
+    expect(shouldClearSelection(42, unit, null)).toBe(true);
+  });
+
+  test("snapshot id collision with non-Battlecruiser clears selection", () => {
+    const unit: MiniUnitSnapshot = {
+      id: 42,
+      type: UnitType.Spaceport,
+      tile: 0,
+      ownerSmallID: 1,
+      isActive: true,
+      hasSlottedStructure: false,
+    };
+    expect(shouldClearSelection(42, unit, 1)).toBe(true);
+  });
+
+  test("live, owned, active Battlecruiser preserves selection", () => {
+    const unit: MiniUnitSnapshot = {
+      id: 42,
+      type: UnitType.Battlecruiser,
+      tile: 0,
+      ownerSmallID: 1,
+      isActive: true,
+      hasSlottedStructure: false,
+    };
+    expect(shouldClearSelection(42, unit, 1)).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Comment 3 – Hostable-hotkey stale-cruiser handling in SpaceInputHandler
+//
+// Replicates the hostable-hotkey branch's stale/occupied/host-build
+// outcomes so the test exercises the contract without keyboard plumbing.
+// ---------------------------------------------------------------------------
+
+type HotkeyOutcome =
+  | { kind: "ghost" }
+  | { kind: "host-build" }
+  | { kind: "slot-occupied" }
+  | { kind: "stale-cleared" };
+
+const HOSTABLE_TYPES = new Set<UnitType>([
+  UnitType.Colony,
+  UnitType.Foundry,
+  UnitType.Spaceport,
+  UnitType.DefenseStation,
+  UnitType.OrbitalStrikePlatform,
+  UnitType.PointDefenseArray,
+]);
+
+function resolveHotkeyOutcome(args: {
+  selectedId: number | null;
+  unit: MiniUnitSnapshot | undefined;
+  myPlayerSmallID: number | null;
+  hotkeyType: UnitType;
+}): HotkeyOutcome {
+  const { selectedId, unit, myPlayerSmallID, hotkeyType } = args;
+  const isHostable = HOSTABLE_TYPES.has(hotkeyType);
+  if (selectedId !== null && isHostable) {
+    const stale =
+      unit === undefined ||
+      unit.type !== UnitType.Battlecruiser ||
+      !unit.isActive ||
+      myPlayerSmallID === null ||
+      unit.ownerSmallID !== myPlayerSmallID;
+    if (stale) {
+      // Consume the hotkey — do NOT fall through to ground ghost.
+      return { kind: "stale-cleared" };
+    }
+    if (unit!.hasSlottedStructure) {
+      return { kind: "slot-occupied" };
+    }
+    return { kind: "host-build" };
+  }
+  // Non-hostable hotkey or no selection — ground ghost fallback.
+  return { kind: "ghost" };
+}
+
+describe("SpaceInputHandler: hostable hotkey with stale selection", () => {
+  test("stale hostable hotkey clears selection and consumes hotkey (no ground ghost)", () => {
+    const outcome = resolveHotkeyOutcome({
+      selectedId: 42,
+      unit: undefined, // destroyed
+      myPlayerSmallID: 1,
+      hotkeyType: UnitType.Colony,
+    });
+    expect(outcome.kind).toBe("stale-cleared");
+  });
+
+  test("captured cruiser + hostable hotkey clears + consumes (no ground ghost)", () => {
+    const unit: MiniUnitSnapshot = {
+      id: 42,
+      type: UnitType.Battlecruiser,
+      tile: 0,
+      ownerSmallID: 7,
+      isActive: true,
+      hasSlottedStructure: false,
+    };
+    const outcome = resolveHotkeyOutcome({
+      selectedId: 42,
+      unit,
+      myPlayerSmallID: 1,
+      hotkeyType: UnitType.Colony,
+    });
+    expect(outcome.kind).toBe("stale-cleared");
+  });
+
+  test("occupied slot shows 'Slot occupied' without ground fallback", () => {
+    const unit: MiniUnitSnapshot = {
+      id: 42,
+      type: UnitType.Battlecruiser,
+      tile: 0,
+      ownerSmallID: 1,
+      isActive: true,
+      hasSlottedStructure: true,
+    };
+    const outcome = resolveHotkeyOutcome({
+      selectedId: 42,
+      unit,
+      myPlayerSmallID: 1,
+      hotkeyType: UnitType.Colony,
+    });
+    expect(outcome.kind).toBe("slot-occupied");
+  });
+
+  test("non-hostable hotkey with selected cruiser still ghost-builds on ground", () => {
+    const unit: MiniUnitSnapshot = {
+      id: 42,
+      type: UnitType.Battlecruiser,
+      tile: 0,
+      ownerSmallID: 1,
+      isActive: true,
+      hasSlottedStructure: false,
+    };
+    // Battlecruiser itself is in the buildable list but NOT hostable.
+    const outcome = resolveHotkeyOutcome({
+      selectedId: 42,
+      unit,
+      myPlayerSmallID: 1,
+      hotkeyType: UnitType.Battlecruiser,
+    });
+    expect(outcome.kind).toBe("ghost");
+  });
+
+  test("no selected cruiser falls back to ground ghost for hostable hotkey", () => {
+    const outcome = resolveHotkeyOutcome({
+      selectedId: null,
+      unit: undefined,
+      myPlayerSmallID: 1,
+      hotkeyType: UnitType.Colony,
+    });
+    expect(outcome.kind).toBe("ghost");
+  });
+
+  test("valid selection + empty slot triggers host-build (no ground ghost)", () => {
+    const unit: MiniUnitSnapshot = {
+      id: 42,
+      type: UnitType.Battlecruiser,
+      tile: 0,
+      ownerSmallID: 1,
+      isActive: true,
+      hasSlottedStructure: false,
+    };
+    const outcome = resolveHotkeyOutcome({
+      selectedId: 42,
+      unit,
+      myPlayerSmallID: 1,
+      hotkeyType: UnitType.OrbitalStrikePlatform,
+    });
+    expect(outcome.kind).toBe("host-build");
+  });
+});

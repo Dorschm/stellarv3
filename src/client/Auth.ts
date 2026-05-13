@@ -29,13 +29,17 @@ let __expiresAt: number = 0;
 let __upstreamAuthUnreachable = false;
 
 export function discordLogin() {
-  const redirectUri = encodeURIComponent(window.location.href);
-  window.location.href = `${getApiBase()}/auth/login/discord?redirect_uri=${redirectUri}`;
+  // Send only the path + search/hash so the server-side same-origin check
+  // accepts it; the server prefixes its own origin when redirecting back.
+  const here = window.location;
+  const postLogin = `${here.pathname}${here.search}${here.hash}` || "/";
+  const redirectUri = encodeURIComponent(postLogin);
+  window.location.href = `${getApiBase()}/api/auth/login/discord?redirect_uri=${redirectUri}`;
 }
 
 export async function tempTokenLogin(token: string): Promise<string | null> {
   const response = await fetch(
-    `${getApiBase()}/auth/login/token?login-token=${token}`,
+    `${getApiBase()}/api/auth/login/token?login-token=${token}`,
     {
       credentials: "include",
     },
@@ -59,7 +63,7 @@ export async function getAuthHeader(): Promise<string> {
 export async function logOut(allSessions: boolean = false): Promise<boolean> {
   try {
     const response = await fetch(
-      getApiBase() + (allSessions ? "/auth/revoke" : "/auth/logout"),
+      getApiBase() + (allSessions ? "/api/auth/revoke" : "/api/auth/logout"),
       {
         method: "POST",
         credentials: "include",
@@ -122,6 +126,10 @@ export async function userAuth(
     const payload = decodeJwt(jwt);
     const { iss, aud } = payload;
 
+    // `iss` must match the server's `API_BASE_URL` env var (defaults to
+    // empty string ⇒ same-origin). The client's `getApiBase()` follows the
+    // same defaulting rule, so a bare deployment matches `iss === ""` and a
+    // split-domain deployment matches `iss === "https://api.example.com"`.
     if (iss !== getApiBase()) {
       // JWT was not issued by the correct server
       console.error('unexpected "iss" claim value');
@@ -176,7 +184,7 @@ async function refreshJwt(): Promise<void> {
 
 async function doRefreshJwt(): Promise<void> {
   try {
-    const response = await fetch(getApiBase() + "/auth/refresh", {
+    const response = await fetch(getApiBase() + "/api/auth/refresh", {
       method: "POST",
       credentials: "include",
     });
@@ -213,7 +221,7 @@ async function doRefreshJwt(): Promise<void> {
 export async function sendMagicLink(email: string): Promise<boolean> {
   try {
     const apiBase = getApiBase();
-    const response = await fetch(`${apiBase}/auth/magic-link`, {
+    const response = await fetch(`${apiBase}/api/auth/magic-link`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

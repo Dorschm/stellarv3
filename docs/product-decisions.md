@@ -7,7 +7,7 @@ not silently reopen the question in a PR; supersede the entry here first.
 
 | Field        | Value                                                        |
 | ------------ | ------------------------------------------------------------ |
-| Last updated | 2026-04-11                                                   |
+| Last updated | 2026-05-13                                                   |
 | Related      | `stellar-gdd-gap-report.md`, `docs/ADR-0001-combat-model.md` |
 
 ---
@@ -121,3 +121,63 @@ The only artifact of this decision log is:
 
 Any future change that wants to _remove_ one of these entities must land
 a new entry here explaining the reversal and supersede the current row.
+
+---
+
+## Balance & gameplay decisions (May 2026 issue batch)
+
+The May 12–13 2026 issue batch resolved three balance/gameplay questions
+that previously lived in the gap report's "still pending" column. Each
+is recorded here so future regressions can be diffed against a stable
+decision record.
+
+### 6. Build cap removed — players may build any number of any structure per planet
+
+- **Current behavior:** No per-planet structure count cap. Players can
+  stack any number of Colonies, Foundries, Spaceports, etc., on a single
+  sector, limited only by available tiles, credits, and the exponential
+  cost curve.
+- **Decision:** **REMOVE** the hard per-structure build cap; cost scaling
+  is the only economic gate.
+- **Rationale:** The GDD's `0/1/2 structures per planet` rule was added
+  to keep early-game planets from being trivially over-built, but the
+  exponential `2^n × base` cost curve already imposes a steep
+  diminishing-return on stacking. A hard cap on top of the cost curve
+  was redundant and led to confusing "build refused — slot full" toasts
+  when the player had ample resources and tiles. With cost-scaling as
+  the only gate, players can spec into a structure type if they're
+  willing to pay for it.
+- **Gap report row:** `Limited slots per planet, stackable levels` —
+  upgrade levels remain `MATCH`; per-planet slot cap is now
+  `DEVIATION (accepted, build cap removed)`.
+
+### 7. Battlecruisers carry no default weapon
+
+- **Current behavior:** A Battlecruiser with an empty slot has no
+  combat capability of its own — no default plasma fire, no built-in
+  LRW intercept, no point defense. All offensive and defensive
+  capability comes from the slotted structure (DefenseStation,
+  OrbitalStrikePlatform, PointDefenseArray, Foundry).
+- **Decision:** **KEEP** the no-default-weapon model. Combat
+  effectiveness is driven entirely by which platform the cruiser hosts.
+- **Rationale:** Capital ships are mobile one-slot planets (GDD §14).
+  Giving them a default weapon would make the slot decision feel
+  optional — "I already have plasma; the structure is just a bonus."
+  The platform-driven model forces the slot to be a meaningful choice:
+  the cruiser is *only* as combat-capable as the structure you load
+  into it. This also keeps the host-only build pathway in
+  `SpaceInputHandler` honest — an empty cruiser is genuinely
+  defenceless until the player commits to a build.
+
+### 8. Foundry hosted on a Battlecruiser provides a heal aura
+
+- **Current behavior:** When a Battlecruiser hosts a Foundry, the
+  Foundry repairs the cruiser (and only the cruiser) over time, capped
+  at the cruiser's max health. Allied and hostile ships are excluded.
+- **Decision:** **KEEP** the same-owner-only Foundry heal aura.
+- **Rationale:** Battlecruisers cannot return to friendly space cheaply,
+  so a slow self-heal gives the player a way to recover from skirmish
+  damage without forcing a long retreat. Restricting the heal to the
+  hosting ship's owner (not allies) keeps Foundry from doubling as an
+  allied-fleet support module, which would over-extend its role beyond
+  the trade loop.

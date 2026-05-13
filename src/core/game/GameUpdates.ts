@@ -169,6 +169,11 @@ export interface UnitUpdate {
   hasTradeHub: boolean;
   frigateType?: FrigateType; // Only for frigates
   loaded?: boolean; // Only for frigates
+  // Issue #7 — surface Battlecruiser slot occupancy to the client snapshot so
+  // the hotkey path can render immediate "slot occupied" feedback without a
+  // server round-trip. `true` if the cruiser currently has a slotted
+  // structure attached; `undefined` for non-Battlecruiser units.
+  hasSlottedStructure?: boolean;
 }
 
 export interface AttackUpdate {

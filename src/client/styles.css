@@ -3,6 +3,16 @@
 @custom-variant dark (&:where(.dark, .dark *));
 @custom-variant hover (&:hover);
 
+/*
+ * Issue #4 — Capital Ship selected: swap to a move-target reticle cursor on
+ * the game canvas so the user has visual confirmation that the next click
+ * issues a move order. Scoped to the R3F canvas only so HUD controls (which
+ * sit above the canvas) keep their normal pointer/button cursors.
+ */
+body.cap-ship-selected canvas {
+  cursor: crosshair;
+}
+
 @theme {
   --default-ring-width: 3px;
   --default-ring-color: var(--color-blue-500);

@@ -184,6 +184,10 @@ export class UnitImpl implements Unit {
       hasTradeHub: this._hasTradeHub,
       frigateType: this._frigateType,
       loaded: this._loaded,
+      hasSlottedStructure:
+        this._type === UnitType.Battlecruiser
+          ? this._slottedStructure !== undefined
+          : undefined,
     };
   }
 

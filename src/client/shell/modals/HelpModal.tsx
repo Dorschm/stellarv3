@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { translateText, TUTORIAL_VIDEO_URL } from "../../Utils";
+import { translateText } from "../../Utils";
 import { Platform } from "../../Platform";
 import { ModalPage, ModalContainer } from "../components/ModalPage";
 import { useNavigation } from "../contexts/NavigationContext";
@@ -95,18 +95,6 @@ export function HelpModal() {
         </div>
 
         <div className="flex-1 min-h-0 overflow-y-auto px-6 py-3 scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
-          {/* Video Tutorial */}
-          <div className="flex items-center gap-3 mb-3">
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3" /></svg>
-            <h3 className="text-xl font-bold uppercase tracking-widest text-white/90">{translateText("help_modal.video_tutorial")}</h3>
-            <div className="flex-1 h-px bg-gradient-to-r from-blue-500/50 to-transparent" />
-          </div>
-          <section className="bg-white/5 rounded-xl border border-white/10 overflow-hidden mb-8">
-            <div className="relative w-full h-0 pb-[56.25%]">
-              <iframe className="absolute top-0 left-0 w-full h-full" src={TUTORIAL_VIDEO_URL} title={translateText("help_modal.video_tutorial_title")} frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen />
-            </div>
-          </section>
-
           {/* Troubleshooting */}
           <div className="flex items-center gap-3 mb-3">
             <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 20 L12 0 L22 20 L2 20" /><line x1="12" y1="8" x2="12" y2="14" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>

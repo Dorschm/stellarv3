@@ -1102,6 +1102,12 @@ export enum MessageType {
   SCOUT_SWARM_TERRAFORMED,
   EMOJI_RECEIVED,
   EMOJI_SENT,
+  /**
+   * Issue #7 — emitted when a host-only Battlecruiser build is rejected
+   * (insufficient credits or stale cruiser id). Surfaces the rejection in
+   * the events panel as a backup for the client-side toast.
+   */
+  HOST_BUILD_REJECTED,
 }
 
 // Message categories used for filtering events in the EventsDisplay
@@ -1148,6 +1154,7 @@ export const MESSAGE_TYPE_CATEGORIES: Record<MessageType, MessageCategory> = {
   [MessageType.SCOUT_SWARM_TERRAFORMED]: MessageCategory.ATTACK,
   [MessageType.EMOJI_RECEIVED]: MessageCategory.CHAT,
   [MessageType.EMOJI_SENT]: MessageCategory.CHAT,
+  [MessageType.HOST_BUILD_REJECTED]: MessageCategory.ATTACK,
 } as const;
 
 /**

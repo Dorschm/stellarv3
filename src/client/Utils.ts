@@ -22,8 +22,6 @@ interface LangSelector {
   defaultTranslations: Record<string, string> | null | undefined;
 }
 
-export const TUTORIAL_VIDEO_URL = "https://www.youtube.com/embed/EN2oOog3pSs";
-
 export function normaliseMapKey(mapName: string): string {
   return mapName.toLowerCase().replace(/[\s.]+/g, "");
 }

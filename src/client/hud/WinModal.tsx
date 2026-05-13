@@ -14,12 +14,7 @@ import { Platform } from "../Platform";
 import { saveRunScore } from "../RunHistory";
 import { pushRunScore } from "../RunHistoryApi";
 import { SendWinnerEvent } from "../Transport";
-import {
-  getGamesPlayed,
-  isInIframe,
-  translateText,
-  TUTORIAL_VIDEO_URL,
-} from "../Utils";
+import { isInIframe, translateText } from "../Utils";
 import { useGameTick } from "./useGameTick";
 
 interface PatternContent {
@@ -38,7 +33,13 @@ export function WinModal(): React.JSX.Element {
 
   const [isVisible, setIsVisible] = useState(false);
   const [showButtons, setShowButtons] = useState(false);
+  // `isWin` itself is no longer read after the social-promo blocks
+  // (Discord invite + YouTube tutorial) were stripped from the modal, but
+  // the setter is still called from the win/loss detection effects below
+  // for future-proofing. Silence the unused-state-value lint by reading
+  // the value into a discard.
   const [isWin, setIsWin] = useState(false);
+  void isWin;
   const [isRankedGame, setIsRankedGame] = useState(false);
   const [title, setTitle] = useState("");
   const [patternContent, setPatternContent] = useState<PatternContent[] | null>(
@@ -243,17 +244,12 @@ export function WinModal(): React.JSX.Element {
   }, [eventBus, handleWinUpdate]);
 
   const renderInnerContent = () => {
-    if (isInIframe()) {
-      return renderDiscordDisplay();
-    }
-    if (!isWin && getGamesPlayed() < 3) {
-      return renderYoutubeTutorial();
-    }
-    if (rand < 0.5) {
-      return renderDiscordDisplay();
-    } else {
-      return renderPatternButton();
-    }
+    // Branding/social-promo blocks (Discord invite, YouTube tutorial) were
+    // removed — only the pattern-button cosmetic prompt remains. `rand`
+    // and `isInIframe` previously selected between those branches.
+    void rand;
+    void isInIframe;
+    return renderPatternButton();
   };
 
   /**
@@ -317,24 +313,6 @@ export function WinModal(): React.JSX.Element {
     );
   };
 
-  const renderYoutubeTutorial = () => (
-    <div className="text-center mb-6 bg-black/30 p-2.5 rounded-sm">
-      <h3 className="text-xl font-semibold text-white mb-3">
-        {translateText("win_modal.youtube_tutorial")}
-      </h3>
-      <div className="relative w-full pb-[56.25%]">
-        <iframe
-          className="absolute top-0 left-0 w-full h-full rounded-sm"
-          src={isVisible ? TUTORIAL_VIDEO_URL : ""}
-          title="YouTube video player"
-          frameBorder="0"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-          allowFullScreen
-        ></iframe>
-      </div>
-    </div>
-  );
-
   const renderPatternButton = () => (
     <div className="text-center mb-6 bg-black/30 p-2.5 rounded-sm">
       <h3 className="text-xl font-semibold text-white mb-3">
@@ -359,25 +337,6 @@ export function WinModal(): React.JSX.Element {
             ))
           : null}
       </div>
-    </div>
-  );
-
-  const renderDiscordDisplay = () => (
-    <div className="text-center mb-6 bg-black/30 p-2.5 rounded-sm">
-      <h3 className="text-xl font-semibold text-white mb-3">
-        {translateText("win_modal.join_discord")}
-      </h3>
-      <p className="text-white mb-3">
-        {translateText("win_modal.discord_description")}
-      </p>
-      <a
-        href="https://discord.com/invite/openfront"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-block px-6 py-3 bg-indigo-600 text-white rounded-sm font-semibold transition-all duration-200 hover:bg-indigo-700 hover:-translate-y-px no-underline"
-      >
-        {translateText("win_modal.join_server")}
-      </a>
     </div>
   );
 

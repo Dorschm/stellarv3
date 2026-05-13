@@ -395,6 +395,12 @@ export const BuildUnitIntentSchema = z.object({
   unit: z.enum(UnitType),
   tile: z.number(),
   rocketDirectionUp: z.boolean().optional(),
+  // Issue #7 — host-only flag for capital-ship hotkey builds. When set, the
+  // server must host the construction on the Battlecruiser whose unit id
+  // matches this value; if the cruiser is unavailable (wrong owner,
+  // destroyed, slot already occupied) the construction is rejected without
+  // ground placement fallback.
+  hostBattlecruiserId: z.number().optional(),
 });
 
 export const UpgradeStructureIntentSchema = z.object({

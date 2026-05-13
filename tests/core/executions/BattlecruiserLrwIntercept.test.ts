@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { BattlecruiserExecution } from "../../../src/core/execution/BattlecruiserExecution";
+import { DefenseStationExecution } from "../../../src/core/execution/DefenseStationExecution";
 import { SpawnExecution } from "../../../src/core/execution/SpawnExecution";
 import {
   Game,
@@ -11,15 +12,36 @@ import {
 } from "../../../src/core/game/Game";
 import { GameID } from "../../../src/core/Schemas";
 import { setup } from "../../util/Setup";
+import { TestConfig } from "../../util/TestConfig";
 import { executeTicks } from "../../util/utils";
 
 /**
  * Tests for GDD §8 — "Satellites or fleets can intercept projectiles within
- * range". BattlecruiserExecution gained LRW projectile interception that
+ * range". BattlecruiserExecution has LRW projectile interception that
  * mirrors DefenseStationExecution's registry dance but with inverse
  * priority: a cruiser only intercepts when no ship target is engaged,
  * because the cruiser is primarily a combat ship with secondary defense.
+ *
+ * Issue #8 — platform-driven combat. The default `Config` flag
+ * `battlecruiserHasDefaultWeapon()` is now `false`, so a bare cruiser does
+ * NOT intercept LRW or fire plasma bolts; that behavior is unlocked by
+ * slotting a DefenseStation / PointDefenseArray / OSP. The legacy intercept
+ * tests below explicitly flip the flag back to `true` so they still cover
+ * the underlying intercept machinery as config-gated regression coverage.
+ * The "default policy" describe block verifies the new default behavior.
  */
+
+/**
+ * Force the legacy "cruiser always shoots" policy. The interceptor and
+ * plasma-bolt code paths are still in `BattlecruiserExecution`, just gated
+ * behind this config flag — the legacy tests need them enabled.
+ */
+function enableLegacyDefaultWeapon(g: Game): void {
+  const cfg = g.config() as TestConfig & {
+    battlecruiserHasDefaultWeapon(): boolean;
+  };
+  cfg.battlecruiserHasDefaultWeapon = () => true;
+}
 
 const gameID: GameID = "bc_lrw_game";
 
@@ -61,9 +83,10 @@ function spawnBattlecruiser(patrolTile: number): Unit {
   return bc;
 }
 
-describe("Battlecruiser LRW intercept (GDD §8)", () => {
+describe("Battlecruiser LRW intercept (GDD §8) — legacy default-weapon flag", () => {
   beforeEach(async () => {
     await buildGame();
+    enableLegacyDefaultWeapon(game);
   });
 
   test("Battlecruiser intercepts a pending enemy LRW impact within range", async () => {
@@ -179,6 +202,7 @@ describe("Battlecruiser LRW intercept (GDD §8)", () => {
       infiniteCredits: true,
       instantBuild: true,
     });
+    enableLegacyDefaultWeapon(game);
     game.addPlayer(
       new PlayerInfo("pilot_id", PlayerType.Human, null, "pilot_id"),
     );
@@ -271,5 +295,63 @@ describe("Battlecruiser LRW intercept (GDD §8)", () => {
       (game.isPendingLrwImpactActive(tokenA) ? 1 : 0) +
       (game.isPendingLrwImpactActive(tokenB) ? 1 : 0);
     expect(alive3).toBe(0);
+  });
+});
+
+/**
+ * Issue #8 — platform-driven combat. With the new default policy
+ * (`battlecruiserHasDefaultWeapon() === false`), a bare cap ship cannot
+ * intercept LRW impacts. The intercept must only be available once an
+ * appropriate weapon platform is slotted on the cruiser.
+ */
+describe("Battlecruiser LRW intercept — default policy (no default weapon)", () => {
+  beforeEach(async () => {
+    await buildGame();
+    // No `enableLegacyDefaultWeapon(game)` — leave the default in place.
+  });
+
+  test("default-config cruiser does NOT intercept a pending LRW impact", async () => {
+    const patrolTile = game.ref(15, 1);
+    spawnBattlecruiser(patrolTile);
+    game.executeNextTick();
+
+    const token = game.registerPendingLrwImpact(
+      attacker.smallID(),
+      game.ref(1, 1),
+      game.ref(15, 2),
+      999_999,
+    );
+
+    // Pump well past the legacy cooldown window. Without the
+    // default-weapon flag the intercept gate stays closed, so the
+    // pending impact must remain registered.
+    executeTicks(game, 100);
+
+    expect(game.isPendingLrwImpactActive(token)).toBe(true);
+  });
+
+  test("cruiser hosting a DefenseStation slot still intercepts via the slotted exec", async () => {
+    // The slotted DefenseStation's own execution handles the intercept
+    // (it runs from the cruiser's tile via `syncSlottedStructure`). This
+    // is the intended replacement for the legacy default-weapon path —
+    // protect issue #8's contract that the gating is platform-driven, not
+    // "no intercept ever".
+    const patrolTile = game.ref(15, 1);
+    const cruiser = spawnBattlecruiser(patrolTile);
+    const ds = pilot.buildUnit(UnitType.DefenseStation, patrolTile, {});
+    cruiser.setSlottedStructure(ds);
+    game.addExecution(new DefenseStationExecution(ds));
+    game.executeNextTick();
+
+    const token = game.registerPendingLrwImpact(
+      attacker.smallID(),
+      game.ref(1, 1),
+      game.ref(15, 2),
+      999_999,
+    );
+
+    executeTicks(game, 25);
+
+    expect(game.isPendingLrwImpactActive(token)).toBe(false);
   });
 });

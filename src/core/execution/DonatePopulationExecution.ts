@@ -1,13 +1,5 @@
-import {
-  Difficulty,
-  Execution,
-  Game,
-  Player,
-  PlayerID,
-  PlayerType,
-} from "../game/Game";
+import { Execution, Game, Player, PlayerID, PlayerType } from "../game/Game";
 import { PseudoRandom } from "../PseudoRandom";
-import { assertNever } from "../Util";
 import { EmojiExecution } from "./EmojiExecution";
 import {
   EMOJI_DONATION_TOO_SMALL,
@@ -86,40 +78,25 @@ export class DonatePopulationExecution implements Execution {
     this.active = false;
   }
 
+  /**
+   * Minimum donation that earns a +50 relation tick from the recipient.
+   *
+   * Originally scaled by difficulty (Easy ~7.7k–9.1k → Impossible ~14.3k–20k
+   * on a 100k cap), but the May 2026 difficulty audit (#2) found this is the
+   * only difficulty-touched code path that can influence a human-affecting
+   * value when an AI Nation donates to a human ally. Normalized to the Hard
+   * tier across all difficulties so humans see the same threshold regardless
+   * of bot difficulty selection. See docs/difficulty-audit-2026-05.md.
+   */
   private getMinPopulationForRelationUpdate(): number {
-    const { difficulty } = this.mg.config().gameConfig();
     const recipientMaxPopulation = this.mg
       .config()
       .maxPopulation(this.recipient);
-
-    switch (difficulty) {
-      // ~7.7k - ~9.1k population (for 100k population)
-      case Difficulty.Easy:
-        return this.random.nextInt(
-          recipientMaxPopulation / 13,
-          recipientMaxPopulation / 11,
-        );
-      // ~9.1k - ~11.1k population (for 100k population)
-      case Difficulty.Medium:
-        return this.random.nextInt(
-          recipientMaxPopulation / 11,
-          recipientMaxPopulation / 9,
-        );
-      // ~11.1k - ~14.3k population (for 100k population)
-      case Difficulty.Hard:
-        return this.random.nextInt(
-          recipientMaxPopulation / 9,
-          recipientMaxPopulation / 7,
-        );
-      // ~14.3k - ~20k population (for 100k population)
-      case Difficulty.Impossible:
-        return this.random.nextInt(
-          recipientMaxPopulation / 7,
-          recipientMaxPopulation / 5,
-        );
-      default:
-        assertNever(difficulty);
-    }
+    // Hard tier: ~11.1k–14.3k on a 100k cap.
+    return this.random.nextInt(
+      recipientMaxPopulation / 9,
+      recipientMaxPopulation / 7,
+    );
   }
 
   isActive(): boolean {

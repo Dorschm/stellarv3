@@ -930,6 +930,75 @@ describe.skip("Economy formulas (PlayerView integration)", () => {
  * layout. The SectorMap-side of the modifier is already covered by
  * `tests/core/game/SectorMap.test.ts`.
  */
+/**
+ * May 2026 balance pass (issue #6) — logistic population growth.
+ *
+ * The old `+3% per second × habitableShare` curve was replaced with the
+ * pure logistic term
+ *   `perTick = LOGISTIC_BASE_RATE × current × (1 - current / max)`
+ * (then scaled by the Bot/Nation multipliers). These tests pin the
+ * qualitative shape of the curve: `current = 0` returns 0, growth peaks
+ * near `current ≈ max/2`, near-cap growth stays positive but lower than
+ * half-max growth, and `current ≥ max` returns 0.
+ */
+describe("troopIncreaseRate (logistic curve)", () => {
+  test("logistic curve: zero at current=0, peaks near half max, tapers toward 0 near cap, zero at/above cap", async () => {
+    const game = await setup(
+      "big_plains",
+      {
+        infiniteCredits: false,
+        infinitePopulation: false,
+        difficulty: Difficulty.Medium,
+      },
+      [humanInfo],
+    );
+    const player = game.player(HUMAN_ID);
+    conquerTiles(game, player, 1000);
+
+    const config = game.config() as DefaultConfig;
+    const max = config.maxPopulation(player);
+    expect(max).toBeGreaterThan(1000);
+
+    // Sample the curve at five anchor points: zero, small, half-cap,
+    // near-cap, exactly-at-cap. With the pure logistic term the
+    // zero-population sample must be 0; the half-cap rate must strictly
+    // exceed both the small and near-cap rates; near-cap remains
+    // positive; the at-cap rate collapses to 0.
+    const sample = (pop: number): number => {
+      player.setPopulation(Math.floor(pop));
+      return config.troopIncreaseRate(player);
+    };
+
+    const zero = sample(0);
+    const small = sample(max * 0.05);
+    const half = sample(max * 0.5);
+    const nearCap = sample(max * 0.95);
+    const atCap = sample(max);
+
+    expect(zero).toBe(0);
+    expect(half).toBeGreaterThan(small);
+    expect(half).toBeGreaterThan(nearCap);
+    expect(nearCap).toBeGreaterThan(0);
+    expect(atCap).toBe(0);
+  });
+
+  test("never returns a negative rate even when population exceeds max", async () => {
+    const game = await setup(
+      "big_plains",
+      { infiniteCredits: false, infinitePopulation: false },
+      [humanInfo],
+    );
+    const player = game.player(HUMAN_ID);
+    conquerTiles(game, player, 1000);
+    const config = game.config() as DefaultConfig;
+    const max = config.maxPopulation(player);
+    // Set population above the cap (defensive: the cap can drift if the
+    // SectorMap updates between ticks). The clamp must hold.
+    player.setPopulation(Math.floor(max + 5));
+    expect(config.troopIncreaseRate(player)).toBe(0);
+  });
+});
+
 describe("creditAdditionRate (per-sector resource modifier)", () => {
   /**
    * Stub SectorMap that returns a fixed `playerWeightedYieldTiles`

@@ -83,13 +83,16 @@ export class WorkerClient {
         clientID: this.clientID,
       });
 
-      // Add timeout for initialization
+      // Add timeout for initialization. 60s is enough for slow CI machines
+      // and for the third+ consecutive game start in a Playwright worker
+      // process (procedural map gen + worker bundle hot-load + JIT warmup
+      // can stack to ~30s in headless Chromium under serial test load).
       setTimeout(() => {
         if (!this.isInitialized) {
           this.messageHandlers.delete(messageId);
           reject(new Error("Worker initialization timeout"));
         }
-      }, 20000); // 20 second timeout
+      }, 60000);
     });
   }
 

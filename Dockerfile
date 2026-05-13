@@ -36,6 +36,14 @@ ENV NPM_CONFIG_IGNORE_SCRIPTS=1
 COPY package*.json ./
 RUN --mount=type=cache,target=/root/.npm \
     npm ci --omit=dev
+# better-sqlite3 ships a prebuilt native binary via prebuild-install that is
+# normally extracted during the postinstall hook. We keep
+# NPM_CONFIG_IGNORE_SCRIPTS=1 for supply-chain safety, then explicitly
+# rebuild this single package so its prebuilt .node file lands in
+# node_modules/. node-gyp-build will download the matching binary for the
+# node:24-slim base; no compiler toolchain needs to be installed.
+RUN --mount=type=cache,target=/root/.npm \
+    npm rebuild better-sqlite3 --foreground-scripts
 
 # Final production image
 FROM base
