@@ -36,11 +36,18 @@ export async function loadTerrainMap(
   map: GameMapType,
   mapSize: GameMapSize,
   terrainMapFileLoader: GameMapLoader,
+  seed?: number,
 ): Promise<TerrainMapData> {
-  const cacheKey = `${map}:${mapSize}`;
+  // Random maps are generated from a seed — include it in the cache key so
+  // two different random games (different seeds) don't collide, and so the
+  // client and server resolve to the same map per game.
+  const cacheKey =
+    map === GameMapType.Random
+      ? `${map}:${mapSize}:${seed ?? "noseed"}`
+      : `${map}:${mapSize}`;
   const cached = loadedMaps.get(cacheKey);
   if (cached !== undefined) return cached;
-  const mapFiles = terrainMapFileLoader.getMapData(map);
+  const mapFiles = terrainMapFileLoader.getMapData(map, seed);
   const manifest = await mapFiles.manifest();
 
   const gameMap =

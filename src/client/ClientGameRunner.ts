@@ -30,7 +30,12 @@ import {
   PlayerRecord,
   ServerMessage,
 } from "../core/Schemas";
-import { createPartialGameRecord, findClosestBy, replacer } from "../core/Util";
+import {
+  createPartialGameRecord,
+  findClosestBy,
+  replacer,
+  simpleHash,
+} from "../core/Util";
 import { WorkerClient } from "../core/worker/WorkerClient";
 import { getPersistentID } from "./Auth";
 import { GameBridge } from "./bridge/GameBridge";
@@ -127,6 +132,7 @@ export function joinLobby(
         message.gameMap,
         message.gameMapSize,
         terrainMapFileLoader,
+        simpleHash(lobbyConfig.gameID),
       );
       resolvePrestart();
     }
@@ -251,6 +257,7 @@ async function createClientGame(
       lobbyConfig.gameStartInfo.config.gameMap,
       lobbyConfig.gameStartInfo.config.gameMapSize,
       mapLoader,
+      simpleHash(lobbyConfig.gameID),
     );
   }
   const worker = new WorkerClient(lobbyConfig.gameStartInfo, clientID);

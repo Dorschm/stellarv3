@@ -36,12 +36,15 @@ export async function createGameRunner(
   callBack: (gu: GameUpdateViewData | ErrorUpdate) => void,
 ): Promise<GameRunner> {
   const config = await getGameLogicConfig(gameStart.config, null);
+  // Seed random maps from gameID so client and server agree on terrain.
+  const mapSeed = simpleHash(gameStart.gameID);
   const gameMap = await loadGameMap(
     gameStart.config.gameMap,
     gameStart.config.gameMapSize,
     mapLoader,
+    mapSeed,
   );
-  const random = new PseudoRandom(simpleHash(gameStart.gameID));
+  const random = new PseudoRandom(mapSeed);
 
   const humans = gameStart.players.map((p) => {
     return new PlayerInfo(
