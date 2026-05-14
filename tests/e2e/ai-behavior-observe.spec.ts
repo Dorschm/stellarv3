@@ -153,7 +153,18 @@ function logSnapshot(s: GameSnapshot) {
   }
 }
 
+// 20-minute observational watchdog, NOT a regression test. With 1 human +
+// 408 nations on SolSystem, AI economy formulas can run for thousands of
+// ticks before any nation accumulates enough territory to fund its first
+// `TradeFreighter` — measuring that is the test's purpose, not its
+// pass/fail. Default-skipped so routine `npx playwright test` runs stay
+// fast and so this spec can never poison the shared dev server for the
+// next spec in the serial chain. Run on demand with
+// `RUN_AI_OBSERVE=1 npx playwright test tests/e2e/ai-behavior-observe.spec.ts`.
+const RUN_AI_OBSERVE = process.env.RUN_AI_OBSERVE === "1";
+
 test.describe("AI behavior observation (headed run)", () => {
+  test.skip(!RUN_AI_OBSERVE, "Set RUN_AI_OBSERVE=1 to enable this watchdog");
   test.setTimeout(20 * 60 * 1000); // up to 20 minutes
 
   test("observe AI ships, territory growth, and win condition", async ({

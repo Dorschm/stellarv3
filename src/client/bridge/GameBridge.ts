@@ -145,23 +145,36 @@ export class GameBridge {
     // -- Hostable structure costs (issue #7) --
     // Snapshot the per-tick cost of every Battlecruiser-hostable structure
     // for the local player so SpaceInputHandler can show a "Not enough
-    // money" toast immediately when a selected-cruiser hotkey is pressed
-    // without funds, instead of the host-only intent silently bouncing on
-    // the server. The cost function is invoked with a PlayerView-backed
-    // adapter implementing the narrow Player subset DefaultConfig.costWrapper
-    // actually reads (`type`, `unitsOwned`, `unitsConstructed`); we no longer
-    // smuggle a PlayerView through `as any`, and any throw from the cost
-    // function now propagates instead of being silently swallowed.
+    // money" toast when a selected-cruiser hotkey is pressed without funds,
+    // instead of the host-only intent silently bouncing on the server. The
+    // cost function is invoked with a PlayerView-backed adapter
+    // implementing the narrow Player subset DefaultConfig.costWrapper
+    // actually reads (`type`, `unitsOwned`, `unitsConstructed`).
+    //
+    // Fault isolation: per-type cost lookups are wrapped so a single
+    // misbehaving cost function (missing data, unexpected throw) leaves
+    // its entry absent from the map but does NOT interrupt the rest of
+    // GameBridge.tick() — HUD sync and scene fan-out must always complete.
+    // A missing cost entry simply means the SpaceInputHandler gate cannot
+    // fire the local toast for that type; the server-side host-only path
+    // still rejects unaffordable builds.
     const costMap = new Map<UnitType, Credits>();
     if (myPlayer !== null) {
       const adapter = adaptPlayerForCost(myPlayer);
       const hostable = this.gameView.config().battlecruiserHostableStructures();
       for (const t of hostable) {
-        const fn = this.gameView.unitInfo(t).cost as unknown as (
-          g: GameView,
-          p: CostFnPlayerLike,
-        ) => Credits;
-        costMap.set(t, fn(this.gameView, adapter));
+        try {
+          const fn = this.gameView.unitInfo(t).cost as unknown as (
+            g: GameView,
+            p: CostFnPlayerLike,
+          ) => Credits;
+          costMap.set(t, fn(this.gameView, adapter));
+        } catch (err) {
+          console.warn(
+            `GameBridge: failed to snapshot hostable cost for ${t}`,
+            err,
+          );
+        }
       }
     }
     store.setCruiserHostableCosts(costMap);
@@ -229,31 +242,34 @@ type CostFnPlayerLike = Pick<
 >;
 
 /**
- * Build a `CostFnPlayerLike` view of a `PlayerView`. Mirrors `PlayerImpl`'s
- * `unitsOwned` / `unitsConstructed` shape using the unit data the client
- * already has.
+ * Build a `CostFnPlayerLike` view of a `PlayerView`. Intentionally
+ * conservative: `unitsOwned` and `unitsConstructed` both return 0 so that
+ * `costWrapper`'s `Math.min(unitsOwned, unitsConstructed)` always resolves
+ * to 0 and the resulting cost is the base price (the lowest a server-side
+ * costFn can produce for that type with finite credits).
  *
- * Note on parity: `PlayerImpl.unitsConstructed` includes a server-side
- * "ever built" counter (`numUnitsConstructed[type]`) that is not part of
- * `PlayerView`. The client therefore counts only currently-extant units,
- * which can under-estimate cost when the player has destroyed structures of
- * the same type. The Math.min() inside `costWrapper` clamps to whichever
- * counter is lower, so the worst case is the toast failing to fire and the
- * server falling back to its existing silent rejection — never a false
- * positive that blocks a legitimate build.
+ * Why not count currently-extant units? `PlayerImpl.unitsConstructed` is a
+ * server-side "ever built" counter (`numUnitsConstructed[type]`) that is
+ * incremented only by `buildUnit` / `upgradeUnit`. It is NOT incremented by
+ * `captureUnit` / `UnitImpl.setOwner`, while `PlayerView.units(type)` does
+ * include captured units. Counting extant units therefore over-estimates
+ * `unitsConstructed` for any player who has captured hostable structures,
+ * which would turn this advisory client snapshot into an authoritative
+ * blocker that falsely rejects legitimate builds (e.g., player with one
+ * captured Colony + 150k credits — server cost is 125k but the old client
+ * adapter computed 250k, and SpaceInputHandler suppressed the build intent).
+ *
+ * The conservative bound guarantees `serverCost ≥ clientCost`, so any toast
+ * SpaceInputHandler fires from this snapshot reflects a genuine inability to
+ * afford even the cheapest tier; the server-side host-only path remains the
+ * authoritative gate for higher tiers. If authoritative `unitsConstructed`
+ * is plumbed through `PlayerUpdate` / `PlayerView` in the future, this
+ * adapter can be tightened to reflect the true cost ladder.
  */
 function adaptPlayerForCost(player: PlayerView): CostFnPlayerLike {
   return {
     type: (): PlayerType => player.type(),
-    unitsOwned: (type: UnitType): number => {
-      let total = 0;
-      for (const u of player.units(type)) {
-        total += u.isUnderConstruction() ? 1 : u.level();
-      }
-      return total;
-    },
-    unitsConstructed: (type: UnitType): number => {
-      return player.units(type).length;
-    },
+    unitsOwned: (_type: UnitType): number => 0,
+    unitsConstructed: (_type: UnitType): number => 0,
   };
 }
