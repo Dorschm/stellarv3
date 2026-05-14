@@ -749,12 +749,13 @@ describe("Battlecruiser — territory anchor", () => {
     // targetTile, so the next patrol() call picks a new random target
     // and invokes findPath() fresh from the cruiser's fully-enclosed
     // tile — hitting the BFS fallback branch in coerceToWater.
+    // (`half_land_half_ocean` is 16×16, so all coords must be in [0,15].)
     const visitedTiles = new Set<number>([postBubbleTile]);
     const retargets = [
-      anchorGame.ref(coastX + 8, 18),
-      anchorGame.ref(coastX + 3, 17),
-      anchorGame.ref(coastX + 10, 20),
-      anchorGame.ref(coastX + 2, 14),
+      anchorGame.ref(coastX + 8, 14),
+      anchorGame.ref(coastX + 3, 13),
+      anchorGame.ref(coastX + 6, 15),
+      anchorGame.ref(coastX + 2, 12),
     ];
     for (const target of retargets) {
       anchorGame.addExecution(

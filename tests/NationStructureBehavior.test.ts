@@ -31,7 +31,10 @@ function makeGame(stations: any[] = []): any {
       frigateCredits: (rel: string, _citiesVisited: number) =>
         TRAIN_CREDITS[rel] ?? 0n,
     }),
-    railNetwork: () => ({
+    // `Game.hyperspaceLaneNetwork()` is the post-rename accessor (was
+    // `railNetwork()`); `NationStructureBehavior.buildReachableStations`
+    // reads stations via `game.hyperspaceLaneNetwork().stationManager()`.
+    hyperspaceLaneNetwork: () => ({
       stationManager: () => ({ getAll: () => new Set(stations) }),
     }),
   };

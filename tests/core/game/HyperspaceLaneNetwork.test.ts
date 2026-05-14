@@ -69,9 +69,14 @@ describe("HyperspaceLaneNetworkImpl", () => {
       nearbyUnits: vi.fn(() => []),
       addExecution: vi.fn(),
       config: () => ({
-        trainStationMaxRange: () => 80,
-        trainStationMinRange: () => 10,
-        railroadMaxSize: () => 100,
+        // Config method names migrated from the legacy `trainStation` /
+        // `railroad` vocabulary to the current `tradeHub` / `hyperspaceLane`
+        // vocabulary used by `HyperspaceLaneNetworkImpl`. The previous
+        // mock keys silently shadowed nothing, so every method call here
+        // returned `undefined` and the network's range/size checks threw.
+        tradeHubMaxRange: () => 80,
+        tradeHubMinRange: () => 10,
+        hyperspaceLaneMaxSize: () => 100,
       }),
       x: vi.fn(() => 0),
       y: vi.fn(() => 0),

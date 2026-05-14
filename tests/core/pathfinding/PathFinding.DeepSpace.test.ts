@@ -41,7 +41,18 @@ describe("PathFinding.DeepSpace", () => {
       expect(path![1]).toBe(to);
     });
 
-    it("returns null for land tiles", () => {
+    it("coerces a non-shore land start tile to nearby water and finds a path", () => {
+      // Pre-BFS-fallback contract: `PathFinding.DeepSpace` refused to
+      // start from a fully-interior sector tile and returned null.
+      //
+      // Post-fix contract (see `SectorBoundaryCoercingTransformer.
+      // bfsNearestDeepSpace`): the transformer BFS-searches outward
+      // from the start for the nearest deep-space tile and routes from
+      // there, so a click that lands on an interior sector tile
+      // produces a usable path back to the requested water destination.
+      // The cruiser's `MoveBattlecruiserExecution` and Scout-Swarm
+      // click handlers both rely on this auto-coerce behavior — the
+      // old "return null" path silently dropped clicks on planets.
       const pathFinder = createPathFinder();
       const map = game.map();
 
@@ -54,7 +65,13 @@ describe("PathFinding.DeepSpace", () => {
 
       const path = pathFinder.findPath(landTile, waterTile);
 
-      expect(path).toBeNull();
+      // A path was found, includes the requested water destination at
+      // its tail, and prepends the original land start tile so the
+      // caller can render a continuous line from click to arrival.
+      expect(path).not.toBeNull();
+      expect(path!.length).toBeGreaterThan(1);
+      expect(path![0]).toBe(landTile);
+      expect(path![path!.length - 1]).toBe(waterTile);
     });
 
     it("returns single-tile path when from equals to", () => {

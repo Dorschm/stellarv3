@@ -557,16 +557,26 @@ describe("WinCheckExecution - 1v1 Ranked Mode", () => {
     const p1Tiles = Math.ceil(totalLand * 0.85);
     let p1Assigned = 0;
     let p2Assigned = 0;
+    let p1Spawn: number | undefined;
+    let p2Spawn: number | undefined;
     game.map().forEachTile((tile) => {
       if (!game.map().isSector(tile)) return;
       if (p1Assigned < p1Tiles) {
         p1.conquer(tile);
+        p1Spawn ??= tile;
         p1Assigned++;
       } else if (p2Assigned < 5) {
         p2.conquer(tile);
+        p2Spawn ??= tile;
         p2Assigned++;
       }
     });
+    // `conquer` alone does not mark a player as spawned. The elimination
+    // path's `hasSpawned()` guard early-returns until every registered
+    // player has a spawn tile, so set it explicitly to one of the tiles
+    // we just gave them.
+    if (p1Spawn !== undefined) p1.setSpawnTile(p1Spawn);
+    if (p2Spawn !== undefined) p2.setSpawnTile(p2Spawn);
 
     expect(p1.numTilesOwned() / totalLand).toBeGreaterThan(0.8);
     expect(p2.numTilesOwned()).toBeGreaterThan(0);
@@ -607,13 +617,26 @@ describe("WinCheckExecution - 1v1 Ranked Mode", () => {
     while (game.inSpawnPhase()) game.executeNextTick();
 
     let assigned = 0;
+    let survivorSpawn: number | undefined;
     game.map().forEachTile((tile) => {
       if (!game.map().isSector(tile)) return;
       if (assigned < 5) {
         survivor.conquer(tile);
+        survivorSpawn ??= tile;
         assigned++;
       }
     });
+    // The elimination path skips the win check until every registered
+    // player has spawned. The survivor has tiles, but `conquer` alone
+    // does not flip `hasSpawned()`. The "Eliminated" player never owns
+    // a tile — give them a spawn tile too so the test exercises the
+    // post-spawn-phase eliminated-faction path (they'll be filtered
+    // out by `isPlayerAlive` because they hold 0 tiles).
+    const eliminated = game.player("Eliminated");
+    if (survivorSpawn !== undefined) {
+      survivor.setSpawnTile(survivorSpawn);
+      eliminated.setSpawnTile(survivorSpawn);
+    }
 
     expect(survivor.numTilesOwned()).toBeGreaterThan(0);
 
@@ -695,16 +718,25 @@ describe("WinCheckExecution - 1v1 Ranked Mode", () => {
 
     let leaderAssigned = 0;
     let followerAssigned = 0;
+    let leaderSpawn: number | undefined;
+    let followerSpawn: number | undefined;
     game.map().forEachTile((tile) => {
       if (!game.map().isSector(tile)) return;
       if (leaderAssigned < 50) {
         leader.conquer(tile);
+        leaderSpawn ??= tile;
         leaderAssigned++;
       } else if (followerAssigned < 5) {
         follower.conquer(tile);
+        followerSpawn ??= tile;
         followerAssigned++;
       }
     });
+    // `conquer` alone does not flip `hasSpawned()`; the elimination /
+    // timer-fallback paths skip the win check until every registered
+    // player has spawned.
+    if (leaderSpawn !== undefined) leader.setSpawnTile(leaderSpawn);
+    if (followerSpawn !== undefined) follower.setSpawnTile(followerSpawn);
 
     expect(leader.numTilesOwned()).toBeGreaterThan(follower.numTilesOwned());
 
@@ -986,13 +1018,24 @@ describe("WinCheckExecution - 1v1 Ranked Mode", () => {
     while (game.inSpawnPhase()) game.executeNextTick();
 
     let assigned = 0;
+    let aSpawn: number | undefined;
     game.map().forEachTile((tile) => {
       if (!game.map().isSector(tile)) return;
       if (assigned < 10) {
         a.conquer(tile);
+        aSpawn ??= tile;
         assigned++;
       }
     });
+    // The team elimination path also guards on every registered player
+    // having spawned. A owns tiles but `conquer` doesn't flip
+    // `hasSpawned()`; B never spawned. Set spawn tiles on both — B's
+    // tile-count remains zero so the team-elimination predicate still
+    // resolves against the empty team.
+    if (aSpawn !== undefined) {
+      a.setSpawnTile(aSpawn);
+      b.setSpawnTile(aSpawn);
+    }
 
     // Sanity: A holds tiles, B does not, and they are on different teams.
     expect(a.numTilesOwned()).toBeGreaterThan(0);

@@ -224,7 +224,13 @@ describe("ClusterWarheadExecution", () => {
 
     expect(displaySpy).toHaveBeenCalled();
     const callArgs = displaySpy.mock.calls[0];
-    expect(callArgs[1]).toContain("MIRV INBOUND");
+    // `displayIncomingUnit` receives a translation KEY, not the
+    // localized English string — the HUD resolves the key against
+    // `en.json` at render time (currently "⚠️⚠️⚠️ {name} - CLUSTER
+    // WARHEAD INBOUND ⚠️⚠️⚠️"). The previous assertion checked the
+    // resolved English literal "MIRV INBOUND" and was always stale
+    // against the actual contract.
+    expect(callArgs[1]).toBe("events_display.cluster_warhead_inbound");
     expect(callArgs[2]).toBe(MessageType.CLUSTER_WARHEAD_INBOUND);
     expect(callArgs[3]).toBe(otherPlayer.id());
   });

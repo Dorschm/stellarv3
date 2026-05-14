@@ -90,6 +90,14 @@ describe("Shell Random Damage", () => {
   });
 
   test("Battlecruiser plasma bolt attacks have random damage", () => {
+    // Battlecruisers ship without a default plasma weapon by design (see
+    // `docs/product-decisions.md` §7 and `battlecruiserHasDefaultWeapon`
+    // defaulting to `false`). This test specifically exercises the
+    // plasma-bolt damage RNG path, so we flip the gate to `true` for
+    // the duration of the test to restore the legacy "always shoots"
+    // behavior — without the override `BattlecruiserExecution.tick`
+    // never enters `shootTarget` and no damage is recorded.
+    game.config().battlecruiserHasDefaultWeapon = () => true;
     player1.buildUnit(UnitType.Spaceport, game.ref(coastX, 10), {});
 
     const battlecruiser = player1.buildUnit(
@@ -147,6 +155,12 @@ describe("Shell Random Damage", () => {
   });
 
   test("Defense post shell attacks have random damage", () => {
+    // Drop the station's plasma-bolt cooldown to ~1 tick so the test's
+    // 100-iteration loop fires enough bolts to actually sample the RNG
+    // distribution. With the default 10-second cooldown only a single
+    // bolt fires inside the test window, which collapses the
+    // distinct-damage check to `size === 1`.
+    game.config().defenseStationPlasmaBoltAttackRate = () => 1;
     player1.conquer(game.ref(coastX, 5));
     const spawn = player1.canBuild(
       UnitType.DefenseStation,

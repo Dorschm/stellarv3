@@ -43,6 +43,12 @@ describe("GameLifecycle", () => {
     };
     mockConfig = {
       turnIntervalMs: () => 100,
+      // `GameServer.start` reads `dynamicTurnIntervalMs(ratio)` to seed
+      // `currentTurnIntervalMs` so the per-tick ramp can shorten the
+      // interval as a player's territory grows. The mock previously
+      // only stubbed `turnIntervalMs` and threw "is not a function"
+      // when the second test's `start()` path hit the dynamic call.
+      dynamicTurnIntervalMs: () => 100,
       gameCreationRate: () => 1000,
       env: () => GameEnv.Dev,
     };

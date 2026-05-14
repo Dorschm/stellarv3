@@ -82,6 +82,16 @@ describe("AllianceBehavior.handleAllianceRequests", () => {
       }
     });
 
+    // `startPopulation` is type-keyed: Bot players start at 10k pop and
+    // Humans at 100k pop. With the default ratio the human requestor is
+    // already > 2.5× the bot's pop, which makes
+    // `isAlliancePartnerThreat` short-circuit to `accept` on Medium
+    // difficulty BEFORE the relation / alliance-count gates fire. Pin
+    // both sides to the same population so the test exercises the
+    // intended downstream gates.
+    player.setPopulation(100_000);
+    requestor.setPopulation(100_000);
+
     vi.spyOn(player, "alliances").mockReturnValue(new Array(alliancesCount));
 
     const mockRequest = {

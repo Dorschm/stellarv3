@@ -123,6 +123,13 @@ describe("Hosted OSP ship targeting respects canAttackPlayer", () => {
     (game.config() as TestConfig).setSpawnImmunityDuration(0);
     expect(defender.isImmune()).toBe(false);
 
+    // `infiniteCredits` zeros out unit build cost, but the OSP's LRW
+    // shot still deducts `longRangeWeaponShotCost` (100k credits per
+    // shot) from the attacker's actual balance. Without seeded credits
+    // the OSP never fires and this test asserts vacuously. Top the
+    // attacker up so the shot path is exercised.
+    attacker.addCredits(10_000_000n);
+
     const healthBefore = enemyCruiser.health();
     executeTicks(game, 30);
 

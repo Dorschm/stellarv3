@@ -69,7 +69,13 @@ export default defineConfig(({ mode }) => {
   return {
     test: {
       globals: true,
-      environment: "jsdom",
+      // happy-dom rather than jsdom: jsdom 27 ships a CJS-requires-ESM
+      // bug in `html-encoding-sniffer` → `@exodus/bytes/encoding-lite.js`
+      // that breaks the test runner on Node ≥ 22. happy-dom is faster,
+      // well-maintained, and covers every browser API our tests use
+      // (matchMedia, ResizeObserver, navigator.userAgent[Data],
+      // window.innerWidth, …).
+      environment: "happy-dom",
       setupFiles: "./tests/setup.ts",
       exclude: [
         "**/node_modules/**",
