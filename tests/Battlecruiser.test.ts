@@ -967,4 +967,73 @@ describe("Battlecruiser — territory anchor", () => {
     }
     expect(cruiserOwner.numTilesOwned()).toBe(ownedBefore);
   });
+
+  test("cruiser can pathfind through its own claimed wake (own-sector passable)", () => {
+    // Regression: the cruiser's `claimTerritoryRadius` promotes
+    // DeepSpace tiles to AsteroidField sector tiles owned by the cruiser
+    // owner. The original `AStarDeepSpace` only accepted non-sector
+    // tiles as passable neighbors, so a wake the cruiser already laid
+    // down became an obstacle the cruiser could not re-traverse — it
+    // had to detour around its own territory. `PathFinding.CapitalShip`
+    // marks sector tiles owned by the cruiser's current owner as
+    // passable, restoring the "mobile one-slot planet" intent: the
+    // cruiser flies through its empire's space, not around it.
+    const patrolTile = anchorGame.ref(coastX + 1, 10);
+    expect(anchorGame.isDeepSpace(patrolTile)).toBe(true);
+
+    const bc = cruiserOwner.buildUnit(UnitType.Battlecruiser, patrolTile, {
+      patrolTile,
+    });
+    slotColonyOnCruiser(bc);
+    anchorGame.addExecution(new BattlecruiserExecution(bc));
+
+    // Drive the cruiser forward so it lays a wake of owned sector
+    // tiles. After this leg, the cruiser sits *inside* its own wake
+    // bubble — the exact pre-fix dead-end where the deep-space-only
+    // pathfinder produced NOT_FOUND or forced a long detour.
+    // (`half_land_half_ocean` is 16×16, so all coords must be ≤ 15.)
+    anchorGame.addExecution(
+      new MoveBattlecruiserExecution(
+        cruiserOwner,
+        bc.id(),
+        anchorGame.ref(coastX + 4, 13),
+      ),
+    );
+    executeTicks(anchorGame, 12);
+
+    const cruiserTile = bc.tile();
+    // Sanity: confirm the cruiser is in a sector tile it owns (its own
+    // wake) so we're exercising the owner-aware passability path. If
+    // the cruiser ended on deep space this test isn't testing what it
+    // claims to test.
+    expect(anchorGame.isSector(cruiserTile)).toBe(true);
+    expect(anchorGame.owner(cruiserTile)).toBe(cruiserOwner);
+
+    // Drive the cruiser forward once more, this time across its own
+    // wake toward fresh deep space on the far side. The destination is
+    // intentionally further into deep space so the route must cross
+    // owned sector tiles to make progress. The pre-fix pathfinder
+    // could only navigate via deep-space neighbors and would either
+    // refuse the path (`NOT_FOUND`) or stall.
+    const farTarget = anchorGame.ref(coastX + 7, 15);
+    anchorGame.addExecution(
+      new MoveBattlecruiserExecution(cruiserOwner, bc.id(), farTarget),
+    );
+
+    const tilesBeforeSecondLeg = cruiserOwner.numTilesOwned();
+    const startDist = anchorGame.manhattanDist(bc.tile(), farTarget);
+    executeTicks(anchorGame, 15);
+
+    // Strict progress: cruiser's Manhattan-distance to the destination
+    // must strictly decrease. With the wake blocking, the pre-fix
+    // pathfinder produced no progress.
+    const endDist = anchorGame.manhattanDist(bc.tile(), farTarget);
+    expect(endDist).toBeLessThan(startDist);
+
+    // The cruiser must have continued laying down wake — it cannot do
+    // that unless its pathfinder advances it through deep space and
+    // own-owned wake tiles together. `numTilesOwned` strictly
+    // increasing confirms wake extension along the second leg.
+    expect(cruiserOwner.numTilesOwned()).toBeGreaterThan(tilesBeforeSecondLeg);
+  });
 });

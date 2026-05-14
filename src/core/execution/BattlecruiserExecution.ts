@@ -29,7 +29,18 @@ export class BattlecruiserExecution implements Execution {
 
   init(mg: Game, ticks: number): void {
     this.mg = mg;
-    this.pathfinder = PathFinding.DeepSpace(mg);
+    // Capital-ship pathfinder: treats sector tiles owned by the current
+    // cruiser owner as passable in addition to deep space, so the
+    // cruiser can re-traverse the wake of AsteroidField sector tiles its
+    // `claimTerritoryRadius` lays down. The owner is read via a getter
+    // on every path query — captures (`captureUnit`) that flip cruiser
+    // ownership are picked up automatically without rebuilding the
+    // pathfinder.
+    this.pathfinder = PathFinding.CapitalShip(mg, () =>
+      this.battlecruiser !== undefined
+        ? this.battlecruiser.owner().smallID()
+        : 0,
+    );
     this.random = new PseudoRandom(mg.ticks());
     if (isUnit(this.input)) {
       this.battlecruiser = this.input;
@@ -327,8 +338,14 @@ export class BattlecruiserExecution implements Execution {
           this.claimTerritoryRadius();
           break;
         case PathStatus.NOT_FOUND: {
-          console.log(`path not found to target`);
-          break;
+          // Freighter is unreachable from the cruiser's current deep-space
+          // component. Drop the chase so we don't re-issue the same failed
+          // pathfinder query every tick (with N AI cruisers in a 400-bot
+          // singleplayer game this was the dominant log-spam source and
+          // was stalling the worker thread). The cruiser falls back to
+          // patrol on the next tick.
+          this.battlecruiser.setTargetUnit(undefined);
+          return;
         }
       }
     }
@@ -364,7 +381,14 @@ export class BattlecruiserExecution implements Execution {
         this.claimTerritoryRadius();
         break;
       case PathStatus.NOT_FOUND: {
-        console.log(`path not found to target`);
+        // Patrol target is unreachable from the cruiser's current deep-space
+        // component (typically the random offset landed on a sector island
+        // separated by void the cruiser can't cross). Clear it so the next
+        // tick picks a fresh `randomTile()` rather than re-running the same
+        // doomed pathfinder query forever. Logging here was the dominant
+        // worker-thread freeze source in 400-bot singleplayer — clearing
+        // the target IS the diagnostic signal.
+        this.battlecruiser.setTargetTile(undefined);
         break;
       }
     }

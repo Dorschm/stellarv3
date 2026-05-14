@@ -33,6 +33,47 @@ export class UniversalPathFinding {
  * Pathfinders that require Game - simulation layer only
  */
 export class PathFinding {
+  /**
+   * Capital-ship pathfinder. Identical to {@link DeepSpaceSimple} (no
+   * HPA cache) except that sector tiles owned by the cruiser's owner are
+   * treated as passable in addition to deep-space tiles, so the cruiser
+   * can re-traverse the wake of AsteroidField sector tiles its
+   * `claimTerritoryRadius` lays down.
+   *
+   * Uses the same 2× minimap as `DeepSpaceSimple` so path resolution
+   * matches the existing deep-space behavior — the cruiser doesn't
+   * suddenly take a different route in deep space just because it now
+   * has owner-aware passability. Ownership is read from the minimap's
+   * `state` buffer, which `GameImpl.conquer` / `relinquish` mirror from
+   * the main map on every flip.
+   *
+   * `ownerSmallIDGetter` is a getter (not a fixed value) so that
+   * `captureUnit` flipping the cruiser's owner mid-run gets picked up by
+   * the next path query without rebuilding the pathfinder.
+   */
+  static CapitalShip(
+    game: Game,
+    ownerSmallIDGetter: () => number,
+  ): SteppingPathFinder<TileRef> {
+    const miniMap = game.miniMap();
+    const pf = new AStarDeepSpace(miniMap, {
+      passableOwnerSmallID: ownerSmallIDGetter,
+    });
+
+    // Intentionally NO `SectorBoundaryCoercingTransformer`: the cruiser
+    // routinely starts a tick on its own wake (a sector tile owned by
+    // its owner), and that transformer would coerce the start back to
+    // the nearest deep-space neighbor before handing the query to the
+    // inner finder — defeating the owner-aware passability check below.
+    // `MoveBattlecruiserExecution.findNearestVoid` already clamps the
+    // destination to a void tile up-front, and `randomTile()` returns
+    // void tiles, so the goal end of the path is always deep space and
+    // does not need coercion either.
+    return PathFinderBuilder.create(pf)
+      .wrap((pf) => new MiniMapTransformer(pf, game.map(), miniMap))
+      .buildWithStepper(tileStepperConfig(game));
+  }
+
   static DeepSpace(game: Game): SteppingPathFinder<TileRef> {
     // Runtime void→sector promotions (scout-swarm terraforming, capital
     // ship anchors) mutate the minimap terrain buffer but leave the HPA

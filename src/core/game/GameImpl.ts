@@ -913,6 +913,7 @@ export class GameImpl implements Game {
       this._sectorMap.recordTileLost(previousOwner.smallID(), tile);
     }
     this._map.setOwnerID(tile, owner.smallID());
+    this.propagateOwnerIDToMiniMap(tile, owner.smallID());
     owner._tiles.add(tile);
     owner._lastTileChange = this._ticks;
     this._sectorMap.recordTileGained(owner.smallID(), tile);
@@ -943,6 +944,7 @@ export class GameImpl implements Game {
     this._sectorMap.recordTileLost(previousOwner.smallID(), tile);
 
     this._map.setOwnerID(tile, 0);
+    this.propagateOwnerIDToMiniMap(tile, 0);
     this.updateBorders(tile);
     this.recordTileUpdate(tile);
   }
@@ -1414,6 +1416,23 @@ export class GameImpl implements Game {
     if (!this.miniGameMap.isSector(miniRef)) {
       this.miniGameMap.promoteNonSectorToSector(miniRef);
     }
+  }
+
+  /**
+   * Mirror owner-ID changes from the main map onto the 2× minimap so the
+   * deep-space pathfinder can read authoritative ownership when the
+   * capital-ship variant (`PathFinding.CapitalShip`) checks owner-aware
+   * passability. Multiple main-map tiles share a single minimap tile
+   * (downscale-by-2), so this is last-write-wins per minimap bucket —
+   * sufficient for the cruiser's "may I traverse my own wake?" check
+   * since the wake is contiguous and any one source tile of the bucket
+   * being owner-flagged is enough to mark the bucket passable.
+   */
+  private propagateOwnerIDToMiniMap(ref: TileRef, playerId: number): void {
+    const miniX = Math.floor(this._map.x(ref) / 2);
+    const miniY = Math.floor(this._map.y(ref) / 2);
+    const miniRef = this.miniGameMap.ref(miniX, miniY);
+    this.miniGameMap.setOwnerID(miniRef, playerId);
   }
 
   markDeepSpaceGraphDirty(): void {

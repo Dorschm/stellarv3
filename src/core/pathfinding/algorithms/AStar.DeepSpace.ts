@@ -4,6 +4,10 @@ import { MinHeap, PriorityQueue } from "./PriorityQueue";
 
 const SECTOR_BIT = 7; // Bit 7 in terrain indicates a sector tile
 const MAGNITUDE_MASK = 0x1f;
+// `GameMapImpl.state[i] & PLAYER_ID_MASK` is the tile's owner small-ID.
+// Kept locally so the pathfinder's inner loop avoids importing
+// `GameMapImpl` (and a circular dep with the game module).
+const PLAYER_ID_MASK = 0xfff;
 const COST_SCALE = 100;
 const BASE_COST = 1 * COST_SCALE;
 
@@ -17,6 +21,17 @@ function getMagnitudePenalty(magnitude: number): number {
 export interface AStarDeepSpaceConfig {
   heuristicWeight?: number;
   maxIterations?: number;
+  /**
+   * Capital-ship territory wake (Issue: cruiser can't traverse its own
+   * flipped tiles). When set to a non-zero small-ID, sector tiles owned
+   * by that small-ID are treated as passable in addition to non-sector
+   * (deep-space) tiles. Read via a getter so the cruiser can swap owners
+   * mid-run (e.g. captureUnit) without rebuilding the pathfinder.
+   *
+   * Returns `0` (or omitting the getter) disables the override and the
+   * pathfinder behaves identically to the original deep-space-only A*.
+   */
+  passableOwnerSmallID?: () => number;
 }
 
 export class AStarDeepSpace implements PathFinder<number> {
@@ -28,17 +43,28 @@ export class AStarDeepSpace implements PathFinder<number> {
   private readonly cameFrom: Int32Array;
   private readonly queue: PriorityQueue;
   private readonly terrain: Uint8Array;
+  private readonly state: Uint16Array | null;
   private readonly width: number;
   private readonly numNodes: number;
   private readonly heuristicWeight: number;
   private readonly maxIterations: number;
+  private readonly passableOwnerSmallIDGetter: (() => number) | null;
 
   constructor(map: GameMap, config?: AStarDeepSpaceConfig) {
     this.terrain = (map as any).terrain as Uint8Array;
+    // `state` is the Uint16Array holding per-tile ownership (low 12 bits
+    // = player small-ID). Only required when the owner-passable override
+    // is in use; otherwise we leave it `null` and pay no per-tile state
+    // lookup cost.
+    this.state =
+      config?.passableOwnerSmallID !== undefined
+        ? ((map as any).state as Uint16Array)
+        : null;
     this.width = map.width();
     this.numNodes = map.width() * map.height();
     this.heuristicWeight = config?.heuristicWeight ?? 5;
     this.maxIterations = config?.maxIterations ?? 1_000_000;
+    this.passableOwnerSmallIDGetter = config?.passableOwnerSmallID ?? null;
 
     this.closedStamp = new Uint32Array(this.numNodes);
     this.gScoreStamp = new Uint32Array(this.numNodes);
@@ -67,6 +93,16 @@ export class AStarDeepSpace implements PathFinder<number> {
     const queue = this.queue;
     const weight = this.heuristicWeight;
     const sectorMask = 1 << SECTOR_BIT;
+    // Resolve the owner-passable override once per findPath() — cruisers
+    // call this on every patrol step, but ownership changes (captureUnit)
+    // are rare. Pulling it out of the inner neighbor check keeps the hot
+    // loop a single straight-line branch.
+    const state = this.state;
+    const passableOwnerSmallID =
+      this.passableOwnerSmallIDGetter !== null
+        ? this.passableOwnerSmallIDGetter()
+        : 0;
+    const ownerOverrideEnabled = state !== null && passableOwnerSmallID !== 0;
 
     const goalX = goal % width;
     const goalY = (goal / width) | 0;
@@ -127,7 +163,10 @@ export class AStarDeepSpace implements PathFinder<number> {
         const neighborTerrain = terrain[neighbor];
         if (
           closedStamp[neighbor] !== stamp &&
-          (neighbor === goal || (neighborTerrain & sectorMask) === 0)
+          (neighbor === goal ||
+            (neighborTerrain & sectorMask) === 0 ||
+            (ownerOverrideEnabled &&
+              (state![neighbor] & PLAYER_ID_MASK) === passableOwnerSmallID))
         ) {
           const magnitude = neighborTerrain & MAGNITUDE_MASK;
           const cost = BASE_COST + getMagnitudePenalty(magnitude);
@@ -155,7 +194,10 @@ export class AStarDeepSpace implements PathFinder<number> {
         const neighborTerrain = terrain[neighbor];
         if (
           closedStamp[neighbor] !== stamp &&
-          (neighbor === goal || (neighborTerrain & sectorMask) === 0)
+          (neighbor === goal ||
+            (neighborTerrain & sectorMask) === 0 ||
+            (ownerOverrideEnabled &&
+              (state![neighbor] & PLAYER_ID_MASK) === passableOwnerSmallID))
         ) {
           const magnitude = neighborTerrain & MAGNITUDE_MASK;
           const cost = BASE_COST + getMagnitudePenalty(magnitude);
@@ -183,7 +225,10 @@ export class AStarDeepSpace implements PathFinder<number> {
         const neighborTerrain = terrain[neighbor];
         if (
           closedStamp[neighbor] !== stamp &&
-          (neighbor === goal || (neighborTerrain & sectorMask) === 0)
+          (neighbor === goal ||
+            (neighborTerrain & sectorMask) === 0 ||
+            (ownerOverrideEnabled &&
+              (state![neighbor] & PLAYER_ID_MASK) === passableOwnerSmallID))
         ) {
           const magnitude = neighborTerrain & MAGNITUDE_MASK;
           const cost = BASE_COST + getMagnitudePenalty(magnitude);
@@ -211,7 +256,10 @@ export class AStarDeepSpace implements PathFinder<number> {
         const neighborTerrain = terrain[neighbor];
         if (
           closedStamp[neighbor] !== stamp &&
-          (neighbor === goal || (neighborTerrain & sectorMask) === 0)
+          (neighbor === goal ||
+            (neighborTerrain & sectorMask) === 0 ||
+            (ownerOverrideEnabled &&
+              (state![neighbor] & PLAYER_ID_MASK) === passableOwnerSmallID))
         ) {
           const magnitude = neighborTerrain & MAGNITUDE_MASK;
           const cost = BASE_COST + getMagnitudePenalty(magnitude);
