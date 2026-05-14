@@ -82,21 +82,22 @@ export class ConstructionExecution implements Execution {
         return;
       }
 
-      // Issue #7 — host-only path for capital-ship hotkey builds. When a
-      // specific Battlecruiser id was named in the intent, only host on
-      // that exact cruiser. Any mismatch (not owned, destroyed, slot
-      // occupied, type unhostable, insufficient credits) deactivates the
-      // execution without falling back to ground placement so a full-slot
-      // cruiser can never silently produce an unintended ground structure.
+      // Issue #7 — host-only path for capital-ship hotkey builds. Hosting
+      // happens ONLY through this explicit branch — a `ConstructionExecution`
+      // without `hostBattlecruiserId` always takes the ground path below,
+      // never a proximity-based fallback. When a specific Battlecruiser id
+      // was named in the intent, only host on that exact cruiser. Any
+      // mismatch (not owned, destroyed, slot occupied, type unhostable,
+      // insufficient credits) deactivates the execution without falling
+      // back to ground placement so a full-slot cruiser can never silently
+      // produce an unintended ground structure.
       if (this.hostBattlecruiserId !== undefined) {
         const targetedCruiser = this.findCruiserById(this.hostBattlecruiserId);
         if (targetedCruiser === null) {
           this.active = false;
           return;
         }
-        const hostable = this.mg
-          .config()
-          .battlecruiserHostableStructures();
+        const hostable = this.mg.config().battlecruiserHostableStructures();
         if (!hostable.includes(this.constructionType)) {
           this.active = false;
           return;
@@ -128,41 +129,6 @@ export class ConstructionExecution implements Execution {
           {},
         );
         targetedCruiser.setSlottedStructure(this.structure);
-        this.completeConstruction();
-        this.active = false;
-        return;
-      }
-
-      // GDD §14 / Ticket 6 — Battlecruiser structure slot. Before falling
-      // back to the normal ground-based structure build path, check whether
-      // the target tile has a Battlecruiser owned by the player with an
-      // empty structure slot. If so, host the new structure directly on
-      // the ship: skip construction time, charge the normal cost, and
-      // attach via `setSlottedStructure`.
-      const hostCruiser = this.findHostBattlecruiser(this.tile);
-      if (hostCruiser !== null) {
-        // Authoritative affordability check. `PlayerImpl.buildUnit` only
-        // subtracts up to the available balance via `removeCredits`, so
-        // without this guard a player could build a hosted structure with
-        // insufficient funds — diverging from the ground-based path which
-        // gates on `player.canBuild()`. We must enforce the same credit
-        // sufficiency contract here before constructing the unit.
-        const hostCost = this.mg
-          .unitInfo(this.constructionType)
-          .cost(this.mg, this.player);
-        if (this.player.credits() < hostCost) {
-          console.warn(
-            `cannot host ${this.constructionType} on battlecruiser: insufficient credits`,
-          );
-          this.active = false;
-          return;
-        }
-        this.structure = this.player.buildUnit(
-          this.constructionType,
-          hostCruiser.tile(),
-          {},
-        );
-        hostCruiser.setSlottedStructure(this.structure);
         this.completeConstruction();
         this.active = false;
         return;
@@ -293,23 +259,14 @@ export class ConstructionExecution implements Execution {
   }
 
   /**
-   * GDD §14 — Capital Ship one-slot hosting. Returns the Battlecruiser that
-   * should host this construction if:
-   *   - The construction type is in the config's hostable-structure list
-   *     (all seven structures by default: Spaceport, OSP, DefenseStation,
-   *     PDA, Colony, Foundry, JumpGate — the "mobile one-slot planet").
-   *   - There is an active, player-owned Battlecruiser within a 2-tile
-   *     radius of the target tile.
-   *   - That cruiser has an empty structure slot.
-   * Otherwise returns `null` so the caller falls back to ground-based
-   * structure placement.
-   */
-  /**
    * Issue #7 — locate a player-owned, active Battlecruiser by unit id whose
    * one-slot structure mount is empty. Returns `null` if the cruiser is
    * missing, captured by a different player, destroyed/inactive, or already
    * has a slotted structure. The host-only intent path uses this to enforce
-   * the same "no fallback" contract the client promised to the user.
+   * the same "no fallback" contract the client promised to the user. This
+   * is the *only* cruiser lookup performed by `ConstructionExecution`:
+   * hosting never happens by proximity — it requires an explicit
+   * `hostBattlecruiserId` in the originating intent.
    */
   private findCruiserById(unitId: number): Unit | null {
     for (const u of this.player.units(UnitType.Battlecruiser)) {
@@ -318,32 +275,6 @@ export class ConstructionExecution implements Execution {
       if (u.owner() !== this.player) return null;
       if (u.slottedStructure() !== undefined) return null;
       return u;
-    }
-    return null;
-  }
-
-  private findHostBattlecruiser(tile: TileRef): Unit | null {
-    const hostable = this.mg.config().battlecruiserHostableStructures();
-    if (!hostable.includes(this.constructionType)) {
-      return null;
-    }
-    // Radius 32 (was 2) so the host lookup matches a player's expectation
-    // of "build on the cruiser that's near here" rather than requiring
-    // the click to be on the exact tile-square the cruiser currently
-    // occupies. Cruisers patrol within a 100-tile radius of their patrol
-    // center (`battlecruiserPatrolRange`), so 2 was effectively never
-    // matchable in the moments after a build click. 32 is large enough to
-    // cover an entire planet's outer ring without spanning into a
-    // neighbour planet's territory on default-spacing maps.
-    const nearby = this.mg.nearbyUnits(tile, 32, [UnitType.Battlecruiser]);
-    for (const { unit } of nearby) {
-      if (
-        unit.owner() === this.player &&
-        unit.isActive() &&
-        unit.slottedStructure() === undefined
-      ) {
-        return unit;
-      }
     }
     return null;
   }

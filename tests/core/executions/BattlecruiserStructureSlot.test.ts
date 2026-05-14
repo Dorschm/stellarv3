@@ -22,11 +22,12 @@ import { executeTicks } from "../../util/utils";
  * hosted structure moves with it; when the cruiser dies, the hosted
  * structure is destroyed too.
  *
- * `ConstructionExecution` auto-detects a cruiser with an empty slot within
- * 2 tiles of the target tile and attaches the new structure there instead
- * of placing it on the ground — this is the entry point wired to the
- * BuildMenu flow. These tests exercise that path directly rather than
- * going through the UI.
+ * Issue #7 — hosting is *only* triggered by an explicit `hostBattlecruiserId`
+ * on the originating intent (see `HostOnlyConstruction.test.ts`). A plain
+ * `ConstructionExecution` near an empty cruiser must take the ground path
+ * and leave the cruiser's slot empty. The slot lifecycle tests below
+ * attach structures via `setSlottedStructure` directly rather than relying
+ * on proximity-based auto-hosting.
  */
 
 const gameID: GameID = "bc_slot_game";
@@ -89,27 +90,35 @@ describe("Battlecruiser structure slot — attachment", () => {
     expect(() => bc.setSlottedStructure(ds2)).toThrow();
   });
 
-  test("ConstructionExecution auto-hosts DefenseStation on nearby empty-slot cruiser", () => {
+  test("plain ConstructionExecution near an empty-slot cruiser builds on the ground and leaves the slot empty", () => {
     const patrolTile = game.ref(5, 5);
     const bc = spawnBattlecruiser(patrolTile);
     expect(bc.slottedStructure()).toBeUndefined();
 
-    // Build a DefenseStation targeting the cruiser's tile. The
-    // findHostBattlecruiser branch should detect the cruiser (within the
-    // 2-tile radius) and attach the structure directly to the slot
-    // instead of ground-placing it.
+    const dsCountBefore = pilot.units(UnitType.DefenseStation).length;
+
+    // Issue #7 regression — a `ConstructionExecution` without an explicit
+    // `hostBattlecruiserId` must NEVER proximity-host. The cruiser's slot
+    // stays empty; the build either lands on the ground or fails canBuild.
     game.addExecution(
       new ConstructionExecution(pilot, UnitType.DefenseStation, patrolTile),
     );
     executeTicks(game, 4);
 
-    const slotted = bc.slottedStructure();
-    expect(slotted).toBeDefined();
-    expect(slotted?.type()).toBe(UnitType.DefenseStation);
-    expect(slotted?.isActive()).toBe(true);
+    expect(bc.slottedStructure()).toBeUndefined();
+    // If a structure was produced at all it lives on the ground (i.e. not
+    // attached to the cruiser slot). The ground-path canBuild may reject
+    // the tile entirely on this map; either outcome is acceptable as long
+    // as the cruiser's slot was not silently filled.
+    for (const ds of pilot.units(UnitType.DefenseStation)) {
+      expect(bc.slottedStructure()).not.toBe(ds);
+    }
+    expect(pilot.units(UnitType.DefenseStation).length).toBeGreaterThanOrEqual(
+      dsCountBefore,
+    );
   });
 
-  test("ConstructionExecution auto-hosts OrbitalStrikePlatform on nearby empty-slot cruiser", () => {
+  test("plain ConstructionExecution does not slot OrbitalStrikePlatform onto a nearby cruiser", () => {
     const patrolTile = game.ref(5, 5);
     const bc = spawnBattlecruiser(patrolTile);
 
@@ -122,9 +131,7 @@ describe("Battlecruiser structure slot — attachment", () => {
     );
     executeTicks(game, 4);
 
-    const slotted = bc.slottedStructure();
-    expect(slotted).toBeDefined();
-    expect(slotted?.type()).toBe(UnitType.OrbitalStrikePlatform);
+    expect(bc.slottedStructure()).toBeUndefined();
   });
 });
 

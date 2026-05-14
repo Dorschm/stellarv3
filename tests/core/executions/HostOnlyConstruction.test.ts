@@ -2,6 +2,7 @@
 import { vi } from "vitest";
 import { BattlecruiserExecution } from "../../../src/core/execution/BattlecruiserExecution";
 import { ConstructionExecution } from "../../../src/core/execution/ConstructionExecution";
+import { Executor } from "../../../src/core/execution/ExecutionManager";
 import { SpawnExecution } from "../../../src/core/execution/SpawnExecution";
 import {
   Game,
@@ -12,7 +13,7 @@ import {
   Unit,
   UnitType,
 } from "../../../src/core/game/Game";
-import { GameID } from "../../../src/core/Schemas";
+import { GameID, StampedIntent } from "../../../src/core/Schemas";
 import { setup } from "../../util/Setup";
 import { executeTicks } from "../../util/utils";
 
@@ -39,7 +40,11 @@ async function buildGame(opts: { infiniteCredits: boolean }) {
     infiniteCredits: opts.infiniteCredits,
     instantBuild: true,
   });
-  game.addPlayer(new PlayerInfo("pilot", PlayerType.Human, null, "pilot"));
+  // Give the pilot a clientID so the Executor regression test below can
+  // resolve `intent.clientID` back to a player via `playerByClientID`.
+  game.addPlayer(
+    new PlayerInfo("pilot", PlayerType.Human, "pilot-client", "pilot"),
+  );
   game.addExecution(
     new SpawnExecution(gameID, game.player("pilot").info(), game.ref(5, 5)),
   );
@@ -84,11 +89,7 @@ describe("ConstructionExecution — host-only hotkey path", () => {
     await buildGame({ infiniteCredits: true });
     const patrolTile = game.ref(5, 5);
     const bc = spawnBattlecruiser(patrolTile);
-    const occupant = pilot.buildUnit(
-      UnitType.DefenseStation,
-      patrolTile,
-      {},
-    );
+    const occupant = pilot.buildUnit(UnitType.DefenseStation, patrolTile, {});
     bc.setSlottedStructure(occupant);
 
     const dsCountBefore = pilot.units(UnitType.DefenseStation).length;
@@ -169,6 +170,30 @@ describe("ConstructionExecution — host-only hotkey path", () => {
     executeTicks(game, 4);
 
     expect(pilot.units(UnitType.DefenseStation).length).toBe(dsCountBefore);
+  });
+
+  test("server-intent regression: plain build_unit (no hostBattlecruiserId) does NOT host on a nearby cruiser", async () => {
+    await buildGame({ infiniteCredits: true });
+    const patrolTile = game.ref(5, 5);
+    const bc = spawnBattlecruiser(patrolTile);
+    expect(bc.slottedStructure()).toBeUndefined();
+
+    // Build the same `build_unit` intent the Transport layer would ship,
+    // omitting `hostBattlecruiserId` to simulate an ordinary ground build
+    // (the client's normal BuildMenu path without the capital-ship hotkey).
+    // The Executor must turn this into a plain `ConstructionExecution`
+    // that ignores the cruiser entirely — no proximity fallback.
+    const executor = new Executor(game, gameID, "pilot-client");
+    const intent: StampedIntent = {
+      type: "build_unit",
+      unit: UnitType.DefenseStation,
+      tile: patrolTile,
+      clientID: "pilot-client",
+    } as StampedIntent;
+    game.addExecution(executor.createExec(intent));
+    executeTicks(game, 4);
+
+    expect(bc.slottedStructure()).toBeUndefined();
   });
 
   test("exposes slot occupancy in the UnitUpdate snapshot", async () => {

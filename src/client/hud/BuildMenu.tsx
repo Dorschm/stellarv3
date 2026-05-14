@@ -155,6 +155,15 @@ export function BuildMenu(): React.JSX.Element {
   // ground tile. Tracked as state so the refresh loop can pass it through
   // to `.buildables()`.
   const [capitalShipMode, setCapitalShipMode] = useState(false);
+  // Issue #7 — explicit Battlecruiser unit id chosen by the radial
+  // "Build on Capital Ship" entry. Stored alongside `capitalShipMode` and
+  // forwarded as the fourth argument of `BuildUnitIntentEvent` for
+  // hostable capital-ship builds so the server hosts on this exact
+  // cruiser with no proximity fallback. `undefined` for ordinary ground
+  // builds and non-hostable units.
+  const [hostBattlecruiserId, setHostBattlecruiserId] = useState<
+    number | undefined
+  >(undefined);
   const [filteredBuildTable, setFilteredBuildTable] =
     useState<BuildItemDisplay[][]>(buildTable);
 
@@ -173,7 +182,7 @@ export function BuildMenu(): React.JSX.Element {
       return;
     }
     const tile = gameView.ref(e.x, e.y);
-    showMenu(tile, e.capitalShip === true);
+    showMenu(tile, e.capitalShip === true, e.hostBattlecruiserId);
   });
 
   useEventBus(eventBus, CloseViewEvent, () => {
@@ -191,13 +200,18 @@ export function BuildMenu(): React.JSX.Element {
   const hideMenu = useCallback(() => {
     setHidden(true);
     setCapitalShipMode(false);
+    setHostBattlecruiserId(undefined);
   }, []);
 
-  const showMenu = useCallback((tile: TileRef, capitalShip: boolean) => {
-    setClickedTile(tile);
-    setCapitalShipMode(capitalShip);
-    setHidden(false);
-  }, []);
+  const showMenu = useCallback(
+    (tile: TileRef, capitalShip: boolean, hostId: number | undefined) => {
+      setClickedTile(tile);
+      setCapitalShipMode(capitalShip);
+      setHostBattlecruiserId(hostId);
+      setHidden(false);
+    },
+    [],
+  );
 
   const refresh = useCallback(() => {
     const tile = clickedTile;
@@ -282,8 +296,27 @@ export function BuildMenu(): React.JSX.Element {
         buildableUnit.type === UnitType.NovaBomb
           ? useHUDStore.getState().rocketDirectionUp
           : undefined;
+      // Issue #7 — only forward the explicit host id when we were opened
+      // in capital-ship mode AND the chosen type is in the hostable list
+      // for the current config. Non-hostable units (nukes, battlecruiser
+      // itself, scout swarm) and ordinary ground builds must leave it
+      // `undefined` so the server takes the regular ground path.
+      const hostableTypes =
+        capitalShipMode && hostBattlecruiserId !== undefined
+          ? gameView?.config()?.battlecruiserHostableStructures()
+          : undefined;
+      const hostIdForIntent =
+        hostableTypes !== undefined &&
+        hostableTypes.includes(buildableUnit.type)
+          ? hostBattlecruiserId
+          : undefined;
       eventBus.emit(
-        new BuildUnitIntentEvent(buildableUnit.type, tile, rocketDirectionUp),
+        new BuildUnitIntentEvent(
+          buildableUnit.type,
+          tile,
+          rocketDirectionUp,
+          hostIdForIntent,
+        ),
       );
     }
     hideMenu();

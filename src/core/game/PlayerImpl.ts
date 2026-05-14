@@ -1438,12 +1438,14 @@ export class PlayerImpl implements Player {
 
   /**
    * GDD §14 / Ticket 6 — locate a player-owned, active Battlecruiser with
-   * an empty structure slot within the same 2-tile radius that
-   * ConstructionExecution.findHostBattlecruiser() scans. Returns `null`
-   * when no such cruiser exists so the build menu falls back to reporting
-   * hostable structures as unbuildable. Kept as a private helper on the
-   * player so buildableUnits() can reuse the lookup across every hostable
-   * type in a single call.
+   * an empty structure slot within a 2-tile radius of the supplied tile.
+   * This is a *UI-side hint only*: it lets the capital-ship build menu
+   * surface hostable structures as buildable when the player right-clicks
+   * near one of their cruisers. The authoritative server-side hosting
+   * decision in `ConstructionExecution` never uses proximity — it requires
+   * an explicit `hostBattlecruiserId` on the originating intent. Returns
+   * `null` when no such cruiser exists so the build menu falls back to
+   * reporting hostable structures as unbuildable.
    */
   private findEmptySlotHostCruiser(tile: TileRef): Unit | null {
     const nearby = this.mg.nearbyUnits(tile, 2, [UnitType.Battlecruiser]);

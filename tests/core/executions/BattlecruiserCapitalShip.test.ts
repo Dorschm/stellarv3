@@ -88,14 +88,23 @@ describe("Capital Ship — expanded hosting whitelist", () => {
     UnitType.Foundry,
     UnitType.JumpGate,
   ])(
-    "ConstructionExecution auto-hosts %s on a nearby empty-slot cruiser",
+    "ConstructionExecution hosts %s on the explicitly named cruiser via hostBattlecruiserId",
     (structureType) => {
       const patrolTile = game.ref(5, 5);
       const bc = spawnBattlecruiser(patrolTile);
       expect(bc.slottedStructure()).toBeUndefined();
 
+      // Issue #7 — hosting now requires an explicit `hostBattlecruiserId`.
+      // The proximity-only path was removed, so we must name the cruiser
+      // directly to exercise the hosting branch.
       game.addExecution(
-        new ConstructionExecution(pilot, structureType, patrolTile),
+        new ConstructionExecution(
+          pilot,
+          structureType,
+          patrolTile,
+          undefined,
+          bc.id(),
+        ),
       );
       executeTicks(game, 4);
 
@@ -103,6 +112,29 @@ describe("Capital Ship — expanded hosting whitelist", () => {
       expect(slotted).toBeDefined();
       expect(slotted?.type()).toBe(structureType);
       expect(slotted?.isActive()).toBe(true);
+    },
+  );
+
+  test.each([
+    UnitType.Spaceport,
+    UnitType.PointDefenseArray,
+    UnitType.Colony,
+    UnitType.Foundry,
+    UnitType.JumpGate,
+  ])(
+    "plain ConstructionExecution near an empty-slot cruiser does NOT slot %s",
+    (structureType) => {
+      const patrolTile = game.ref(5, 5);
+      const bc = spawnBattlecruiser(patrolTile);
+      expect(bc.slottedStructure()).toBeUndefined();
+
+      // Issue #7 regression — no `hostBattlecruiserId` means ground path.
+      game.addExecution(
+        new ConstructionExecution(pilot, structureType, patrolTile),
+      );
+      executeTicks(game, 4);
+
+      expect(bc.slottedStructure()).toBeUndefined();
     },
   );
 

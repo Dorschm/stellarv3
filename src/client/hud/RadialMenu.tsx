@@ -347,17 +347,16 @@ export function RadialMenu(): React.JSX.Element | null {
   };
 
   // Ticket 6 — Build on Capital Ship. Opens the build menu anchored to a
-  // nearby player-owned Battlecruiser's tile, so the ensuing
-  // BuildUnitIntent targets coordinates the server's
-  // `findHostBattlecruiser()` lookup will match. Only shown when such a
+  // nearby player-owned Battlecruiser and names that exact cruiser as the
+  // host for the subsequent BuildUnitIntent. Only shown when such a
   // cruiser actually exists near the clicked tile — otherwise the entry
   // is a dead button.
   //
-  // Radius MUST stay in sync with ConstructionExecution.findHostBattle
-  // cruiser (server-side resolves the same lookup): 32 tiles, expanded
-  // from 2 so users can right-click anywhere on or around their cruiser's
-  // patrol area instead of having to land within 2 squares of the
-  // currently-rendered position.
+  // The 32-tile radius applies *only* to discovering a cruiser to anchor
+  // the menu on; the server does NOT perform a proximity lookup. Hosting
+  // is gated on the explicit `hostBattlecruiserId` we forward through
+  // ShowBuildMenuEvent → BuildUnitIntentEvent (Issue #7), so the cruiser
+  // chosen here is the *only* one the server will host on.
   const hostCruiser =
     myPlayer === null
       ? null
@@ -369,19 +368,22 @@ export function RadialMenu(): React.JSX.Element | null {
     hostCruiser !== null && !gameView.inSpawnPhase();
   const handleBuildOnCapitalShip = () => {
     if (!canBuildOnCapitalShip || hostCruiser === null) return;
-    // Re-anchor the build menu on the cruiser's tile so the subsequent
-    // BuildUnitIntent's target coordinates are within range of
-    // ConstructionExecution.findHostBattlecruiser(), which scans a
-    // 2-tile radius around the intent tile. The `capitalShip` flag tells
-    // BuildMenu to resolve buildability for hostable structures against
-    // the cruiser's empty slot instead of the (usually unowned) deep-space
-    // tile it sits on — see PlayerImpl.buildableUnits.
+    // Re-anchor the build menu on the cruiser's tile and carry the
+    // cruiser's unit id through ShowBuildMenuEvent. The `capitalShip`
+    // flag tells BuildMenu to resolve buildability for hostable
+    // structures against the cruiser's empty slot instead of the
+    // (usually unowned) deep-space tile it sits on — see
+    // PlayerImpl.buildableUnits. The `hostBattlecruiserId` is stored
+    // alongside the menu state and forwarded into the eventual
+    // BuildUnitIntentEvent so the server hosts on this exact cruiser
+    // with no proximity fallback (Issue #7).
     const cruiserTile = hostCruiser.tile();
     eventBus.emit(
       new ShowBuildMenuEvent(
         gameView.x(cruiserTile),
         gameView.y(cruiserTile),
         true,
+        hostCruiser.id(),
       ),
     );
     hide();
@@ -616,10 +618,10 @@ export function RadialMenu(): React.JSX.Element | null {
 
         {/*
          * Ticket 6 — Build on Capital Ship. Only rendered when a
-         * player-owned Battlecruiser is within range of the clicked tile
-         * (within the same 2-tile radius used by
-         * ConstructionExecution.findHostBattlecruiser), so the entry is
-         * discoverable exactly in the context where it applies.
+         * player-owned Battlecruiser is within range of the clicked tile.
+         * The selected cruiser's id is forwarded explicitly to the server
+         * via ShowBuildMenuEvent → BuildUnitIntentEvent so the host
+         * decision is unambiguous (Issue #7) — no proximity fallback.
          */}
         {hostCruiser !== null && (
           <RadialButton

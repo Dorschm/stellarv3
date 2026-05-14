@@ -136,6 +136,14 @@ export class ShowBuildMenuEvent implements GameEvent {
      * buildable even on unowned deep-space cruiser tiles.
      */
     public readonly capitalShip: boolean = false,
+    /**
+     * Issue #7 — explicit Battlecruiser unit id named by the radial
+     * "Build on Capital Ship" entry. When present, the BuildMenu must
+     * propagate this id into the eventual `BuildUnitIntentEvent` so the
+     * server hosts on this exact cruiser (no proximity fallback). Leave
+     * `undefined` for ordinary ground builds and non-hostable units.
+     */
+    public readonly hostBattlecruiserId?: number,
   ) {}
 }
 export class ShowEmojiMenuEvent implements GameEvent {
