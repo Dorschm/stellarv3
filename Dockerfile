@@ -42,8 +42,17 @@ RUN --mount=type=cache,target=/root/.npm \
 # rebuild this single package so its prebuilt .node file lands in
 # node_modules/. node-gyp-build will download the matching binary for the
 # node:24-slim base; no compiler toolchain needs to be installed.
+#
+# IMPORTANT: prepend `NPM_CONFIG_IGNORE_SCRIPTS=false` so this single
+# command opts back in to script execution. Without that override the
+# `--foreground-scripts` flag alone is not enough — npm still inherits
+# the IGNORE_SCRIPTS env from line 35, prebuild-install silently no-ops,
+# the better_sqlite3.node native binary is never laid down, and the
+# resulting image crashes at startup with MODULE_NOT_FOUND when the
+# self-hosted backend (`src/server/userdb/db.ts`) imports
+# `better-sqlite3`. See WHM deploy-stellar.sh for the full incident.
 RUN --mount=type=cache,target=/root/.npm \
-    npm rebuild better-sqlite3 --foreground-scripts
+    NPM_CONFIG_IGNORE_SCRIPTS=false npm rebuild better-sqlite3 --foreground-scripts
 
 # Final production image
 FROM base
