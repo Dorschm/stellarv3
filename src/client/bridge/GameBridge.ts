@@ -1,8 +1,14 @@
 import { EventBus } from "../../core/EventBus";
-import { Credits, PlayerID, UnitType } from "../../core/game/Game";
+import {
+  Credits,
+  Player,
+  PlayerID,
+  PlayerType,
+  UnitType,
+} from "../../core/game/Game";
 import { TileRef } from "../../core/game/GameMap";
 import { GameUpdateType } from "../../core/game/GameUpdates";
-import { GameView } from "../../core/game/GameView";
+import { GameView, PlayerView } from "../../core/game/GameView";
 import {
   AttackRatioEvent,
   GhostStructureChangedEvent,
@@ -141,19 +147,21 @@ export class GameBridge {
     // for the local player so SpaceInputHandler can show a "Not enough
     // money" toast immediately when a selected-cruiser hotkey is pressed
     // without funds, instead of the host-only intent silently bouncing on
-    // the server.
+    // the server. The cost function is invoked with a PlayerView-backed
+    // adapter implementing the narrow Player subset DefaultConfig.costWrapper
+    // actually reads (`type`, `unitsOwned`, `unitsConstructed`); we no longer
+    // smuggle a PlayerView through `as any`, and any throw from the cost
+    // function now propagates instead of being silently swallowed.
     const costMap = new Map<UnitType, Credits>();
     if (myPlayer !== null) {
+      const adapter = adaptPlayerForCost(myPlayer);
       const hostable = this.gameView.config().battlecruiserHostableStructures();
       for (const t of hostable) {
-        try {
-          costMap.set(
-            t,
-            this.gameView.unitInfo(t).cost(this.gameView as any, myPlayer as any),
-          );
-        } catch {
-          // Defensive: a missing unitInfo entry shouldn't break the tick.
-        }
+        const fn = this.gameView.unitInfo(t).cost as unknown as (
+          g: GameView,
+          p: CostFnPlayerLike,
+        ) => Credits;
+        costMap.set(t, fn(this.gameView, adapter));
       }
     }
     store.setCruiserHostableCosts(costMap);
@@ -203,4 +211,49 @@ export class GameBridge {
   setSelectedTile(tile: TileRef | null): void {
     useHUDStore.getState().setSelectedTile(tile);
   }
+}
+
+// ---------------------------------------------------------------------------
+// Cost-function PlayerView adapter (issue #7)
+// ---------------------------------------------------------------------------
+
+/**
+ * The narrow subset of `Player` that `DefaultConfig.costWrapper` actually
+ * reads. Hostable-structure costs (Spaceport, Foundry, Colony, DefenseStation,
+ * OrbitalStrikePlatform, PointDefenseArray, JumpGate) all flow through
+ * `costWrapper`, so this is the full structural contract for those types.
+ */
+type CostFnPlayerLike = Pick<
+  Player,
+  "type" | "unitsOwned" | "unitsConstructed"
+>;
+
+/**
+ * Build a `CostFnPlayerLike` view of a `PlayerView`. Mirrors `PlayerImpl`'s
+ * `unitsOwned` / `unitsConstructed` shape using the unit data the client
+ * already has.
+ *
+ * Note on parity: `PlayerImpl.unitsConstructed` includes a server-side
+ * "ever built" counter (`numUnitsConstructed[type]`) that is not part of
+ * `PlayerView`. The client therefore counts only currently-extant units,
+ * which can under-estimate cost when the player has destroyed structures of
+ * the same type. The Math.min() inside `costWrapper` clamps to whichever
+ * counter is lower, so the worst case is the toast failing to fire and the
+ * server falling back to its existing silent rejection — never a false
+ * positive that blocks a legitimate build.
+ */
+function adaptPlayerForCost(player: PlayerView): CostFnPlayerLike {
+  return {
+    type: (): PlayerType => player.type(),
+    unitsOwned: (type: UnitType): number => {
+      let total = 0;
+      for (const u of player.units(type)) {
+        total += u.isUnderConstruction() ? 1 : u.level();
+      }
+      return total;
+    },
+    unitsConstructed: (type: UnitType): number => {
+      return player.units(type).length;
+    },
+  };
 }
