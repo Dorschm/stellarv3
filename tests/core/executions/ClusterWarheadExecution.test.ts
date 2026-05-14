@@ -502,4 +502,118 @@ describe("ClusterWarheadExecution", () => {
       expect(prevMd).toBeGreaterThanOrEqual(nextMd);
     }
   });
+
+  test("MIRV launch does not freeze the game: bounded per-tick cost, no path-not-found floods, forward progress", async () => {
+    // Freeze regression — fix commits `87626c7` (path-not-found floods from a
+    // corrupted `separateDst` after a misplaced `mg.x(...)` wrap) and the
+    // tick-spread drain in `MirvExecution` (350 NukeExecutions used to be
+    // added in a single tick, spiking the executor queue and the renderer
+    // hard).
+    //
+    // We exercise the full end-to-end flow — silo → cruise → separation →
+    // tick-spread spawn drain → submunition flight → impact — and pin three
+    // load-bearing invariants:
+    //
+    //   1. The game advances on every tick (no infinite loop / stall).
+    //   2. No `console.warn("cannot build ClusterWarhead")` and no
+    //      `console.log("path not found")` floods appear. We allow at most
+    //      a small constant from unrelated AI/transit code, but the count
+    //      must not scale with the number of submunitions.
+    //   3. Per-tick wall time stays bounded. We don't pin a strict latency
+    //      number (varies by host), but every tick must complete inside a
+    //      generous 5-second budget — anything beyond that is a real
+    //      freeze, not a slow CI box.
+    for (let x = 75; x < 200; x++) {
+      for (let y = 75; y < 200; y++) {
+        const tile = game.ref(x, y);
+        if (game.map().isSector(tile)) {
+          otherPlayer.conquer(tile);
+        }
+      }
+    }
+
+    const targetTile = game.ref(110, 110);
+    const mirvExec = new MirvExecution(player, targetTile);
+    game.addExecution(mirvExec);
+
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    // Hard cap so a real freeze (true infinite loop) surfaces as a test
+    // timeout rather than hanging this test forever.
+    const MAX_TICKS = 800;
+    const TICK_BUDGET_MS = 5_000;
+    let ticksRan = 0;
+    let prevTick = game.ticks();
+    while (mirvExec.isActive() && ticksRan < MAX_TICKS) {
+      const start = Date.now();
+      game.executeNextTick();
+      const elapsed = Date.now() - start;
+      // Pin 3 — per-tick latency. The original freeze showed up as a
+      // single tick taking minutes (the parabola pathfinder being asked
+      // to reach `(garbage, garbage)`).
+      expect(elapsed).toBeLessThan(TICK_BUDGET_MS);
+      // Pin 1 — forward progress. The game's internal tick counter must
+      // strictly advance, even when the MRV is mid-drain. The pre-fix
+      // freeze symptom was a tick that effectively never returned, but
+      // a quieter variant (executor stuck on a pending exec) would
+      // show as ticks() not advancing.
+      const nextTick = game.ticks();
+      expect(nextTick).toBeGreaterThan(prevTick);
+      prevTick = nextTick;
+      ticksRan++;
+    }
+
+    // The full MRV flight + separation + drain finished before
+    // `MAX_TICKS` — i.e. we did not just survive a timeout, we actually
+    // saw the execution deactivate.
+    expect(mirvExec.isActive()).toBe(false);
+
+    // Pin 2 — log floods. The "path not found" stream from the bugged
+    // `separateDst` produced one message per tick of the cruise leg
+    // (~50+ messages), so we cap at 5 to leave room for unrelated AI
+    // routing prints without letting a freeze-class regression slip
+    // through.
+    const pathNotFoundLogs = logSpy.mock.calls.filter((call) =>
+      call.some(
+        (arg) => typeof arg === "string" && arg.includes("path not found"),
+      ),
+    );
+    expect(pathNotFoundLogs.length).toBeLessThanOrEqual(5);
+    const cannotBuildWarns = warnSpy.mock.calls.filter((call) =>
+      call.some(
+        (arg) =>
+          typeof arg === "string" &&
+          arg.includes("cannot build ClusterWarhead"),
+      ),
+    );
+    expect(cannotBuildWarns.length).toBe(0);
+
+    logSpy.mockRestore();
+    warnSpy.mockRestore();
+
+    // Submunitions actually spawned — this prevents a degenerate "MIRV
+    // never separated" pass that would silently satisfy the timing and
+    // log pins. The drain queues `NukeExecution`s via `addExecution`,
+    // and the FIRST tick each NukeExecution runs is when it calls
+    // `buildUnit` to produce the `ClusterWarheadSubmunition`. So we
+    // need at least one tick after `mirvExec.isActive()` flips to
+    // false for the submunition units to exist on the player. Cap that
+    // post-drain wait too so a stall after separation still surfaces
+    // as a test failure rather than a hang.
+    const POST_DRAIN_BUDGET = 3;
+    let postTicks = 0;
+    while (
+      player.units(UnitType.ClusterWarheadSubmunition).length === 0 &&
+      postTicks < POST_DRAIN_BUDGET
+    ) {
+      const start = Date.now();
+      game.executeNextTick();
+      expect(Date.now() - start).toBeLessThan(TICK_BUDGET_MS);
+      postTicks++;
+    }
+    expect(
+      player.units(UnitType.ClusterWarheadSubmunition).length,
+    ).toBeGreaterThan(0);
+  });
 });

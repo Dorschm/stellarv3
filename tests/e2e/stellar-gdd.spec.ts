@@ -176,6 +176,7 @@ test.describe("Stellar GDD v0.1 feature coverage", () => {
   // DeepSpace). Sample the map on a coarse grid and assert multiple distinct
   // terrain types exist, so the procedural map isn't monolithic.
   test("§2 Habitability: map contains multiple distinct terrain types", async () => {
+    await requireLiveSession("§2 needs an active game session to read terrain");
     const terrainTypes = await page.evaluate(() => {
       const gv = (
         window as unknown as {
@@ -210,6 +211,9 @@ test.describe("Stellar GDD v0.1 feature coverage", () => {
   // km³/s" (resources). Record a baseline, wait 30 ticks (~3 seconds at the
   // 10 Hz default), and assert both values strictly increased.
   test("§3 Dual currency: population and resources both accumulate over time", async () => {
+    await requireLiveSession(
+      "§3 needs an active game session to read player resources",
+    );
     const baseline = await page.evaluate(() => {
       const gv = (
         window as unknown as {
@@ -256,6 +260,9 @@ test.describe("Stellar GDD v0.1 feature coverage", () => {
   // values. Open the BuildMenu on an owned interior tile and enumerate the
   // rendered buildable option images by alt text.
   test("§5 Structures: BuildMenu exposes StarPort, DefenseStation, LongRangeWeapon, and JumpGate", async () => {
+    await requireLiveSession(
+      "§5 needs an active game session to open the BuildMenu",
+    );
     const ownedTile =
       (await findInteriorOwnedTile(page)) ?? (await findOwnedTile(page));
     expect(ownedTile).not.toBeNull();
@@ -317,6 +324,9 @@ test.describe("Stellar GDD v0.1 feature coverage", () => {
   // early-game budget of this test.) We verify the fleet-combat plumbing
   // by asserting a new outgoing attack is registered after the click.
   test("§6 Fleet combat: attacking an enemy registers an outgoing fleet attack", async () => {
+    await requireLiveSession(
+      "§6 needs an active game session to issue an attack intent",
+    );
     const enemyTile = await waitForBorderEnemyTile(page, 60_000);
     test.skip(
       enemyTile === null,
