@@ -75,7 +75,28 @@ export class BattlecruiserExecution implements Execution {
     }
 
     this.battlecruiser.setTargetUnit(this.findTargetUnit());
-    if (this.battlecruiser.targetUnit()?.type() === UnitType.TradeFreighter) {
+    // Trade-freighter capture hijacks the cruiser's movement: it ignores
+    // `targetTile` and chases the freighter instead. That's the desired
+    // behavior during a random patrol, but NOT during a user-issued
+    // move — otherwise mid- to late-game (when the map fills with
+    // freighters) every click the player issues gets silently overridden
+    // on the next tick and the cruiser appears to "stop listening".
+    //
+    // We distinguish the two via patrolTile vs targetTile:
+    //   - `MoveBattlecruiserExecution` sets BOTH to the same tile, so
+    //     `patrolTile === targetTile` is a stable "user-directed move"
+    //     marker that survives across ticks until the cruiser arrives
+    //     and `patrol()` clears `targetTile` on `PathStatus.COMPLETE`.
+    //   - `randomTile()` picks a random offset from `patrolTile`, so
+    //     during random patrol `patrolTile !== targetTile` (the offset
+    //     is non-zero by construction).
+    const target = this.battlecruiser.targetTile();
+    const patrol = this.battlecruiser.patrolTile();
+    const isUserDirectedMove = target !== undefined && target === patrol;
+    if (
+      !isUserDirectedMove &&
+      this.battlecruiser.targetUnit()?.type() === UnitType.TradeFreighter
+    ) {
       this.huntDownTradeFreighter();
       this.syncSlottedStructure();
       return;

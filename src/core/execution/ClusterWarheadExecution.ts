@@ -114,8 +114,15 @@ export class MirvExecution implements Execution {
       this.mg
         .stats()
         .bombLaunch(this.player, this.targetPlayer, UnitType.ClusterWarhead);
+      // Midpoint between the launch tile and the target tile, lofted up
+      // by 500 (capped at row 0) — the warhead climbs from the silo, then
+      // dives onto its target. The previous code wrapped the nuke X in a
+      // second `mg.x(...)` by mistake, treating an x-coordinate as a
+      // TileRef and returning a garbage value; the parabola pathfinder
+      // then aimed at an invalid `separateDst`, which is what triggered
+      // the "path not found" floods and the perceived freeze.
       const x = Math.floor(
-        (this.mg.x(this.dst) + this.mg.x(this.mg.x(this.nuke.tile()))) / 2,
+        (this.mg.x(this.dst) + this.mg.x(this.nuke.tile())) / 2,
       );
       const y = Math.max(0, this.mg.y(this.dst) - 500) + 50;
       this.separateDst = this.mg.ref(x, y);

@@ -168,6 +168,52 @@ describe("Battlecruiser", () => {
     expect(tradeFreighter.owner().id()).toBe(player2.id());
   });
 
+  test("user-directed move overrides auto-hunt of a trade freighter", async () => {
+    // Regression: as the game ages, more trade freighters appear, and the
+    // cruiser's `findTargetUnit` reliably finds one nearby every tick. The
+    // hunt path bypasses `patrol()` (and therefore `targetTile`), so a
+    // click-to-move issued via MoveBattlecruiserExecution gets silently
+    // dropped on the next tick — the cruiser "stops listening" even though
+    // the user told it where to go.
+    //
+    // The fix: when `patrolTile === targetTile` (the stable marker for a
+    // user-issued directed move, since `randomTile()` always returns a
+    // tile with a non-zero offset from `patrolTile`), the cruiser MUST
+    // follow that target and ignore freighter auto-hunt.
+    player1.buildUnit(UnitType.Spaceport, game.ref(coastX, 10), {});
+    const cruiserStart = game.ref(coastX + 1, 10);
+    const battlecruiser = player1.buildUnit(
+      UnitType.Battlecruiser,
+      cruiserStart,
+      {
+        patrolTile: cruiserStart,
+      },
+    );
+    game.addExecution(new BattlecruiserExecution(battlecruiser));
+
+    // Freighter sitting right under the cruiser — would normally be the
+    // next tick's hunt target.
+    player2.buildUnit(UnitType.TradeFreighter, cruiserStart, {
+      targetUnit: player2.buildUnit(
+        UnitType.Spaceport,
+        game.ref(coastX, 11),
+        {},
+      ),
+    });
+
+    // User clicks far away.
+    const userDest = game.ref(coastX + 5, 15);
+    game.addExecution(
+      new MoveBattlecruiserExecution(player1, battlecruiser.id(), userDest),
+    );
+
+    executeTicks(game, 10);
+
+    // Cruiser must honour the user-directed move regardless of how
+    // attractive the freighter under it looks.
+    expect(battlecruiser.patrolTile()).toBe(userDest);
+  });
+
   test("Battlecruiser moves to new patrol tile", async () => {
     game.config().battlecruiserTargettingRange = () => 1;
 
