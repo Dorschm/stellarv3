@@ -517,6 +517,149 @@ describe("Capital Ship — Foundry heal aura (Bucket C)", () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// Bucket C — no-default-weapon gate. The default `Config` flag
+// `battlecruiserHasDefaultWeapon()` is `false`: a bare cap ship has no
+// built-in plasma or LRW intercept and is only combat-capable through a
+// slotted weapon platform (DefenseStation / OrbitalStrikePlatform / PDA).
+// These tests directly exercise `BattlecruiserExecution` with an empty slot
+// AND with a non-weapon slot (Colony, Foundry) to pin the gate around
+// `shootTarget()` and `tryInterceptLrw()` against future regressions that
+// would silently re-enable the cruiser's default weaponry.
+// ---------------------------------------------------------------------------
+
+describe("Capital Ship — no default weapon gate (Bucket C)", () => {
+  let attacker: Player;
+  let defender: Player;
+  const noDefaultGameID: GameID = "bc_no_default_weapon_game";
+
+  beforeEach(async () => {
+    game = await setup("big_plains", {
+      infiniteCredits: true,
+      instantBuild: true,
+    });
+    game.addPlayer(
+      new PlayerInfo("attacker", PlayerType.Human, null, "attacker"),
+    );
+    game.addPlayer(
+      new PlayerInfo("defender", PlayerType.Human, null, "defender"),
+    );
+    game.addExecution(
+      new SpawnExecution(
+        noDefaultGameID,
+        game.player("attacker").info(),
+        game.ref(5, 5),
+      ),
+      new SpawnExecution(
+        noDefaultGameID,
+        game.player("defender").info(),
+        game.ref(15, 5),
+      ),
+    );
+    while (game.inSpawnPhase()) {
+      game.executeNextTick();
+    }
+    attacker = game.player("attacker");
+    defender = game.player("defender");
+    // Sanity: the default config exposes the gate as `false`. Every
+    // assertion below relies on this — if a future config change flips
+    // the default to `true`, these tests must fail loudly rather than
+    // silently pass against the legacy "cruiser always shoots" behavior.
+    expect(game.config().battlecruiserHasDefaultWeapon()).toBe(false);
+  });
+
+  test("empty-slot cruiser does NOT damage an enemy ship in plasma range past cooldown", () => {
+    const cruiserTile = game.ref(5, 5);
+    const cruiser = attacker.buildUnit(UnitType.Battlecruiser, cruiserTile, {
+      patrolTile: cruiserTile,
+    });
+    expect(cruiser.slottedStructure()).toBeUndefined();
+    game.addExecution(new BattlecruiserExecution(cruiser));
+
+    // Enemy battlecruiser well within `battlecruiserTargettingRange`
+    // (default 130) so `findTargetUnit` returns it as a valid target.
+    // Without the default-weapon gate, `shootTarget()` would launch a
+    // PlasmaBoltExecution each cooldown and the enemy would lose health.
+    const enemyTile = game.ref(6, 5);
+    const enemyCruiser = defender.buildUnit(UnitType.Battlecruiser, enemyTile, {
+      patrolTile: enemyTile,
+    });
+
+    const healthBefore = enemyCruiser.health();
+    // Run well past `battlecruiserPlasmaBoltAttackRate` so any default
+    // plasma volley would have fired multiple times if the gate leaked.
+    const cooldown = game.config().battlecruiserPlasmaBoltAttackRate();
+    executeTicks(game, cooldown * 3 + 5);
+
+    // Empty slot + flag=false → `shootTarget()` is gated → enemy untouched.
+    expect(enemyCruiser.health()).toBe(healthBefore);
+  });
+
+  test.each([UnitType.Colony, UnitType.Foundry])(
+    "cruiser with non-weapon slotted %s does NOT damage an enemy ship past cooldown",
+    (nonWeaponType) => {
+      const cruiserTile = game.ref(5, 5);
+      const cruiser = attacker.buildUnit(UnitType.Battlecruiser, cruiserTile, {
+        patrolTile: cruiserTile,
+      });
+      const nonWeapon = attacker.buildUnit(nonWeaponType, cruiserTile, {});
+      cruiser.setSlottedStructure(nonWeapon);
+      expect(cruiser.slottedStructure()?.type()).toBe(nonWeaponType);
+      game.addExecution(new BattlecruiserExecution(cruiser));
+
+      const enemyTile = game.ref(6, 5);
+      const enemyCruiser = defender.buildUnit(
+        UnitType.Battlecruiser,
+        enemyTile,
+        { patrolTile: enemyTile },
+      );
+
+      const healthBefore = enemyCruiser.health();
+      const cooldown = game.config().battlecruiserPlasmaBoltAttackRate();
+      executeTicks(game, cooldown * 3 + 5);
+
+      // A non-weapon slot (Colony / Foundry) is not a combat structure —
+      // its presence must not re-enable the cruiser's default plasma.
+      // Only DefenseStation / OrbitalStrikePlatform / PointDefenseArray
+      // (whose own executions fire from the cruiser tile) should produce
+      // damage; here, no shot must be fired.
+      expect(enemyCruiser.health()).toBe(healthBefore);
+    },
+  );
+
+  test("empty-slot cruiser does NOT intercept a pending LRW impact in range", () => {
+    const cruiserTile = game.ref(5, 5);
+    const cruiser = attacker.buildUnit(UnitType.Battlecruiser, cruiserTile, {
+      patrolTile: cruiserTile,
+    });
+    expect(cruiser.slottedStructure()).toBeUndefined();
+    game.addExecution(new BattlecruiserExecution(cruiser));
+    // Tick once so the BattlecruiserExecution is initialized and on the
+    // execution list before we register the LRW impact.
+    game.executeNextTick();
+
+    // Hostile pending LRW impact registered within the cruiser's targeting
+    // range. With a far-future `impactTick`, the only thing that could
+    // clear it is the cruiser's own intercept path — which must stay
+    // closed while `battlecruiserHasDefaultWeapon()` is `false`.
+    const token = game.registerPendingLrwImpact(
+      defender.smallID(),
+      game.ref(15, 5),
+      game.ref(6, 5),
+      999_999,
+    );
+    expect(game.isPendingLrwImpactActive(token)).toBe(true);
+
+    // Run well past the plasma cooldown so `tryInterceptLrw` would have
+    // had multiple opportunities to fire if the gate had leaked.
+    const cooldown = game.config().battlecruiserPlasmaBoltAttackRate();
+    executeTicks(game, cooldown * 3 + 5);
+
+    // Gate held closed — the impact remains pending.
+    expect(game.isPendingLrwImpactActive(token)).toBe(true);
+  });
+});
+
 describe("Capital Ship — build menu buildability on deep space", () => {
   beforeEach(async () => {
     await buildMixedGame();

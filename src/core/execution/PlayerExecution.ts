@@ -427,16 +427,29 @@ export class PlayerExecution implements Execution {
     const credits = this.player.credits();
     this.player.removeCredits(credits);
 
-    this.player.units().forEach((u) => {
-      if (
-        u.type() !== UnitType.AntimatterTorpedo &&
-        u.type() !== UnitType.NovaBomb &&
-        u.type() !== UnitType.ClusterWarheadSubmunition &&
-        u.type() !== UnitType.ClusterWarhead
-      ) {
-        u.delete();
-      }
-    });
+    // Snapshot the list with `slice()` — `UnitImpl.delete` cascade-deletes
+    // a Battlecruiser's slotted structure (Colony / DefenseStation / etc.)
+    // by mutating `_owner._units` in place. Without the snapshot AND the
+    // per-iteration `isActive()` guard, we'd re-enter the slotted unit
+    // here after it was already cascade-deleted and trip
+    // `cannot delete Unit:<X> not active` — that throw aborts the whole
+    // tick, leaving the worker stuck (the user-visible "pause/unpause
+    // processes ticks but nothing else does" symptom in the 400-bot
+    // singleplayer freeze).
+    this.player
+      .units()
+      .slice()
+      .forEach((u) => {
+        if (!u.isActive()) return;
+        if (
+          u.type() !== UnitType.AntimatterTorpedo &&
+          u.type() !== UnitType.NovaBomb &&
+          u.type() !== UnitType.ClusterWarheadSubmunition &&
+          u.type() !== UnitType.ClusterWarhead
+        ) {
+          u.delete();
+        }
+      });
 
     this.player.removeAllAlliances();
   }

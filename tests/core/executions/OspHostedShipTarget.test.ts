@@ -149,17 +149,53 @@ describe("Hosted OSP — ship damage, ground suppression, cost + cooldown", () =
     (game.config() as TestConfig).setSpawnImmunityDuration(0);
     expect(defender.isImmune()).toBe(false);
 
+    // Suppress every passive credit movement that isn't the LRW shot
+    // itself so the exact-deduction assertion below is unambiguous. Two
+    // independent debits/credits could otherwise muddy the math:
+    //  - `creditAdditionRate` (territory income / Spaceport trickle)
+    //  - `battlecruiserUpkeepPerTick` (fleet upkeep drain on the cruiser
+    //    owner, charged each tick by `BattlecruiserExecution`)
+    // With both stubbed to 0, the only delta on `attacker.credits()`
+    // during the test window is `removeCredits(shotCost)` per LRW shot
+    // — making `creditsSpent % shotCost === 0n` a strict proof that the
+    // production execution actually paid the cost.
+    (
+      game.config() as unknown as { creditAdditionRate(p: Player): bigint }
+    ).creditAdditionRate = () => 0n;
+    (
+      game.config() as unknown as {
+        battlecruiserUpkeepPerTick(p?: Player): bigint;
+      }
+    ).battlecruiserUpkeepPerTick = () => 0n;
+
     // Give the defender owned-territory tiles inside hosted-OSP range so we
     // can prove ground targeting is suppressed when the OSP is hosted.
     // (If the hosted path leaked ground targeting in, these tiles would
-    // accrue habitability damage and the defender's population would drop.)
+    // accrue habitability damage via `applyHabitabilityDamage`.)
+    const defenderGroundTiles: number[] = [];
     for (let x = 13; x <= 17; x++) {
       for (let y = 3; y <= 7; y++) {
         const t = game.ref(x, y);
         if (game.map().isSector(t)) {
           defender.conquer(t);
+          defenderGroundTiles.push(t);
         }
       }
+    }
+    expect(defenderGroundTiles.length).toBeGreaterThan(0);
+
+    // Snapshot per-tile effective habitability BEFORE the hosted OSP fires.
+    // `OrbitalStrikePlatformExecution.applyLrwImpact` is the authoritative
+    // ground-damage hook: on the ground branch it calls
+    // `sectorMap().applyHabitabilityDamage(targetTile, ...)`, which is the
+    // ONLY production code path that decreases `effectiveHabitability` on
+    // a sector tile. Habitability does not decay naturally, so any
+    // decrement on a defender tile here is unambiguous proof of a
+    // ground-target leak through the hosted-vs-ground branch in
+    // `maybeFireLongRangeWeapon`.
+    const habitabilityBefore = new Map<number, number>();
+    for (const t of defenderGroundTiles) {
+      habitabilityBefore.set(t, game.sectorMap().effectiveHabitability(t));
     }
 
     // Construct the hosted OSP via the production executions so cost +
@@ -189,6 +225,16 @@ describe("Hosted OSP — ship damage, ground suppression, cost + cooldown", () =
     game.addExecution(new BattlecruiserExecution(enemyCruiser));
 
     const enemyHealthBefore = enemyCruiser.health();
+
+    // Pre-seed the attacker with a known credit balance well above the LRW
+    // shot cost so the cost-deduction assertion is unambiguous. With
+    // `creditAdditionRate` stubbed at `0n`, the only delta on
+    // `attacker.credits()` during the test window is the LRW shot debit.
+    const shotCost = game.config().longRangeWeaponShotCost();
+    expect(shotCost).toBeGreaterThan(0n);
+    attacker.removeCredits(attacker.credits());
+    attacker.addCredits(shotCost * 100n);
+    const attackerCreditsBefore = attacker.credits();
 
     // Drive the OSP through a complete fire → flight → impact window. The
     // LRW cooldown is `orbitalStrikeCooldown()` ticks; running just past
@@ -226,13 +272,33 @@ describe("Hosted OSP — ship damage, ground suppression, cost + cooldown", () =
       expect(pending[0].targetShip!.id()).toBe(enemyCruiser.id());
     }
 
-    // (c) Cost charged + cooldown armed: `lrwReadyAt()` is in the future
-    // relative to the setup tick. `maybeFireLongRangeWeapon` only writes
+    // Authoritative ground-side check: every defender-owned tile inside
+    // hosted-OSP range must have unchanged effective habitability. A
+    // ground-target impact would have called `applyHabitabilityDamage`
+    // on at least one of these tiles, decrementing its
+    // `effectiveHabitability` — so equal-before-and-after is the
+    // strictly observable proof that no ground LRW impact ever landed.
+    for (const t of defenderGroundTiles) {
+      const before = habitabilityBefore.get(t)!;
+      const after = game.sectorMap().effectiveHabitability(t);
+      expect(after).toBe(before);
+    }
+
+    // (c) Cost charged: with `creditAdditionRate` stubbed to `0n`, the
+    // attacker's credits dropped by an exact multiple of
+    // `longRangeWeaponShotCost()` — proving the production execution
+    // calls `owner.removeCredits(cost)` for each shot rather than just
+    // arming the cooldown without paying. Decoupling cost from cooldown
+    // is the exact regression this assertion guards.
+    const creditsSpent = attackerCreditsBefore - attacker.credits();
+    expect(creditsSpent).toBeGreaterThanOrEqual(shotCost);
+    expect(creditsSpent % shotCost).toBe(0n);
+
+    // Cooldown armed: `lrwReadyAt()` is in the future relative to the
+    // setup tick. `maybeFireLongRangeWeapon` only writes
     // `lrwReadyTick = currentTick + orbitalStrikeCooldown()` after the
-    // shot-cost debit succeeds — so a future `lrwReadyAt()` is the
-    // observable proof that BOTH the cost was charged AND the cooldown
-    // was set. (The two branches share a code block in the production
-    // execution; checking the cooldown thus pins both contracts.)
+    // shot-cost debit succeeds — combined with the explicit cost
+    // assertion above, this pins both the debit and the cooldown set.
     expect(ospExec.lrwReadyAt()).toBeGreaterThan(tickAtSetup);
     // Sanity: cooldown should also be at least one full cooldown period
     // in the future relative to the moment the shot fired.
