@@ -150,15 +150,16 @@ export class OrbitalStrikePlatformExecution implements Execution {
 
     // Issue #8 — when the OSP is slotted on a Battlecruiser its LRW fires
     // at enemy SHIPS rather than ground tiles. We detect host status via
-    // the explicit `hostBattlecruiser()` back-reference rather than just
-    // "is on a void tile" so an OSP that happens to overhang deep space
-    // (e.g. a coastal sector boundary) still uses ground targeting.
-    const hostedOnCapShip =
-      this.platform.hostBattlecruiser() !== undefined &&
-      this.platform.hostBattlecruiser()!.type() === UnitType.Battlecruiser;
+    // the explicit `isHostedOnCapitalShip()` predicate (which reads through
+    // the back-reference) rather than just "is on a void tile" so an OSP
+    // that happens to overhang deep space (e.g. a coastal sector boundary)
+    // still uses ground targeting.
+    const hostedOnCapShip = this.platform.isHostedOnCapitalShip();
 
     const shipTarget = hostedOnCapShip ? this.findShipTargetInRange() : null;
-    const groundTarget = hostedOnCapShip ? null : this.findLongRangeWeaponTarget();
+    const groundTarget = hostedOnCapShip
+      ? null
+      : this.findLongRangeWeaponTarget();
     if (shipTarget === null && groundTarget === null) {
       return;
     }
@@ -169,7 +170,8 @@ export class OrbitalStrikePlatformExecution implements Execution {
 
     // Schedule the impact based on the projectile's tile-per-tick speed.
     const speed = config.longRangeWeaponProjectileSpeed();
-    const targetTile = shipTarget !== null ? shipTarget.tile : groundTarget!.tile;
+    const targetTile =
+      shipTarget !== null ? shipTarget.tile : groundTarget!.tile;
     const distance = this.mg.manhattanDist(this.platform.tile(), targetTile);
     // At least 1 tick of travel so the impact never resolves on the same
     // tick the shot was fired (gives the cooldown a sane lower bound).
@@ -187,9 +189,7 @@ export class OrbitalStrikePlatformExecution implements Execution {
     this.pendingImpacts.push({
       targetTile,
       targetSmallID:
-        shipTarget !== null
-          ? shipTarget.ownerSmallID
-          : groundTarget!.smallID,
+        shipTarget !== null ? shipTarget.ownerSmallID : groundTarget!.smallID,
       impactTick,
       registryToken,
       targetShip: shipTarget?.unit,

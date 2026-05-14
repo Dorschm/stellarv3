@@ -142,6 +142,11 @@ export class UnitImpl implements Unit {
     return this._hostBattlecruiser;
   }
 
+  isHostedOnCapitalShip(): boolean {
+    const host = this._hostBattlecruiser;
+    return host !== undefined && host.type() === UnitType.Battlecruiser;
+  }
+
   isUnit(): this is Unit {
     return true;
   }

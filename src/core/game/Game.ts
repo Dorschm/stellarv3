@@ -605,6 +605,13 @@ export interface Unit {
    * player owns).
    */
   hostBattlecruiser(): Unit | undefined;
+  /**
+   * Issue #8 — explicit predicate for "this unit is currently slotted on a
+   * Battlecruiser." Reads through the `hostBattlecruiser()` back-reference
+   * rather than inferring from tile type, so that a structure built on a
+   * deep-space coastal tile (not on a cap ship) is not treated as hosted.
+   */
+  isHostedOnCapitalShip(): boolean;
 }
 
 export interface TerraNullius {
