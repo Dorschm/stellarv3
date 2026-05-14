@@ -5,10 +5,21 @@ import {
   DragEvent,
   GhostStructureChangedEvent,
 } from "../../../src/client/InputHandler";
+import { MoveBattlecruiserIntentEvent } from "../../../src/client/Transport";
 import { GameBridge } from "../../../src/client/bridge/GameBridge";
-import { useHUDStore } from "../../../src/client/bridge/HUDStore";
+import {
+  PlayerSnapshot,
+  UnitSnapshot,
+  useHUDStore,
+} from "../../../src/client/bridge/HUDStore";
+import {
+  CapitalShipClickGame,
+  findOwnedBattlecruiserAtClick,
+  resolveCapitalShipClick,
+} from "../../../src/client/scene/capitalShipClick";
 import { EventBus } from "../../../src/core/EventBus";
-import { UnitType } from "../../../src/core/game/Game";
+import { PlayerType, UnitType } from "../../../src/core/game/Game";
+import { TileRef } from "../../../src/core/game/GameMap";
 
 // ---------------------------------------------------------------------------
 // Minimal mock of GameView — only the constructor shape matters here.
@@ -25,7 +36,67 @@ function makeMockGameView(): any {
 }
 
 // ---------------------------------------------------------------------------
-// Comment 1 – Right-click cancels ghost build mode
+// Helpers — build the small `Game`-like surface used by the production
+// `capitalShipClick` helpers, plus a fluent UnitSnapshot/PlayerSnapshot
+// builder so each test stays focused on the case under test.
+// ---------------------------------------------------------------------------
+
+/**
+ * Minimal `Game` surface satisfying {@link CapitalShipClickGame}. Treats
+ * `TileRef` as a flat `y * MAP_WIDTH + x` index so `ref()`/`x()`/`y()` are
+ * mutually consistent, which is all the production helpers depend on.
+ */
+const MAP_WIDTH = 1024;
+function makeGameStub(): CapitalShipClickGame {
+  return {
+    x: (t: TileRef) => (t as unknown as number) % MAP_WIDTH,
+    y: (t: TileRef) => Math.floor((t as unknown as number) / MAP_WIDTH),
+    ref: (x: number, y: number) => (y * MAP_WIDTH + x) as unknown as TileRef,
+  };
+}
+
+function tile(x: number, y: number): TileRef {
+  return (y * MAP_WIDTH + x) as unknown as TileRef;
+}
+
+function makePlayer(smallID: number): PlayerSnapshot {
+  return {
+    id: `player_${smallID}`,
+    smallID,
+    name: `player ${smallID}`,
+    displayName: `Player ${smallID}`,
+    isAlive: true,
+    population: 0,
+    credits: 0n,
+    numTilesOwned: 0,
+    allies: [],
+    isMe: smallID === 1,
+    playerType: PlayerType.Human,
+    team: null,
+  };
+}
+
+function makeCruiser(
+  id: number,
+  ownerSmallID: number,
+  at: TileRef,
+  isActive = true,
+): UnitSnapshot {
+  return {
+    id,
+    type: UnitType.Battlecruiser,
+    ownerSmallID,
+    tile: at,
+    population: 0,
+    level: 1,
+    isActive,
+    health: 100,
+    hasSlottedStructure: false,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Right-click cancels ghost build mode
 // ---------------------------------------------------------------------------
 
 describe("SpaceMapPlane: right-click cancels ghost build", () => {
@@ -93,7 +164,7 @@ describe("SpaceMapPlane: right-click cancels ghost build", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Comment 2 – Drag-pan continues outside the mesh
+// Drag-pan continues outside the mesh
 //
 // SpaceMapPlane.onPointerOut installs a temporary window-level pointermove
 // handler when the pointer leaves the mesh mid-drag. These tests exercise
@@ -221,14 +292,188 @@ describe("SpaceMapPlane: drag continues outside mesh", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Comment 2/3 – Capital Ship selection (select-or-swap) + stale cleanup
+// Capital-ship click — exercises the production helpers directly.
 //
-// We can't mount React/R3F under the node test env, so these tests replicate
-// the exact branching logic of SpaceMapPlane's click and cleanup paths
-// against the real HUDStore. They cover:
-//   - select / swap / same-click-preserves
-//   - Esc clears selection
-//   - destroyed and captured ships are cleaned up
+// We import `findOwnedBattlecruiserAtClick` and `resolveCapitalShipClick`
+// from `src/client/scene/capitalShipClick.ts` so the click decision is the
+// same one `SpaceMapPlane.onPointerUp` runs in production, not a re-stated
+// copy. The test then mimics the component's small follow-up step
+// (`setSelectedBattlecruiser` or `MoveBattlecruiserIntentEvent` emit) so
+// the contract assertions can land on real store state / event-bus output.
+// ---------------------------------------------------------------------------
+
+describe("SpaceMapPlane: capital ship select-or-swap (production helpers)", () => {
+  beforeEach(() => {
+    useHUDStore.getState().reset();
+  });
+
+  test("findOwnedBattlecruiserAtClick returns the owned cruiser within radius", () => {
+    const game = makeGameStub();
+    useHUDStore.getState().setMyPlayer(makePlayer(1));
+    useHUDStore
+      .getState()
+      .setUnits(new Map([[42, makeCruiser(42, 1, tile(100, 100))]]));
+
+    const hit = findOwnedBattlecruiserAtClick(
+      useHUDStore.getState(),
+      game,
+      102,
+      101,
+    );
+    expect(hit).toBe(42);
+  });
+
+  test("findOwnedBattlecruiserAtClick rejects out-of-radius / inactive / non-owned cruisers", () => {
+    const game = makeGameStub();
+    useHUDStore.getState().setMyPlayer(makePlayer(1));
+    useHUDStore.getState().setUnits(
+      new Map<number, UnitSnapshot>([
+        [10, makeCruiser(10, 1, tile(0, 0), false)], // inactive
+        [11, makeCruiser(11, 7, tile(100, 100))], // enemy-owned
+        [12, makeCruiser(12, 1, tile(200, 200))], // far away
+      ]),
+    );
+
+    // Click near origin — only id 10 is close but it's inactive.
+    expect(
+      findOwnedBattlecruiserAtClick(useHUDStore.getState(), game, 1, 1),
+    ).toBeNull();
+    // Click on the enemy cruiser — must not select it.
+    expect(
+      findOwnedBattlecruiserAtClick(useHUDStore.getState(), game, 100, 100),
+    ).toBeNull();
+  });
+
+  test("owned Battlecruiser click sets selection (via resolveCapitalShipClick)", () => {
+    const game = makeGameStub();
+    useHUDStore.getState().setMyPlayer(makePlayer(1));
+    useHUDStore
+      .getState()
+      .setUnits(new Map([[42, makeCruiser(42, 1, tile(50, 50))]]));
+
+    expect(useHUDStore.getState().selectedBattlecruiserUnitId).toBeNull();
+    const action = resolveCapitalShipClick(
+      useHUDStore.getState(),
+      game,
+      50,
+      50,
+    );
+    expect(action.kind).toBe("select");
+    if (action.kind === "select") {
+      useHUDStore.getState().setSelectedBattlecruiser(action.unitId);
+    }
+    expect(useHUDStore.getState().selectedBattlecruiserUnitId).toBe(42);
+  });
+
+  test("same-click on already-selected ship preserves selection (no toggle-off)", () => {
+    const game = makeGameStub();
+    useHUDStore.getState().setMyPlayer(makePlayer(1));
+    useHUDStore
+      .getState()
+      .setUnits(new Map([[42, makeCruiser(42, 1, tile(50, 50))]]));
+    useHUDStore.getState().setSelectedBattlecruiser(42);
+
+    const action = resolveCapitalShipClick(
+      useHUDStore.getState(),
+      game,
+      50,
+      50,
+    );
+    expect(action.kind).toBe("select");
+    if (action.kind === "select") {
+      useHUDStore.getState().setSelectedBattlecruiser(action.unitId);
+    }
+    // Critical regression guard: same-click MUST NOT clear the selection.
+    expect(useHUDStore.getState().selectedBattlecruiserUnitId).toBe(42);
+  });
+
+  test("clicking another friendly Battlecruiser swaps the selection", () => {
+    const game = makeGameStub();
+    useHUDStore.getState().setMyPlayer(makePlayer(1));
+    useHUDStore.getState().setUnits(
+      new Map<number, UnitSnapshot>([
+        [42, makeCruiser(42, 1, tile(50, 50))],
+        [99, makeCruiser(99, 1, tile(200, 200))],
+      ]),
+    );
+    useHUDStore.getState().setSelectedBattlecruiser(42);
+
+    const action = resolveCapitalShipClick(
+      useHUDStore.getState(),
+      game,
+      200,
+      200,
+    );
+    expect(action.kind).toBe("select");
+    if (action.kind === "select") {
+      useHUDStore.getState().setSelectedBattlecruiser(action.unitId);
+    }
+    expect(useHUDStore.getState().selectedBattlecruiserUnitId).toBe(99);
+  });
+
+  test("left-click on an empty tile while a cruiser is selected emits MoveBattlecruiserIntentEvent with the selected id and clicked tile", () => {
+    const game = makeGameStub();
+    useHUDStore.getState().setMyPlayer(makePlayer(1));
+    useHUDStore
+      .getState()
+      .setUnits(new Map([[42, makeCruiser(42, 1, tile(50, 50))]]));
+    useHUDStore.getState().setSelectedBattlecruiser(42);
+
+    // Click well outside the cap-ship hit radius so the `move` branch wins.
+    const clickX = 300;
+    const clickY = 400;
+    const action = resolveCapitalShipClick(
+      useHUDStore.getState(),
+      game,
+      clickX,
+      clickY,
+    );
+    expect(action.kind).toBe("move");
+
+    // Mirror SpaceMapPlane.onPointerUp: emit on the move branch.
+    const eventBus = new EventBus();
+    const intents: MoveBattlecruiserIntentEvent[] = [];
+    eventBus.on(MoveBattlecruiserIntentEvent, (e) => intents.push(e));
+    if (action.kind === "move") {
+      eventBus.emit(
+        new MoveBattlecruiserIntentEvent(action.unitId, action.tile),
+      );
+    }
+
+    expect(intents).toHaveLength(1);
+    expect(intents[0].unitId).toBe(42);
+    // Tile arg must be the click tile, resolved through `game.ref(x, y)`.
+    expect(intents[0].tile).toBe(game.ref(clickX, clickY));
+  });
+
+  test("Esc clears the selection", () => {
+    useHUDStore.getState().setSelectedBattlecruiser(42);
+    // Esc path in SpaceInputHandler.onKeyDown:
+    //   if (hud.selectedBattlecruiserUnitId !== null) setSelectedBattlecruiser(null)
+    if (useHUDStore.getState().selectedBattlecruiserUnitId !== null) {
+      useHUDStore.getState().setSelectedBattlecruiser(null);
+    }
+    expect(useHUDStore.getState().selectedBattlecruiserUnitId).toBeNull();
+  });
+
+  test("with no cruiser hit and no selection, action is `none` (fall through)", () => {
+    const game = makeGameStub();
+    useHUDStore.getState().setMyPlayer(makePlayer(1));
+    // No units at all — click anywhere should fall through.
+    const action = resolveCapitalShipClick(
+      useHUDStore.getState(),
+      game,
+      10,
+      10,
+    );
+    expect(action.kind).toBe("none");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// SpaceMapPlane — stale selection cleanup (replicates the cleanup effect's
+// predicate). The predicate itself is small enough that the test states it
+// inline; the assertions still pin the contract.
 // ---------------------------------------------------------------------------
 
 interface MiniUnitSnapshot {
@@ -238,23 +483,6 @@ interface MiniUnitSnapshot {
   ownerSmallID: number;
   isActive: boolean;
   hasSlottedStructure: boolean;
-}
-
-/**
- * Replicate the SpaceMapPlane left-click select-or-swap branch. Given the
- * HUD state and the unit (if any) the click resolved to, this returns the
- * resulting `selectedBattlecruiserUnitId`.
- */
-function resolveClickSelection(
-  current: number | null,
-  clickedUnitId: number | null,
-): number | null {
-  if (clickedUnitId !== null) {
-    // Select-or-swap: always pin selection to the clicked id. Same-click
-    // preserves the existing selection; another friendly cruiser swaps.
-    return clickedUnitId;
-  }
-  return current;
 }
 
 /**
@@ -274,44 +502,6 @@ function shouldClearSelection(
   if (unit.ownerSmallID !== myPlayerSmallID) return true;
   return false;
 }
-
-describe("SpaceMapPlane: capital ship select-or-swap", () => {
-  beforeEach(() => {
-    useHUDStore.getState().reset();
-  });
-
-  test("owned Battlecruiser click sets selection", () => {
-    expect(useHUDStore.getState().selectedBattlecruiserUnitId).toBeNull();
-    const next = resolveClickSelection(null, 42);
-    useHUDStore.getState().setSelectedBattlecruiser(next);
-    expect(useHUDStore.getState().selectedBattlecruiserUnitId).toBe(42);
-  });
-
-  test("same-click on already-selected ship preserves selection (no toggle-off)", () => {
-    useHUDStore.getState().setSelectedBattlecruiser(42);
-    const next = resolveClickSelection(42, 42);
-    useHUDStore.getState().setSelectedBattlecruiser(next);
-    // Critical regression guard: same-click MUST NOT clear the selection.
-    expect(useHUDStore.getState().selectedBattlecruiserUnitId).toBe(42);
-  });
-
-  test("clicking another friendly Battlecruiser swaps the selection", () => {
-    useHUDStore.getState().setSelectedBattlecruiser(42);
-    const next = resolveClickSelection(42, 99);
-    useHUDStore.getState().setSelectedBattlecruiser(next);
-    expect(useHUDStore.getState().selectedBattlecruiserUnitId).toBe(99);
-  });
-
-  test("Esc clears the selection", () => {
-    useHUDStore.getState().setSelectedBattlecruiser(42);
-    // Esc path in SpaceInputHandler.onKeyDown:
-    //   if (hud.selectedBattlecruiserUnitId !== null) setSelectedBattlecruiser(null)
-    if (useHUDStore.getState().selectedBattlecruiserUnitId !== null) {
-      useHUDStore.getState().setSelectedBattlecruiser(null);
-    }
-    expect(useHUDStore.getState().selectedBattlecruiserUnitId).toBeNull();
-  });
-});
 
 describe("SpaceMapPlane: stale selection cleanup", () => {
   beforeEach(() => {
@@ -384,8 +574,7 @@ describe("SpaceMapPlane: stale selection cleanup", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Comment 3 – Hostable-hotkey stale-cruiser handling in SpaceInputHandler
-//
+// Hostable-hotkey stale-cruiser handling in SpaceInputHandler.
 // Replicates the hostable-hotkey branch's stale/occupied/host-build
 // outcomes so the test exercises the contract without keyboard plumbing.
 // ---------------------------------------------------------------------------

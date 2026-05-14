@@ -347,22 +347,30 @@ describe("ClusterWarheadExecution", () => {
     expect(player.isTraitor()).toBe(false);
   });
 
-  test("MIRV deterministic contract: count, ordering, per-batch drain, separation src", async () => {
+  test("MIRV deterministic contract: count, full destination ordering, per-batch drain, separation src", async () => {
     // Issue #5 — deterministic MRV verification.
     //
     // With a fixed setup and the seeded `PseudoRandom` used inside
     // `MirvExecution`, the destination set is fully determined by the
-    // game state at separation. The map size and `minimumSpread = 55`
-    // bound the achievable submunition count to roughly the
-    // non-overlapping packing density of the enemy territory, so we
-    // assert the count against a captured floor (proven on the
-    // 200×200 `big_plains` test map) and the documented upper bound,
-    // then pin the deterministic contract:
-    //   1. Total submunition count is in (0, warheadCount = 350] and
-    //      at least the empirically observed floor for this map.
-    //   2. Destinations are sorted by Manhattan distance from `dst`
-    //      descending — the furthest target spawns first so the arrival
-    //      window converges roughly on the centre.
+    // game state at separation. We pin the deterministic contract for
+    // this exact fixture (200×200 `big_plains`, enemy territory in
+    // x,y ∈ [25, 200) once the `beforeEach` block and the additional
+    // grab below combine, single MRV aimed at `(110, 110)`,
+    // `minimumSpread = 55`, `warheadCount = 350`) and assert:
+    //
+    //   1. Total submunition count is exactly `EXPECTED_COUNT` for this
+    //      fixed seed — no more "> 0 / <= 350 / >= floor" smoke check.
+    //      A change in the RNG stream, the packing predicate, or the
+    //      target filter shifts the count and flips this assertion
+    //      immediately. The product decision to change this number must
+    //      be explicit (update `EXPECTED_COUNT`) and visible in the
+    //      diff.
+    //   2. The ordered destination list matches the fixed
+    //      `EXPECTED_DESTINATIONS` array. Equality is by-element, so
+    //      ANY drift — count, order, or coordinates — fails the test.
+    //      Additionally, every adjacent pair must stay in non-increasing
+    //      Manhattan-distance order from `dst` (the furthest target
+    //      spawns first so the arrival window converges on the centre).
     //   3. The tick-spread drain spawns at most `MIRV_SPAWN_PER_TICK`
     //      (= 50) NukeExecutions per tick, and the total drains in
     //      exactly `ceil(total / 50)` ticks.
@@ -423,19 +431,22 @@ describe("ClusterWarheadExecution", () => {
       expect(sz).toBeLessThanOrEqual(PER_TICK_CAP);
     }
 
-    // Submunition count: bounded above by warheadCount, strictly
-    // positive, and meets the empirically-observed minimum for this
-    // territory shape. The packing density of `minimumSpread = 55` in
-    // a 125×125 enemy region caps the achievable count well below 350.
     const submunitionExecs = addExecSpy.mock.calls
       .flatMap((call) => call)
       .filter((e): e is NukeExecution => e instanceof NukeExecution);
-    expect(submunitionExecs.length).toBeGreaterThan(0);
+
+    // Exact count for the fixed setup. The 200×200 `big_plains` map
+    // bounded by `minimumSpread = 55` packs to this exact cardinality
+    // under the seeded RNG. If product changes the seed, map size, or
+    // packing predicate this constant must be updated in lockstep —
+    // the test failing here is *the point* of the deterministic
+    // contract.
+    const EXPECTED_COUNT = 8;
+    expect(submunitionExecs.length).toBe(EXPECTED_COUNT);
+    // Hard upper bound from `warheadCount` is still an invariant: the
+    // count must never exceed the configured payload size regardless
+    // of the seed.
     expect(submunitionExecs.length).toBeLessThanOrEqual(WARHEAD_COUNT);
-    // Floor captured from a baseline run on this map+seed; tighter than
-    // a generic `> 0` check so a regression that halves the packing
-    // efficiency still fails this test.
-    expect(submunitionExecs.length).toBeGreaterThanOrEqual(5);
 
     // Drain window: `ceil(total / PER_TICK_CAP)` ticks.
     expect(batchSizes.length).toBe(
@@ -451,17 +462,38 @@ describe("ClusterWarheadExecution", () => {
       expect(src).not.toBe(siloTile);
     }
 
-    // Destination ordering: targets sorted by Manhattan distance from
-    // `dst` descending. The first-spawned submunition (furthest from
-    // `dst`) must have a larger Manhattan distance than the last-spawned.
-    const firstDst = (submunitionExecs[0]! as unknown as { dst: number }).dst;
-    const lastDst = (
-      submunitionExecs[submunitionExecs.length - 1]! as unknown as {
-        dst: number;
-      }
-    ).dst;
-    expect(game.manhattanDist(firstDst, targetTile)).toBeGreaterThanOrEqual(
-      game.manhattanDist(lastDst, targetTile),
-    );
+    // Full ordered destination list. We pin the deterministic spawn
+    // order as a literal array — a change in the RNG stream OR the
+    // sort comparator both fail this `toEqual`. Stored as (x, y)
+    // pairs so the diff is readable on regression.
+    const orderedDestinations = submunitionExecs.map((exec) => {
+      const dst = (exec as unknown as { dst: number }).dst;
+      return [game.x(dst), game.y(dst)];
+    });
+    const EXPECTED_DESTINATIONS: [number, number][] = [
+      [181, 185],
+      [43, 34],
+      [183, 124],
+      [64, 72],
+      [77, 146],
+      [113, 173],
+      [156, 91],
+      [110, 110],
+    ];
+    expect(orderedDestinations).toEqual(EXPECTED_DESTINATIONS);
+
+    // Adjacency invariant — independent of the literal pin: every
+    // adjacent pair must remain in non-increasing Manhattan-distance
+    // order from `dst`. This catches a corrupted sort even if the
+    // expected array above happens to coincidentally agree at the
+    // endpoints.
+    for (let i = 1; i < submunitionExecs.length; i++) {
+      const prevDst = (submunitionExecs[i - 1]! as unknown as { dst: number })
+        .dst;
+      const nextDst = (submunitionExecs[i]! as unknown as { dst: number }).dst;
+      const prevMd = game.manhattanDist(prevDst, targetTile);
+      const nextMd = game.manhattanDist(nextDst, targetTile);
+      expect(prevMd).toBeGreaterThanOrEqual(nextMd);
+    }
   });
 });

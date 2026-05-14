@@ -370,6 +370,153 @@ describe("Capital Ship — JumpGate hosted on a mobile cruiser", () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// Bucket C — Foundry heal aura. A Foundry slotted on a Battlecruiser
+// floating in deep space must heal *same-owner* eligible ships within the
+// configured radius. Allied and hostile ships are explicitly excluded, and
+// the heal is clamped to each ship's max health by `Unit.modifyHealth`.
+// We exercise the actual `FoundryExecution` rather than re-stating its
+// predicates in a helper.
+// ---------------------------------------------------------------------------
+
+describe("Capital Ship — Foundry heal aura (Bucket C)", () => {
+  let allyPlayer: Player;
+  let enemyPlayer: Player;
+  let foundryGameID: GameID;
+
+  beforeEach(async () => {
+    foundryGameID = "bc_foundry_heal_game";
+    game = await setup("half_land_half_ocean", {
+      infiniteCredits: true,
+      instantBuild: true,
+    });
+    game.addPlayer(new PlayerInfo("pilot", PlayerType.Human, null, "pilot"));
+    game.addPlayer(new PlayerInfo("ally", PlayerType.Human, null, "ally"));
+    game.addPlayer(new PlayerInfo("enemy", PlayerType.Human, null, "enemy"));
+    game.addExecution(
+      new SpawnExecution(
+        foundryGameID,
+        game.player("pilot").info(),
+        game.ref(3, 3),
+      ),
+      new SpawnExecution(
+        foundryGameID,
+        game.player("ally").info(),
+        game.ref(5, 3),
+      ),
+      new SpawnExecution(
+        foundryGameID,
+        game.player("enemy").info(),
+        game.ref(2, 5),
+      ),
+    );
+    while (game.inSpawnPhase()) {
+      game.executeNextTick();
+    }
+    pilot = game.player("pilot");
+    allyPlayer = game.player("ally");
+    enemyPlayer = game.player("enemy");
+
+    // Form an alliance so `allyPlayer.isFriendly(pilot)` is true — the test
+    // proves the heal is same-owner-only, NOT same-faction.
+    const req = pilot.createAllianceRequest(allyPlayer);
+    req!.accept();
+    expect(pilot.isAlliedWith(allyPlayer)).toBe(true);
+  });
+
+  test("heals same-owner eligible ships in radius; excludes allied/hostile ships; clamps to max health", () => {
+    const radius = game.config().foundryHealRadius();
+    const heal = game.config().foundryHealPerTick();
+    expect(radius).toBeGreaterThan(0);
+    expect(heal).toBeGreaterThan(0);
+
+    const voidTile = game.ref(10, 4);
+    expect(game.isVoid(voidTile)).toBe(true);
+
+    // Cruiser host on a void tile so `isVoid(this.factory.tile())` is true
+    // (the FoundryExecution heal path only runs in deep space).
+    const bc = pilot.buildUnit(UnitType.Battlecruiser, voidTile, {
+      patrolTile: voidTile,
+    });
+    const foundry = pilot.buildUnit(UnitType.Foundry, voidTile, {});
+    bc.setSlottedStructure(foundry);
+    game.addExecution(new FoundryExecution(foundry));
+    // We deliberately do NOT register `BattlecruiserExecution` — the
+    // cruiser's per-tick logic isn't under test here, and skipping it
+    // keeps the Foundry tile stable so the radius scan stays predictable.
+
+    // Same-owner damaged cruiser inside radius.
+    const sameOwnerCruiserTile = game.ref(11, 4);
+    expect(game.manhattanDist(sameOwnerCruiserTile, voidTile)).toBeLessThan(
+      radius,
+    );
+    const sameOwnerCruiser = pilot.buildUnit(
+      UnitType.Battlecruiser,
+      sameOwnerCruiserTile,
+      { patrolTile: sameOwnerCruiserTile },
+    );
+    const cruiserMax = sameOwnerCruiser.health();
+    sameOwnerCruiser.modifyHealth(-10);
+    const sameOwnerHealthBefore = sameOwnerCruiser.health();
+    expect(sameOwnerHealthBefore).toBe(cruiserMax - 10);
+
+    // Same-owner damaged cruiser AT MAX (clamp test).
+    const fullHealthTile = game.ref(12, 4);
+    const fullHealthCruiser = pilot.buildUnit(
+      UnitType.Battlecruiser,
+      fullHealthTile,
+      { patrolTile: fullHealthTile },
+    );
+    const fullHealthBefore = fullHealthCruiser.health();
+    expect(fullHealthBefore).toBe(cruiserMax);
+
+    // Allied (different owner) damaged cruiser inside radius — must NOT heal.
+    const alliedTile = game.ref(13, 4);
+    const alliedCruiser = allyPlayer.buildUnit(
+      UnitType.Battlecruiser,
+      alliedTile,
+      { patrolTile: alliedTile },
+    );
+    alliedCruiser.modifyHealth(-10);
+    const alliedHealthBefore = alliedCruiser.health();
+    expect(alliedHealthBefore).toBe(cruiserMax - 10);
+
+    // Hostile damaged cruiser inside radius — must NOT heal.
+    const enemyTile = game.ref(9, 4);
+    const enemyCruiser = enemyPlayer.buildUnit(
+      UnitType.Battlecruiser,
+      enemyTile,
+      { patrolTile: enemyTile },
+    );
+    enemyCruiser.modifyHealth(-10);
+    const enemyHealthBefore = enemyCruiser.health();
+    expect(enemyHealthBefore).toBe(cruiserMax - 10);
+
+    // Warm-up tick so FoundryExecution.init runs.
+    game.executeNextTick();
+
+    const TICKS = 5;
+    for (let i = 0; i < TICKS; i++) {
+      game.executeNextTick();
+    }
+
+    // Same-owner damaged ship gained at least `TICKS * heal` HP, clamped
+    // to max. With heal=1 and TICKS=5 we should be exactly at full health
+    // (10 damage healed back over 5 ticks would still leave us 5 below,
+    // but the test asserts a strict positive delta — the contract is
+    // "ticks up", not "ticks up by exactly N").
+    expect(sameOwnerCruiser.health()).toBeGreaterThan(sameOwnerHealthBefore);
+    expect(sameOwnerCruiser.health()).toBeLessThanOrEqual(cruiserMax);
+
+    // Clamp: the full-HP same-owner cruiser stayed at max.
+    expect(fullHealthCruiser.health()).toBe(cruiserMax);
+
+    // Exclusion: allied and hostile ships did NOT heal.
+    expect(alliedCruiser.health()).toBe(alliedHealthBefore);
+    expect(enemyCruiser.health()).toBe(enemyHealthBefore);
+  });
+});
+
 describe("Capital Ship — build menu buildability on deep space", () => {
   beforeEach(async () => {
     await buildMixedGame();

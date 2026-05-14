@@ -180,6 +180,19 @@ describe("Battlecruiser", () => {
     // user-issued directed move, since `randomTile()` always returns a
     // tile with a non-zero offset from `patrolTile`), the cruiser MUST
     // follow that target and ignore freighter auto-hunt.
+    //
+    // The regression guard below is intentionally NOT just
+    // `patrolTile() === userDest`: the old broken behavior set
+    // `patrolTile` from `MoveBattlecruiserExecution.init` *before*
+    // `BattlecruiserExecution.tick` got a chance to pick a freighter and
+    // chase it, so a patrol-tile-only assertion can be green even when
+    // the cruiser is actually hunting freighters and never advancing
+    // toward the click. We instead pin two motion-side invariants:
+    //   1. The cruiser's `tile()` advances toward `userDest` (manhattan
+    //      distance strictly decreases from the cruiser's starting tile).
+    //   2. The cruiser does NOT capture (or transfer ownership of) any
+    //      of the enemy freighters during the directed-move window —
+    //      they remain owned by `player2`.
     player1.buildUnit(UnitType.Spaceport, game.ref(coastX, 10), {});
     const cruiserStart = game.ref(coastX + 1, 10);
     const battlecruiser = player1.buildUnit(
@@ -191,27 +204,65 @@ describe("Battlecruiser", () => {
     );
     game.addExecution(new BattlecruiserExecution(battlecruiser));
 
-    // Freighter sitting right under the cruiser — would normally be the
-    // next tick's hunt target.
-    player2.buildUnit(UnitType.TradeFreighter, cruiserStart, {
-      targetUnit: player2.buildUnit(
-        UnitType.Spaceport,
-        game.ref(coastX, 11),
-        {},
-      ),
-    });
+    // Stream of valid enemy TradeFreighters sitting on and near the
+    // cruiser's tile so `findTargetUnit` will keep returning one every
+    // tick across the entire directed-move window. The old broken
+    // behavior would chase whichever was closest each tick, silently
+    // overriding the directed move.
+    const enemyPort = player2.buildUnit(
+      UnitType.Spaceport,
+      game.ref(coastX, 11),
+      {},
+    );
+    const freighters = [
+      player2.buildUnit(UnitType.TradeFreighter, cruiserStart, {
+        targetUnit: enemyPort,
+      }),
+      player2.buildUnit(UnitType.TradeFreighter, game.ref(coastX + 1, 11), {
+        targetUnit: enemyPort,
+      }),
+      player2.buildUnit(UnitType.TradeFreighter, game.ref(coastX + 2, 11), {
+        targetUnit: enemyPort,
+      }),
+      player2.buildUnit(UnitType.TradeFreighter, game.ref(coastX + 1, 12), {
+        targetUnit: enemyPort,
+      }),
+    ];
 
-    // User clicks far away.
+    // User clicks far away. The destination is intentionally far enough
+    // that the cruiser cannot arrive within the assertion window — so
+    // we can measure progress without the patrol target getting cleared
+    // mid-test on `PathStatus.COMPLETE`.
     const userDest = game.ref(coastX + 5, 15);
+    const startDist = game.manhattanDist(cruiserStart, userDest);
     game.addExecution(
       new MoveBattlecruiserExecution(player1, battlecruiser.id(), userDest),
     );
 
+    // Multi-tick directed-move window. The old broken behavior chased
+    // the under-the-cruiser freighter every tick and never advanced
+    // toward `userDest`; with persistent freighter candidates around
+    // the cruiser this directly exercises the pre-fix path.
     executeTicks(game, 10);
 
-    // Cruiser must honour the user-directed move regardless of how
-    // attractive the freighter under it looks.
+    // patrolTile is still the destination (cleared only on arrival).
     expect(battlecruiser.patrolTile()).toBe(userDest);
+
+    // The cruiser actually moved toward the destination — not just set
+    // `patrolTile` and froze. Manhattan-distance to userDest must have
+    // strictly decreased from the cruiser's starting tile. This is the
+    // assertion that catches the original "appears to ignore the move"
+    // regression.
+    const currentDist = game.manhattanDist(battlecruiser.tile(), userDest);
+    expect(currentDist).toBeLessThan(startDist);
+
+    // No freighter capture happened during the directed move. The old
+    // auto-hunt path would `captureUnit` whichever freighter the
+    // cruiser drifted into range of, transferring ownership to
+    // `player1`; the fix must keep ownership on `player2` throughout.
+    for (const f of freighters) {
+      expect(f.owner().id()).toBe(player2.id());
+    }
   });
 
   test("Battlecruiser moves to new patrol tile", async () => {
@@ -720,6 +771,137 @@ describe("Battlecruiser — territory anchor", () => {
     // And the cruiser must not still be sitting on the exact tile it
     // reached right after the first bubble formed.
     expect(bc.tile()).not.toBe(postBubbleTile);
+  });
+
+  test("Colony-gate: NO Colony slotted → no terraforming, no conquering even after movement (Bucket C)", () => {
+    // Bucket C — the "Colony-gated territory expansion" rule. A
+    // Battlecruiser without a Colony slot must NOT terraform deep-space
+    // tiles into sector tiles, nor conquer unowned sector tiles, even
+    // when it patrols across deep space. This pins the implementation
+    // gate in `BattlecruiserExecution.claimTerritoryRadius`.
+    const patrolTile = anchorGame.ref(coastX + 1, 10);
+    expect(anchorGame.isDeepSpace(patrolTile)).toBe(true);
+
+    const bc = cruiserOwner.buildUnit(UnitType.Battlecruiser, patrolTile, {
+      patrolTile,
+    });
+    // Intentionally NO `slotColonyOnCruiser(bc)`. Empty slot → no claim.
+    expect(bc.slottedStructure()).toBeUndefined();
+    anchorGame.addExecution(new BattlecruiserExecution(bc));
+    anchorGame.addExecution(
+      new MoveBattlecruiserExecution(
+        cruiserOwner,
+        bc.id(),
+        anchorGame.ref(coastX + 5, 15),
+      ),
+    );
+
+    const tilesBefore = cruiserOwner.numTilesOwned();
+    executeTicks(anchorGame, 20);
+
+    // Cruiser actually moved (sanity).
+    expect(bc.tile()).not.toBe(patrolTile);
+    // Terrain promotion: the cruiser's current tile must still be deep
+    // space — no terraforming happened because the Colony gate blocked it.
+    expect(anchorGame.isDeepSpace(bc.tile())).toBe(true);
+    // Tile ownership: the cruiser owner did NOT gain tiles from the wake.
+    expect(cruiserOwner.numTilesOwned()).toBe(tilesBefore);
+  });
+
+  test("Colony-gate: cruiser INSIDE a sector with a Colony slotted → no terraforming, no conquering (Bucket C)", () => {
+    // Bucket C — the deep-space precondition. Even with a Colony slotted,
+    // a cruiser sitting on a sector tile must NOT claim. The implementation
+    // returns early via `!isDeepSpace(this.battlecruiser.tile())`; if the
+    // gate flipped open inside a sector, ground players could trivially
+    // chain-claim adjacent tiles by parking a Colony-loaded cruiser there.
+    //
+    // We exercise the gate by invoking `claimTerritoryRadius` directly via
+    // the (test-only) escape hatch on `BattlecruiserExecution`. Letting
+    // the real BC execution tick would move the cruiser off the sector
+    // tile via the DeepSpace pathfinder's coerce-to-void start path,
+    // defeating the test premise. The direct call lands the production
+    // gate logic on the exact (sector-tile, Colony-slotted) state we
+    // want to verify.
+    const sectorTile = anchorGame.ref(3, 3);
+    expect(anchorGame.isSector(sectorTile)).toBe(true);
+    const radius = anchorGame.config().battlecruiserTerritoryRadius();
+    // Sanity: there is at least one unowned sector tile inside the
+    // claim radius — otherwise the gate would have nothing to refuse.
+    let unownedNearby = 0;
+    for (const t of anchorGame.circleSearch(sectorTile, radius)) {
+      if (anchorGame.isSector(t) && !anchorGame.hasOwner(t)) unownedNearby++;
+    }
+    expect(unownedNearby).toBeGreaterThan(0);
+
+    const bc = cruiserOwner.buildUnit(UnitType.Battlecruiser, sectorTile, {
+      patrolTile: sectorTile,
+    });
+    slotColonyOnCruiser(bc);
+    expect(bc.slottedStructure()?.type()).toBe(UnitType.Colony);
+    expect(anchorGame.isDeepSpace(bc.tile())).toBe(false);
+
+    // Construct + init the production execution but do NOT register it
+    // with the game (so its tick() doesn't auto-move the cruiser). We
+    // then call the gated claim method directly.
+    const bcExec = new BattlecruiserExecution(bc);
+    bcExec.init(anchorGame, 0);
+
+    const tilesBefore = cruiserOwner.numTilesOwned();
+    // Snapshot every unowned sector tile in radius before the claim
+    // attempt so we can prove none of them flipped.
+    const unownedSnapshot: number[] = [];
+    for (const t of anchorGame.circleSearch(bc.tile(), radius)) {
+      if (anchorGame.isSector(t) && !anchorGame.hasOwner(t)) {
+        unownedSnapshot.push(t);
+      }
+    }
+    expect(unownedSnapshot.length).toBeGreaterThan(0);
+
+    // Direct invocation of the production gate. Inside-sector + Colony
+    // slotted is the contract under test — the gate must return early
+    // and leave terrain/ownership untouched.
+    (
+      bcExec as unknown as { claimTerritoryRadius(): void }
+    ).claimTerritoryRadius();
+
+    // No unowned tile inside radius was conquered — the in-sector gate
+    // blocked the claim despite the slotted Colony.
+    for (const t of unownedSnapshot) {
+      expect(anchorGame.hasOwner(t)).toBe(false);
+    }
+    expect(cruiserOwner.numTilesOwned()).toBe(tilesBefore);
+  });
+
+  test("Colony-gate: cruiser in DEEP SPACE with Colony slotted → terraforms AND conquers (Bucket C)", () => {
+    // Bucket C — the positive path that the two negative tests above
+    // bracket. Identical setup to the existing "claims unowned sector
+    // tiles along cruiser's path" test, but written as the explicit
+    // third leg of the Colony-gate matrix so the three cases live next
+    // to each other in the file.
+    const patrolTile = anchorGame.ref(coastX + 1, 10);
+    expect(anchorGame.isDeepSpace(patrolTile)).toBe(true);
+
+    const bc = cruiserOwner.buildUnit(UnitType.Battlecruiser, patrolTile, {
+      patrolTile,
+    });
+    slotColonyOnCruiser(bc);
+    anchorGame.addExecution(new BattlecruiserExecution(bc));
+    anchorGame.addExecution(
+      new MoveBattlecruiserExecution(
+        cruiserOwner,
+        bc.id(),
+        anchorGame.ref(coastX + 5, 15),
+      ),
+    );
+
+    const tilesBefore = cruiserOwner.numTilesOwned();
+    executeTicks(anchorGame, 20);
+
+    // (a) The cruiser's current tile is now sector (terraformed).
+    expect(anchorGame.isSector(bc.tile())).toBe(true);
+    // (b) Numerous tiles were conquered — at minimum the cruiser owner
+    // gained tiles relative to the start.
+    expect(cruiserOwner.numTilesOwned()).toBeGreaterThan(tilesBefore);
   });
 
   test("does NOT claim territory on stationary COMPLETE (in-range freighter capture)", () => {

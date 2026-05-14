@@ -7,7 +7,7 @@ not silently reopen the question in a PR; supersede the entry here first.
 
 | Field        | Value                                                        |
 | ------------ | ------------------------------------------------------------ |
-| Last updated | 2026-05-13                                                   |
+| Last updated | 2026-05-13 (Foundry heal aura scope correction)              |
 | Related      | `stellar-gdd-gap-report.md`, `docs/ADR-0001-combat-model.md` |
 
 ---
@@ -164,7 +164,7 @@ decision record.
   Giving them a default weapon would make the slot decision feel
   optional — "I already have plasma; the structure is just a bonus."
   The platform-driven model forces the slot to be a meaningful choice:
-  the cruiser is *only* as combat-capable as the structure you load
+  the cruiser is _only_ as combat-capable as the structure you load
   into it. This also keeps the host-only build pathway in
   `SpaceInputHandler` honest — an empty cruiser is genuinely
   defenceless until the player commits to a build.
@@ -172,12 +172,16 @@ decision record.
 ### 8. Foundry hosted on a Battlecruiser provides a heal aura
 
 - **Current behavior:** When a Battlecruiser hosts a Foundry, the
-  Foundry repairs the cruiser (and only the cruiser) over time, capped
-  at the cruiser's max health. Allied and hostile ships are excluded.
+  Foundry heals **same-owner eligible ships** (Battlecruiser,
+  AssaultShuttle, TradeFreighter, ScoutSwarm) within
+  `foundryHealRadius()` for `foundryHealPerTick()` HP per tick, capped
+  at each ship's max health by `Unit.modifyHealth`. Allied players'
+  ships are excluded; hostile ships are excluded.
 - **Decision:** **KEEP** the same-owner-only Foundry heal aura.
 - **Rationale:** Battlecruisers cannot return to friendly space cheaply,
-  so a slow self-heal gives the player a way to recover from skirmish
-  damage without forcing a long retreat. Restricting the heal to the
-  hosting ship's owner (not allies) keeps Foundry from doubling as an
+  so a slow heal aura gives the player a way to recover skirmish damage
+  on the hosting cruiser AND any other same-owner ships drifting nearby
+  without forcing a long retreat. Restricting the heal to the hosting
+  ship's owner (not allies) keeps Foundry from doubling as an
   allied-fleet support module, which would over-extend its role beyond
   the trade loop.

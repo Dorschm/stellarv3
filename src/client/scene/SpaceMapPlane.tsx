@@ -17,7 +17,6 @@ import {
 import { TerrainType, UnitType } from "../../core/game/Game";
 import { TileRef } from "../../core/game/GameMap";
 import { UserSettings } from "../../core/game/UserSettings";
-import { MoveBattlecruiserIntentEvent } from "../Transport";
 import {
   AutoUpgradeEvent,
   ContextMenuEvent,
@@ -31,6 +30,7 @@ import {
   TileHoverClearEvent,
   TileHoverEvent,
 } from "../InputHandler";
+import { MoveBattlecruiserIntentEvent } from "../Transport";
 import { useGameView } from "../bridge/GameViewContext";
 import { useHUDStore } from "../bridge/HUDStore";
 import {
@@ -38,6 +38,7 @@ import {
   isModifierKeyPressed,
   loadKeybinds,
 } from "../bridge/keybindModifiers";
+import { resolveCapitalShipClick } from "./capitalShipClick";
 import { resolveLeftClickAction } from "./jumpGateClickPrecedence";
 
 // ─── Space-themed terrain palette ────────────────────────────────────────────
@@ -506,25 +507,16 @@ export function SpaceMapPlane(): React.JSX.Element | null {
         //   - Else if a cap ship is already selected, issue a move order
         //     to the clicked tile.
         const hud = useHUDStore.getState();
-        const clickedUnitId = findOwnedBattlecruiserAtClick(
-          hud,
-          game,
-          tileX,
-          tileY,
-        );
-        if (clickedUnitId !== null) {
+        const capAction = resolveCapitalShipClick(hud, game, tileX, tileY);
+        if (capAction.kind === "select") {
           // Select-or-swap: always set to the clicked id. Same-click
           // preserves selection; clicking another friendly cruiser swaps.
-          hud.setSelectedBattlecruiser(clickedUnitId);
+          hud.setSelectedBattlecruiser(capAction.unitId);
           return;
         }
-        if (hud.selectedBattlecruiserUnitId !== null) {
-          const clickedTile = game.ref(tileX, tileY);
+        if (capAction.kind === "move") {
           eventBus.emit(
-            new MoveBattlecruiserIntentEvent(
-              hud.selectedBattlecruiserUnitId,
-              clickedTile,
-            ),
+            new MoveBattlecruiserIntentEvent(capAction.unitId, capAction.tile),
           );
           return;
         }
@@ -843,39 +835,4 @@ function compositePixel(
     );
     out[i + 3] = Math.round(outA * 255);
   }
-}
-
-/**
- * Issue #4 — Capital Ship click hit-test. Returns the unit id of an owned
- * Battlecruiser whose tile lies within a small radius of the click, or
- * `null` if no owned cap ship is near the click. Reads the live unit
- * snapshot from the HUD store (no game-tick dependency).
- */
-const BATTLECRUISER_CLICK_RADIUS_TILES = 5;
-function findOwnedBattlecruiserAtClick(
-  hud: ReturnType<typeof useHUDStore.getState>,
-  game: { x(t: TileRef): number; y(t: TileRef): number; ref(x: number, y: number): TileRef },
-  clickTileX: number,
-  clickTileY: number,
-): number | null {
-  const myPlayer = hud.myPlayer;
-  if (myPlayer === null) return null;
-  let bestId: number | null = null;
-  let bestDistSq = Infinity;
-  const r2 = BATTLECRUISER_CLICK_RADIUS_TILES * BATTLECRUISER_CLICK_RADIUS_TILES;
-  for (const unit of hud.units.values()) {
-    if (unit.type !== UnitType.Battlecruiser) continue;
-    if (!unit.isActive) continue;
-    if (unit.ownerSmallID !== myPlayer.smallID) continue;
-    const ux = game.x(unit.tile);
-    const uy = game.y(unit.tile);
-    const dx = ux - clickTileX;
-    const dy = uy - clickTileY;
-    const d2 = dx * dx + dy * dy;
-    if (d2 <= r2 && d2 < bestDistSq) {
-      bestDistSq = d2;
-      bestId = unit.id;
-    }
-  }
-  return bestId;
 }

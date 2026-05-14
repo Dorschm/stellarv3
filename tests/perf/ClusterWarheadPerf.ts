@@ -1,120 +1,119 @@
-import Benchmark from "benchmark";
 import { dirname } from "path";
 import { fileURLToPath } from "url";
 import { MirvExecution } from "../../src/core/execution/ClusterWarheadExecution";
-import { PlayerInfo, PlayerType, UnitType } from "../../src/core/game/Game";
+import {
+  Game,
+  Player,
+  PlayerInfo,
+  PlayerType,
+  UnitType,
+} from "../../src/core/game/Game";
 import { setup } from "../util/Setup";
 
-// Setup sparse territory scenario (small target area)
-const sparseTerritoryGame = await setup(
-  "big_plains",
-  {
-    infiniteCredits: true,
-    instantBuild: true,
-  },
-  [new PlayerInfo("player", PlayerType.Human, "client_id1", "player_id")],
-  dirname(fileURLToPath(import.meta.url)),
-);
+const moduleDir = dirname(fileURLToPath(import.meta.url));
 
-while (sparseTerritoryGame.inSpawnPhase()) {
-  sparseTerritoryGame.executeNextTick();
+type Fixture = { game: Game; player: Player };
+
+async function buildSparseTerritoryFixture(): Promise<Fixture> {
+  const game = await setup(
+    "big_plains",
+    {
+      infiniteCredits: true,
+      instantBuild: true,
+    },
+    [new PlayerInfo("player", PlayerType.Human, "client_id1", "player_id")],
+    moduleDir,
+  );
+
+  while (game.inSpawnPhase()) {
+    game.executeNextTick();
+  }
+
+  const player = game.player("player_id");
+
+  const claimRow = (y: number, length: number) => {
+    for (let x = 0; x < 200; x++) {
+      for (let dy = y; dy < y + length; dy++) {
+        const tile = game.ref(x, dy);
+        if (game.map().isSector(tile)) {
+          player.conquer(tile);
+        }
+      }
+    }
+  };
+
+  claimRow(0, 15);
+  claimRow(40, 15);
+  claimRow(90, 15);
+  claimRow(140, 15);
+  claimRow(185, 15);
+
+  player.buildUnit(UnitType.OrbitalStrikePlatform, game.ref(10, 10), {});
+  return { game, player };
 }
 
-const sparsePlayer = sparseTerritoryGame.player("player_id");
+async function buildDenseTerritoryFixture(): Promise<Fixture> {
+  const game = await setup(
+    "big_plains",
+    {
+      infiniteCredits: true,
+      instantBuild: true,
+    },
+    [new PlayerInfo("player", PlayerType.Human, "client_id1", "player_id")],
+    moduleDir,
+  );
 
-function claimRow(y: number, length: number) {
+  while (game.inSpawnPhase()) {
+    game.executeNextTick();
+  }
+
+  const player = game.player("player_id");
+
   for (let x = 0; x < 200; x++) {
-    for (let dy = y; dy < y + length; dy++) {
-      const tile = sparseTerritoryGame.ref(x, dy);
-      if (sparseTerritoryGame.map().isSector(tile)) {
-        sparsePlayer.conquer(tile);
+    for (let y = 0; y < 200; y++) {
+      const tile = game.ref(x, y);
+      if (game.map().isSector(tile)) {
+        player.conquer(tile);
       }
     }
   }
+
+  player.buildUnit(UnitType.OrbitalStrikePlatform, game.ref(10, 10), {});
+  return { game, player };
 }
 
-claimRow(0, 15);
-claimRow(40, 15);
-claimRow(90, 15);
-claimRow(140, 15);
-claimRow(185, 15);
+async function buildGiantMapFixture(): Promise<Fixture> {
+  const game = await setup(
+    "giantworldmap",
+    {
+      infiniteCredits: true,
+      instantBuild: true,
+    },
+    [new PlayerInfo("player", PlayerType.Human, "client_id1", "player_id")],
+    moduleDir,
+  );
 
-sparsePlayer.buildUnit(
-  UnitType.OrbitalStrikePlatform,
-  sparseTerritoryGame.ref(10, 10),
-  {},
-);
+  while (game.inSpawnPhase()) {
+    game.executeNextTick();
+  }
 
-// Setup dense territory scenario (large target area)
-const denseTerritoryGame = await setup(
-  "big_plains",
-  {
-    infiniteCredits: true,
-    instantBuild: true,
-  },
-  [new PlayerInfo("player", PlayerType.Human, "client_id1", "player_id")],
-  dirname(fileURLToPath(import.meta.url)),
-);
+  const player = game.player("player_id");
 
-while (denseTerritoryGame.inSpawnPhase()) {
-  denseTerritoryGame.executeNextTick();
-}
-
-const densePlayer = denseTerritoryGame.player("player_id");
-
-for (let x = 0; x < 200; x++) {
-  for (let y = 0; y < 200; y++) {
-    const tile = denseTerritoryGame.ref(x, y);
-    if (denseTerritoryGame.map().isSector(tile)) {
-      densePlayer.conquer(tile);
+  let conqueredCount = 0;
+  for (let x = 0; x < game.map().width(); x++) {
+    for (let y = 0; y < game.map().height(); y++) {
+      const tile = game.ref(x, y);
+      if (game.map().isSector(tile)) {
+        player.conquer(tile);
+        conqueredCount++;
+      }
     }
   }
+  console.log(`Conquered ${conqueredCount} tiles on giant world map`);
+
+  player.buildUnit(UnitType.OrbitalStrikePlatform, game.ref(800, 350), {});
+  return { game, player };
 }
-
-densePlayer.buildUnit(
-  UnitType.OrbitalStrikePlatform,
-  denseTerritoryGame.ref(10, 10),
-  {},
-);
-
-// Setup giant world map scenario (realistic large-scale test)
-const giantMapGame = await setup(
-  "giantworldmap",
-  {
-    infiniteCredits: true,
-    instantBuild: true,
-  },
-  [new PlayerInfo("player", PlayerType.Human, "client_id1", "player_id")],
-  dirname(fileURLToPath(import.meta.url)),
-);
-
-while (giantMapGame.inSpawnPhase()) {
-  giantMapGame.executeNextTick();
-}
-
-const giantMapPlayer = giantMapGame.player("player_id");
-
-// Conquer ALL available land tiles on the giant world map
-console.log("Conquering all tiles on giant world map...");
-let conqueredCount = 0;
-for (let x = 0; x < giantMapGame.map().width(); x++) {
-  for (let y = 0; y < giantMapGame.map().height(); y++) {
-    const tile = giantMapGame.ref(x, y);
-    if (giantMapGame.map().isSector(tile)) {
-      giantMapPlayer.conquer(tile);
-      conqueredCount++;
-    }
-  }
-}
-console.log(`Conquered ${conqueredCount} tiles on giant world map`);
-
-giantMapPlayer.buildUnit(
-  UnitType.OrbitalStrikePlatform,
-  giantMapGame.ref(800, 350),
-  {},
-);
-
-const results: string[] = [];
 
 /**
  * Worst-tick budget for the MRV spread-spawn path (issue #5).
@@ -135,12 +134,16 @@ const MRV_WORST_TICK_BUDGET_MS = 15;
 
 /**
  * Runs a single MRV launch to completion and reports the worst-tick
- * wall time observed. Returns the worst-tick value so the budget
- * assertion can run inside the benchmark cycle.
+ * wall time observed. Each call must be given a *fresh* fixture — the
+ * MIRV mutates the game (spawns a warhead unit, queues NukeExecutions
+ * via `game.addExecution`, advances ticks). Reusing the same game
+ * across measurements allows accumulated executions and units to bias
+ * subsequent worst-tick samples and mask real regressions. Build a new
+ * fixture per call via the `build*Fixture` helpers above.
  */
 function measureWorstTick(
-  gameRef: typeof sparseTerritoryGame,
-  player: typeof sparsePlayer,
+  gameRef: Game,
+  player: Player,
   targetTile: number,
 ): number {
   const mirvExec = new MirvExecution(player, targetTile);
@@ -159,60 +162,84 @@ function measureWorstTick(
   return worstTickMs;
 }
 
-let worstTickSparse = 0;
-let worstTickDense = 0;
-let worstTickGiant = 0;
+/**
+ * Number of independent measurement iterations per scenario. Each
+ * iteration rebuilds the scenario's game fixture from scratch so MIRV
+ * side effects (in-flight warhead units, queued NukeExecutions,
+ * advanced tick counts, conquered tiles) from a prior run can't
+ * contaminate the next worst-tick sample. We keep `N` modest because
+ * the giant-map fixture is expensive to build (full-map conquer over
+ * a multi-thousand-tile grid).
+ */
+const ITER_COUNT = 3;
 
-new Benchmark.Suite()
-  .add("MIRV target selection - sparse territory", () => {
-    const targetTile = sparseTerritoryGame.ref(100, 100);
-    const wt = measureWorstTick(sparseTerritoryGame, sparsePlayer, targetTile);
-    if (wt > worstTickSparse) worstTickSparse = wt;
-  })
-  .add("MIRV target selection - dense territory", () => {
-    const targetTile = denseTerritoryGame.ref(100, 100);
-    const wt = measureWorstTick(denseTerritoryGame, densePlayer, targetTile);
-    if (wt > worstTickDense) worstTickDense = wt;
-  })
-  .add("MIRV target selection - giant world map (350 targets)", () => {
-    const targetTile = giantMapGame.ref(2150, 800);
-    const wt = measureWorstTick(giantMapGame, giantMapPlayer, targetTile);
-    if (wt > worstTickGiant) worstTickGiant = wt;
-  })
-  .on("cycle", (event: any) => {
-    results.push(String(event.target));
-  })
-  .on("complete", () => {
-    console.log("\n=== MIRV Performance Benchmark Results ===");
+const samples: Record<"sparse" | "dense" | "giant", number[]> = {
+  sparse: [],
+  dense: [],
+  giant: [],
+};
 
-    for (const result of results) {
-      console.log(result);
-    }
+for (let i = 0; i < ITER_COUNT; i++) {
+  console.log(`\nIteration ${i + 1}/${ITER_COUNT}`);
 
-    // Worst-tick budget regression check: the spread-spawn drain
-    // (`MIRV_SPAWN_PER_TICK = 50`) must keep every tick under the budget.
-    // A reintroduced single-tick spawn would push the giant-map worst
-    // tick well past `MRV_WORST_TICK_BUDGET_MS` and fail this assertion.
-    console.log(
-      `\nWorst-tick observed (budget = ${MRV_WORST_TICK_BUDGET_MS}ms):` +
-        `\n  sparse: ${worstTickSparse.toFixed(2)}ms` +
-        `\n  dense:  ${worstTickDense.toFixed(2)}ms` +
-        `\n  giant:  ${worstTickGiant.toFixed(2)}ms`,
-    );
-    const offenders = [
-      { name: "sparse", value: worstTickSparse },
-      { name: "dense", value: worstTickDense },
-      { name: "giant", value: worstTickGiant },
-    ].filter((o) => o.value > MRV_WORST_TICK_BUDGET_MS);
-    if (offenders.length > 0) {
-      const detail = offenders
-        .map((o) => `${o.name}=${o.value.toFixed(2)}ms`)
-        .join(", ");
-      throw new Error(
-        `MRV worst-tick budget regression — single-tick spawn spike` +
-          ` likely reintroduced. Budget ${MRV_WORST_TICK_BUDGET_MS}ms,` +
-          ` offenders: ${detail}.`,
-      );
-    }
-  })
-  .run({ async: true });
+  console.log("  Building sparse-territory fixture...");
+  const sparse = await buildSparseTerritoryFixture();
+  samples.sparse.push(
+    measureWorstTick(sparse.game, sparse.player, sparse.game.ref(100, 100)),
+  );
+
+  console.log("  Building dense-territory fixture...");
+  const dense = await buildDenseTerritoryFixture();
+  samples.dense.push(
+    measureWorstTick(dense.game, dense.player, dense.game.ref(100, 100)),
+  );
+
+  console.log("  Building giant-map fixture...");
+  const giant = await buildGiantMapFixture();
+  samples.giant.push(
+    measureWorstTick(giant.game, giant.player, giant.game.ref(2150, 800)),
+  );
+}
+
+console.log("\n=== MIRV Performance Benchmark Results ===");
+const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
+const fmt = (xs: number[]) =>
+  `mean=${mean(xs).toFixed(2)}ms worst=${Math.max(...xs).toFixed(2)}ms (n=${xs.length})`;
+console.log(`MIRV target selection - sparse territory: ${fmt(samples.sparse)}`);
+console.log(`MIRV target selection - dense territory:  ${fmt(samples.dense)}`);
+console.log(
+  `MIRV target selection - giant world map (350 targets): ${fmt(samples.giant)}`,
+);
+
+// Worst-tick budget regression check: the spread-spawn drain
+// (`MIRV_SPAWN_PER_TICK = 50`) must keep every tick under the budget on
+// every independent run. Computed across the fresh-fixture samples so a
+// single bad iteration cannot be masked by other iterations' cached
+// state. A reintroduced single-tick spawn would push the giant-map
+// worst tick well past `MRV_WORST_TICK_BUDGET_MS` and fail this
+// assertion.
+const worstTickSparse = Math.max(...samples.sparse);
+const worstTickDense = Math.max(...samples.dense);
+const worstTickGiant = Math.max(...samples.giant);
+
+console.log(
+  `\nWorst-tick observed (budget = ${MRV_WORST_TICK_BUDGET_MS}ms):` +
+    `\n  sparse: ${worstTickSparse.toFixed(2)}ms` +
+    `\n  dense:  ${worstTickDense.toFixed(2)}ms` +
+    `\n  giant:  ${worstTickGiant.toFixed(2)}ms`,
+);
+const offenders = [
+  { name: "sparse", value: worstTickSparse },
+  { name: "dense", value: worstTickDense },
+  { name: "giant", value: worstTickGiant },
+].filter((o) => o.value > MRV_WORST_TICK_BUDGET_MS);
+if (offenders.length > 0) {
+  const detail = offenders
+    .map((o) => `${o.name}=${o.value.toFixed(2)}ms`)
+    .join(", ");
+  throw new Error(
+    `MRV worst-tick budget regression — single-tick spawn spike` +
+      ` likely reintroduced. Budget ${MRV_WORST_TICK_BUDGET_MS}ms,` +
+      ` offenders: ${detail}.`,
+  );
+}
