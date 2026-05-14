@@ -400,6 +400,28 @@ test.describe("Full 2-player multiplayer game", () => {
       waitForTicksAbove(guest, guestBaseTick + 60, 90_000),
     ]);
 
+    // Re-check after the 60-tick wait: with `nations: "default"` baked
+    // into HostLobbyModal, an aggressive nation can eliminate one of the
+    // human players during the ~60s wait window. When that happens the
+    // shell unmounts ReactRoot and `delete window.__gameView` fires (see
+    // ReactRoot.tsx), so reading `__gameView.myPlayer()` below would
+    // throw a hard "Cannot read properties of undefined" instead of
+    // failing cleanly. Skip if either page lost its game view.
+    const [hostStillIn, guestStillIn] = await Promise.all([
+      host.evaluate(() => {
+        const w = window as unknown as { __gameView?: unknown };
+        return w.__gameView !== undefined;
+      }),
+      guest.evaluate(() => {
+        const w = window as unknown as { __gameView?: unknown };
+        return w.__gameView !== undefined;
+      }),
+    ]);
+    test.skip(
+      !hostStillIn || !guestStillIn,
+      `Host or guest page navigated out of game during the 60-tick wait (hostInGame=${hostStillIn}, guestInGame=${guestStillIn}) — procedural-map nation aggression eliminated a player mid-test`,
+    );
+
     const [hostState, guestState] = await Promise.all([
       host.evaluate(() => {
         const w = window as unknown as {

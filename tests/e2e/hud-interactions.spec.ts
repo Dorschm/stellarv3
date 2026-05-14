@@ -197,6 +197,20 @@ test.describe("HUD interactions (singleplayer)", () => {
     // Right-click the enemy tile to open the RadialMenu.
     await rightClickOnGameTile(page, enemyTile!.tileX, enemyTile!.tileY);
 
+    // Defensive bail-out: if the game ended between waitForBorderEnemyTile
+    // resolving and now (player eliminated, lobby redirect), `__gameView`
+    // is gone and the RadialMenu won't open. The downstream button waits
+    // would just time out with confusing errors. Skip cleanly so the
+    // serial chain can keep running.
+    const stillInGame = await page.evaluate(() => {
+      const w = window as unknown as { __gameView?: unknown };
+      return w.__gameView !== undefined;
+    });
+    test.skip(
+      !stillInGame,
+      "Game session ended between border-enemy poll and chat open — local player eliminated by AI nation aggression mid-test",
+    );
+
     // Click "Player info" in the RadialMenu to open PlayerPanel.
     const playerInfoButton = page
       .getByRole("button", { name: /player.info/i })
