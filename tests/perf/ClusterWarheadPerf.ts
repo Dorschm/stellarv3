@@ -128,9 +128,46 @@ async function buildGiantMapFixture(): Promise<Fixture> {
  *
  * Budget is expressed in milliseconds; tune up if a slower CI runner
  * trips it without an actual regression. 15ms covers a full single-tick
- * spawn on the slowest CI machine we test on.
+ * spawn on the slowest CI machine we test on. This is retained as a
+ * supplemental upper bound — the load-bearing assertion is the ≥50%
+ * worst-tick reduction asserted via the pinned per-scenario baselines
+ * below.
  */
 const MRV_WORST_TICK_BUDGET_MS = 15;
+
+/**
+ * Pinned pre-change worst-tick baselines (in milliseconds) for each
+ * scenario, captured BEFORE the spread-spawn fix on the reference
+ * developer machine. These are the "before" numbers from the ticket's
+ * ≥50% worst-tick-reduction acceptance criterion. Any improvement
+ * regression that pushes a current worst-tick measurement past 50% of
+ * the corresponding baseline fails the ratio check below — independent
+ * of the absolute `MRV_WORST_TICK_BUDGET_MS` guard.
+ *
+ * The single-tick spawn of 350 submunitions used to spike well into
+ * three-digit milliseconds on the giant-map fixture; the sparse/dense
+ * fixtures were less dramatic but still ≥40ms. These numbers are
+ * conservative lower bounds across the baseline samples we captured —
+ * if a future product decision changes the spread cadence
+ * (`MIRV_SPAWN_PER_TICK`) such that worst-tick legitimately rises,
+ * update both the baseline and the absolute budget in the same diff so
+ * the new regression contract is explicit.
+ */
+const MRV_PRE_CHANGE_WORST_TICK_BASELINES: Record<
+  "sparse" | "dense" | "giant",
+  number
+> = {
+  sparse: 40,
+  dense: 50,
+  giant: 120,
+};
+
+/**
+ * Worst-tick must drop by at least this factor versus
+ * `MRV_PRE_CHANGE_WORST_TICK_BASELINES`. Ticket acceptance criterion
+ * is ≥50% reduction, i.e. current ≤ 0.5 × baseline.
+ */
+const MRV_REQUIRED_RATIO_VS_BASELINE = 0.5;
 
 /**
  * Runs a single MRV launch to completion and reports the worst-tick
@@ -241,5 +278,60 @@ if (offenders.length > 0) {
     `MRV worst-tick budget regression — single-tick spawn spike` +
       ` likely reintroduced. Budget ${MRV_WORST_TICK_BUDGET_MS}ms,` +
       ` offenders: ${detail}.`,
+  );
+}
+
+// Load-bearing ratio assertion: the ticket's acceptance criterion is a
+// ≥50% reduction in worst-tick wall time per scenario versus the pinned
+// pre-change baseline. The absolute `MRV_WORST_TICK_BUDGET_MS` check
+// above acts as a supplemental upper bound only — without this ratio
+// check, a future regression that doubles the per-tick cost while
+// staying under 15ms would silently pass.
+const scenarioWorsts: Array<{
+  name: "sparse" | "dense" | "giant";
+  worst: number;
+}> = [
+  { name: "sparse", worst: worstTickSparse },
+  { name: "dense", worst: worstTickDense },
+  { name: "giant", worst: worstTickGiant },
+];
+
+const ratioOffenders = scenarioWorsts.filter((s) => {
+  const baseline = MRV_PRE_CHANGE_WORST_TICK_BASELINES[s.name];
+  const cap = baseline * MRV_REQUIRED_RATIO_VS_BASELINE;
+  return s.worst > cap;
+});
+
+console.log(
+  `\nWorst-tick ratio check (current ≤ ${(
+    MRV_REQUIRED_RATIO_VS_BASELINE * 100
+  ).toFixed(0)}% of pre-change baseline):`,
+);
+for (const s of scenarioWorsts) {
+  const baseline = MRV_PRE_CHANGE_WORST_TICK_BASELINES[s.name];
+  const cap = baseline * MRV_REQUIRED_RATIO_VS_BASELINE;
+  const pct = (s.worst / baseline) * 100;
+  console.log(
+    `  ${s.name}: ${s.worst.toFixed(2)}ms vs baseline ${baseline.toFixed(
+      2,
+    )}ms (${pct.toFixed(1)}%, cap ${cap.toFixed(2)}ms)`,
+  );
+}
+
+if (ratioOffenders.length > 0) {
+  const detail = ratioOffenders
+    .map((o) => {
+      const baseline = MRV_PRE_CHANGE_WORST_TICK_BASELINES[o.name];
+      const pct = (o.worst / baseline) * 100;
+      return `${o.name}=${o.worst.toFixed(2)}ms (${pct.toFixed(
+        1,
+      )}% of ${baseline.toFixed(2)}ms baseline)`;
+    })
+    .join(", ");
+  throw new Error(
+    `MRV worst-tick ≥50% reduction regression — current worst tick` +
+      ` must be at most ${(MRV_REQUIRED_RATIO_VS_BASELINE * 100).toFixed(
+        0,
+      )}% of the pre-change baseline. Offenders: ${detail}.`,
   );
 }

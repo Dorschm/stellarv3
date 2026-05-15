@@ -82,6 +82,7 @@ export interface PlayerBuildablesMessage extends BaseWorkerMessage {
   y?: number;
   units?: readonly PlayerBuildableUnitType[];
   capitalShipMode?: boolean;
+  hostBattlecruiserId?: number;
 }
 
 export interface PlayerBuildablesResultMessage extends BaseWorkerMessage {

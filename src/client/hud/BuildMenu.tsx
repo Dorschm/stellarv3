@@ -216,12 +216,25 @@ export function BuildMenu(): React.JSX.Element {
   const refresh = useCallback(() => {
     const tile = clickedTile;
     if (tile) {
+      // Issue #7 — when the menu was opened via the radial "Build on
+      // Capital Ship" entry, forward the explicit `hostBattlecruiserId`
+      // so `PlayerImpl.buildableUnits` resolves hostability against THAT
+      // exact cruiser (owner / active / type / empty-slot) instead of a
+      // proximity lookup. That keeps the build button enable/disable
+      // state aligned with the eventual intent's host id so the server's
+      // host-only branch can't reject a button the menu showed as
+      // buildable on a different (now-empty) cruiser nearby.
       gameView
         .myPlayer()
         ?.buildables(
           tile,
           BuildMenus.types,
-          capitalShipMode ? { capitalShipMode: true } : undefined,
+          capitalShipMode
+            ? {
+                capitalShipMode: true,
+                hostBattlecruiserId,
+              }
+            : undefined,
         )
         .then((buildables) => {
           setPlayerBuildables(buildables);
@@ -231,7 +244,7 @@ export function BuildMenu(): React.JSX.Element {
       const filtered = getBuildableUnits();
       setFilteredBuildTable(filtered);
     }
-  }, [gameView, clickedTile, capitalShipMode]);
+  }, [gameView, clickedTile, capitalShipMode, hostBattlecruiserId]);
 
   const getBuildableUnits = useCallback(() => {
     return buildTable.map((row) =>

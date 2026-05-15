@@ -678,7 +678,7 @@ export interface Player {
   buildableUnits(
     tile: TileRef | null,
     units?: readonly PlayerBuildableUnitType[],
-    options?: { capitalShipMode?: boolean },
+    options?: { capitalShipMode?: boolean; hostBattlecruiserId?: number },
   ): BuildableUnit[];
   canBuild(
     type: UnitType,

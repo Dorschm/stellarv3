@@ -1074,7 +1074,7 @@ export class PlayerImpl implements Player {
   public buildableUnits(
     tile: TileRef | null,
     units: readonly PlayerBuildableUnitType[] = PlayerBuildable.types,
-    options: { capitalShipMode?: boolean } = {},
+    options: { capitalShipMode?: boolean; hostBattlecruiserId?: number } = {},
   ): BuildableUnit[] {
     const mg = this.mg;
     const config = mg.config();
@@ -1087,15 +1087,30 @@ export class PlayerImpl implements Player {
     // `battlecruiserHostableStructures()`. The cruiser tile is typically
     // unowned deep space, so `validStructureSpawnTiles(tile)` returns []
     // and normal buildability would always be false. Instead we resolve
-    // a nearby player-owned Battlecruiser with an empty structure slot
-    // once per call and reuse it across every hostable unit type.
+    // a player-owned Battlecruiser with an empty structure slot up front
+    // and reuse it across every hostable unit type.
+    //
+    // Issue #7 — when the menu was opened via the radial "Build on
+    // Capital Ship" entry, the named cruiser id flows in via
+    // `options.hostBattlecruiserId`. We must resolve THAT exact cruiser
+    // (owner / active / type / empty-slot) rather than fall back to a
+    // proximity lookup. That keeps the buildability decision aligned
+    // with the eventual `hostBattlecruiserId`-carrying intent so a full
+    // or stale named cruiser does not enable a host build that the
+    // server would reject without falling back to the ground path.
+    // Only when no explicit id is supplied (legacy callers) do we still
+    // use the proximity-based hint.
     const hostable = capitalShipMode
       ? config.battlecruiserHostableStructures()
       : null;
-    const hostCruiser =
-      capitalShipMode && tile !== null
-        ? this.findEmptySlotHostCruiser(tile)
-        : null;
+    let hostCruiser: Unit | null = null;
+    if (capitalShipMode) {
+      if (options.hostBattlecruiserId !== undefined) {
+        hostCruiser = this.findHostCruiserById(options.hostBattlecruiserId);
+      } else if (tile !== null) {
+        hostCruiser = this.findEmptySlotHostCruiser(tile);
+      }
+    }
 
     const validTiles =
       tile !== null && units.some((u) => Structures.has(u))
@@ -1457,6 +1472,30 @@ export class PlayerImpl implements Player {
       ) {
         return unit;
       }
+    }
+    return null;
+  }
+
+  /**
+   * Issue #7 — resolve a Battlecruiser by id and validate the owner /
+   * active state / type / empty slot in one place. Returns the cruiser
+   * only when every guard passes; otherwise `null`. This is the
+   * buildability-side complement to `ConstructionExecution.findCruiserById`:
+   * keeping the buildability menu in sync with the eventual hosting
+   * decision so a full or stale named cruiser greys out the host build
+   * instead of enabling a button the server would reject without falling
+   * back to ground placement. No proximity check — the named cruiser
+   * binds buildability irrespective of how far it is from the clicked
+   * tile.
+   */
+  private findHostCruiserById(unitId: number): Unit | null {
+    for (const u of this._units) {
+      if (u.type() !== UnitType.Battlecruiser) continue;
+      if (u.id() !== unitId) continue;
+      if (u.owner() !== this) return null;
+      if (!u.isActive()) return null;
+      if (u.slottedStructure() !== undefined) return null;
+      return u;
     }
     return null;
   }

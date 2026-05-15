@@ -156,23 +156,36 @@ export class AttackExecution implements Execution {
     }
 
     if (this.target.isPlayer()) {
-      const difficulty = this.mg.config().gameConfig().difficulty;
+      const targetPlayer = this.target as Player;
+      // Difficulty audit (docs/difficulty-audit-2026-05.md): relation deltas
+      // are exported to clients via PlayerImpl.playerProfile() and surfaced
+      // by PlayerPanel, so difficulty-scaled values become human-visible.
+      // Normalize to the Hard tier whenever a human is involved on either
+      // side; preserve Nation-vs-Nation scaling otherwise.
+      const humanInvolved =
+        this._owner.type() === PlayerType.Human ||
+        targetPlayer.type() === PlayerType.Human;
       let relationChange: number;
-      switch (difficulty) {
-        case Difficulty.Easy:
-          relationChange = -60;
-          break;
-        case Difficulty.Medium:
-          relationChange = -70;
-          break;
-        case Difficulty.Hard:
-          relationChange = -80;
-          break;
-        case Difficulty.Impossible:
-          relationChange = -100;
-          break;
-        default:
-          assertNever(difficulty);
+      if (humanInvolved) {
+        relationChange = -80;
+      } else {
+        const difficulty = this.mg.config().gameConfig().difficulty;
+        switch (difficulty) {
+          case Difficulty.Easy:
+            relationChange = -60;
+            break;
+          case Difficulty.Medium:
+            relationChange = -70;
+            break;
+          case Difficulty.Hard:
+            relationChange = -80;
+            break;
+          case Difficulty.Impossible:
+            relationChange = -100;
+            break;
+          default:
+            assertNever(difficulty);
+        }
       }
       this.target.updateRelation(this._owner, relationChange);
     }

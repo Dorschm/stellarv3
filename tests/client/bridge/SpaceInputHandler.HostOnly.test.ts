@@ -228,3 +228,105 @@ describe("SpaceInputHandler — selected-cruiser host-only hotkey feedback", () 
     expect(ghostChanges).toHaveLength(0);
   });
 });
+
+/**
+ * Issue #4 — Escape precedence: when a Capital Ship is selected AND a
+ * ghost build is armed, the first Escape must only clear the selection
+ * and leave the ghost intact. The verification comment specifically
+ * asked for a test that drives `SpaceInputHandler` directly (rather
+ * than re-stating the branch in the test body) so the production code
+ * path is the contract under test.
+ */
+describe("SpaceInputHandler — Escape precedence (Issue #4)", () => {
+  let bus: EventBus;
+  let handler: SpaceInputHandler;
+  let buildIntents: BuildUnitIntentEvent[];
+  let ghostChanges: (UnitType | null)[];
+
+  beforeEach(() => {
+    bus = new EventBus();
+    handler = new SpaceInputHandler(bus);
+    handler.initialize();
+
+    buildIntents = [];
+    ghostChanges = [];
+    bus.on(BuildUnitIntentEvent, (e) => buildIntents.push(e));
+    bus.on(GhostStructureChangedEvent, (e) =>
+      ghostChanges.push(e.ghostStructure),
+    );
+    useHUDStore.getState().reset();
+  });
+
+  afterEach(() => {
+    handler.destroy();
+    useHUDStore.getState().reset();
+  });
+
+  function pressEscape() {
+    (window as any).dispatchEvent(
+      new (globalThis as any).KeyboardEvent("keydown", { code: "Escape" }),
+    );
+  }
+
+  test("Escape with both cruiser selection AND ghost armed clears only the selection (no ghost change)", () => {
+    const hud = useHUDStore.getState();
+    hud.setMyPlayer(makeMyPlayer(1_000_000n));
+    hud.setUnits(
+      new Map<number, UnitSnapshot>([
+        [CRUISER_ID, makeCruiser({ occupied: false })],
+      ]),
+    );
+    hud.setSelectedBattlecruiser(CRUISER_ID);
+    hud.setGhostStructure(UnitType.Colony);
+
+    // Read through `useHUDStore.getState()` on every assertion: the
+    // snapshot returned by `getState()` is a frozen view, not a live
+    // proxy, so values captured before the setters fire are stale.
+    expect(useHUDStore.getState().selectedBattlecruiserUnitId).toBe(CRUISER_ID);
+    expect(useHUDStore.getState().ghostStructure).toBe(UnitType.Colony);
+
+    pressEscape();
+
+    // First Escape: selection cleared, ghost preserved, no ghost-change
+    // event emitted.
+    expect(useHUDStore.getState().selectedBattlecruiserUnitId).toBeNull();
+    expect(useHUDStore.getState().ghostStructure).toBe(UnitType.Colony);
+    expect(ghostChanges).toHaveLength(0);
+    expect(buildIntents).toHaveLength(0);
+  });
+
+  test("Escape with only ghost armed clears the ghost on the first press", () => {
+    useHUDStore.getState().setGhostStructure(UnitType.Colony);
+    expect(useHUDStore.getState().ghostStructure).toBe(UnitType.Colony);
+
+    pressEscape();
+
+    // No cruiser selection -> ghost-clear path runs.
+    expect(ghostChanges).toHaveLength(1);
+    expect(ghostChanges[0]).toBeNull();
+  });
+
+  test("second Escape after the selection clears falls through to the ghost-clear path", () => {
+    const hud0 = useHUDStore.getState();
+    hud0.setMyPlayer(makeMyPlayer(1_000_000n));
+    hud0.setUnits(
+      new Map<number, UnitSnapshot>([
+        [CRUISER_ID, makeCruiser({ occupied: false })],
+      ]),
+    );
+    hud0.setSelectedBattlecruiser(CRUISER_ID);
+    hud0.setGhostStructure(UnitType.Colony);
+
+    pressEscape();
+    // First Escape cleared the selection but left the ghost armed.
+    expect(useHUDStore.getState().selectedBattlecruiserUnitId).toBeNull();
+    expect(useHUDStore.getState().ghostStructure).toBe(UnitType.Colony);
+    expect(ghostChanges).toHaveLength(0);
+
+    pressEscape();
+    // Second Escape with no selection but ghost still armed runs the
+    // ghost-clear path.
+    expect(ghostChanges).toHaveLength(1);
+    expect(ghostChanges[0]).toBeNull();
+  });
+});

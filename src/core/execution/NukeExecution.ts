@@ -19,6 +19,23 @@ import { listNukeBreakAlliance } from "./Util";
 
 const SPRITE_RADIUS = 16;
 
+// Every UnitType *except* the in-flight nuke/missile types that the
+// legacy `mg.units()` loop in `detonate()` skipped. Computed once at
+// module load so the bounded `nearbyUnits` scan there doesn't have to
+// allocate the list per detonation. Update this list if a new unit
+// type ever lands that should also be immune to its sister nukes
+// (or, conversely, vulnerable to them).
+const KILLABLE_BY_NUKE: readonly UnitType[] = (
+  Object.values(UnitType) as UnitType[]
+).filter(
+  (t) =>
+    t !== UnitType.AntimatterTorpedo &&
+    t !== UnitType.NovaBomb &&
+    t !== UnitType.ClusterWarhead &&
+    t !== UnitType.ClusterWarheadSubmunition &&
+    t !== UnitType.PointDefenseMissile,
+);
+
 export class NukeExecution implements Execution {
   private active = true;
   private mg: Game;
@@ -127,16 +144,44 @@ export class NukeExecution implements Execution {
 
   tick(ticks: number): void {
     if (this.nuke === null) {
-      const spawn = this.player.canBuild(this.nukeType, this.dst);
-      if (spawn === false) {
-        console.warn(`cannot build Nuke`);
-        this.active = false;
-        return;
+      let spawn: TileRef;
+      if (this.nukeType === UnitType.ClusterWarheadSubmunition) {
+        // Submunitions are spawned at the separation tile that MirvExecution
+        // captured and passed in via the constructor. `canBuild(submunition,
+        // dst)` returns `targetTile` (the destination) from
+        // `PlayerImpl.canSpawnUnitType`, so calling it here would overwrite
+        // `this.src` with the destination and build the submunition unit at
+        // the impact point — shortening flight time and changing PDA
+        // interception windows. Keep the constructor-provided `src`.
+        if (this.src === undefined || this.src === null) {
+          console.warn(`cannot build Nuke`);
+          this.active = false;
+          return;
+        }
+        spawn = this.src;
+      } else {
+        const built = this.player.canBuild(this.nukeType, this.dst);
+        if (built === false) {
+          console.warn(`cannot build Nuke`);
+          this.active = false;
+          return;
+        }
+        this.src = built;
+        spawn = built;
       }
-      this.src = spawn;
+      // ClusterWarheadSubmunition skips trajectory storage. PDA's cluster
+      // intercept path scans `nearbyUnits` and reads `targetTile()` only
+      // (`PointDefenseArrayExecution.tick`, mirvWarheadTargets branch),
+      // and the precise-intercept `computeInterceptionTile` only runs for
+      // AntimatterTorpedo/NovaBomb. Computing a 350-element parabolic A*
+      // per submunition is the single dominant cost in the MRV freeze.
+      const trajectory =
+        this.nukeType === UnitType.ClusterWarheadSubmunition
+          ? []
+          : this.getTrajectory(this.dst);
       this.nuke = this.player.buildUnit(this.nukeType, spawn, {
         targetTile: this.dst,
-        trajectory: this.getTrajectory(this.dst),
+        trajectory,
       });
       if (this.nuke.type() !== UnitType.ClusterWarheadSubmunition) {
         this.maybeBreakAlliances();
@@ -315,19 +360,31 @@ export class NukeExecution implements Execution {
     const outer2 = magnitude.outer * magnitude.outer;
     const dst = this.dst;
     const destroyer = this.player;
-    for (const unit of mg.units()) {
-      const type = unit.type();
-      if (
-        type === UnitType.AntimatterTorpedo ||
-        type === UnitType.NovaBomb ||
-        type === UnitType.ClusterWarheadSubmunition ||
-        type === UnitType.ClusterWarhead ||
-        type === UnitType.PointDefenseMissile
-      ) {
-        continue;
-      }
-      if (mg.euclideanDistSquared(dst, unit.tile()) < outer2) {
-        unit.delete(true, destroyer);
+    // Bounded spatial scan instead of `mg.units()` (which walks every
+    // unit in the game — including mid-flight submunitions for a sister
+    // MRV). The blast can only touch units inside `outer`, so we ask the
+    // spatial grid for that radius and skip the in-flight nuke types
+    // the legacy loop skipped.
+    //
+    // `includeUnderConstruction = true` preserves the legacy `mg.units()`
+    // semantics — the old loop walked every player unit without filtering
+    // `isUnderConstruction()`, so half-built structures inside the blast
+    // radius were destroyed alongside completed ones. `UnitGrid.nearbyUnits`
+    // defaults that flag to `false`; we must opt back in to keep the
+    // damage footprint unchanged.
+    const killable = mg.nearbyUnits(
+      dst,
+      magnitude.outer,
+      KILLABLE_BY_NUKE,
+      undefined,
+      true,
+    );
+    for (const entry of killable) {
+      // `nearbyUnits` uses an axis-aligned grid; re-check euclidean
+      // distance against `outer2` so the damage footprint matches the
+      // legacy loop exactly.
+      if (mg.euclideanDistSquared(dst, entry.unit.tile()) < outer2) {
+        entry.unit.delete(true, destroyer);
       }
     }
 
@@ -344,13 +401,28 @@ export class NukeExecution implements Execution {
 
   private redrawBuildings(range: number) {
     const rangeSquared = range * range;
-    for (const unit of this.mg.units()) {
-      if (Structures.has(unit.type())) {
-        if (
-          this.mg.euclideanDistSquared(this.dst, unit.tile()) < rangeSquared
-        ) {
-          unit.touch();
-        }
+    // Bounded scan via `nearbyUnits` so each submunition detonation
+    // doesn't walk every unit in the game. `Structures.types` is the
+    // same filter the legacy loop applied, and we re-check the
+    // euclidean distance with the original `rangeSquared` so the touch
+    // footprint is identical.
+    //
+    // `includeUnderConstruction = true` preserves the legacy `mg.units()`
+    // semantics: the old loop touched every structure in range regardless
+    // of construction state, so half-built structures within the redraw
+    // footprint got the same `touch()` notification as completed ones.
+    const nearby = this.mg.nearbyUnits(
+      this.dst,
+      range,
+      Structures.types,
+      undefined,
+      true,
+    );
+    for (const entry of nearby) {
+      if (
+        this.mg.euclideanDistSquared(this.dst, entry.unit.tile()) < rangeSquared
+      ) {
+        entry.unit.touch();
       }
     }
   }

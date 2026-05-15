@@ -199,7 +199,10 @@ ctx.addEventListener("message", async (e: MessageEvent<MainThreadMessage>) => {
           message.y,
           message.units,
           message.capitalShipMode === true
-            ? { capitalShipMode: true }
+            ? {
+                capitalShipMode: true,
+                hostBattlecruiserId: message.hostBattlecruiserId,
+              }
             : undefined,
         );
         sendMessage({

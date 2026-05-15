@@ -339,6 +339,23 @@ describe("ClusterWarheadExecution", () => {
       expect(src).toBe(separationTile);
       expect(src).not.toBe(siloTile);
     }
+
+    // End-to-end check: advance one more tick so each newly queued
+    // NukeExecution actually runs its first `tick()` and builds the
+    // submunition Unit. Assert the resulting ClusterWarheadSubmunition
+    // is created at the captured separation tile — not at the
+    // destination (which is what `canBuild(submunition, dst)` returns
+    // via `PlayerImpl.canSpawnUnitType`) and not at the silo. Without
+    // driving the spawn through `tick()`, a buggy implementation that
+    // overwrites `this.src` with `canBuild`'s return value would still
+    // pass the constructor-arg assertion above.
+    executeTicks(game, 1);
+    const submunitionUnits = player.units(UnitType.ClusterWarheadSubmunition);
+    expect(submunitionUnits.length).toBeGreaterThan(0);
+    for (const unit of submunitionUnits) {
+      expect(unit.tile()).toBe(separationTile);
+      expect(unit.tile()).not.toBe(siloTile);
+    }
   });
 
   test("MIRV should launch when targeting own territory without breaking alliances", async () => {

@@ -763,4 +763,104 @@ describe("Capital Ship — build menu buildability on deep space", () => {
       expect(bu.canBuild).toBe(false);
     }
   });
+
+  test("named cruiser is full, nearby cruiser is empty — host build stays disabled (no proximity fallback)", () => {
+    // Issue #7 — `BuildMenu` opened via the radial "Build on Capital
+    // Ship" entry names ONE specific cruiser. If `buildableUnits` falls
+    // back to a proximity lookup, a full named cruiser sitting next to
+    // an empty cruiser would silently re-enable host builds for the
+    // wrong ship — and the resulting intent (carrying the full cruiser's
+    // id) would be rejected server-side without falling back to ground
+    // placement. Buildability must therefore lock onto the named
+    // cruiser only.
+    const voidTile = game.ref(10, 4);
+    expect(game.isVoid(voidTile)).toBe(true);
+
+    // Named cruiser: full slot.
+    const namedCruiser = pilot.buildUnit(UnitType.Battlecruiser, voidTile, {
+      patrolTile: voidTile,
+    });
+    const occupant = pilot.buildUnit(UnitType.Colony, voidTile, {});
+    namedCruiser.setSlottedStructure(occupant);
+    expect(namedCruiser.slottedStructure()?.type()).toBe(UnitType.Colony);
+
+    // Decoy cruiser: empty slot, parked one tile over so the legacy
+    // proximity lookup (`findEmptySlotHostCruiser`, radius 2) would
+    // happily pick it up.
+    const decoyTile = game.ref(11, 4);
+    const decoyCruiser = pilot.buildUnit(UnitType.Battlecruiser, decoyTile, {
+      patrolTile: decoyTile,
+    });
+    expect(decoyCruiser.slottedStructure()).toBeUndefined();
+
+    const hostable = game
+      .config()
+      .battlecruiserHostableStructures() as readonly PlayerBuildableUnitType[];
+
+    const buildables = pilot.buildableUnits(voidTile, hostable, {
+      capitalShipMode: true,
+      hostBattlecruiserId: namedCruiser.id(),
+    });
+    // Every hostable type must report canBuild=false: the named cruiser
+    // is full and the menu must NOT silently re-route to the decoy.
+    expect(buildables.length).toBe(hostable.length);
+    for (const bu of buildables) {
+      expect(bu.canBuild).toBe(false);
+    }
+  });
+
+  test("named cruiser is empty — host build is enabled on that cruiser even with other cruisers nearby", () => {
+    // Companion test for the named-cruiser path: prove the menu DOES
+    // light up host builds for the explicitly named cruiser, and reports
+    // the spawn target as that cruiser's tile, regardless of where
+    // proximity would have pointed.
+    const namedTile = game.ref(10, 4);
+    const namedCruiser = pilot.buildUnit(UnitType.Battlecruiser, namedTile, {
+      patrolTile: namedTile,
+    });
+    // A second cruiser, also empty, far enough away that the proximity
+    // lookup would have ignored it — pin the test to the named-cruiser
+    // resolution, not the legacy radius-2 walk.
+    const otherTile = game.ref(14, 4);
+    pilot.buildUnit(UnitType.Battlecruiser, otherTile, {
+      patrolTile: otherTile,
+    });
+
+    const hostable = game
+      .config()
+      .battlecruiserHostableStructures() as readonly PlayerBuildableUnitType[];
+
+    const buildables = pilot.buildableUnits(namedTile, hostable, {
+      capitalShipMode: true,
+      hostBattlecruiserId: namedCruiser.id(),
+    });
+    expect(buildables.length).toBe(hostable.length);
+    for (const bu of buildables) {
+      expect(bu.canBuild).toBe(namedCruiser.tile());
+    }
+  });
+
+  test("named cruiser id does not match any owned cruiser — host build stays disabled", () => {
+    // Stale or spoofed id (e.g. the cruiser was destroyed between the
+    // radial click and the build menu refresh): buildability must not
+    // silently fall back to a proximity lookup that might pick up a
+    // different cruiser.
+    const voidTile = game.ref(10, 4);
+    const realCruiser = pilot.buildUnit(UnitType.Battlecruiser, voidTile, {
+      patrolTile: voidTile,
+    });
+    expect(realCruiser.slottedStructure()).toBeUndefined();
+
+    const hostable = game
+      .config()
+      .battlecruiserHostableStructures() as readonly PlayerBuildableUnitType[];
+
+    const buildables = pilot.buildableUnits(voidTile, hostable, {
+      capitalShipMode: true,
+      hostBattlecruiserId: realCruiser.id() + 9999,
+    });
+    for (const bu of buildables) {
+      expect(bu.canBuild).toBe(false);
+    }
+  });
 });

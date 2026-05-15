@@ -455,7 +455,7 @@ export class PlayerView {
   async buildables(
     tile?: TileRef,
     units?: readonly PlayerBuildableUnitType[],
-    options?: { capitalShipMode?: boolean },
+    options?: { capitalShipMode?: boolean; hostBattlecruiserId?: number },
   ): Promise<BuildableUnit[]> {
     return this.game.worker.playerBuildables(
       this.id(),

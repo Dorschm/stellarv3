@@ -91,6 +91,17 @@ export class DonateCreditsExecution implements Execution {
   }
 
   private getCreditsChunkSize(): number {
+    // Difficulty audit (docs/difficulty-audit-2026-05.md): the resulting
+    // relation delta feeds PlayerImpl.playerProfile() and is surfaced by
+    // PlayerPanel, so difficulty-scaled chunk sizes become human-visible.
+    // Normalize to the Hard tier whenever a human is on either side of the
+    // donation; preserve Nation-vs-Nation scaling otherwise.
+    const humanInvolved =
+      this.sender.type() === PlayerType.Human ||
+      this.recipient.type() === PlayerType.Human;
+    if (humanInvolved) {
+      return 12_500;
+    }
     const { difficulty } = this.mg.config().gameConfig();
     switch (difficulty) {
       case Difficulty.Easy:

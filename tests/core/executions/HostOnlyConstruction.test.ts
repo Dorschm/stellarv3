@@ -196,6 +196,85 @@ describe("ConstructionExecution — host-only hotkey path", () => {
     expect(bc.slottedStructure()).toBeUndefined();
   });
 
+  test("rejects without ground fallback when the named cruiser is owned by a different player (captured)", async () => {
+    await buildGame({ infiniteCredits: true });
+    const patrolTile = game.ref(5, 5);
+    const bc = spawnBattlecruiser(patrolTile);
+    const cruiserId = bc.id();
+    expect(bc.slottedStructure()).toBeUndefined();
+
+    // Add a second player and transfer the cruiser ownership to them
+    // (capture simulation). After this, `pilot.units(Battlecruiser)`
+    // no longer lists the cruiser, so the host-only path must report
+    // "missing for this player" and deactivate without falling back to
+    // ground placement on the original player's territory.
+    game.addPlayer(
+      new PlayerInfo("captor", PlayerType.Human, "captor-client", "captor"),
+    );
+    const captor = game.player("captor") as Player;
+    captor.captureUnit(bc);
+    expect(bc.owner()).toBe(captor);
+
+    const dsCountBeforePilot = pilot.units(UnitType.DefenseStation).length;
+    const dsCountBeforeCaptor = captor.units(UnitType.DefenseStation).length;
+
+    game.addExecution(
+      new ConstructionExecution(
+        pilot,
+        UnitType.DefenseStation,
+        patrolTile,
+        undefined,
+        cruiserId,
+      ),
+    );
+    executeTicks(game, 4);
+
+    // No structure hosted on the (captured) cruiser, no ground structure
+    // built for either player. The captor must not have inherited a free
+    // hosted structure, and the original requester must not have placed
+    // anything on the ground at the original tile.
+    expect(bc.slottedStructure()).toBeUndefined();
+    expect(pilot.units(UnitType.DefenseStation).length).toBe(
+      dsCountBeforePilot,
+    );
+    expect(captor.units(UnitType.DefenseStation).length).toBe(
+      dsCountBeforeCaptor,
+    );
+  });
+
+  test("rejects non-hostable unit type carrying hostBattlecruiserId without ground fallback or slot mutation", async () => {
+    await buildGame({ infiniteCredits: true });
+    const patrolTile = game.ref(5, 5);
+    const bc = spawnBattlecruiser(patrolTile);
+    expect(bc.slottedStructure()).toBeUndefined();
+
+    // AntimatterTorpedo is NOT a hostable structure (it isn't even a
+    // structure). A malformed intent that names a cruiser id while
+    // carrying a non-hostable type must:
+    //   - NOT slot the torpedo into the cruiser,
+    //   - NOT delegate to NukeExecution / launch the torpedo at the
+    //     ground tile (host-only path skips `completeConstruction`).
+    // Mirrors the early bail at the top of `ConstructionExecution.tick`
+    // for `!isStructure && hostBattlecruiserId !== undefined`.
+    const torpedoCountBefore = pilot.units(UnitType.AntimatterTorpedo).length;
+
+    game.addExecution(
+      new ConstructionExecution(
+        pilot,
+        UnitType.AntimatterTorpedo,
+        patrolTile,
+        undefined,
+        bc.id(),
+      ),
+    );
+    executeTicks(game, 4);
+
+    expect(bc.slottedStructure()).toBeUndefined();
+    expect(pilot.units(UnitType.AntimatterTorpedo).length).toBe(
+      torpedoCountBefore,
+    );
+  });
+
   test("exposes slot occupancy in the UnitUpdate snapshot", async () => {
     await buildGame({ infiniteCredits: true });
     const patrolTile = game.ref(5, 5);

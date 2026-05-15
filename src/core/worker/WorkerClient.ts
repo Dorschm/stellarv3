@@ -205,7 +205,7 @@ export class WorkerClient {
     x?: number,
     y?: number,
     units?: readonly PlayerBuildableUnitType[],
-    options?: { capitalShipMode?: boolean },
+    options?: { capitalShipMode?: boolean; hostBattlecruiserId?: number },
   ): Promise<BuildableUnit[]> {
     return new Promise((resolve, reject) => {
       if (!this.isInitialized) {
@@ -232,6 +232,7 @@ export class WorkerClient {
         y,
         units,
         capitalShipMode: options?.capitalShipMode === true,
+        hostBattlecruiserId: options?.hostBattlecruiserId,
       });
     });
   }

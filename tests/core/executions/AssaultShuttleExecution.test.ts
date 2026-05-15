@@ -6,11 +6,13 @@ import {
   Player,
   PlayerInfo,
   PlayerType,
+  UnitType,
 } from "../../../src/core/game/Game";
 import { TileRef } from "../../../src/core/game/GameMap";
 import { PathStatus } from "../../../src/core/pathfinding/types";
 import { GameID } from "../../../src/core/Schemas";
 import { setup } from "../../util/Setup";
+import { giveSpaceport } from "../../util/utils";
 
 /**
  * GDD §3.2 — AssaultShuttle fleet upkeep.
@@ -143,5 +145,99 @@ describe("AssaultShuttleExecution — upkeep drain (GDD §3.2)", () => {
       ((exec as any).shuttle as { isActive: () => boolean }).isActive(),
     ).toBe(true);
     expect(exec.isActive()).toBe(true);
+  });
+});
+
+/**
+ * GDD §6 / May 2026 balance pass (#3) — Assault Shuttle travel speed is
+ * pinned at one tick per tile so the unit doesn't feel like a slog. This
+ * suite pins that timing through the real init()+tick() movement path
+ * (not the upkeep stub above, which deliberately injects a huge
+ * `ticksPerMove` and so cannot guard against the speed regressing).
+ */
+describe("AssaultShuttleExecution — movement timing (1 tick/tile)", () => {
+  let game: Game;
+  let attacker: Player;
+
+  beforeEach(async () => {
+    game = await setup("ocean_and_land", {
+      infiniteCredits: true,
+      instantBuild: true,
+      infinitePopulation: true,
+    });
+
+    const attackerInfo = new PlayerInfo(
+      "attacker",
+      PlayerType.Human,
+      null,
+      "attacker_id",
+    );
+    const defenderInfo = new PlayerInfo(
+      "defender",
+      PlayerType.Human,
+      null,
+      "defender_id",
+    );
+    game.addPlayer(attackerInfo);
+    game.addPlayer(defenderInfo);
+
+    game.addExecution(
+      new SpawnExecution(
+        "movement_test_game" as GameID,
+        attackerInfo,
+        game.ref(0, 10),
+      ),
+      new SpawnExecution(
+        "movement_test_game" as GameID,
+        defenderInfo,
+        game.ref(0, 15),
+      ),
+    );
+    while (game.inSpawnPhase()) {
+      game.executeNextTick();
+    }
+    attacker = game.player("attacker_id");
+
+    // Real Spaceport is required for AssaultShuttleExecution.canBuild.
+    giveSpaceport(game, attacker, game.ref(15, 8));
+  });
+
+  test("Config.assaultShuttleTicksPerTile() is 1", () => {
+    expect(game.config().assaultShuttleTicksPerTile()).toBe(1);
+  });
+
+  test("init() records ticksPerMove from Config and the shuttle advances one tile per tick", () => {
+    // Use the live config — do NOT inject ticksPerMove. The point of this
+    // test is that the production execution wires the 1-tick cadence
+    // through Config, not that we can force it via field assignment.
+    const exec = new AssaultShuttleExecution(attacker, game.ref(15, 8), 100);
+    game.addExecution(exec);
+    // First tick processes init(); after that the shuttle exists and
+    // ticksPerMove has been resolved.
+    game.executeNextTick();
+
+    const ticksPerMove = (exec as unknown as { ticksPerMove: number })
+      .ticksPerMove;
+    expect(ticksPerMove).toBe(1);
+    expect(ticksPerMove).toBe(game.config().assaultShuttleTicksPerTile());
+
+    const shuttles = attacker.units(UnitType.AssaultShuttle);
+    expect(shuttles).toHaveLength(1);
+    const shuttle = shuttles[0];
+    expect(shuttle.isActive()).toBe(true);
+
+    // Step the simulation tile-by-tile and confirm the shuttle's location
+    // changes on every tick — i.e. the gate `ticks - lastMove < 1` never
+    // holds back movement. We watch a handful of ticks (well under the
+    // path length to the (15, 8) target from a (0,10) spawn) so we don't
+    // accidentally see the shuttle arrive and self-destruct mid-test.
+    let previousTile = shuttle.tile();
+    for (let step = 0; step < 4; step++) {
+      game.executeNextTick();
+      if (!shuttle.isActive()) break;
+      const currentTile = shuttle.tile();
+      expect(currentTile).not.toBe(previousTile);
+      previousTile = currentTile;
+    }
   });
 });

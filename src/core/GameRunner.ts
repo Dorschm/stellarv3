@@ -221,7 +221,7 @@ export class GameRunner {
     x?: number,
     y?: number,
     units?: readonly PlayerBuildableUnitType[],
-    options?: { capitalShipMode?: boolean },
+    options?: { capitalShipMode?: boolean; hostBattlecruiserId?: number },
   ): BuildableUnit[] {
     const player = this.game.player(playerID);
     const tile =
