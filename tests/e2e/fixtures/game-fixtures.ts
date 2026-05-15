@@ -1025,6 +1025,15 @@ export function trackConsoleErrors(page: Page): void {
     //    it down to the literal value (e.g. "0", "NaN", "sybo: wtmc").
     if (/^(0|NaN|sybo: \w+)$/i.test(text)) return;
     if (/%c%d font-size:0;color:transparent/i.test(text)) return;
+    // Opera-specific phrasing for the Turnstile about:blank iframe
+    // sandbox issue — same root cause as Firefox/WebKit's cross-origin
+    // postMessage warnings.
+    if (
+      /Blocked script execution in 'about:blank'.*frame is sandboxed/i.test(
+        text,
+      )
+    )
+      return;
     errors.push(text);
   });
 

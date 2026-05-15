@@ -21,7 +21,11 @@ export default defineConfig({
   expect: { timeout: 30_000 },
   fullyParallel: false,
   workers: 1,
-  retries: 0,
+  // 1 retry is enough to absorb the transient prod-server throttling
+  // we see when the 5-browser smoke fan-out hits stellar.game in a
+  // burst (Solo button visibility check intermittently times out on
+  // the 3rd or 4th browser in a row, then passes on retry).
+  retries: 1,
   reporter: "list",
   use: {
     baseURL: "https://stellar.game",
@@ -42,14 +46,18 @@ export default defineConfig({
       name: "webkit",
       use: { ...devices["Desktop Safari"] },
     },
-    // Brave is Chromium under the hood (so it inherits Playwright's
-    // chromium driver) plus a default-on Brave Shields layer that
-    // blocks ad/tracker requests, restricts third-party cookies, and
-    // tightens fingerprinting. We point the chromium driver at the
-    // user-installed brave.exe so the run exercises the real shields
-    // path on every page navigation. If brave.exe is not installed at
-    // the standard Windows location this project simply errors out at
-    // launch — the rest of the suite still runs.
+    // Real Google Chrome (not Playwright's bundled chromium).
+    {
+      name: "chrome",
+      use: { ...devices["Desktop Chrome"], channel: "chrome" },
+    },
+    // Microsoft Edge — Chromium engine + Tracking Prevention defaults.
+    {
+      name: "edge",
+      use: { ...devices["Desktop Chrome"], channel: "msedge" },
+    },
+    // Brave: Chromium driver + brave.exe so the run exercises Brave
+    // Shields (ad/tracker/fingerprinting) on every navigation.
     {
       name: "brave",
       use: {
@@ -58,9 +66,20 @@ export default defineConfig({
         launchOptions: {
           executablePath:
             process.env.BRAVE_EXECUTABLE ??
-            // Default install location on Windows (winget / direct
-            // installer both land here for the per-user install).
             `${process.env.LOCALAPPDATA ?? "C:\\Users\\Public\\AppData\\Local"}\\BraveSoftware\\Brave-Browser\\Application\\brave.exe`,
+        },
+      },
+    },
+    // Opera: Chromium driver + opera.exe.
+    {
+      name: "opera",
+      use: {
+        ...devices["Desktop Chrome"],
+        channel: undefined,
+        launchOptions: {
+          executablePath:
+            process.env.OPERA_EXECUTABLE ??
+            `${process.env.LOCALAPPDATA ?? "C:\\Users\\Public\\AppData\\Local"}\\Programs\\Opera\\opera.exe`,
         },
       },
     },

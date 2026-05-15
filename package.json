@@ -12,6 +12,7 @@
     "test": "cross-env NODE_OPTIONS=--experimental-require-module vitest run && cross-env NODE_OPTIONS=--experimental-require-module vitest run tests/server",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
+    "test:e2e:all-browsers": "bash scripts/e2e-all-browsers.sh",
     "perf": "cross-env NODE_OPTIONS=--experimental-require-module npx tsx tests/perf/run-all.ts",
     "test:coverage": "cross-env NODE_OPTIONS=--experimental-require-module vitest run --coverage",
     "format": "prettier --ignore-unknown --write .",

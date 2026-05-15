@@ -74,6 +74,11 @@ const IGNORED_CONSOLE_RE = [
   // header. Three.js falls back to standard rendering — gameplay
   // unaffected.
   /Permissions policy violation: xr-spatial-tracking/i,
+  // Opera-specific phrasing for the same Turnstile iframe issue —
+  // Opera blocks script execution in about:blank frames lacking
+  // `allow-scripts` sandbox permission. Other engines surface this as
+  // a postMessage / cross-origin error caught by the patterns above.
+  /Blocked script execution in 'about:blank'.*frame is sandboxed/i,
 ];
 
 function shouldIgnore(text: string): boolean {
@@ -157,9 +162,16 @@ test.describe("stellar.game production smoke", () => {
 
     // 7. The 3D scene mounts a <canvas>. We don't probe Three.js internals
     //    (those globals aren't exposed in prod) — just confirm the canvas
-    //    element exists and has non-zero size.
+    //    element exists and has non-zero size. The canvas mounts
+    //    asynchronously after the `in-game` class is set, as part of the
+    //    same cold first-paint pipeline that step 6 budgets 90s for. On a
+    //    warm Chromium run the canvas appears in <2s, but a cold
+    //    production first-paint — slower WebGL context init on Firefox,
+    //    Brave Shields / Opera fingerprinting probes, variable prod
+    //    network — was observed to exceed 15s. Match step 6's cold-start
+    //    headroom rather than assume a fast path.
     const canvas = page.locator("canvas").first();
-    await expect(canvas).toBeVisible({ timeout: 15_000 });
+    await expect(canvas).toBeVisible({ timeout: 90_000 });
     const box = await canvas.boundingBox();
     expect(box, "canvas has bounding box").not.toBeNull();
     expect(box!.width).toBeGreaterThan(100);

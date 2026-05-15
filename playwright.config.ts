@@ -45,6 +45,19 @@ export default defineConfig({
       name: "webkit",
       use: { ...devices["Desktop Safari"] },
     },
+    // Real Google Chrome (not Playwright's bundled chromium build).
+    // Useful catch for Chrome-specific extensions / autofill / sync paths.
+    {
+      name: "chrome",
+      use: { ...devices["Desktop Chrome"], channel: "chrome" },
+    },
+    // Microsoft Edge — same Chromium engine, slightly different default
+    // configuration (Smart Screen, Tracking Prevention). Channel pulls
+    // the system msedge.exe.
+    {
+      name: "edge",
+      use: { ...devices["Desktop Chrome"], channel: "msedge" },
+    },
     // Brave is Chromium under the hood plus a default-on Brave Shields
     // layer (ad/tracker/cookie blocking, fingerprinting hardening). We
     // launch the user-installed brave.exe through Playwright's chromium
@@ -59,6 +72,21 @@ export default defineConfig({
           executablePath:
             process.env.BRAVE_EXECUTABLE ??
             `${process.env.LOCALAPPDATA ?? "C:\\Users\\Public\\AppData\\Local"}\\BraveSoftware\\Brave-Browser\\Application\\brave.exe`,
+        },
+      },
+    },
+    // Opera ships its own VPN, ad-blocker (off by default), and "Crypto
+    // Browser" features on top of Chromium. Same channel-style launch
+    // as Brave: Chromium driver + executablePath to opera.exe.
+    {
+      name: "opera",
+      use: {
+        ...devices["Desktop Chrome"],
+        channel: undefined,
+        launchOptions: {
+          executablePath:
+            process.env.OPERA_EXECUTABLE ??
+            `${process.env.LOCALAPPDATA ?? "C:\\Users\\Public\\AppData\\Local"}\\Programs\\Opera\\opera.exe`,
         },
       },
     },
