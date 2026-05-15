@@ -42,5 +42,27 @@ export default defineConfig({
       name: "webkit",
       use: { ...devices["Desktop Safari"] },
     },
+    // Brave is Chromium under the hood (so it inherits Playwright's
+    // chromium driver) plus a default-on Brave Shields layer that
+    // blocks ad/tracker requests, restricts third-party cookies, and
+    // tightens fingerprinting. We point the chromium driver at the
+    // user-installed brave.exe so the run exercises the real shields
+    // path on every page navigation. If brave.exe is not installed at
+    // the standard Windows location this project simply errors out at
+    // launch — the rest of the suite still runs.
+    {
+      name: "brave",
+      use: {
+        ...devices["Desktop Chrome"],
+        channel: undefined,
+        launchOptions: {
+          executablePath:
+            process.env.BRAVE_EXECUTABLE ??
+            // Default install location on Windows (winget / direct
+            // installer both land here for the per-user install).
+            `${process.env.LOCALAPPDATA ?? "C:\\Users\\Public\\AppData\\Local"}\\BraveSoftware\\Brave-Browser\\Application\\brave.exe`,
+        },
+      },
+    },
   ],
 });
