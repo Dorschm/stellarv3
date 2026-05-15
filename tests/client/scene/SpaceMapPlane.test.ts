@@ -468,6 +468,51 @@ describe("SpaceMapPlane: capital ship select-or-swap (production helpers)", () =
     );
     expect(action.kind).toBe("none");
   });
+
+  // Regression for user-reported "I can no longer select the battlecruiser
+  // and move them" (commit f6bdb50→after).
+  //
+  // The visible Battlecruiser sprite renders at an EMA-smoothed position
+  // that lags the true game tile by ~150ms (see
+  // SHIP_POSITION_SMOOTH_TAU_MS in UnitRenderer.tsx). Combined with the
+  // sprite's 2×6 BoxGeometry visually extending ~3 tiles from its centre
+  // and the 45° camera tilting the projected click tile, a user clicking
+  // on the visible sprite can resolve to a tile up to ~10 tiles away
+  // from the cruiser's actual game tile — particularly while the cruiser
+  // is moving. The previous radius (5) failed to cover this in real
+  // gameplay even though every static-position unit test passed. The
+  // current radius (12) covers the worst-case smoothing+sprite+projection
+  // skew without two adjacent cruisers' hit zones overlapping.
+  test("click N tiles away from the cruiser still selects (covers smoothing+sprite skew)", () => {
+    const game = makeGameStub();
+    useHUDStore.getState().setMyPlayer(makePlayer(1));
+    useHUDStore
+      .getState()
+      .setUnits(new Map([[42, makeCruiser(42, 1, tile(100, 100))]]));
+
+    // Click 8 tiles away (5x5 below + 5x5 right ≈ 7.07 Euclidean) — well
+    // inside the 12-tile radius but outside the old 5-tile radius. This is
+    // the click that REGRESSED for users when the radius was 5.
+    const action = resolveCapitalShipClick(
+      useHUDStore.getState(),
+      game,
+      105,
+      105,
+    );
+    expect(action.kind).toBe("select");
+    if (action.kind === "select") {
+      expect(action.unitId).toBe(42);
+    }
+
+    // Click 11 tiles away — still inside the radius (just barely).
+    const distantAction = resolveCapitalShipClick(
+      useHUDStore.getState(),
+      game,
+      108,
+      108,
+    );
+    expect(distantAction.kind).toBe("select");
+  });
 });
 
 // ---------------------------------------------------------------------------

@@ -12,8 +12,27 @@ import { useHUDStore } from "../bridge/HUDStore";
  * and `setSelectedBattlecruiser` call; this module owns the decision.
  */
 
-/** Manhattan-tile radius for the cap-ship click hit-test. */
-export const BATTLECRUISER_CLICK_RADIUS_TILES = 5;
+/**
+ * Tile radius for the cap-ship click hit-test (Euclidean, not Manhattan
+ * despite the legacy variable name).
+ *
+ * Why 12 and not 5: the visible Battlecruiser sprite renders at an
+ * EMA-smoothed position that lags the true game tile by ~150ms (see
+ * `SHIP_POSITION_SMOOTH_TAU_MS` in UnitRenderer.tsx) AND is drawn from a
+ * 2×6 BoxGeometry that visually extends ~3 tiles from its centre. With
+ * the camera tilted ~45° and the sprite floating above the map plane,
+ * the user's click on the visible sprite raycast-resolves to a tile
+ * that can sit 5-10 tiles away from the cruiser's actual game tile —
+ * especially while the cruiser is moving. A radius of 5 was tight
+ * enough that real users reported "select stopped working" because
+ * their clicks landed just outside the disc.
+ *
+ * 12 tiles ≈ 452 sq-tile disc — comfortably covers the smoothing lag,
+ * sprite extent, and camera-projection skew without making two adjacent
+ * cruisers' hit zones overlap (cruisers move on void tiles which are
+ * almost always >12 tiles apart in our procedural maps).
+ */
+export const BATTLECRUISER_CLICK_RADIUS_TILES = 12;
 
 /** Minimal `Game`-like surface needed by the click helpers. */
 export interface CapitalShipClickGame {
