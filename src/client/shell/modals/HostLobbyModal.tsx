@@ -339,6 +339,16 @@ export function HostLobbyModal() {
           {lobbyUrl && (
             <button
               onClick={handleCopyUrl}
+              // `data-lobby-url` exposes the freshly-minted lobby URL to E2E
+              // tests cross-browser. Firefox + WebKit refuse the
+              // `clipboard-read` permission Playwright accepts on Chromium,
+              // so reading the URL via `navigator.clipboard.readText()` is
+              // chromium-only. The fixture in
+              // `tests/e2e/fixtures/game-fixtures.ts` reads this attribute
+              // directly so the multiplayer flows work on every engine.
+              // Production users never see this attribute — it's a single
+              // data-* hook on a button they would interact with anyway.
+              data-lobby-url={lobbyUrl}
               className="ml-auto text-xs px-3 py-1.5 rounded-lg bg-blue-600/20 text-blue-400 border border-blue-500/30 hover:bg-blue-600/30 transition-colors font-medium"
             >
               {translateText("host_lobby.copy_url")}

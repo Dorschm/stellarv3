@@ -30,8 +30,16 @@ const PROD_URL = "https://stellar.game";
 // Console errors we choose to ignore for the prod smoke. None of these
 // indicate a real user-facing fault — the lobby loads, a game can be
 // started, the canvas renders, and gameplay is unaffected.
+//
+// Patterns intentionally cover per-engine phrasing variants. Firefox
+// prefixes errors with `[JavaScript Error: "..."]` and uses curly
+// quotes; WebKit prefixes pageerror events with the URL fragment;
+// Chromium emits the raw message. Match patterns are kept permissive
+// (substring / case-insensitive) so a small phrasing tweak in any
+// engine doesn't silently re-fail the suite.
 const IGNORED_CONSOLE_RE = [
   /turnstile/i, // Cloudflare widget challenge noise
+  /challenges\.cloudflare\.com/i, // WebKit/Firefox cross-origin postMessage from Turnstile iframe
   /cosmetics|fetchCosmetics/i, // optional cosmetics API (self-hosted backend skips it)
   /profane.*words/i, // optional moderation API
   /Failed to fetch/i, // generic network noise (Turnstile / cosmetics)
@@ -49,8 +57,19 @@ const IGNORED_CONSOLE_RE = [
   // over. These are warnings, not crashes; tracked separately.
   /TrustedHTML|TrustedScript|TrustedScriptURL/i,
   /Content Security Policy directive/i,
-  // Console-art logger spam from a shipped library.
-  /%c%d font-size:0;color:transparent NaN/i,
+  /Content-Security-Policy:.*blocked an inline script/i, // Firefox phrasing
+  /Refused to execute a script because its hash, its nonce/i, // WebKit phrasing
+  // Cross-origin postMessage from the Turnstile iframe — the third-party
+  // widget tries to talk to itself but the parent doesn't match its
+  // hard-coded target origin. Cosmetic; widget still functions.
+  /postMessage.*target origin/i,
+  /accessing a frame with origin/i,
+  // Console-art logger spam from a shipped library — appears as
+  // "%c%d font-size:0;color:transparent <something>" in Chromium and
+  // as the literal interpolated value (e.g. "0", "NaN", "sybo: wtmc")
+  // in Firefox/WebKit which strip the format directives differently.
+  /%c%d font-size:0;color:transparent/i,
+  /^(0|NaN|sybo: \w+)$/i,
   // Three.js WebXR feature probe blocked by a strict Permissions-Policy
   // header. Three.js falls back to standard rendering — gameplay
   // unaffected.
@@ -108,7 +127,14 @@ test.describe("stellar.game production smoke", () => {
     });
 
     // 4. Open the SinglePlayerModal
-    await soloButton.click();
+    //
+    // `force: true` bypasses Playwright's element-stability check. WebKit
+    // treats elements with active CSS transitions (the lobby buttons use
+    // `transition-colors`) as "not stable" and times out the click; the
+    // same elements pass on Chromium. Forcing the click is safe here
+    // because we already asserted visibility above and the button has no
+    // overlapping pointer-events: none guards.
+    await soloButton.click({ force: true });
     const startButton = page
       .getByRole("button", { name: /^start game$/i })
       .first();
@@ -117,7 +143,7 @@ test.describe("stellar.game production smoke", () => {
     });
 
     // 5. Start Game — this triggers the in-browser game session
-    await startButton.click();
+    await startButton.click({ force: true });
 
     // 6. Body picks up the `in-game` marker once the client transitions.
     //    The prod build still adds this class — it is set in the client

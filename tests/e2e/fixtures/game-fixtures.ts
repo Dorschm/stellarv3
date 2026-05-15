@@ -246,22 +246,40 @@ export async function startMultiplayerGame(
     el.dispatchEvent(new Event("change", { bubbles: true }));
   });
 
-  // The lobby URL is only stored in React state — the modal exposes it
-  // via navigator.clipboard.writeText when the "Copy URL" button is
-  // clicked. Grant clipboard permissions, trigger the copy, then read it
-  // back via clipboard.readText(). The captured URL has the form
-  // `<origin>/<workerPath>/game/<gameId>`, so we extract the ID with a
-  // single regex. If the format ever changes, fall back to treating the
-  // trimmed clipboard text as a raw ID.
-  await hostContext.grantPermissions(["clipboard-read", "clipboard-write"]);
+  // The lobby URL is only stored in React state. Cross-browser strategy:
+  //   1. Read it from the `data-lobby-url` attribute the Copy URL button
+  //      exposes (works in every engine — pure DOM access).
+  //   2. Fall back to the clipboard route on Chromium for safety in case
+  //      a future product change drops the data attribute.
+  //
+  // Firefox + WebKit refuse the `clipboard-read` Playwright permission
+  // ("Unknown permission: clipboard-read"), so the clipboard fallback is
+  // gated behind a try/catch and a chromium-only branch.
   const copyUrlButton = host.getByRole("button", { name: /copy/i }).first();
   await expect(copyUrlButton).toBeVisible({ timeout: 10_000 });
-  await copyUrlButton.click();
-  const clipboardText = await host.evaluate(() =>
-    navigator.clipboard.readText(),
-  );
-  const match = clipboardText.match(/\/game\/([^/?]+)/);
-  const resolvedLobbyId = match ? match[1] : clipboardText.trim();
+
+  let resolvedLobbyId = "";
+  const dataLobbyUrl = await copyUrlButton.getAttribute("data-lobby-url");
+  if (dataLobbyUrl) {
+    const m = dataLobbyUrl.match(/\/game\/([^/?]+)/);
+    resolvedLobbyId = m ? m[1] : dataLobbyUrl.trim();
+  } else {
+    try {
+      await hostContext.grantPermissions(["clipboard-read", "clipboard-write"]);
+      await copyUrlButton.click();
+      const clipboardText = await host.evaluate(() =>
+        navigator.clipboard.readText(),
+      );
+      const match = clipboardText.match(/\/game\/([^/?]+)/);
+      resolvedLobbyId = match ? match[1] : clipboardText.trim();
+    } catch (e) {
+      throw new Error(
+        `Failed to determine lobby ID — neither data-lobby-url attribute ` +
+          `nor clipboard fallback worked. Browser: ${browser.browserType().name()}. ` +
+          `Underlying error: ${e instanceof Error ? e.message : String(e)}`,
+      );
+    }
+  }
 
   if (!resolvedLobbyId) {
     throw new Error("Failed to determine lobby ID from HostLobbyModal");
@@ -976,6 +994,37 @@ export function trackConsoleErrors(page: Page): void {
       return;
     if (/^WebSocket error: Event$/i.test(text)) return;
     if (/Max WebSocket attempts reached/i.test(text)) return;
+    // ── Cross-browser noise filters ────────────────────────────────────
+    // Firefox + WebKit emit different phrasings for the same third-party
+    // problems. These match the Chromium-equivalent patterns above.
+    //
+    // 1. Cloudflare Turnstile cross-origin postMessage. Firefox:
+    //    `[JavaScript Error: "Failed to execute 'postMessage' on
+    //    'DOMWindow': The target origin provided
+    //    ('https://challenges.cloudflare.com') does not match ..."`.
+    //    WebKit: `pageerror /challenges.cloudflare.com" from accessing
+    //    a frame with origin "..."`.
+    if (/postMessage.*target origin/i.test(text)) return;
+    if (/accessing a frame with origin/i.test(text)) return;
+    if (/challenges\.cloudflare\.com/i.test(text)) return;
+    // 2. WebKit's CORS phrasing for fetch failures (Chromium says
+    //    "blocked by CORS policy"; WebKit says "Access-Control-Allow-Origin").
+    //    Same underlying third-party fetch (cloudflareinsights, etc).
+    if (/Access-Control-Allow-Origin/i.test(text)) return;
+    if (/cloudflareinsights\.com|cdn-cgi\/rum/i.test(text)) return;
+    if (/due to access control checks/i.test(text)) return;
+    // 3. Firefox + WebKit phrasings for the prod CSP block on inline
+    //    scripts (the Chromium phrasing "Content Security Policy
+    //    directive" is already covered by the line above).
+    if (/Content-Security-Policy:.*blocked an inline script/i.test(text))
+      return;
+    if (/Refused to execute a script because its hash, its nonce/i.test(text))
+      return;
+    // 4. Console-art logger spam from a shipped third-party lib —
+    //    Chromium shows the format string, Firefox/WebKit interpolate
+    //    it down to the literal value (e.g. "0", "NaN", "sybo: wtmc").
+    if (/^(0|NaN|sybo: \w+)$/i.test(text)) return;
+    if (/%c%d font-size:0;color:transparent/i.test(text)) return;
     errors.push(text);
   });
 
@@ -988,6 +1037,14 @@ export function trackConsoleErrors(page: Page): void {
     if (/^Failed to fetch$/i.test(text)) return;
     // Cloudflare Turnstile widget errors in dev (no valid sitekey)
     if (/turnstile/i.test(text)) return;
+    // Cross-browser variants of the same third-party noise — see the
+    // page.on("console") filters above for full rationale.
+    if (/postMessage.*target origin/i.test(text)) return;
+    if (/accessing a frame with origin/i.test(text)) return;
+    if (/challenges\.cloudflare\.com/i.test(text)) return;
+    if (/Access-Control-Allow-Origin/i.test(text)) return;
+    if (/cloudflareinsights\.com|cdn-cgi\/rum/i.test(text)) return;
+    if (/due to access control checks/i.test(text)) return;
     errors.push(`[PAGE ERROR] ${text}`);
   });
 }
