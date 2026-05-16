@@ -23,6 +23,11 @@ interface PendingLrwImpact {
   // habitability-overlay path. The Unit may have been destroyed between
   // fire and impact; `isActive()` guards that case at impact time.
   targetShip?: Unit;
+  // Issue #8 — the player who fired this shot. Carried so a lethal
+  // ship-target impact attributes the kill to the firing player via
+  // `Unit.modifyHealth(delta, attacker)`, matching the PlasmaBolt/nuke
+  // damage paths. Unset for ground-target impacts.
+  firingPlayer?: Player;
 }
 
 /** OSP target kinds — ground (legacy ground-tile bombardment) or ship
@@ -193,6 +198,7 @@ export class OrbitalStrikePlatformExecution implements Execution {
       impactTick,
       registryToken,
       targetShip: shipTarget?.unit,
+      firingPlayer: shipTarget !== null ? owner : undefined,
     });
   }
 
@@ -211,7 +217,7 @@ export class OrbitalStrikePlatformExecution implements Execution {
     if (impact.targetShip !== undefined) {
       const ship = impact.targetShip;
       if (ship.isActive()) {
-        ship.modifyHealth(-config.lrwShipDamage());
+        ship.modifyHealth(-config.lrwShipDamage(), impact.firingPlayer);
       }
       return;
     }

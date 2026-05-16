@@ -321,6 +321,53 @@ describe("Hosted OSP — ship damage, ground suppression, cost + cooldown", () =
 });
 
 // ---------------------------------------------------------------------------
+// Issue #8 regression — a lethal hosted-OSP LRW impact must attribute the
+// kill to the firing player. `OrbitalStrikePlatformExecution.applyLrwImpact`
+// passes the firing player into `Unit.modifyHealth(delta, attacker)`, which
+// forwards it into `Unit.delete(true, destroyer)`. A missing attacker would
+// leave the destroyed ship as an unattributed / non-enemy destruction.
+// ---------------------------------------------------------------------------
+
+describe("Hosted OSP lethal shot attributes the kill", () => {
+  test("destroyed ship records enemy destruction and the firing player as destroyer", async () => {
+    (game.config() as TestConfig).setSpawnImmunityDuration(0);
+    expect(defender.isImmune()).toBe(false);
+
+    const { osp } = buildHostedOsp();
+
+    const enemyCruiserTile = game.ref(15, 5);
+    const enemyCruiser = defender.buildUnit(
+      UnitType.Battlecruiser,
+      enemyCruiserTile,
+      { patrolTile: enemyCruiserTile },
+    );
+    game.addExecution(new BattlecruiserExecution(enemyCruiser));
+
+    // Pre-damage the enemy cruiser so a single LRW shot is lethal — its
+    // remaining health must sit at or below `lrwShipDamage()` without
+    // hitting zero (which would delete it early, unattributed).
+    const shipDamage = game.config().lrwShipDamage();
+    const remaining = Math.max(1, shipDamage - 100);
+    enemyCruiser.modifyHealth(remaining - Number(enemyCruiser.health()));
+    expect(enemyCruiser.health()).toBeGreaterThan(0n);
+    expect(enemyCruiser.health()).toBeLessThanOrEqual(BigInt(shipDamage));
+
+    // Fund the LRW shot cost so the OSP actually fires.
+    attacker.addCredits(10_000_000n);
+
+    executeTicks(game, 30);
+
+    // The lethal LRW impact destroyed the ship and attributed the kill.
+    expect(enemyCruiser.isActive()).toBe(false);
+    expect(enemyCruiser.wasDestroyedByEnemy()).toBe(true);
+    expect(enemyCruiser.destroyer()).toBe(attacker);
+
+    // Sanity: the slotted OSP is still ours and alive.
+    expect(osp.isActive()).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Bucket C — Hosted PDA must intercept *from the cruiser tile* (not from
 // some ground spawn point). We slot a real PointDefenseArray on a
 // Battlecruiser sitting next to the launch site and confirm the PDA's

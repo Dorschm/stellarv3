@@ -176,6 +176,11 @@ type TickSample = {
   tick: number;
   ms: number;
   inFlightSubmunitions: number;
+  /** Count of submunition NukeExecutions still active or pending (queued
+   *  in `unInitExecs`, unit not yet built) on this tick. Lets the profile
+   *  localize whether a spike comes from queued child executions vs.
+   *  mid-flight units. */
+  pendingSubmunitionExecs: number;
   /** True for ticks belonging to the submunition lifecycle window:
    *  from the first tick a submunition exists (or its pending NukeExec
    *  is queued) through the last tick before everything resolves.
@@ -204,10 +209,10 @@ type Report = {
  * sample.
  */
 type ExecCheck = {
-  /** Is the parent MirvExecution still alive (pre-separation)? */
-  mrvAlive: boolean;
-  /** Is any submunition NukeExecution still active or pending? */
-  submunitionExecActive: boolean;
+  /** Count of parent MirvExecutions still alive (pre-separation). */
+  mrvCount: number;
+  /** Count of submunition NukeExecutions still active or pending. */
+  submunitionExecCount: number;
 };
 
 function measureFullSimulation(
@@ -225,14 +230,17 @@ function measureFullSimulation(
   let worstTickLifecycle = 0;
   let totalMs = 0;
   let launched = false;
+  let completed = false;
+  let lifecycleObserved = false;
+  let submunitionEverSpawned = false;
 
   const inspectExecs = (): ExecCheck => {
-    let mrvAlive = false;
-    let submunitionExecActive = false;
+    let mrvCount = 0;
+    let submunitionExecCount = 0;
     for (const exec of gameImpl.executions()) {
       if (!exec.isActive()) continue;
       if (exec instanceof MirvExecution) {
-        mrvAlive = true;
+        mrvCount++;
       } else if (exec instanceof NukeExecution && exec.owner() === player) {
         // The fixture never queues non-MRV nukes, so any NukeExecution
         // owned by this player belongs to the submunition cluster.
@@ -243,11 +251,11 @@ function measureFullSimulation(
           nuke === null ||
           nuke.type() === UnitType.ClusterWarheadSubmunition
         ) {
-          submunitionExecActive = true;
+          submunitionExecCount++;
         }
       }
     }
-    return { mrvAlive, submunitionExecActive };
+    return { mrvCount, submunitionExecCount };
   };
 
   for (let t = 0; t < MAX_TICKS; t++) {
@@ -262,7 +270,9 @@ function measureFullSimulation(
       UnitType.ClusterWarheadSubmunition,
     ).length;
     const warheadCount = player.units(UnitType.ClusterWarhead).length;
-    const { mrvAlive, submunitionExecActive } = inspectExecs();
+    const { mrvCount, submunitionExecCount } = inspectExecs();
+    const mrvAlive = mrvCount > 0;
+    const submunitionExecActive = submunitionExecCount > 0;
 
     if (
       warheadCount > 0 ||
@@ -273,14 +283,27 @@ function measureFullSimulation(
       launched = true;
     }
 
+    if (inFlightSubmunitions > 0 || submunitionExecActive) {
+      submunitionEverSpawned = true;
+    }
+
     // A tick belongs to the submunition lifecycle if a submunition is
     // already in the air OR a submunition NukeExecution is queued/active.
     // The MRV's parent execution and its pre-separation warhead climb
     // are intentionally excluded — those are part of `MirvExecution`
     // itself and are covered by `ClusterWarheadPerf.ts`.
     const inLifecycle = inFlightSubmunitions > 0 || submunitionExecActive;
+    if (inLifecycle) {
+      lifecycleObserved = true;
+    }
 
-    samples.push({ tick: t, ms: dt, inFlightSubmunitions, inLifecycle });
+    samples.push({
+      tick: t,
+      ms: dt,
+      inFlightSubmunitions,
+      pendingSubmunitionExecs: submunitionExecCount,
+      inLifecycle,
+    });
     totalMs += dt;
     if (dt > worstMsAny) {
       worstMsAny = dt;
@@ -298,8 +321,42 @@ function measureFullSimulation(
       !mrvAlive &&
       !submunitionExecActive
     ) {
+      completed = true;
       break;
     }
+  }
+
+  // The full-sim acceptance requires the run to terminate naturally with
+  // every spawned submunition resolved. If we hit the safety cap, or no
+  // submunition lifecycle/execution was ever observed, the budget checks
+  // below would otherwise pass on a degenerate run — fail loudly instead.
+  const finalChecks = inspectExecs();
+  const finalSubmunitionUnits = player.units(
+    UnitType.ClusterWarheadSubmunition,
+  ).length;
+  const diag =
+    `remainingMirvExecutions=${finalChecks.mrvCount}, ` +
+    `remainingSubmunitionUnits=${finalSubmunitionUnits}, ` +
+    `remainingSubmunitionNukeExecutions=${finalChecks.submunitionExecCount}`;
+
+  if (!completed) {
+    throw new Error(
+      `MRV full simulation hit the ${MAX_TICKS}-tick safety cap without ` +
+        `completing — a stuck MirvExecution or submunition NukeExecution ` +
+        `prevented natural termination. ${diag}.`,
+    );
+  }
+  if (!submunitionEverSpawned) {
+    throw new Error(
+      `MRV full simulation never spawned any submunition unit or ` +
+        `NukeExecution — submunition separation appears broken. ${diag}.`,
+    );
+  }
+  if (!lifecycleObserved) {
+    throw new Error(
+      `MRV full simulation observed no submunition lifecycle tick — the ` +
+        `budget checks would assert on an empty window. ${diag}.`,
+    );
   }
 
   return {
@@ -356,6 +413,7 @@ function summarizeSamples(samples: TickSample[]): string {
         `    tick=${s.tick.toString().padStart(4)} ` +
         `ms=${s.ms.toFixed(2).padStart(7)} ` +
         `subs=${s.inFlightSubmunitions.toString().padStart(3)} ` +
+        `nukeExecs=${s.pendingSubmunitionExecs.toString().padStart(3)} ` +
         `${s.inLifecycle ? "L" : " "}`,
     )
     .join("\n");
@@ -423,11 +481,16 @@ for (const scenario of scenarios) {
       scenario.target(fixture.game),
     );
     iterReports.push(report);
+    const maxPendingNukeExecs = report.samples.reduce(
+      (m, s) => Math.max(m, s.pendingSubmunitionExecs),
+      0,
+    );
     console.log(
       `    totalTicks=${report.totalTicks} ` +
         `worstAny=${report.worstMsAny.toFixed(2)}ms@${report.worstTickAny} ` +
         `worstLifecycle=${report.worstMsLifecycle.toFixed(2)}ms@${report.worstTickLifecycle} ` +
-        `mean=${report.meanMs.toFixed(2)}ms`,
+        `mean=${report.meanMs.toFixed(2)}ms ` +
+        `maxPendingNukeExecs=${maxPendingNukeExecs}`,
     );
   }
 
@@ -486,21 +549,28 @@ for (const scenario of scenarios) {
       `max=${r.worstAnyMs.toFixed(2)}ms ` +
       `[${anyPerIter}]`,
   );
+  const maxPendingNukeExecs = r.representativeReport.samples.reduce(
+    (m, s) => Math.max(m, s.pendingSubmunitionExecs),
+    0,
+  );
+  console.log(
+    `${"".padEnd(7)} maxPendingSubmunitionNukeExecs=${maxPendingNukeExecs}`,
+  );
 }
 
 console.log(
   `\nWorst-tick budget: ${FULL_SIM_WORST_TICK_BUDGET_MS}ms across the entire submunition lifecycle.`,
 );
 
-// Budget is asserted against the *lifecycle* best-of-N. A reproducible
-// freeze in the submunition window would exceed the budget on every
-// iteration (so the minimum still trips); a one-off GC pause inflates
-// `worstLifecycleMs` only, which we report but don't assert on. The
-// pre-separation `selectDestinations` cost is intentionally out of
-// scope here — it's a property of the parent MRV warhead, not the
-// submunition lifecycle this ticket targets.
+// Budget is asserted against the *worst* lifecycle tick observed across
+// all iterations. Players freeze on any slow tick, so a single iteration
+// exceeding the budget must fail the run — best-of-N would let a fast
+// iteration mask a slow one. The best-of-N value is kept only as
+// diagnostic reporting. The pre-separation `selectDestinations` cost is
+// intentionally out of scope here — it's a property of the parent MRV
+// warhead, not the submunition lifecycle this ticket targets.
 const offenders = scenarios
-  .map((s) => ({ name: s.name, worst: results[s.name].bestLifecycleMs }))
+  .map((s) => ({ name: s.name, worst: results[s.name].worstLifecycleMs }))
   .filter((o) => o.worst > FULL_SIM_WORST_TICK_BUDGET_MS);
 
 if (offenders.length > 0) {
@@ -509,7 +579,7 @@ if (offenders.length > 0) {
     .join(", ");
   throw new Error(
     `MRV submunition-lifecycle worst-tick budget regression. ` +
-      `Budget ${FULL_SIM_WORST_TICK_BUDGET_MS}ms (best of ${ITER_COUNT}). ` +
+      `Budget ${FULL_SIM_WORST_TICK_BUDGET_MS}ms (worst of ${ITER_COUNT}). ` +
       `Offenders: ${detail}. ` +
       `Inspect the per-tick profile above to localize the freeze window.`,
   );
@@ -517,13 +587,13 @@ if (offenders.length > 0) {
 
 // Load-bearing ratio assertion (ticket acceptance criterion): current
 // lifecycle worst-tick must be at most 50% of the pinned pre-change
-// baseline per scenario. We use the best-of-N (the least-noisy
-// iteration) on both sides — that's the same statistic the absolute
-// budget asserts, applied as a ratio so a regression that doubles the
-// per-tick cost while staying under the absolute budget still fails.
+// baseline per scenario. We assert the worst-of-N observed value — the
+// same statistic the absolute budget asserts — applied as a ratio so a
+// regression that doubles the per-tick cost while staying under the
+// absolute budget still fails.
 const ratioOffenders = (["sparse", "dense", "giant"] as const).flatMap(
   (name) => {
-    const current = results[name].bestLifecycleMs;
+    const current = results[name].worstLifecycleMs;
     const baseline = FULL_SIM_PRE_CHANGE_LIFECYCLE_BASELINES[name];
     const cap = baseline * FULL_SIM_REQUIRED_RATIO_VS_BASELINE;
     return current > cap ? [{ name, current, baseline, cap }] : [];
@@ -536,7 +606,7 @@ console.log(
   ).toFixed(0)}% of pre-change baseline):`,
 );
 for (const name of ["sparse", "dense", "giant"] as const) {
-  const current = results[name].bestLifecycleMs;
+  const current = results[name].worstLifecycleMs;
   const baseline = FULL_SIM_PRE_CHANGE_LIFECYCLE_BASELINES[name];
   const cap = baseline * FULL_SIM_REQUIRED_RATIO_VS_BASELINE;
   const pct = (current / baseline) * 100;

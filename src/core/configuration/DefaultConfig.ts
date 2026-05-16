@@ -511,7 +511,10 @@ export class DefaultConfig implements Config {
   lrwShipDamage(): number {
     // Roughly 2× a plasma-bolt's per-shot damage; tuned to make an OSP-on-BC
     // a credible-but-not-overwhelming anti-ship weapon. See plan §5.2.
-    return 50;
+    // Derived from the configured plasma-bolt damage so balance edits to the
+    // plasma bolt carry through here instead of silently diverging.
+    const plasmaDamage = this.unitInfo(UnitType.PlasmaBolt).damage ?? 250;
+    return plasmaDamage * 2;
   }
 
   // ---- Issue #10 — Foundry-on-cap-ship heal aura --------------------------
