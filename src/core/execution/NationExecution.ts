@@ -16,7 +16,9 @@ import { NationAllianceBehavior } from "./nation/NationAllianceBehavior";
 import { NationBattlecruiserBehavior } from "./nation/NationBattlecruiserBehavior";
 import { NationClusterWarheadBehavior } from "./nation/NationClusterWarheadBehavior";
 import { NationEmojiBehavior } from "./nation/NationEmojiBehavior";
+import { NationJumpGateBehavior } from "./nation/NationJumpGateBehavior";
 import { NationNukeBehavior } from "./nation/NationNukeBehavior";
+import { NationShipSlottingBehavior } from "./nation/NationShipSlottingBehavior";
 import { NationStructureBehavior } from "./nation/NationStructureBehavior";
 import { SpawnExecution } from "./SpawnExecution";
 import { AiAttackBehavior } from "./utils/AiAttackBehavior";
@@ -32,6 +34,8 @@ export class NationExecution implements Execution {
   private battlecruiserBehavior!: NationBattlecruiserBehavior;
   private nukeBehavior!: NationNukeBehavior;
   private structureBehavior!: NationStructureBehavior;
+  private shipSlottingBehavior!: NationShipSlottingBehavior;
+  private jumpGateBehavior!: NationJumpGateBehavior;
   private mg: Game;
   private player: Player | null = null;
 
@@ -182,8 +186,10 @@ export class NationExecution implements Execution {
     this.mirvBehavior.considerMIRV();
     this.structureBehavior.handleStructures();
     this.battlecruiserBehavior.maybeSpawnBattlecruiser();
+    this.shipSlottingBehavior.maybeSlotStructureOnEmptyCruiser();
     this.handleEmbargoesToHostileNations();
     this.attackBehavior.maybeAttack();
+    this.jumpGateBehavior.maybeTeleportUnits();
     this.battlecruiserBehavior.counterBattlecruiserInfestation();
     this.nukeBehavior.maybeSendNuke();
   }
@@ -232,6 +238,16 @@ export class NationExecution implements Execution {
       this.emojiBehavior,
     );
     this.structureBehavior = new NationStructureBehavior(
+      this.random,
+      this.mg,
+      this.player,
+    );
+    this.shipSlottingBehavior = new NationShipSlottingBehavior(
+      this.random,
+      this.mg,
+      this.player,
+    );
+    this.jumpGateBehavior = new NationJumpGateBehavior(
       this.random,
       this.mg,
       this.player,

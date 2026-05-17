@@ -12,7 +12,11 @@ import {
 import { TileRef } from "../../game/GameMap";
 import { Cluster } from "../../game/TradeHub";
 import { PseudoRandom } from "../../PseudoRandom";
-import { assertNever } from "../../Util";
+import {
+  assertNever,
+  boundingBoxCenter,
+  calculateBoundingBoxCenter,
+} from "../../Util";
 import { ConstructionExecution } from "../ConstructionExecution";
 import { UpgradeStructureExecution } from "../UpgradeStructureExecution";
 import { closestTile, closestTwoTiles } from "../Util";
@@ -63,6 +67,10 @@ function getStructureRatios(
       perceivedCostIncreasePerOwned: 0.5,
     },
     [UnitType.OrbitalStrikePlatform]: {
+      ratioPerColony: 0.2,
+      perceivedCostIncreasePerOwned: 1,
+    },
+    [UnitType.JumpGate]: {
       ratioPerColony: 0.2,
       perceivedCostIncreasePerOwned: 1,
     },
@@ -119,6 +127,7 @@ export class NationStructureBehavior {
       UnitType.Foundry,
       UnitType.PointDefenseArray,
       UnitType.OrbitalStrikePlatform,
+      UnitType.JumpGate,
     ];
 
     const nukesEnabled =
@@ -518,6 +527,8 @@ export class NationStructureBehavior {
         return this.defensePostValue();
       case UnitType.PointDefenseArray:
         return this.pointDefenseArrayValue();
+      case UnitType.JumpGate:
+        return this.jumpGateValue();
       default:
         throw new Error(`Value function not implemented for ${type}`);
     }
@@ -1025,6 +1036,160 @@ export class NationStructureBehavior {
             w += structureSpacing * entry.weight;
           }
         }
+      }
+
+      return w;
+    };
+  }
+
+  /**
+   * Returns the TileRef closest to the player's territory centroid.
+   * Uses the largest-cluster bounding box when available (same helper pattern
+   * as AiAttackBehavior), otherwise falls back to the border-tile bounding box.
+   */
+  private playerCenterTile(): TileRef | null {
+    const game = this.game;
+    const center = this.player.largestClusterBoundingBox
+      ? boundingBoxCenter(this.player.largestClusterBoundingBox)
+      : calculateBoundingBoxCenter(game, this.player.borderTiles());
+    if (!game.isValidCoord(center.x, center.y)) {
+      return null;
+    }
+    return game.ref(center.x, center.y);
+  }
+
+  /**
+   * Returns true if any of the player's border tiles genuinely face rival
+   * (non-friendly, player-owned) territory. Used to decide whether the
+   * hostile-frontier jump-gate heuristic has anything to anchor to.
+   */
+  private hasHostileFrontier(): boolean {
+    const game = this.game;
+    const player = this.player;
+    for (const tile of player.borderTiles()) {
+      for (const neighborTile of game.neighbors(tile)) {
+        if (!game.isSector(neighborTile)) continue;
+        const id = game.ownerID(neighborTile);
+        if (id === player.smallID()) continue;
+        const neighbor = game.playerBySmallID(id);
+        if (!neighbor.isPlayer()) continue;
+        if (player.isFriendly(neighbor)) continue;
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Builds the interior placement value function for jump gates: prefers high
+   * elevation, distance from the border, and proximity to the player's
+   * largest-cluster centroid.
+   */
+  private jumpGateInteriorValue(
+    borderTiles: ReadonlySet<TileRef>,
+    borderSpacing: number,
+    structureSpacing: number,
+  ): (tile: TileRef) => number {
+    const game = this.game;
+    const centroid = this.playerCenterTile();
+    return (tile) => {
+      let w = 0;
+
+      // Prefer higher elevations
+      w += game.magnitude(tile);
+
+      // Prefer to be away from the border
+      const [, closestBorderDist] = closestTile(game, borderTiles, tile);
+      w += Math.min(closestBorderDist, borderSpacing);
+
+      // Prefer to be near the player's largest-cluster centroid
+      if (centroid !== null) {
+        const d = game.manhattanDist(centroid, tile);
+        w += structureSpacing - Math.min(d, structureSpacing);
+      }
+
+      return w;
+    };
+  }
+
+  /**
+   * Value function for jump gates.
+   * The first gate is placed in the interior near the player's largest-cluster
+   * centroid, reusing cityValue()'s elevation + border-distance heuristics.
+   * Subsequent gates are placed near hostile borders (mirroring
+   * defensePostValue()) and biased toward maximising distance from existing
+   * gates so a "home + frontier" gate pair emerges naturally. When the nation
+   * has no rival-facing border (isolated or fully allied), later gates fall
+   * back to the same interior heuristic rather than hugging an arbitrary
+   * peaceful border.
+   */
+  private jumpGateValue(): (tile: TileRef) => number {
+    const game = this.game;
+    const player = this.player;
+    const borderTiles = player.borderTiles();
+    const existingGates = player.units(UnitType.JumpGate);
+    const { borderSpacing, structureSpacing } = this.spacingConstants();
+
+    // First owned gate: interior placement near the largest-cluster centroid.
+    if (existingGates.length === 0) {
+      return this.jumpGateInteriorValue(
+        borderTiles,
+        borderSpacing,
+        structureSpacing,
+      );
+    }
+
+    // Subsequent gates only use the hostile-frontier heuristic when a genuine
+    // rival-facing border exists. Otherwise there is nothing for the frontier
+    // reward to anchor to, so fall back to interior placement.
+    if (!this.hasHostileFrontier()) {
+      return this.jumpGateInteriorValue(
+        borderTiles,
+        borderSpacing,
+        structureSpacing,
+      );
+    }
+
+    // Subsequent gates: frontier placement near hostile borders, biased away
+    // from existing gates so a "home <-> frontier" pair emerges.
+    const gateTiles: Set<TileRef> = new Set(existingGates.map((u) => u.tile()));
+
+    return (tile) => {
+      let w = 0;
+
+      // Prefer higher elevations
+      w += game.magnitude(tile);
+
+      const [closest, closestBorderDist] = closestTile(game, borderTiles, tile);
+      if (closest !== null) {
+        // Prefer to be borderSpacing tiles from the border
+        w += Math.max(
+          0,
+          borderSpacing - Math.abs(borderSpacing - closestBorderDist),
+        );
+
+        // Prefer borders facing hostile rival territory
+        const neighbors: Set<Player> = new Set();
+        for (const neighborTile of game.neighbors(closest)) {
+          if (!game.isSector(neighborTile)) continue;
+          const id = game.ownerID(neighborTile);
+          if (id === player.smallID()) continue;
+          const neighbor = game.playerBySmallID(id);
+          if (!neighbor.isPlayer()) continue;
+          if (player.isFriendly(neighbor)) continue;
+          neighbors.add(neighbor);
+        }
+        for (const neighbor of neighbors) {
+          w += borderSpacing * (Relation.Friendly - player.relation(neighbor));
+        }
+      }
+
+      // Bias toward maximising distance from existing gates so the second gate
+      // lands on the frontier rather than next to the home gate.
+      const closestGate = closestTwoTiles(game, gateTiles, [tile]);
+      if (closestGate !== null) {
+        const d = game.manhattanDist(closestGate.x, tile);
+        w += Math.min(d, structureSpacing);
       }
 
       return w;

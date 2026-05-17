@@ -1,6 +1,11 @@
 import { vi } from "vitest";
 import { NationStructureBehavior } from "../src/core/execution/nation/NationStructureBehavior";
-import { Difficulty, PlayerType } from "../src/core/game/Game";
+import {
+  Difficulty,
+  PlayerType,
+  Relation,
+  UnitType,
+} from "../src/core/game/Game";
 import { Cluster } from "../src/core/game/TradeHub";
 import { PseudoRandom } from "../src/core/PseudoRandom";
 
@@ -357,5 +362,283 @@ describe("NationStructureBehavior.getOrBuildReachableStations", () => {
     (behavior as any).getOrBuildReachableStations();
 
     expect(buildSpy).toHaveBeenCalledTimes(2);
+  });
+});
+
+// ── handleStructures build order (JumpGate) ──────────────────────────────────
+
+function makeOrderGame(disabled: Set<UnitType> = new Set()): any {
+  return {
+    config: () => ({
+      isUnitDisabled: (t: UnitType) => disabled.has(t),
+      gameConfig: () => ({ difficulty: Difficulty.Medium }),
+    }),
+    // A coastal tile keeps Spaceport in the build order so the loop is complete.
+    isVoidShore: () => true,
+  };
+}
+
+function makeOrderPlayer(): any {
+  return {
+    unitsOwned: () => 0,
+    borderTiles: () => new Set([1]),
+  };
+}
+
+describe("NationStructureBehavior.handleStructures build order", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("scores JumpGate immediately after OrbitalStrikePlatform", () => {
+    const behavior = makeBehavior(makeOrderGame(), makeOrderPlayer());
+    const order: UnitType[] = [];
+    vi.spyOn(behavior as any, "shouldBuildStructure").mockImplementation(
+      (type: UnitType) => {
+        order.push(type);
+        return false;
+      },
+    );
+    vi.spyOn(behavior as any, "maybeSpawnStructure").mockReturnValue(false);
+
+    behavior.handleStructures();
+
+    expect(order).toContain(UnitType.JumpGate);
+    expect(order).toContain(UnitType.OrbitalStrikePlatform);
+    expect(order.indexOf(UnitType.JumpGate)).toBe(
+      order.indexOf(UnitType.OrbitalStrikePlatform) + 1,
+    );
+  });
+
+  it("skips JumpGate entirely when the unit type is disabled", () => {
+    const behavior = makeBehavior(
+      makeOrderGame(new Set([UnitType.JumpGate])),
+      makeOrderPlayer(),
+    );
+    const order: UnitType[] = [];
+    vi.spyOn(behavior as any, "shouldBuildStructure").mockImplementation(
+      (type: UnitType) => {
+        order.push(type);
+        return false;
+      },
+    );
+    vi.spyOn(behavior as any, "maybeSpawnStructure").mockReturnValue(false);
+
+    behavior.handleStructures();
+
+    expect(order).not.toContain(UnitType.JumpGate);
+    expect(order).toContain(UnitType.OrbitalStrikePlatform);
+  });
+
+  it("builds a higher-priority structure before reaching JumpGate (non-regression)", () => {
+    const behavior = makeBehavior(makeOrderGame(), makeOrderPlayer());
+    const built: UnitType[] = [];
+    vi.spyOn(behavior as any, "shouldBuildStructure").mockReturnValue(true);
+    vi.spyOn(behavior as any, "maybeSpawnStructure").mockImplementation(
+      (type: UnitType) => {
+        built.push(type);
+        return true;
+      },
+    );
+
+    const result = behavior.handleStructures();
+
+    // The first build-order entry wins and the loop returns before JumpGate.
+    expect(result).toBe(true);
+    expect(built).toEqual([UnitType.DefenseStation]);
+    expect(built).not.toContain(UnitType.JumpGate);
+  });
+});
+
+// ── JumpGate ratio threshold ─────────────────────────────────────────────────
+
+function makeRatioGame(): any {
+  return {
+    config: () => ({
+      gameConfig: () => ({ difficulty: Difficulty.Medium }),
+    }),
+  };
+}
+
+function makeRatioPlayer(jumpGatesOwned: number): any {
+  return {
+    unitsOwned: (t: UnitType) => (t === UnitType.JumpGate ? jumpGatesOwned : 0),
+    numTilesOwned: () => 100_000,
+  };
+}
+
+describe("NationStructureBehavior JumpGate ratio threshold", () => {
+  it("builds another JumpGate while owned count is below the colony ratio", () => {
+    // 20 colonies * 0.2 ratio => target 4; 3 owned is still below target.
+    const behavior = makeBehavior(makeRatioGame(), makeRatioPlayer(3));
+    expect(
+      (behavior as any).shouldBuildStructure(UnitType.JumpGate, 20, false),
+    ).toBe(true);
+  });
+
+  it("stops building JumpGates once the colony ratio target is met", () => {
+    // 20 colonies * 0.2 ratio => target 4; 4 owned reaches the target.
+    const behavior = makeBehavior(makeRatioGame(), makeRatioPlayer(4));
+    expect(
+      (behavior as any).shouldBuildStructure(UnitType.JumpGate, 20, false),
+    ).toBe(false);
+  });
+});
+
+// ── JumpGate perceived cost scaling ──────────────────────────────────────────
+
+function makeCostGame(
+  costs: Partial<Record<UnitType, bigint>>,
+  disabled: Set<UnitType>,
+): any {
+  return {
+    config: () => ({
+      isUnitDisabled: (t: UnitType) => disabled.has(t),
+      gameConfig: () => ({ difficulty: Difficulty.Medium }),
+    }),
+    unitInfo: (t: UnitType) => ({ cost: () => costs[t] ?? 0n }),
+  };
+}
+
+function makeCostPlayer(credits: bigint, jumpGatesOwned: number): any {
+  return {
+    credits: () => credits,
+    unitsOwned: (t: UnitType) => (t === UnitType.JumpGate ? jumpGatesOwned : 0),
+  };
+}
+
+describe("NationStructureBehavior JumpGate perceived cost", () => {
+  // ClusterWarhead + NovaBomb disabled => save-up target is 20 antimatter
+  // torpedoes => 100 * 20 = 2000 credits.
+  const disabled = new Set([UnitType.ClusterWarhead, UnitType.NovaBomb]);
+  const costs: Partial<Record<UnitType, bigint>> = {
+    [UnitType.JumpGate]: 1000n,
+    [UnitType.AntimatterTorpedo]: 100n,
+  };
+
+  it("inflates perceived cost by 100% per owned JumpGate while saving up", () => {
+    const game = makeCostGame(costs, disabled);
+
+    const owned0 = makeBehavior(game, makeCostPlayer(500n, 0));
+    expect((owned0 as any).getPerceivedCost(UnitType.JumpGate)).toBe(1000n);
+
+    const owned2 = makeBehavior(game, makeCostPlayer(500n, 2));
+    // realCost * (1 + increasePerOwned * owned) = 1000 * (1 + 1 * 2) = 3000
+    expect((owned2 as any).getPerceivedCost(UnitType.JumpGate)).toBe(3000n);
+  });
+
+  it("does not inflate perceived cost once the save-up target is reached", () => {
+    const game = makeCostGame(costs, disabled);
+    // 5000 credits >= 2000 save-up target => real cost is used unchanged.
+    const behavior = makeBehavior(game, makeCostPlayer(5000n, 2));
+    expect((behavior as any).getPerceivedCost(UnitType.JumpGate)).toBe(1000n);
+  });
+});
+
+// ── JumpGate placement scoring ───────────────────────────────────────────────
+
+const SELF_ID = 1;
+const HOSTILE_ID = 2;
+
+/** Tile encoding for the placement mocks: a TileRef is x * 1000 + y. */
+const REF = (x: number, y: number): number => x * 1000 + y;
+const TX = (t: number): number => Math.floor(t / 1000);
+const TY = (t: number): number => t % 1000;
+
+function makePlacementGame(hostileTiles: Set<number> = new Set()): any {
+  const hostilePlayer = { isPlayer: () => true };
+  const selfPlayer = { isPlayer: () => true };
+  return {
+    config: () => ({
+      nukeMagnitudes: () => ({ outer: 10 }),
+    }),
+    magnitude: () => 0,
+    manhattanDist: (a: number, b: number) =>
+      Math.abs(TX(a) - TX(b)) + Math.abs(TY(a) - TY(b)),
+    x: (t: number) => TX(t),
+    y: (t: number) => TY(t),
+    ref: (x: number, y: number) => REF(x, y),
+    isValidCoord: () => true,
+    isSector: () => true,
+    neighbors: (t: number) =>
+      (
+        [
+          [TX(t) + 1, TY(t)],
+          [TX(t) - 1, TY(t)],
+          [TX(t), TY(t) + 1],
+          [TX(t), TY(t) - 1],
+        ] as Array<[number, number]>
+      )
+        .filter(([x, y]) => x >= 0 && y >= 0)
+        .map(([x, y]) => REF(x, y)),
+    ownerID: (t: number) => (hostileTiles.has(t) ? HOSTILE_ID : SELF_ID),
+    playerBySmallID: (id: number) =>
+      id === HOSTILE_ID ? hostilePlayer : selfPlayer,
+  };
+}
+
+function makePlacementPlayer(opts: {
+  borderTiles: number[];
+  gates?: number[];
+  bbox?: { min: { x: number; y: number }; max: { x: number; y: number } };
+}): any {
+  return {
+    smallID: () => SELF_ID,
+    borderTiles: () => new Set(opts.borderTiles),
+    units: () => (opts.gates ?? []).map((t) => makeUnit(t)),
+    largestClusterBoundingBox: opts.bbox,
+    isFriendly: () => false,
+    relation: () => Relation.Hostile,
+  };
+}
+
+describe("NationStructureBehavior.jumpGateValue placement", () => {
+  it("places the first gate in the interior near the cluster centroid", () => {
+    const game = makePlacementGame();
+    const player = makePlacementPlayer({
+      borderTiles: [REF(0, 0), REF(0, 5), REF(0, 10)],
+      gates: [],
+      bbox: { min: { x: 50, y: 5 }, max: { x: 50, y: 5 } },
+    });
+    const behavior = makeBehavior(game, player);
+    const valueFn = (behavior as any).jumpGateValue();
+
+    const interiorTile = REF(50, 5);
+    const borderTile = REF(1, 5);
+    expect(valueFn(interiorTile)).toBeGreaterThan(valueFn(borderTile));
+  });
+
+  it("biases later gates toward the hostile frontier when one exists", () => {
+    // REF(9, 10) is a hostile-owned neighbor of border tile REF(10, 10).
+    const game = makePlacementGame(new Set([REF(9, 10)]));
+    const player = makePlacementPlayer({
+      borderTiles: [REF(10, 10), REF(10, 200)],
+      gates: [REF(50, 5)],
+    });
+    const behavior = makeBehavior(game, player);
+    const valueFn = (behavior as any).jumpGateValue();
+
+    const hostileFrontierTile = REF(20, 10);
+    const peacefulFrontierTile = REF(20, 200);
+    expect(valueFn(hostileFrontierTile)).toBeGreaterThan(
+      valueFn(peacefulFrontierTile),
+    );
+  });
+
+  it("falls back to interior placement for later gates with no hostile frontier", () => {
+    // No hostile tiles => hasHostileFrontier() is false => interior heuristic
+    // is used instead of border-hugging the only (peaceful) frontier.
+    const game = makePlacementGame();
+    const player = makePlacementPlayer({
+      borderTiles: [REF(0, 0), REF(0, 5), REF(0, 10)],
+      gates: [REF(99, 99)],
+      bbox: { min: { x: 50, y: 5 }, max: { x: 50, y: 5 } },
+    });
+    const behavior = makeBehavior(game, player);
+    const valueFn = (behavior as any).jumpGateValue();
+
+    const interiorTile = REF(50, 5);
+    const borderHuggingTile = REF(1, 5);
+    expect(valueFn(interiorTile)).toBeGreaterThan(valueFn(borderHuggingTile));
   });
 });
