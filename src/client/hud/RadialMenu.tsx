@@ -20,7 +20,7 @@ import {
   SendJumpGateTeleportIntentEvent,
   SendShuttleAttackIntentEvent,
 } from "../Transport";
-import { translateText } from "../Utils";
+import { renderNumber, translateText } from "../Utils";
 import { CloseRadialMenuEvent, ShowPlayerPanelEvent } from "./events";
 
 const attackIcon = assetUrl("images/SwordIconWhite.svg");
@@ -257,6 +257,13 @@ export function RadialMenu(): React.JSX.Element | null {
   const shuttleDisabledReason =
     shuttleBuildable?.canBuild === false && shuttleBuildable.rejectReason
       ? humanReadableShuttleReason(shuttleBuildable.rejectReason)
+      : undefined;
+  // Shuttle attacks cost credits — surface the price on the button so
+  // players can see it before launching (the build menu shows costs for
+  // every other buildable, but a shuttle attack bypasses that menu).
+  const shuttleCostLabel =
+    shuttleBuildable !== undefined
+      ? renderNumber(shuttleBuildable.cost)
       : undefined;
   const canEmoji = ownerIsPlayer;
   const canOpenPlayerPanel = ownerIsPlayer && actions !== null;
@@ -657,6 +664,7 @@ export function RadialMenu(): React.JSX.Element | null {
           onClick={handleShuttle}
           color="bg-sky-700/80 hover:bg-sky-600/80"
           tooltip={shuttleDisabledReason}
+          cost={shuttleCostLabel}
         />
 
         <RadialButton
@@ -716,6 +724,11 @@ interface RadialButtonProps {
    * button is disabled (e.g. which Assault Shuttle precondition failed).
    */
   tooltip?: string;
+  /**
+   * Optional credit cost shown right-aligned on the button. Used by the
+   * Shuttle attack entry so its price is visible before launch.
+   */
+  cost?: string;
 }
 
 function RadialButton({
@@ -725,6 +738,7 @@ function RadialButton({
   onClick,
   color,
   tooltip,
+  cost,
 }: RadialButtonProps): React.JSX.Element {
   const base =
     "flex items-center gap-2 px-3 py-2 rounded text-white text-sm transition-colors";
@@ -747,6 +761,10 @@ function RadialButton({
       {disabled && tooltip ? (
         <span className="ml-auto text-[10px] text-zinc-400 italic">
           {tooltip}
+        </span>
+      ) : cost ? (
+        <span className="ml-auto text-xs font-medium text-amber-300">
+          {cost}
         </span>
       ) : null}
     </button>
