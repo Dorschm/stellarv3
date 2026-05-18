@@ -15,7 +15,7 @@ export function HeadsUpMessage(): React.JSX.Element {
 
   const catchingUpTicksRef = React.useRef(0);
   const toastTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(
-    null
+    null,
   );
 
   const CATCHING_UP_SHOW_THRESHOLD = 10;
@@ -24,7 +24,10 @@ export function HeadsUpMessage(): React.JSX.Element {
   useEffect(() => {
     const handleShowMessage = (event: CustomEvent) => {
       const { message, duration, color } = event.detail ?? {};
-      if (typeof message === "string" || (message && typeof message === "object")) {
+      if (
+        typeof message === "string" ||
+        (message && typeof message === "object")
+      ) {
         setToastMessage(message);
         setToastColor(color === "red" ? "red" : "green");
 
@@ -36,7 +39,7 @@ export function HeadsUpMessage(): React.JSX.Element {
           () => {
             setToastMessage(null);
           },
-          typeof duration === "number" ? duration ?? 2000 : 2000
+          typeof duration === "number" ? (duration ?? 2000) : 2000,
         );
       }
     };
@@ -45,7 +48,7 @@ export function HeadsUpMessage(): React.JSX.Element {
     return () => {
       window.removeEventListener(
         "show-message",
-        handleShowMessage as EventListener
+        handleShowMessage as EventListener,
       );
       if (toastTimeoutRef.current) {
         clearTimeout(toastTimeoutRef.current);
@@ -70,7 +73,7 @@ export function HeadsUpMessage(): React.JSX.Element {
       gameView.config().hasExtendedSpawnImmunity() &&
         !gameView.inSpawnPhase() &&
         gameView.isSpawnImmunityActive() &&
-        ticksSinceSpawnEnd < showImmunityHudDuration
+        ticksSinceSpawnEnd < showImmunityHudDuration,
     );
 
     const currentlyCatchingUp =
@@ -82,15 +85,10 @@ export function HeadsUpMessage(): React.JSX.Element {
       catchingUpTicksRef.current = 0;
     }
 
-    setIsCatchingUp(
-      catchingUpTicksRef.current >= CATCHING_UP_SHOW_THRESHOLD
-    );
+    setIsCatchingUp(catchingUpTicksRef.current >= CATCHING_UP_SHOW_THRESHOLD);
 
     setIsVisible(
-      gameView.inSpawnPhase() ||
-        isPaused ||
-        isImmunityActive ||
-        isCatchingUp
+      gameView.inSpawnPhase() || isPaused || isImmunityActive || isCatchingUp,
     );
   }, [tick, gameView, isPaused, isImmunityActive, isCatchingUp]);
 
@@ -119,7 +117,7 @@ export function HeadsUpMessage(): React.JSX.Element {
     <div style={{ pointerEvents: "none" }}>
       {toastMessage ? (
         <div
-          className="fixed top-6 left-1/2 -translate-x-1/2 z-[800] px-6 py-4 rounded-xl transition-all duration-300 animate-fade-in-out"
+          className="fixed top-36 left-1/2 -translate-x-1/2 z-[800] px-6 py-4 rounded-xl transition-all duration-300 animate-fade-in-out"
           style={{
             maxWidth: "90vw",
             minWidth: "200px",
