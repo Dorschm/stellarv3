@@ -36,6 +36,53 @@ const KILLABLE_BY_NUKE: readonly UnitType[] = (
     t !== UnitType.PointDefenseMissile,
 );
 
+/**
+ * Cap on how many `ClusterWarheadSubmunition` detonations may run in a
+ * single game tick. A separated MRV can land dozens of submunitions on
+ * the same tick; each `detonate()` runs tile destruction, population
+ * damage, unit deletion, building redraw touches, and stats. Letting
+ * them all fire at once produces a visible freeze/stutter. Throttling
+ * to 3/tick spreads the work over more ticks without changing the total
+ * submunition count or total damage — only the detonation timing.
+ *
+ * Only `UnitType.ClusterWarheadSubmunition` is throttled; AntimatterTorpedo,
+ * NovaBomb, and the parent ClusterWarhead detonate immediately.
+ */
+const CLUSTER_SUBMUNITION_DETONATIONS_PER_TICK = 3;
+
+/**
+ * Per-game cluster-submunition detonation budget, reset every tick. Keyed
+ * by the `Game` instance via a `WeakMap` so the budget is scoped to a
+ * single game — it never leaks between simultaneous games or between
+ * tests, and the entry is garbage-collected with the game. The throttle
+ * is fully deterministic: it depends only on `mg.ticks()`, never on
+ * wall-clock time.
+ */
+const clusterDetonationBudget = new WeakMap<
+  Game,
+  { tick: number; count: number }
+>();
+
+/**
+ * Returns `true` and consumes one detonation slot if the current tick
+ * still has cluster-submunition detonation budget; returns `false` if the
+ * per-tick cap has already been reached. A throttled submunition's
+ * `NukeExecution` stays active and retries on a later tick.
+ */
+function tryConsumeClusterDetonationBudget(mg: Game): boolean {
+  const tick = mg.ticks();
+  let entry = clusterDetonationBudget.get(mg);
+  if (entry === undefined || entry.tick !== tick) {
+    entry = { tick, count: 0 };
+    clusterDetonationBudget.set(mg, entry);
+  }
+  if (entry.count >= CLUSTER_SUBMUNITION_DETONATIONS_PER_TICK) {
+    return false;
+  }
+  entry.count++;
+  return true;
+}
+
 export class NukeExecution implements Execution {
   private active = true;
   private mg: Game;
@@ -237,6 +284,19 @@ export class NukeExecution implements Execution {
     // Move to next tile
     const result = this.pathFinder.next(this.src!, this.dst, this.speed);
     if (result.status === PathStatus.COMPLETE) {
+      // Throttle cluster-warhead submunition detonations: at most
+      // CLUSTER_SUBMUNITION_DETONATIONS_PER_TICK may run per tick. When the
+      // budget is exhausted, leave this execution active so it retries on a
+      // later tick — the parabola pathfinder keeps returning COMPLETE once
+      // the curve is consumed, so flight time and damage are unchanged and
+      // only the detonation timing spreads. Non-cluster nukes are never
+      // throttled.
+      if (
+        this.nuke.type() === UnitType.ClusterWarheadSubmunition &&
+        !tryConsumeClusterDetonationBudget(this.mg)
+      ) {
+        return;
+      }
       this.detonate();
       return;
     } else if (result.status === PathStatus.NEXT) {

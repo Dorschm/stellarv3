@@ -520,6 +520,116 @@ describe("ClusterWarheadExecution", () => {
     }
   });
 
+  test("cluster submunition detonations are throttled to 3 per tick", async () => {
+    // Spawn more than 3 `ClusterWarheadSubmunition` NukeExecutions whose
+    // `src === dst`, so every one of them reaches `PathStatus.COMPLETE` on
+    // the same tick. The per-tick throttle must let at most 3 detonate per
+    // tick, leaving the rest active to retry on later ticks — total count
+    // and eventual damage are preserved, only the timing spreads.
+    const targetTile = game.ref(50, 50);
+    expect(game.owner(targetTile)).toBe(otherPlayer);
+
+    const SUBMUNITION_COUNT = 8;
+    const execs: NukeExecution[] = [];
+    for (let i = 0; i < SUBMUNITION_COUNT; i++) {
+      // src === dst → the parabola curve is degenerate and the execution
+      // reaches COMPLETE as soon as it can move, so all 8 are ready to
+      // detonate on the same tick.
+      const exec = new NukeExecution(
+        UnitType.ClusterWarheadSubmunition,
+        player,
+        targetTile,
+        targetTile,
+      );
+      execs.push(exec);
+      game.addExecution(exec);
+    }
+
+    // Advance ticks, recording how many submunition executions finish
+    // (detonate → inactive) on each tick.
+    const perTickDetonations: number[] = [];
+    let prevInactive = 0;
+    let guard = 0;
+    while (execs.some((e) => e.isActive()) && guard < 50) {
+      game.executeNextTick();
+      guard++;
+      const inactive = execs.filter((e) => !e.isActive()).length;
+      const delta = inactive - prevInactive;
+      if (delta > 0) perTickDetonations.push(delta);
+      prevInactive = inactive;
+    }
+
+    // Acceptance criterion 1 — no tick detonates more than 3.
+    for (const detonations of perTickDetonations) {
+      expect(detonations).toBeLessThanOrEqual(3);
+    }
+    // Acceptance criterion 4 — every submunition eventually detonates.
+    expect(prevInactive).toBe(SUBMUNITION_COUNT);
+    // Acceptance criterion 6 — 8 submunitions at 3/tick must spread across
+    // at least ceil(8 / 3) = 3 ticks.
+    expect(perTickDetonations.length).toBeGreaterThanOrEqual(3);
+  });
+
+  test("non-cluster nukes (AntimatterTorpedo) are not throttled", async () => {
+    // The cluster throttle must scope to `ClusterWarheadSubmunition` only.
+    // Give each AntimatterTorpedo its own OrbitalStrikePlatform, with the
+    // platform → target offset vector identical for every pair (always
+    // (0, +5)). Identical relative geometry means identical parabolic
+    // flight, so all torpedoes reach `PathStatus.COMPLETE` on the same
+    // tick. With 8 detonations on one tick (> the 3/tick cluster cap),
+    // this proves non-cluster nukes are never deferred.
+    const platformTiles: [number, number][] = [
+      [30, 30],
+      [40, 30],
+      [50, 30],
+      [60, 30],
+      [30, 45],
+      [40, 45],
+      [50, 45],
+      [60, 45],
+    ];
+    for (const [x, y] of platformTiles) {
+      const tile = game.ref(x, y);
+      expect(game.map().isSector(tile)).toBe(true);
+      player.conquer(tile);
+      player.buildUnit(UnitType.OrbitalStrikePlatform, tile, {});
+    }
+
+    const TORPEDO_COUNT = platformTiles.length;
+    const execs: NukeExecution[] = [];
+    for (const [x, y] of platformTiles) {
+      // Target tile sits 5 tiles south of its own platform. `canBuild` →
+      // `nukeSpawn` picks the closest platform by Manhattan distance, so
+      // each torpedo launches from its dedicated platform — distinct
+      // platforms mean no launch-cooldown contention, and the identical
+      // (0, +5) offset makes every flight the same length.
+      const exec = new NukeExecution(
+        UnitType.AntimatterTorpedo,
+        player,
+        game.ref(x, y + 5),
+      );
+      execs.push(exec);
+      game.addExecution(exec);
+    }
+
+    const perTickDetonations: number[] = [];
+    let prevInactive = 0;
+    let guard = 0;
+    while (execs.some((e) => e.isActive()) && guard < 100) {
+      game.executeNextTick();
+      guard++;
+      const inactive = execs.filter((e) => !e.isActive()).length;
+      const delta = inactive - prevInactive;
+      if (delta > 0) perTickDetonations.push(delta);
+      prevInactive = inactive;
+    }
+
+    // All torpedoes detonate, and the busiest tick sees more than 3 go off
+    // at once — the cluster cap does not apply to them.
+    expect(prevInactive).toBe(TORPEDO_COUNT);
+    expect(Math.max(...perTickDetonations)).toBeGreaterThan(3);
+  });
+
   test("MIRV launch does not freeze the game: bounded per-tick cost, no path-not-found floods, forward progress", async () => {
     // Freeze regression — fix commits `87626c7` (path-not-found floods from a
     // corrupted `separateDst` after a misplaced `mg.x(...)` wrap) and the
