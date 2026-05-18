@@ -460,7 +460,7 @@
     "run_score_planets": "Planets",
     "run_score_systems": "Systems",
     "run_score_survived": "Survived",
-    "run_score": "Run score: {score}"
+    "run_score": "Run Score"
   },
   "leaderboard": {
     "player": "Player",
