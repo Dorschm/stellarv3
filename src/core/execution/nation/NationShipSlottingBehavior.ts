@@ -75,20 +75,10 @@ export class NationShipSlottingBehavior {
 
     // Pick one cruiser fairly — this runs every cadence so no priority needed.
     const cruiser = this.random.randElement(candidates);
-    const type = this.decideSlotType(cruiser);
+    const type = this.pickSlotType(cruiser);
 
-    // Guard: never dispatch a disabled or non-hostable structure type.
-    if (this.game.config().isUnitDisabled(type)) {
-      return false;
-    }
-    if (!this.game.config().battlecruiserHostableStructures().includes(type)) {
-      return false;
-    }
-
-    // Guard: check credits up-front so we don't spam HOST_BUILD_REJECTED
-    // events — the host-only path would reject anyway.
-    const cost = this.game.unitInfo(type).cost(this.game, this.player);
-    if (this.player.credits() < cost) {
+    // No structure (preferred or alternate) is currently slottable.
+    if (type === undefined) {
       return false;
     }
 
@@ -105,6 +95,64 @@ export class NationShipSlottingBehavior {
       ),
     );
     return true;
+  }
+
+  /**
+   * Resolve the structure type to actually slot onto `cruiser`. Treats
+   * `decideSlotType()` as the *preferred* choice, but for Medium/Hard/
+   * Impossible falls back to the other allowed structure when the preferred
+   * one is disabled, not in `battlecruiserHostableStructures()`, or currently
+   * unaffordable — so a configurable disable of one structure no longer
+   * strands the slot. Easy stays intentionally Colony-only with no fallback.
+   * Returns `undefined` when neither option can be slotted right now.
+   */
+  private pickSlotType(cruiser: Unit): UnitType | undefined {
+    const { difficulty } = this.game.config().gameConfig();
+    const preferred = this.decideSlotType(cruiser);
+    if (this.canSlotStructure(preferred)) {
+      return preferred;
+    }
+
+    // Easy nations only ever slot Colony — no alternate is permitted.
+    if (difficulty === Difficulty.Easy) {
+      return undefined;
+    }
+
+    const alternate =
+      preferred === UnitType.Colony
+        ? UnitType.OrbitalStrikePlatform
+        : UnitType.Colony;
+    if (this.canSlotStructure(alternate)) {
+      return alternate;
+    }
+    return undefined;
+  }
+
+  /**
+   * Whether `type` can be slotted right now: enabled, hostable on a
+   * Battlecruiser, and affordable. Checking credits up-front avoids spamming
+   * HOST_BUILD_REJECTED events — the host-only path would reject anyway.
+   */
+  private canSlotStructure(type: UnitType): boolean {
+    if (this.game.config().isUnitDisabled(type)) {
+      return false;
+    }
+    if (!this.game.config().battlecruiserHostableStructures().includes(type)) {
+      return false;
+    }
+    const cost = this.game.unitInfo(type).cost(this.game, this.player);
+    return this.player.credits() >= cost;
+  }
+
+  /**
+   * Count this nation's Battlecruisers whose slotted structure is `type` —
+   * i.e. fleet-local ship-slot composition, excluding ordinary ground
+   * structures built by `NationStructureBehavior`.
+   */
+  private hostedStructureCount(type: UnitType): number {
+    return this.player
+      .units(UnitType.Battlecruiser)
+      .filter((cruiser) => cruiser.slottedStructure()?.type() === type).length;
   }
 
   /**
@@ -126,12 +174,15 @@ export class NationShipSlottingBehavior {
       return UnitType.OrbitalStrikePlatform;
     }
 
-    // Impossible: contextual — slot whichever structure the bot owns fewer of.
+    // Impossible: contextual — slot whichever structure the fleet has fewer
+    // of *in cruiser slots*. Counting only Battlecruiser-hosted structures
+    // keeps the tie-break driven by cruiser-slot composition rather than
+    // unrelated ground Colonies built by `NationStructureBehavior`.
     if (difficulty === Difficulty.Impossible) {
-      const colonies = this.player.units(UnitType.Colony).length;
-      const platforms = this.player.units(
+      const colonies = this.hostedStructureCount(UnitType.Colony);
+      const platforms = this.hostedStructureCount(
         UnitType.OrbitalStrikePlatform,
-      ).length;
+      );
       if (colonies < platforms) {
         return UnitType.Colony;
       }

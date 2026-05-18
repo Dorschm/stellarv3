@@ -173,6 +173,62 @@ describe("NationShipSlottingBehavior — slot type selection", () => {
       UnitType.OrbitalStrikePlatform,
     );
   });
+
+  test("Medium falls back to Colony when the preferred OSP is unavailable", async () => {
+    await buildGame({ difficulty: Difficulty.Medium });
+    const cruiser = spawnCruiser();
+    // Cruiser sits on a sector tile, so it is not Colony-eligible — the
+    // preferred slot type for Medium is therefore OrbitalStrikePlatform.
+    expect(game.isDeepSpace(cruiser.tile())).toBe(false);
+    // Disable exactly that preferred type. The behavior must not strand the
+    // slot: it should evaluate the alternate hostable structure (Colony).
+    game.config().isUnitDisabled = (unit: UnitType) =>
+      unit === UnitType.OrbitalStrikePlatform;
+    const addExecSpy = vi.spyOn(game, "addExecution");
+
+    expect(makeBehavior().maybeSlotStructureOnEmptyCruiser()).toBe(true);
+
+    const constructions = dispatchedConstructions(addExecSpy);
+    expect(constructions).toHaveLength(1);
+    const fields = constructionFields(constructions[0]);
+    expect(fields.constructionType).toBe(UnitType.Colony);
+    expect(fields.hostBattlecruiserId).toBe(cruiser.id());
+
+    executeTicks(game, 4);
+    expect(cruiser.slottedStructure()?.type()).toBe(UnitType.Colony);
+  });
+
+  test("Impossible balances cruiser slots from hosted structures, not ground Colonies", async () => {
+    await buildGame({ difficulty: Difficulty.Impossible });
+    // Many ordinary ground Colonies built by normal expansion. These must
+    // NOT skew the contextual tie-break, which should only weigh
+    // Battlecruiser-hosted structures.
+    for (let i = 0; i < 6; i++) {
+      nationPlayer.buildUnit(UnitType.Colony, game.ref(10 + i, 10), {});
+    }
+    const cruiser = spawnCruiser();
+    // Building those ground Colonies escalates Colony cost and drains the
+    // starting balance — top up so the credit guard is not what's tested.
+    nationPlayer.addCredits(50_000_000n);
+    // Make the cruiser Colony-eligible regardless of the map's terrain.
+    vi.spyOn(game, "isDeepSpace").mockReturnValue(true);
+    vi.spyOn(game, "circleSearch").mockReturnValue(new Set([game.ref(6, 6)]));
+    // No structures are hosted on cruisers yet, so the fleet-local Colony
+    // and OSP counts are equal and the tie-break resolves via `chance`.
+    // Pin it to Colony; with the old empire-wide count the 6 ground
+    // Colonies would instead force OrbitalStrikePlatform.
+    const random = makeRandom();
+    vi.spyOn(random, "chance").mockReturnValue(true);
+    const addExecSpy = vi.spyOn(game, "addExecution");
+
+    expect(makeBehavior(random).maybeSlotStructureOnEmptyCruiser()).toBe(true);
+
+    const constructions = dispatchedConstructions(addExecSpy);
+    expect(constructions).toHaveLength(1);
+    const fields = constructionFields(constructions[0]);
+    expect(fields.constructionType).toBe(UnitType.Colony);
+    expect(fields.hostBattlecruiserId).toBe(cruiser.id());
+  });
 });
 
 describe("NationShipSlottingBehavior — guard paths", () => {

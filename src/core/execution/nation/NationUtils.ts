@@ -20,6 +20,69 @@ export function randTerritoryTileArray(
   return tiles;
 }
 
+/**
+ * Candidate-tile sampler dedicated to Jump Gate placement.
+ *
+ * Generic `randTerritoryTileArray()` sampling uniformly draws a handful of owned
+ * tiles, which on large territories easily misses the hostile frontier entirely
+ * — hostile-border tiles are a tiny fraction of the owned area. This sampler
+ * instead anchors on a caller-supplied set of tiles (rival-facing border tiles
+ * for a later gate, or centroid-near tiles for the first gate) and guarantees
+ * those anchors — plus their owned neighbours, so the scorer can pick a tile a
+ * few steps inside the border — appear in the result. Any remaining slots are
+ * filled with generic interior tiles so the scorer always has fallbacks.
+ */
+export function jumpGateCandidateTiles(
+  random: PseudoRandom,
+  mg: Game,
+  player: Player,
+  anchorTiles: Iterable<TileRef>,
+  numTiles: number,
+): TileRef[] {
+  // Anchor-derived candidates: each anchor plus its owned neighbours.
+  const anchorCandidates = new Set<TileRef>();
+  for (const tile of anchorTiles) {
+    if (mg.owner(tile) === player) {
+      anchorCandidates.add(tile);
+    }
+    for (const neighbor of mg.neighbors(tile)) {
+      if (mg.owner(neighbor) === player) {
+        anchorCandidates.add(neighbor);
+      }
+    }
+  }
+
+  const result: TileRef[] = [];
+
+  // Anchor candidates take priority so the frontier is never sampled away.
+  const anchorArray = Array.from(anchorCandidates);
+  if (anchorArray.length > numTiles) {
+    const remaining = new Set(anchorArray);
+    while (result.length < numTiles) {
+      const t = random.randFromSet(remaining);
+      remaining.delete(t);
+      result.push(t);
+    }
+    return result;
+  }
+  result.push(...anchorArray);
+
+  // Fill the remaining slots with generic interior tiles as fallbacks.
+  const seen = new Set(result);
+  for (const tile of randTerritoryTileArray(random, mg, player, numTiles)) {
+    if (result.length >= numTiles) {
+      break;
+    }
+    if (seen.has(tile)) {
+      continue;
+    }
+    seen.add(tile);
+    result.push(tile);
+  }
+
+  return result;
+}
+
 function randTerritoryTile(
   random: PseudoRandom,
   mg: Game,

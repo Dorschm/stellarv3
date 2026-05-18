@@ -157,16 +157,17 @@ export class NationJumpGateBehavior {
       return false;
     }
 
-    // Score each gate by the population of nearby incoming attacks.
+    // Score each gate by the single largest incoming attack near it — the
+    // threatened gate answers the biggest invasion, not the densest cluster.
     const threatenedGates = gates.filter(
-      (gate) => this.gateThreatScore(gate, threats, radius) > 0,
+      (gate) => this.gateLargestIncomingAttack(gate, threats, radius) > 0,
     );
     if (threatenedGates.length === 0) {
       return false;
     }
     const threatenedGate = this.pickExtremum(
       threatenedGates,
-      (gate) => this.gateThreatScore(gate, threats, radius),
+      (gate) => this.gateLargestIncomingAttack(gate, threats, radius),
       "max",
     );
     if (threatenedGate === null) {
@@ -202,12 +203,16 @@ export class NationJumpGateBehavior {
       return false;
     }
 
-    return JumpGateTravel.teleport(
+    const teleported = JumpGateTravel.teleport(
       this.game,
       cruiser,
       sourceGate,
       threatenedGate,
     );
+    if (teleported) {
+      this.resetCruiserPatrolIntent(cruiser, threatenedGate);
+    }
+    return teleported;
   }
 
   /**
@@ -282,7 +287,16 @@ export class NationJumpGateBehavior {
       return false;
     }
 
-    return JumpGateTravel.teleport(this.game, cruiser, sourceGate, destGate);
+    const teleported = JumpGateTravel.teleport(
+      this.game,
+      cruiser,
+      sourceGate,
+      destGate,
+    );
+    if (teleported) {
+      this.resetCruiserPatrolIntent(cruiser, destGate);
+    }
+    return teleported;
   }
 
   /**
@@ -346,6 +360,25 @@ export class NationJumpGateBehavior {
   }
 
   /**
+   * Re-home a Battlecruiser's patrol intent on the gate it was just
+   * teleported to. `JumpGateTravel.teleport(...)` only calls `unit.move(...)`,
+   * so without this the cruiser's `patrolTile` still points at its
+   * pre-teleport home and `BattlecruiserExecution.randomTile()` would steer
+   * it straight back across the map. The stale `targetTile` is cleared so the
+   * next `BattlecruiserExecution` tick picks a fresh patrol point around the
+   * new gate instead of resuming the old route — mirroring the
+   * patrol+target pair `MoveBattlecruiserExecution` sets when relocating a
+   * cruiser intentionally.
+   *
+   * Scoped to AI Battlecruiser teleports on purpose: `JumpGateTravel.teleport`
+   * stays unchanged for AssaultShuttles and every other unit type.
+   */
+  private resetCruiserPatrolIntent(cruiser: Unit, destinationGate: Unit): void {
+    cruiser.setPatrolTile(destinationGate.tile());
+    cruiser.setTargetTile(undefined);
+  }
+
+  /**
    * Active, fully-built, unengaged Battlecruisers farther than `radius` from
    * the threatened gate — recalling something already nearby is pointless.
    */
@@ -366,21 +399,26 @@ export class NationJumpGateBehavior {
   }
 
   /**
-   * Total incoming-attack population whose attacker territory center lies
-   * within `radius` Manhattan distance of `gate`.
+   * Population of the single largest incoming attack whose attacker territory
+   * center lies within `radius` Manhattan distance of `gate`. Returns `0` when
+   * no incoming attack qualifies — driving gate selection by the biggest
+   * invasion rather than the summed threat of a cluster.
    */
-  private gateThreatScore(
+  private gateLargestIncomingAttack(
     gate: Unit,
     threats: { population: number; center: TileRef }[],
     radius: number,
   ): number {
-    let score = 0;
+    let largest = 0;
     for (const threat of threats) {
-      if (this.game.manhattanDist(gate.tile(), threat.center) <= radius) {
-        score += threat.population;
+      if (
+        this.game.manhattanDist(gate.tile(), threat.center) <= radius &&
+        threat.population > largest
+      ) {
+        largest = threat.population;
       }
     }
-    return score;
+    return largest;
   }
 
   /** Gate from `gates` nearest `tile` by Manhattan distance. */

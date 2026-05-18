@@ -164,6 +164,237 @@ describe("NationJumpGateBehavior — shuttle forward-deploy connectivity guard",
   });
 });
 
+describe("NationJumpGateBehavior — Battlecruiser patrol-intent reset after teleport", () => {
+  /**
+   * Add a Nation player and give it a one-tile territory so
+   * `territoryCenterTile()` resolves a usable centroid around (x, y) — the
+   * attacker/target an incoming or outgoing attack needs to mark a gate.
+   */
+  function addPlayerWithTerritory(name: string, x: number, y: number): Player {
+    const player = game.addPlayer(
+      new PlayerInfo(name, PlayerType.Nation, `${name}-client`, name),
+    );
+    player.conquer(game.ref(x, y));
+    return player;
+  }
+
+  test("defensive recall re-homes the cruiser's patrol center and clears its stale target", async () => {
+    await buildGame(Difficulty.Hard);
+
+    // Build the threatened gate FIRST so it wins the deterministic tie-break
+    // in `pickExtremum` (gates are scored in build order under makeRandom()).
+    const threatenedGate = spawnGate(game.ref(158, 158));
+    const homeGate = spawnGate(game.ref(10, 10));
+
+    // Attacker territory sits next to the threatened gate (within the Hard
+    // recall radius of 100); far from the home gate (300 away → not threatened).
+    const attacker = addPlayerWithTerritory("attacker", 160, 160);
+
+    // Cruiser patrolling far from the threatened gate (> recall radius), near
+    // the home gate, still carrying a stale target tile from its old route.
+    const oldPatrol = game.ref(12, 12);
+    const cruiser = nationPlayer.buildUnit(UnitType.Battlecruiser, oldPatrol, {
+      patrolTile: oldPatrol,
+    });
+    const staleTarget = game.ref(20, 20);
+    cruiser.setTargetTile(staleTarget);
+
+    const fakeAttack = {
+      population: () => 5000,
+      attacker: () => attacker,
+      target: () => nationPlayer,
+      isActive: () => true,
+    } as unknown as Attack;
+    vi.spyOn(nationPlayer, "incomingAttacks").mockReturnValue([fakeAttack]);
+
+    expect(makeBehavior().maybeTeleportUnits()).toBe(true);
+
+    // The cruiser teleported onto the threatened gate...
+    expect(cruiser.tile()).toBe(threatenedGate.tile());
+    // ...its patrol center now follows the destination gate...
+    expect(cruiser.patrolTile()).toBe(threatenedGate.tile());
+    expect(cruiser.patrolTile()).not.toBe(oldPatrol);
+    // ...and the stale pre-teleport target is cleared so the next
+    // BattlecruiserExecution tick patrols around the new gate.
+    expect(cruiser.targetTile()).toBeUndefined();
+    // Source gate is untouched.
+    expect(homeGate.tile()).toBe(game.ref(10, 10));
+  });
+
+  test("offensive reposition re-homes the cruiser's patrol center and clears its stale target", async () => {
+    await buildGame(Difficulty.Hard);
+
+    // Frontier gate built first; the home gate is the cruiser's source.
+    const frontierGate = spawnGate(game.ref(158, 158));
+    const homeGate = spawnGate(game.ref(10, 10));
+
+    // Outgoing-attack target territory next to the frontier gate.
+    const target = addPlayerWithTerritory("target", 160, 160);
+
+    const oldPatrol = game.ref(12, 12);
+    const cruiser = nationPlayer.buildUnit(UnitType.Battlecruiser, oldPatrol, {
+      patrolTile: oldPatrol,
+    });
+    const staleTarget = game.ref(20, 20);
+    cruiser.setTargetTile(staleTarget);
+
+    const fakeAttack = {
+      population: () => 5000,
+      attacker: () => nationPlayer,
+      target: () => target,
+      isActive: () => true,
+    } as unknown as Attack;
+    vi.spyOn(nationPlayer, "outgoingAttacks").mockReturnValue([fakeAttack]);
+    // No incoming attacks → defensive recall is skipped first.
+    vi.spyOn(nationPlayer, "incomingAttacks").mockReturnValue([]);
+
+    expect(makeBehavior().maybeTeleportUnits()).toBe(true);
+
+    expect(cruiser.tile()).toBe(frontierGate.tile());
+    expect(cruiser.patrolTile()).toBe(frontierGate.tile());
+    expect(cruiser.patrolTile()).not.toBe(oldPatrol);
+    expect(cruiser.targetTile()).toBeUndefined();
+    expect(homeGate.tile()).toBe(game.ref(10, 10));
+  });
+
+  test("AssaultShuttle forward-deploy leaves the shuttle's target tile intact", async () => {
+    await buildGame(Difficulty.Hard);
+
+    const target = game.ref(30, 30);
+    // Closer-but-disconnected vs farther-but-connected — same setup as the
+    // connectivity-guard test; the shuttle lands on the connected gate.
+    const disconnectedGate = spawnGate(game.ref(28, 28));
+    const connectedGate = spawnGate(game.ref(12, 12));
+
+    const shuttle = nationPlayer.buildUnit(
+      UnitType.AssaultShuttle,
+      game.ref(5, 5),
+      { population: 100, targetTile: target },
+    );
+
+    stubDeepSpaceComponents(
+      new Map<TileRef, number>([
+        [target, 1],
+        [connectedGate.tile(), 1],
+        [disconnectedGate.tile(), 2],
+      ]),
+    );
+
+    expect(makeBehavior().maybeTeleportUnits()).toBe(true);
+
+    // The shuttle teleported, but its combat target tile is untouched — the
+    // patrol-intent reset is specific to Battlecruiser teleports.
+    expect(shuttle.tile()).toBe(connectedGate.tile());
+    expect(shuttle.targetTile()).toBe(target);
+  });
+});
+
+describe("NationJumpGateBehavior — shuttle forward-deploy probability/selection semantics", () => {
+  /**
+   * Build an eligible AssaultShuttle: active, not retreating, with a target
+   * tile, sitting on a tile whose teleport to `connectedGate` shortens the
+   * remaining trip.
+   */
+  function spawnShuttle(tile: TileRef, target: TileRef): Unit {
+    return nationPlayer.buildUnit(UnitType.AssaultShuttle, tile, {
+      population: 100,
+      targetTile: target,
+    });
+  }
+
+  test("teleports the first eligible shuttle in build order", async () => {
+    await buildGame(Difficulty.Hard);
+
+    const target = game.ref(30, 30);
+    spawnGate(game.ref(28, 28));
+    const connectedGate = spawnGate(game.ref(12, 12));
+
+    // Two eligible shuttles — only the first built should be teleported,
+    // matching the per-eligible-shuttle, first-match iteration semantics.
+    const shuttleA = spawnShuttle(game.ref(5, 5), target);
+    const shuttleATile = shuttleA.tile();
+    const shuttleB = spawnShuttle(game.ref(6, 6), target);
+    const shuttleBTile = shuttleB.tile();
+
+    stubDeepSpaceComponents(
+      new Map<TileRef, number>([
+        [target, 1],
+        [connectedGate.tile(), 1],
+        [game.ref(28, 28), 1],
+      ]),
+    );
+
+    expect(makeBehavior().maybeTeleportUnits()).toBe(true);
+    // First eligible shuttle teleported; the second is left untouched.
+    expect(shuttleA.tile()).not.toBe(shuttleATile);
+    expect(shuttleB.tile()).toBe(shuttleBTile);
+  });
+
+  test("applies the acceptance probability per eligible shuttle", async () => {
+    await buildGame(Difficulty.Hard);
+
+    const target = game.ref(30, 30);
+    spawnGate(game.ref(28, 28));
+    const connectedGate = spawnGate(game.ref(12, 12));
+
+    const shuttleA = spawnShuttle(game.ref(5, 5), target);
+    const shuttleATile = shuttleA.tile();
+    const shuttleB = spawnShuttle(game.ref(6, 6), target);
+    const shuttleBTile = shuttleB.tile();
+
+    stubDeepSpaceComponents(
+      new Map<TileRef, number>([
+        [target, 1],
+        [connectedGate.tile(), 1],
+        [game.ref(28, 28), 1],
+      ]),
+    );
+
+    // The probability gate fails for the first eligible shuttle but passes
+    // for the second — only per-eligible-shuttle iteration reaches shuttle B.
+    const random = new PseudoRandom(0);
+    vi.spyOn(random, "nextInt").mockReturnValueOnce(100).mockReturnValue(0);
+    const behavior = new NationJumpGateBehavior(random, game, nationPlayer);
+
+    expect(behavior.maybeTeleportUnits()).toBe(true);
+    // Shuttle A's chance failed, so it stayed put; shuttle B's passed.
+    expect(shuttleA.tile()).toBe(shuttleATile);
+    expect(shuttleB.tile()).not.toBe(shuttleBTile);
+  });
+
+  test("does not teleport when the chance fails for every eligible shuttle", async () => {
+    await buildGame(Difficulty.Hard);
+
+    const target = game.ref(30, 30);
+    spawnGate(game.ref(28, 28));
+    const connectedGate = spawnGate(game.ref(12, 12));
+
+    const shuttleA = spawnShuttle(game.ref(5, 5), target);
+    const shuttleATile = shuttleA.tile();
+    const shuttleB = spawnShuttle(game.ref(6, 6), target);
+    const shuttleBTile = shuttleB.tile();
+
+    stubDeepSpaceComponents(
+      new Map<TileRef, number>([
+        [target, 1],
+        [connectedGate.tile(), 1],
+        [game.ref(28, 28), 1],
+      ]),
+    );
+
+    // Probability gate fails on every draw — no shuttle is forward-deployed.
+    const random = new PseudoRandom(0);
+    vi.spyOn(random, "nextInt").mockReturnValue(100);
+    const teleportSpy = vi.spyOn(JumpGateTravel, "teleport");
+    const behavior = new NationJumpGateBehavior(random, game, nationPlayer);
+
+    expect(behavior.maybeTeleportUnits()).toBe(false);
+    expect(teleportSpy).not.toHaveBeenCalled();
+    expect(shuttleA.tile()).toBe(shuttleATile);
+    expect(shuttleB.tile()).toBe(shuttleBTile);
+  });
+});
+
 describe("NationJumpGateBehavior — territory centroid resilience", () => {
   /**
    * Add a Nation player but never spawn it, so it owns no tiles and has

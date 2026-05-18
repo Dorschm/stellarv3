@@ -20,7 +20,7 @@ import {
 import { ConstructionExecution } from "../ConstructionExecution";
 import { UpgradeStructureExecution } from "../UpgradeStructureExecution";
 import { closestTile, closestTwoTiles } from "../Util";
-import { randTerritoryTileArray } from "./NationUtils";
+import { jumpGateCandidateTiles, randTerritoryTileArray } from "./NationUtils";
 
 /**
  * Configuration for how many structures of each type a nation should build
@@ -468,10 +468,14 @@ export class NationStructureBehavior {
   }
 
   private structureSpawnTile(type: UnitType): TileRef | null {
-    const tiles =
-      type === UnitType.Spaceport
-        ? this.randCoastalTileArray(25)
-        : randTerritoryTileArray(this.random, this.game, this.player, 25);
+    let tiles: TileRef[];
+    if (type === UnitType.Spaceport) {
+      tiles = this.randCoastalTileArray(25);
+    } else if (type === UnitType.JumpGate) {
+      tiles = this.jumpGateCandidateTiles(25);
+    } else {
+      tiles = randTerritoryTileArray(this.random, this.game, this.player, 25);
+    }
     if (tiles.length === 0) {
       return null;
     }
@@ -1078,6 +1082,56 @@ export class NationStructureBehavior {
       }
     }
     return false;
+  }
+
+  /**
+   * Collects every border tile that genuinely faces rival (non-friendly,
+   * player-owned) territory. These anchor the hostile-frontier Jump Gate
+   * candidate set so the scorer always sees frontier tiles.
+   */
+  private hostileFrontierBorderTiles(): TileRef[] {
+    const game = this.game;
+    const player = this.player;
+    const result: TileRef[] = [];
+    for (const tile of player.borderTiles()) {
+      for (const neighborTile of game.neighbors(tile)) {
+        if (!game.isSector(neighborTile)) continue;
+        const id = game.ownerID(neighborTile);
+        if (id === player.smallID()) continue;
+        const neighbor = game.playerBySmallID(id);
+        if (!neighbor.isPlayer()) continue;
+        if (player.isFriendly(neighbor)) continue;
+        result.push(tile);
+        break;
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Builds the Jump Gate candidate-tile set. A later gate facing a genuine
+   * hostile frontier anchors on rival-facing border tiles so jumpGateValue()
+   * always sees the frontier even on large territories; the first gate (or an
+   * isolated/fully-allied nation) anchors on the territory centroid for
+   * interior placement. The decision mirrors jumpGateValue() exactly.
+   */
+  private jumpGateCandidateTiles(numTiles: number): TileRef[] {
+    const existingGates = this.player.units(UnitType.JumpGate);
+    const useFrontier = existingGates.length > 0 && this.hasHostileFrontier();
+    let anchors: TileRef[];
+    if (useFrontier) {
+      anchors = this.hostileFrontierBorderTiles();
+    } else {
+      const centroid = this.playerCenterTile();
+      anchors = centroid !== null ? [centroid] : [];
+    }
+    return jumpGateCandidateTiles(
+      this.random,
+      this.game,
+      this.player,
+      anchors,
+      numTiles,
+    );
   }
 
   /**
