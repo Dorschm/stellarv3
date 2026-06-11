@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { GameEnv } from "../../core/configuration/Config";
 import { GameType } from "../../core/game/Game";
 import { MultiTabDetector } from "../MultiTabDetector";
@@ -6,7 +6,7 @@ import { translateText } from "../Utils";
 import { useGameTick } from "./useGameTick";
 
 export function MultiTabModal(): React.JSX.Element {
-  const { gameView } = useGameTick(100);
+  const { gameView, tick } = useGameTick(100);
   const [isVisible, setIsVisible] = useState(false);
   const [countdown, setCountdown] = useState(5);
   const [fakeIp, setFakeIp] = useState("");
@@ -38,7 +38,11 @@ export function MultiTabModal(): React.JSX.Element {
     setReported(true);
   }, [generateFakeIp, generateDeviceFingerprint]);
 
-  // Initialize multi-tab monitoring
+  // Initialize multi-tab monitoring. Re-evaluated on every (throttled) tick
+  // because the component mounts before the first turn is processed, when
+  // inSpawnPhase() is still true — a mount-only effect would early-return
+  // once and never start the detector. The detectorRef guard ensures the
+  // detector starts exactly once, after the spawn phase ends.
   useEffect(() => {
     if (
       gameView.inSpawnPhase() ||
@@ -55,7 +59,7 @@ export function MultiTabModal(): React.JSX.Element {
         show(detectedDuration);
       });
     }
-  }, [gameView]);
+  }, [tick, gameView]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -63,6 +67,10 @@ export function MultiTabModal(): React.JSX.Element {
       if (intervalIdRef.current) {
         window.clearInterval(intervalIdRef.current);
       }
+      // Stop the detector's heartbeat interval and release the tab lock so
+      // monitoring does not outlive the game session.
+      detectorRef.current?.stopMonitoring();
+      detectorRef.current = null;
     };
   }, []);
 
@@ -83,28 +91,31 @@ export function MultiTabModal(): React.JSX.Element {
     );
   }, []);
 
-  const show = useCallback((detectedDuration: number) => {
-    if (!gameView.myPlayer()?.isAlive()) {
-      return;
-    }
+  const show = useCallback(
+    (detectedDuration: number) => {
+      if (!gameView.myPlayer()?.isAlive()) {
+        return;
+      }
 
-    setDuration(detectedDuration);
-    setCountdown(Math.ceil(detectedDuration / 1000));
-    setIsVisible(true);
+      setDuration(detectedDuration);
+      setCountdown(Math.ceil(detectedDuration / 1000));
+      setIsVisible(true);
 
-    // Start countdown timer
-    intervalIdRef.current = window.setInterval(() => {
-      setCountdown((prev) => {
-        const newCountdown = prev - 1;
+      // Start countdown timer
+      intervalIdRef.current = window.setInterval(() => {
+        setCountdown((prev) => {
+          const newCountdown = prev - 1;
 
-        if (newCountdown <= 0) {
-          hide();
-        }
+          if (newCountdown <= 0) {
+            hide();
+          }
 
-        return newCountdown;
-      });
-    }, 1000);
-  }, [gameView, hide]);
+          return newCountdown;
+        });
+      }, 1000);
+    },
+    [gameView, hide],
+  );
 
   if (!isVisible) {
     return null as any;

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import Countries from "resources/countries.json" with { type: "json" };
 import { assetUrl } from "../../core/AssetUrls";
 import {
@@ -50,7 +50,7 @@ const traitorIcon = assetUrl("images/TraitorIconLightRed.svg");
 const breakAllianceIcon = assetUrl("images/TraitorIconWhite.svg");
 
 export function PlayerPanel(): React.JSX.Element {
-  const { gameView, eventBus } = useGameTick(100);
+  const { gameView, eventBus, tick } = useGameTick(100);
 
   // Reactive subscription so the rocket-direction toggle label re-renders
   // automatically when the store value changes (set by
@@ -70,6 +70,14 @@ export function PlayerPanel(): React.JSX.Element {
   const [profileForPlayerId, setProfileForPlayerId] = useState<number | null>(
     null,
   );
+
+  // Mirror the latest panel target so late async worker responses can be
+  // dropped instead of repopulating a panel that closed or moved to a
+  // different tile.
+  const isVisibleRef = useRef(isVisible);
+  isVisibleRef.current = isVisible;
+  const tileRef = useRef(tile);
+  tileRef.current = tile;
 
   const hidePanel = useCallback(() => {
     setIsVisible(false);
@@ -122,6 +130,7 @@ export function PlayerPanel(): React.JSX.Element {
       const playerId = Number(owner.id());
       if (profileForPlayerId !== playerId) {
         owner.profile().then((profile) => {
+          if (!isVisibleRef.current || tileRef.current !== tile) return;
           setOtherProfile(profile);
           setProfileForPlayerId(playerId);
         });
@@ -132,6 +141,7 @@ export function PlayerPanel(): React.JSX.Element {
     const myPlayer = gameView.myPlayer();
     if (myPlayer !== null && myPlayer.isAlive()) {
       myPlayer.actions(tile, null).then((panelActions) => {
+        if (!isVisibleRef.current || tileRef.current !== tile) return;
         setActions(panelActions);
 
         if (panelActions?.interaction?.allianceInfo?.expiresAt !== undefined) {
@@ -152,7 +162,7 @@ export function PlayerPanel(): React.JSX.Element {
         }
       });
     }
-  }, [gameView, isVisible, tile, profileForPlayerId]);
+  }, [gameView, isVisible, tile, profileForPlayerId, tick]);
 
   const handleAllianceClick = useCallback(
     (other: any) => {

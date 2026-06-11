@@ -301,6 +301,7 @@ export class ClientGameRunner {
   private lastHoveredTile: TileRef | null = null;
 
   private lastMessageTime: number = 0;
+  private connectionCheckStartTimeout: NodeJS.Timeout | null = null;
   private connectionCheckInterval: NodeJS.Timeout | null = null;
   private goToPlayerTimeout: NodeJS.Timeout | null = null;
 
@@ -373,7 +374,15 @@ export class ClientGameRunner {
 
     this.isActive = true;
     this.lastMessageTime = Date.now();
-    setTimeout(() => {
+    // Track the warm-up timeout so stop() can cancel it; otherwise leaving
+    // the game within the first 20s would let this fire on a dead runner and
+    // install an interval nothing can ever clear (reconnecting to the
+    // abandoned game forever).
+    this.connectionCheckStartTimeout = setTimeout(() => {
+      this.connectionCheckStartTimeout = null;
+      if (!this.isActive) {
+        return;
+      }
       this.connectionCheckInterval = setInterval(
         () => this.onConnectionCheck(),
         1000,
@@ -590,6 +599,10 @@ export class ClientGameRunner {
     useHUDStore.getState().reset();
     this.worker.cleanup();
     this.transport.leaveGame();
+    if (this.connectionCheckStartTimeout) {
+      clearTimeout(this.connectionCheckStartTimeout);
+      this.connectionCheckStartTimeout = null;
+    }
     if (this.connectionCheckInterval) {
       clearInterval(this.connectionCheckInterval);
       this.connectionCheckInterval = null;
@@ -992,7 +1005,7 @@ export class ClientGameRunner {
   }
 
   private onConnectionCheck() {
-    if (this.transport.isLocal) {
+    if (!this.isActive || this.transport.isLocal) {
       return;
     }
     const now = Date.now();

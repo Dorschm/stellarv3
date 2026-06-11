@@ -8,6 +8,7 @@ import {
 } from "../../core/game/GameUpdates";
 import { PlayerView, UnitView } from "../../core/game/GameView";
 import { useHUDStore } from "../bridge/HUDStore";
+import { SceneTickEvent } from "../InputHandler";
 import {
   CancelAttackIntentEvent,
   CancelShuttleIntentEvent,
@@ -42,6 +43,35 @@ export function AttacksDisplay(): React.JSX.Element {
   const spriteDataURLCacheRef = useRef(new Map<string, string>());
   const attackRatio = useHUDStore((state) => state.attackRatio);
 
+  // Track incoming shuttle unit IDs from UnitIncoming events. Ingested via
+  // SceneTickEvent (the authoritative per-tick feed, see WinModal) rather
+  // than polling updatesSinceLastTick() from the throttled tick effect:
+  // useGameTick(100) skips renders, and any skipped tick's update buffer is
+  // overwritten before the effect runs — a missed ORBITAL_ASSAULT_INBOUND
+  // would permanently drop that shuttle's warning row.
+  useEffect(() => {
+    const handler = (event: SceneTickEvent) => {
+      const myPlayer = gameView.myPlayer();
+      if (!myPlayer) return;
+      const unitUpdates = event.updates[
+        GameUpdateType.UnitIncoming
+      ] as UnitIncomingUpdate[];
+      if (!unitUpdates) return;
+      for (const update of unitUpdates) {
+        if (
+          update.playerID === myPlayer.smallID() &&
+          update.messageType === MessageType.ORBITAL_ASSAULT_INBOUND
+        ) {
+          incomingShuttleIDsRef.current.add(update.unitID);
+        }
+      }
+    };
+    eventBus.on(SceneTickEvent, handler);
+    return () => {
+      eventBus.off(SceneTickEvent, handler);
+    };
+  }, [eventBus, gameView]);
+
   // Update on game tick
   useEffect(() => {
     const myPlayer = gameView.myPlayer();
@@ -67,24 +97,6 @@ export function AttacksDisplay(): React.JSX.Element {
 
     if (!myPlayer || !myPlayer.isAlive()) {
       return;
-    }
-
-    // Track incoming shuttle unit IDs from UnitIncoming events
-    const updates = gameView.updatesSinceLastTick();
-    if (updates) {
-      const unitUpdates = updates[
-        GameUpdateType.UnitIncoming
-      ] as UnitIncomingUpdate[];
-      if (unitUpdates) {
-        for (const event of unitUpdates) {
-          if (
-            event.playerID === myPlayer.smallID() &&
-            event.messageType === MessageType.ORBITAL_ASSAULT_INBOUND
-          ) {
-            incomingShuttleIDsRef.current.add(event.unitID);
-          }
-        }
-      }
     }
 
     // Resolve incoming shuttles from tracked IDs

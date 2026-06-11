@@ -81,6 +81,7 @@ export function EventsDisplay(): React.JSX.Element {
   const eventsContainerRef = useRef<HTMLDivElement>(null);
   const shouldScrollToBottomRef = useRef(true);
   const alliancesCheckedAtRef = useRef(new Map<number, Tick>());
+  const lastProcessedTickRef = useRef(-1);
 
   // Handle scroll position
   useEffect(() => {
@@ -181,7 +182,14 @@ export function EventsDisplay(): React.JSX.Element {
     }
 
     const updates = gameView.updatesSinceLastTick();
-    if (updates) {
+    // Ingest each tick's update buffer at most once:
+    // `gameView.updatesSinceLastTick()` returns the same cached object until
+    // the next tick, and this effect also re-fires when `isVisible` flips
+    // (it sets it itself above) — without the tick guard every visibility
+    // transition would feed the same DisplayEvents through
+    // onDisplayMessageEvent a second time, doubling bundle counts.
+    if (updates && lastProcessedTickRef.current !== tick) {
+      lastProcessedTickRef.current = tick;
       // Process various update types
       const displayEvents = updates[GameUpdateType.DisplayEvent] as
         | DisplayMessageUpdate[]

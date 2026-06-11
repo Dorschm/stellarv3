@@ -171,7 +171,6 @@ export class SpaceInputHandler {
   private moveInterval: ReturnType<typeof setInterval> | null = null;
   private alternateView = false;
   private coordinateGridEnabled = false;
-  private rocketDirectionUp = true;
 
   private readonly PAN_SPEED = 5;
   private readonly ZOOM_SPEED = 10;
@@ -534,8 +533,12 @@ export class SpaceInputHandler {
 
     if (e.code === this.keybinds.swapDirection) {
       e.preventDefault();
-      this.rocketDirectionUp = !this.rocketDirectionUp;
-      this.eventBus.emit(new SwapRocketDirectionEvent(this.rocketDirectionUp));
+      // The HUDStore is the single source of truth for rocket direction —
+      // the PlayerPanel toggle flips it too (via GameBridge's
+      // SwapRocketDirectionEvent listener), so deriving the next value from
+      // the store keeps the hotkey and the panel button in phase.
+      const next = !useHUDStore.getState().rocketDirectionUp;
+      this.eventBus.emit(new SwapRocketDirectionEvent(next));
     }
 
     if (!e.repeat && e.code === this.keybinds.pauseGame) {

@@ -51,7 +51,15 @@ export function SettingsModal(): React.JSX.Element {
     setIsVisible(event.isVisible);
     setShouldPause(event.shouldPause);
     setWasPausedWhenOpened(event.isPaused);
-    pauseGame(true);
+    // Pause directly from the event payload — the pauseGame callback closes
+    // over shouldPause/wasPausedWhenOpened from the previous render, so it
+    // would see stale values here (the setState calls above haven't
+    // committed yet). The state is still kept for the close path, which
+    // runs after the commit.
+    if (event.isVisible && event.shouldPause && !event.isPaused) {
+      crazyGamesSDK.gameplayStop();
+      eventBus.emit(new PauseGameIntentEvent(true));
+    }
   });
 
   // Toggle settings on Escape (CloseViewEvent). If the modal is already
