@@ -18,7 +18,10 @@ import {
 
 export class DonateCreditsExecution implements Execution {
   private recipient: Player;
-  private credits: Credits;
+  // Kept nullable until init() so the default-amount fallback can resolve
+  // against the sender's balance at execution time (mirrors
+  // DonatePopulationExecution).
+  private credits: Credits | null;
 
   private mg: Game;
   private random: PseudoRandom;
@@ -30,7 +33,7 @@ export class DonateCreditsExecution implements Execution {
     private recipientID: PlayerID,
     creditsAmount: number | null,
   ) {
-    this.credits = toInt(creditsAmount ?? 0);
+    this.credits = creditsAmount === null ? null : toInt(creditsAmount);
   }
 
   init(mg: Game, ticks: number): void {

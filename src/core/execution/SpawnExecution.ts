@@ -56,13 +56,20 @@ export class SpawnExecution implements Execution {
       return;
     }
 
-    player.tiles().forEach((t) => player.relinquish(t));
-    const spawn = this.getSpawn(this.tile);
+    // Validate the new spawn location before relinquishing the old one so a
+    // failed re-spawn (hotspot already claimed, invalid tile) can never
+    // strand the player with zero tiles.
+    const validated = this.getSpawn(this.tile);
 
-    if (!spawn) {
+    if (!validated) {
       console.warn(`SpawnExecution: cannot spawn ${this.playerInfo.name}`);
       return;
     }
+
+    player.tiles().forEach((t) => player.relinquish(t));
+    // Re-resolve from the validated center so tiles freed by the relinquish
+    // (a re-click overlapping the old spawn area) are claimable again.
+    const spawn = this.getSpawn(validated.center) ?? validated;
 
     spawn.tiles.forEach((t) => {
       player.conquer(t);

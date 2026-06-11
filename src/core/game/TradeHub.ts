@@ -25,7 +25,8 @@ class TradeStationStopHandler implements FrigateStopHandler {
     // Share revenue with the station owner if it's not the current player
     if (trainOwner !== stationOwner) {
       stationOwner.addCredits(credits, station.tile());
-      mg.stats().frigateExternalTrade(trainOwner, credits);
+      // Earnings from another player's frigate belong to the station owner.
+      mg.stats().frigateExternalTrade(stationOwner, credits);
     }
     trainOwner.addCredits(credits, station.tile());
     mg.stats().frigateSelfTrade(trainOwner, credits);

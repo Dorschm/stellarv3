@@ -261,7 +261,13 @@ export class AssaultShuttleExecution implements Execution {
           // converts it to OpenSpace (partial → full habitability). The
           // conversion is free (no cost beyond the shuttle itself).
           this.convertNebulaToOpenSpace(this.dst);
-          const deaths = this.shuttle.population() * (malusForRetreat / 100);
+          // The 25% malus only applies to an ordered retreat. A shuttle whose
+          // destination became attacker-owned mid-flight (e.g. captured by the
+          // attacker's own ground push) delivers its full population, matching
+          // the NOT_FOUND branch's 100% refund and AttackExecution.retreat().
+          const deaths = this.shuttle.retreating()
+            ? this.shuttle.population() * (malusForRetreat / 100)
+            : 0;
           const survivors = this.shuttle.population() - deaths;
           this.attacker.addPopulation(survivors);
           this.shuttle.delete(false);
@@ -282,19 +288,32 @@ export class AssaultShuttleExecution implements Execution {
           }
           return;
         }
-        this.attacker.conquer(this.dst);
-        if (this.target.isPlayer() && this.attacker.isFriendly(this.target)) {
-          this.attacker.addPopulation(this.shuttle.population());
-        } else {
-          this.mg.addExecution(
-            new AttackExecution(
-              this.shuttle.population(),
-              this.attacker,
-              this.target.id(),
-              this.dst,
-              false,
-            ),
-          );
+        {
+          const dstOwner = this.mg.owner(this.dst);
+          if (dstOwner.isPlayer() && this.attacker.isFriendly(dstOwner)) {
+            // The landing tile's owner became friendly while the shuttle was
+            // in flight — don't annex the ally's tile (AttackExecution refuses
+            // friendly targets in both init and tick); just return the troops.
+            this.attacker.addPopulation(this.shuttle.population());
+          } else {
+            this.attacker.conquer(this.dst);
+            if (
+              this.target.isPlayer() &&
+              this.attacker.isFriendly(this.target)
+            ) {
+              this.attacker.addPopulation(this.shuttle.population());
+            } else {
+              this.mg.addExecution(
+                new AttackExecution(
+                  this.shuttle.population(),
+                  this.attacker,
+                  this.target.id(),
+                  this.dst,
+                  false,
+                ),
+              );
+            }
+          }
         }
         this.shuttle.delete(false);
         this.active = false;
