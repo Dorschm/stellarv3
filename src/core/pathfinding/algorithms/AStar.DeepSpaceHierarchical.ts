@@ -7,6 +7,13 @@ import { AbstractGraph, AbstractNode } from "./AbstractGraph";
 import { BFSGrid } from "./BFS.Grid";
 import { SECTOR_MARKER } from "./ConnectedComponents";
 
+// Multi-source short-path fast path: sources within this manhattan
+// distance of the target are tried with a bounded A* before falling
+// back to the full hierarchical resolve. PADDING widens the search box
+// so the bounded A* can route around small obstacles near the hull.
+const SHORT_PATH_THRESHOLD = 120;
+const SHORT_PATH_PADDING = 10;
+
 export class AStarDeepSpaceHierarchical implements PathFinder<number> {
   private tileBFS: BFSGrid;
   private abstractAStar: AbstractGraphAStar;
@@ -42,8 +49,12 @@ export class AStarDeepSpaceHierarchical implements PathFinder<number> {
       maxMultiClusterNodes,
     );
 
-    // BoundedAStar for short path multi-source
-    const shortPathSize = 260; // 2 * (120 + padding 10)
+    // BoundedAStar for short path multi-source. Worst case: candidates
+    // span target ± SHORT_PATH_THRESHOLD on an axis, plus PADDING per
+    // side, plus one for the inclusive target tile — derived from the
+    // same constants `tryShortPathMultiSource` uses so the preallocated
+    // area can never drift below the bounds it is asked to search.
+    const shortPathSize = 2 * (SHORT_PATH_THRESHOLD + SHORT_PATH_PADDING) + 1;
     const maxShortPathNodes = shortPathSize * shortPathSize;
     this.localAStarShortPath = new AStarDeepSpaceBounded(
       map,
@@ -99,9 +110,6 @@ export class AStarDeepSpaceHierarchical implements PathFinder<number> {
     sources: TileRef[],
     target: TileRef,
   ): TileRef[] | null {
-    const SHORT_PATH_THRESHOLD = 120;
-    const PADDING = 10;
-
     const candidates = sources.filter(
       (s) => this.map.manhattanDist(s, target) <= SHORT_PATH_THRESHOLD,
     );
@@ -124,10 +132,10 @@ export class AStarDeepSpaceHierarchical implements PathFinder<number> {
     }
 
     const bounds = {
-      minX: Math.max(0, minX - PADDING),
-      maxX: Math.min(this.map.width() - 1, maxX + PADDING),
-      minY: Math.max(0, minY - PADDING),
-      maxY: Math.min(this.map.height() - 1, maxY + PADDING),
+      minX: Math.max(0, minX - SHORT_PATH_PADDING),
+      maxX: Math.min(this.map.width() - 1, maxX + SHORT_PATH_PADDING),
+      minY: Math.max(0, minY - SHORT_PATH_PADDING),
+      maxY: Math.min(this.map.height() - 1, maxY + SHORT_PATH_PADDING),
     };
 
     return this.localAStarShortPath.searchBounded(candidates, target, bounds);

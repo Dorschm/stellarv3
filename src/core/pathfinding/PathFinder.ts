@@ -77,14 +77,15 @@ export class PathFinding {
   static DeepSpace(game: Game): SteppingPathFinder<TileRef> {
     // Runtime void→sector promotions (scout-swarm terraforming, capital
     // ship anchors) mutate the minimap terrain buffer but leave the HPA
-    // graph stale. Return a wrapper that re-evaluates the dirty flag on
+    // graph stale. Return a wrapper that re-evaluates staleness on
     // every query so long-lived steppers (cached in Execution.init) can
     // observe mid-lifecycle promotions and route via `DeepSpaceSimple`
-    // instead of the stale HPA cache. When the wrapper observes the
-    // dirty flag it consumes it (via `clearDeepSpaceGraphDirty`) and
-    // latches simple routing for the current tick so subsequent queries
-    // within the same tick stay on the fallback without flapping; a
-    // future tick re-evaluates dirty state from scratch.
+    // instead of the stale HPA cache. The game-global dirty flag is
+    // consume-on-read (via `clearDeepSpaceGraphDirty`), so the wrapper
+    // that observes it records the staleness in a shared per-game
+    // version counter that every other wrapper instance — and every
+    // future tick — checks; the HPA graph is built once at game init
+    // and never rebuilt, so once stale it stays stale.
     return new DeepSpaceRuntimeSwitchingPathFinder(game);
   }
 
@@ -145,11 +146,26 @@ export class PathFinding {
 }
 
 /**
+ * Monotonic per-game staleness version for the deep-space HPA graph.
+ * `isDeepSpaceGraphDirty` is consume-on-read and there is one switcher
+ * instance per in-flight unit, so the first instance to observe the
+ * flag must translate it into a signal every other instance (and every
+ * later tick) can still see. The HPA graph is built once in the
+ * GameImpl constructor (version 0) and never rebuilt, so any version
+ * above zero means the graph is permanently stale and all instances
+ * must route via the simple fallback. Keyed weakly by Game so state
+ * never leaks between simultaneous games or between tests.
+ */
+const deepSpaceStaleVersion = new WeakMap<Game, number>();
+
+/**
  * Wraps deep-space routing so the choice between HPA and simple A* is
  * re-evaluated on every query, not frozen at construction time. This lets
  * long-lived steppers (cached in Execution.init) correctly fall back to
  * `DeepSpaceSimple` when the HPA graph becomes stale due to void→sector
- * promotion, and swap back if/when the HPA graph is refreshed.
+ * promotion. Staleness is tracked in the shared per-game version counter
+ * above so all wrapper instances switch consistently, regardless of which
+ * one consumed the dirty flag.
  */
 class DeepSpaceRuntimeSwitchingPathFinder
   implements SteppingPathFinder<TileRef>
@@ -157,26 +173,30 @@ class DeepSpaceRuntimeSwitchingPathFinder
   private hpa: SteppingPathFinder<TileRef> | null = null;
   private simple: SteppingPathFinder<TileRef> | null = null;
   private lastUsedSimple: boolean | null = null;
-  // Tick at which simple-routing was last latched. While this matches
-  // the current game tick, `shouldUseSimple` short-circuits to true so
-  // repeated queries inside one tick stay on the fallback even after
-  // the dirty flag has been consumed.
-  private latchedSimpleTick: number | null = null;
+  // Version of the HPA graph this wrapper trusts. Always 0 today (the
+  // graph is built once at game init and never rebuilt); if a rebuild
+  // mechanism is ever added, refresh this alongside `this.hpa` when
+  // re-acquiring the rebuilt graph.
+  private readonly hpaGraphVersion: number = 0;
 
   constructor(private game: Game) {}
 
   private shouldUseSimple(): boolean {
-    const currentTick = this.game.ticks();
-
     if (this.game.isDeepSpaceGraphDirty()) {
-      // Consume the dirty flag on first observation and latch simple
-      // routing for this tick. Future ticks re-evaluate cleanly.
+      // Consume the single-shot dirty flag and record the staleness in
+      // the shared per-game version so ALL wrapper instances — not just
+      // the first one to query after a promotion — keep routing via the
+      // fallback on this and every future tick.
       this.game.clearDeepSpaceGraphDirty();
-      this.latchedSimpleTick = currentTick;
-      return true;
+      deepSpaceStaleVersion.set(
+        this.game,
+        (deepSpaceStaleVersion.get(this.game) ?? 0) + 1,
+      );
     }
 
-    if (this.latchedSimpleTick === currentTick) return true;
+    if ((deepSpaceStaleVersion.get(this.game) ?? 0) > this.hpaGraphVersion) {
+      return true;
+    }
 
     const pf = this.game.miniDeepSpaceHPA();
     const graph = this.game.miniDeepSpaceGraph();
