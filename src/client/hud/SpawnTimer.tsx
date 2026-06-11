@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { GameMode, Team } from "../../core/game/Game";
-import { useGameTick } from "./useGameTick";
-import { useEventBus } from "../bridge/useEventBus";
 import { SpawnBarVisibleEvent } from "./events";
+import { useGameTick } from "./useGameTick";
 
 export function SpawnTimer(): React.JSX.Element {
   const { gameView, eventBus, tick } = useGameTick();

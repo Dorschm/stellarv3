@@ -1,16 +1,16 @@
 import {
   createContext,
-  useContext,
-  useState,
-  useEffect,
-  useCallback,
   ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
 } from "react";
-import { assetUrl } from "../../../core/AssetUrls";
-import { useNavigation } from "../contexts/NavigationContext";
-import metadata from "../../../../resources/lang/metadata.json";
 import en from "../../../../resources/lang/en.json";
+import metadata from "../../../../resources/lang/metadata.json";
+import { assetUrl } from "../../../core/AssetUrls";
 import { formatDebugTranslation } from "../../Utils";
+import { useNavigation } from "../contexts/NavigationContext";
 
 type LanguageMetadata = {
   code: string;
@@ -26,7 +26,7 @@ interface LangContextValue {
   changeLanguage: (lang: string) => Promise<void>;
   translateText: (
     key: string,
-    params?: Record<string, string | number>
+    params?: Record<string, string | number>,
   ) => string;
 }
 
@@ -35,7 +35,7 @@ const LangContext = createContext<LangContextValue | null>(null);
 function flattenTranslations(
   obj: Record<string, any>,
   parentKey = "",
-  result: Record<string, string> = {}
+  result: Record<string, string> = {},
 ): Record<string, string> {
   for (const key in obj) {
     const value = obj[key];
@@ -66,7 +66,7 @@ function getClosestSupportedLang(lang: string): string {
   if (supported.has(base)) return base;
 
   const candidates = Array.from(supported).filter((key) =>
-    key.startsWith(base)
+    key.startsWith(base),
   );
   if (candidates.length > 0) {
     candidates.sort((a, b) => b.length - a.length);
@@ -87,12 +87,11 @@ export function useLang(): LangContextValue {
 export function LangProvider({ children }: { children: ReactNode }) {
   const [currentLang, setCurrentLang] = useState<string>("en");
   const [translations, setTranslations] = useState<Record<string, string>>();
-  const [defaultTranslations, setDefaultTranslations] = useState<
-    Record<string, string>
-  >();
-  const [languageList, setLanguageList] = useState<LanguageMetadata[]>([]);
+  const [defaultTranslations, setDefaultTranslations] =
+    useState<Record<string, string>>();
+  const [, setLanguageList] = useState<LanguageMetadata[]>([]);
   const [debugKeyPressed, setDebugKeyPressed] = useState(false);
-  const [debugMode, setDebugMode] = useState(false);
+  const [, setDebugMode] = useState(false);
 
   const languageMetadata: LanguageMetadata[] = metadata;
   const languageCache = new Map<string, Record<string, string>>();
@@ -139,10 +138,12 @@ export function LangProvider({ children }: { children: ReactNode }) {
 
       try {
         const response = await fetch(
-          assetUrl(`lang/${encodeURIComponent(lang)}.json`)
+          assetUrl(`lang/${encodeURIComponent(lang)}.json`),
         );
         if (!response.ok) {
-          throw new Error(`Failed to fetch language ${lang}: ${response.status}`);
+          throw new Error(
+            `Failed to fetch language ${lang}: ${response.status}`,
+          );
         }
         const language = (await response.json()) as Record<string, any>;
         const flat = flattenTranslations(language);
@@ -153,7 +154,7 @@ export function LangProvider({ children }: { children: ReactNode }) {
         return {};
       }
     },
-    []
+    [],
   );
 
   const loadLanguageList = useCallback(async () => {
@@ -196,7 +197,7 @@ export function LangProvider({ children }: { children: ReactNode }) {
           l.code !== currentLang &&
           l.code !== browserLang &&
           l.code !== "en" &&
-          l.code !== "debug"
+          l.code !== "debug",
       );
 
       list.sort((a, b) => a.en.localeCompare(b.en));
@@ -244,7 +245,7 @@ export function LangProvider({ children }: { children: ReactNode }) {
       document.dispatchEvent(
         new CustomEvent("language-selected", {
           detail: { lang },
-        })
+        }),
       );
 
       // Expose on window for backward compat
@@ -255,7 +256,7 @@ export function LangProvider({ children }: { children: ReactNode }) {
         changeLanguage,
       };
     },
-    [loadLanguage, defaultTranslations]
+    [loadLanguage, defaultTranslations],
   );
 
   const translateText = useCallback(
@@ -281,13 +282,13 @@ export function LangProvider({ children }: { children: ReactNode }) {
 
       return text;
     },
-    [currentLang, translations, defaultTranslations]
+    [currentLang, translations, defaultTranslations],
   );
 
   const applyTranslation = (
     trans: Record<string, string> | undefined,
     defTrans: Record<string, string> | undefined,
-    lang: string
+    lang: string,
   ) => {
     const components = [
       "single-player-modal",
@@ -327,7 +328,7 @@ export function LangProvider({ children }: { children: ReactNode }) {
 
     // Update document title
     const titleKey = "main.title";
-    let title = trans?.[titleKey] ?? defTrans?.[titleKey];
+    const title = trans?.[titleKey] ?? defTrans?.[titleKey];
     if (title) {
       document.title = title;
     }
@@ -336,7 +337,7 @@ export function LangProvider({ children }: { children: ReactNode }) {
     document.querySelectorAll("[data-i18n]").forEach((element) => {
       const key = element.getAttribute("data-i18n");
       if (key === null) return;
-      let text = trans?.[key] ?? defTrans?.[key];
+      const text = trans?.[key] ?? defTrans?.[key];
       if (text === undefined || text === null) {
         console.warn(`Translation key not found: ${key}`);
         return;
@@ -347,12 +348,12 @@ export function LangProvider({ children }: { children: ReactNode }) {
     // Update attribute translations
     const applyAttributeTranslation = (
       dataAttr: string,
-      targetAttr: string
+      targetAttr: string,
     ): void => {
       document.querySelectorAll(`[${dataAttr}]`).forEach((element) => {
         const key = element.getAttribute(dataAttr);
         if (key === null) return;
-        let text = trans?.[key] ?? defTrans?.[key];
+        const text = trans?.[key] ?? defTrans?.[key];
         if (text === undefined || text === null) {
           console.warn(`Translation key not found: ${key}`);
           return;
@@ -431,7 +432,9 @@ export function LangSelector() {
   const languageMetadata: LanguageMetadata[] = metadata;
 
   // Get current language metadata
-  const currentLangMeta = languageMetadata.find((l) => l.code === currentLang) ?? {
+  const currentLangMeta = languageMetadata.find(
+    (l) => l.code === currentLang,
+  ) ?? {
     native: "English",
     en: "English",
     svg: "uk_us_flag",

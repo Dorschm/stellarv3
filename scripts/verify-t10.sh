@@ -120,7 +120,7 @@ else
 fi
 
 # 2.3 Lit usage in source
-LIT_MATCHES=$(grep -r "LitElement\|@customElement" src/ --include="*.ts" --include="*.tsx" -l 2>/dev/null | wc -l)
+LIT_MATCHES=$(grep -r "LitElement\|@customElement" src/ --include="*.ts" --include="*.tsx" -l 2> /dev/null | wc -l)
 if [ "$LIT_MATCHES" -gt 0 ]; then
     check_fail "2.3 $LIT_MATCHES files still use LitElement/@customElement in src/ (T9 incomplete)"
 else
@@ -172,16 +172,16 @@ for file in "src/client/graphics/TransformHandler.ts" "src/client/graphics/UISta
 done
 
 # Canvas 2D usage
-CANVAS_2D=$(grep -r "getContext.*2d" src/client/ --include="*.ts" --include="*.tsx" -l 2>/dev/null | wc -l)
+CANVAS_2D=$(grep -r "getContext.*2d" src/client/ --include="*.ts" --include="*.tsx" -l 2> /dev/null | wc -l)
 if [ "$CANVAS_2D" -gt 0 ]; then
-    CANVAS_FILES=$(grep -r "getContext.*2d" src/client/ --include="*.ts" --include="*.tsx" -l 2>/dev/null)
+    CANVAS_FILES=$(grep -r "getContext.*2d" src/client/ --include="*.ts" --include="*.tsx" -l 2> /dev/null)
     check_warn "3.x Canvas 2D getContext('2d') found in $CANVAS_2D file(s): $CANVAS_FILES"
 else
     check_pass "3.x No Canvas 2D usage in src/client/"
 fi
 
 # T7-stub markers
-STUB_COUNT=$(grep -r "\[T7-stub\]" src/ --include="*.ts" --include="*.tsx" -c 2>/dev/null | awk -F: '{s+=$2}END{print s}')
+STUB_COUNT=$(grep -r "\[T7-stub\]" src/ --include="*.ts" --include="*.tsx" -c 2> /dev/null | awk -F: '{s+=$2}END{print s}')
 if [ "$STUB_COUNT" -gt 0 ]; then
     check_fail "3.x $STUB_COUNT [T7-stub] TODO markers found in source (T3/T7 incomplete)"
 else
@@ -256,7 +256,7 @@ for file in "src/client/shell/App.tsx" "src/client/shell/index.tsx" \
 done
 
 # Check for old Lit components still present
-LIT_COMPONENTS=$(find src/client/components/ -name "*.ts" 2>/dev/null | wc -l)
+LIT_COMPONENTS=$(find src/client/components/ -name "*.ts" 2> /dev/null | wc -l)
 if [ "$LIT_COMPONENTS" -gt 0 ]; then
     check_fail "8.x $LIT_COMPONENTS old Lit components still in src/client/components/ (T9 incomplete)"
 else
@@ -280,7 +280,7 @@ check_pass "9.x Invariant checks noted for manual verification"
 print_header "Section 10: Codebase Cleanliness"
 
 # Orphaned imports
-ORPHANED=$(grep -r "import.*graphics/layers" src/ --include="*.ts" --include="*.tsx" -l 2>/dev/null | wc -l)
+ORPHANED=$(grep -r "import.*graphics/layers" src/ --include="*.ts" --include="*.tsx" -l 2> /dev/null | wc -l)
 if [ "$ORPHANED" -gt 0 ]; then
     check_fail "10.1 Orphaned imports from graphics/layers found in $ORPHANED file(s)"
 else
@@ -288,7 +288,7 @@ else
 fi
 
 # TODO/FIXME referencing old renderer
-OLD_TODOS=$(grep -r "TODO.*canvas\|FIXME.*2d\|TODO.*old renderer" src/ --include="*.ts" --include="*.tsx" -l 2>/dev/null | wc -l)
+OLD_TODOS=$(grep -r "TODO.*canvas\|FIXME.*2d\|TODO.*old renderer" src/ --include="*.ts" --include="*.tsx" -l 2> /dev/null | wc -l)
 if [ "$OLD_TODOS" -gt 0 ]; then
     check_warn "10.2 $OLD_TODOS file(s) with TODO/FIXME referencing old renderer"
 else

@@ -1,8 +1,8 @@
 import React from "react";
 import { AlertFrame } from "./AlertFrame";
-import { CapitalShipSelectedHint } from "./CapitalShipSelectedHint";
 import { AttacksDisplay } from "./AttacksDisplay";
 import { BuildMenu } from "./BuildMenu";
+import { CapitalShipSelectedHint } from "./CapitalShipSelectedHint";
 import { ChatDisplay } from "./ChatDisplay";
 import { ChatModal } from "./ChatModal";
 import { ControlPanel } from "./ControlPanel";

@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
-import { EventBus } from "../../core/EventBus";
 import { UserSettings } from "../../core/game/UserSettings";
-import { TickMetricsEvent, TogglePerformanceOverlayEvent } from "../InputHandler";
+import {
+  TickMetricsEvent,
+  TogglePerformanceOverlayEvent,
+} from "../InputHandler";
 import { translateText } from "../Utils";
 import { useGameView } from "../bridge/GameViewContext";
 
@@ -22,7 +24,7 @@ export function PerformanceOverlay(): React.JSX.Element {
   const [isDragging, setIsDragging] = useState(false);
   const [position, setPosition] = useState({ x: 8, y: 8 });
   const [copyStatus, setCopyStatus] = useState<"idle" | "success" | "error">(
-    "idle"
+    "idle",
   );
 
   // Tracking refs
@@ -46,11 +48,11 @@ export function PerformanceOverlay(): React.JSX.Element {
     dragStart: { x: number; y: number };
   } | null>(null);
   const copyStatusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null
+    null,
   );
 
   const onTogglePerformanceOverlay = (
-    _event: TogglePerformanceOverlayEvent
+    _event: TogglePerformanceOverlayEvent,
   ) => {
     const nextVisible = !isVisible;
     setIsVisible(nextVisible);
@@ -132,7 +134,7 @@ export function PerformanceOverlay(): React.JSX.Element {
 
   const updateTickMetrics = (
     tickExecutionDuration?: number,
-    tickDelay?: number
+    tickDelay?: number,
   ) => {
     if (!isVisible) return;
 
@@ -162,18 +164,18 @@ export function PerformanceOverlay(): React.JSX.Element {
       ticksLast60s > 0
         ? tickTimestampsRef.current[tickHead60sRef.current]
         : now;
-    const elapsed60s = Math.min(
-      60,
-      Math.max(1, (now - oldest60) / 1000)
-    );
+    const elapsed60s = Math.min(60, Math.max(1, (now - oldest60) / 1000));
     setAverageTPS(Math.round((ticksLast60s / elapsed60s) * 10) / 10);
 
     // Compact occasionally to avoid unbounded growth
     if (tickHead60sRef.current > 4000) {
       tickTimestampsRef.current = tickTimestampsRef.current.slice(
-        tickHead60sRef.current
+        tickHead60sRef.current,
       );
-      tickHead1sRef.current = Math.max(0, tickHead1sRef.current - tickHead60sRef.current);
+      tickHead1sRef.current = Math.max(
+        0,
+        tickHead1sRef.current - tickHead60sRef.current,
+      );
       tickHead60sRef.current = 0;
     }
 
@@ -183,13 +185,13 @@ export function PerformanceOverlay(): React.JSX.Element {
       tickExecutionTimesSumRef.current += tickExecutionDuration;
       if (tickExecutionTimesRef.current.length > 60) {
         const removed = tickExecutionTimesRef.current.shift();
-        if (removed !== undefined)
-          tickExecutionTimesSumRef.current -= removed;
+        if (removed !== undefined) tickExecutionTimesSumRef.current -= removed;
       }
 
       if (tickExecutionTimesRef.current.length > 0) {
         const avg =
-          tickExecutionTimesSumRef.current / tickExecutionTimesRef.current.length;
+          tickExecutionTimesSumRef.current /
+          tickExecutionTimesRef.current.length;
         setTickExecutionAvg(Math.round(avg * 100) / 100);
         let max = 0;
         for (const v of tickExecutionTimesRef.current) max = Math.max(max, v);
@@ -264,7 +266,10 @@ export function PerformanceOverlay(): React.JSX.Element {
     };
 
     const onPointerMove = (e: PointerEvent) => {
-      if (!dragStateRef.current || e.pointerId !== dragStateRef.current.pointerId)
+      if (
+        !dragStateRef.current ||
+        e.pointerId !== dragStateRef.current.pointerId
+      )
         return;
 
       const newX = e.clientX - dragStateRef.current.dragStart.x;
@@ -281,7 +286,10 @@ export function PerformanceOverlay(): React.JSX.Element {
     };
 
     const onPointerUp = (e: PointerEvent) => {
-      if (!dragStateRef.current || e.pointerId !== dragStateRef.current.pointerId)
+      if (
+        !dragStateRef.current ||
+        e.pointerId !== dragStateRef.current.pointerId
+      )
         return;
 
       globalThis.removeEventListener("pointermove", onPointerMove);
@@ -410,38 +418,38 @@ export function PerformanceOverlay(): React.JSX.Element {
       <div style={{ marginTop: "32px" }}>
         <div className="mb-1">
           {translateText("performance_overlay.fps")}{" "}
-          <span className={getPerformanceColor(currentFPS)}>
-            {currentFPS}
-          </span>
+          <span className={getPerformanceColor(currentFPS)}>{currentFPS}</span>
         </div>
         <div className="mb-1">
           {translateText("performance_overlay.avg_60s")}{" "}
-          <span className={getPerformanceColor(averageFPS)}>
-            {averageFPS}
-          </span>
+          <span className={getPerformanceColor(averageFPS)}>{averageFPS}</span>
         </div>
         <div className="mb-1">
           {translateText("performance_overlay.frame")}{" "}
-          <span className={getPerformanceColor(frameTime > 0 ? 1000 / frameTime : 0)}>
+          <span
+            className={getPerformanceColor(
+              frameTime > 0 ? 1000 / frameTime : 0,
+            )}
+          >
             {frameTime}ms
           </span>
         </div>
         <div className="mb-1">
           {translateText("performance_overlay.tps")}{" "}
-          <span className={getTPSColor(currentTPS)}>{currentTPS}</span>
-          ({translateText("performance_overlay.tps_avg_60s")}{" "}
+          <span className={getTPSColor(currentTPS)}>{currentTPS}</span>(
+          {translateText("performance_overlay.tps_avg_60s")}{" "}
           <span>{averageTPS}</span>)
         </div>
         <div className="mb-1">
           {translateText("performance_overlay.tick_exec")}{" "}
-          <span>{tickExecutionAvg.toFixed(2)}ms</span>
-          ({translateText("performance_overlay.max_label")}{" "}
+          <span>{tickExecutionAvg.toFixed(2)}ms</span>(
+          {translateText("performance_overlay.max_label")}{" "}
           <span>{tickExecutionMax}ms</span>)
         </div>
         <div className="mb-1">
           {translateText("performance_overlay.tick_delay")}{" "}
-          <span>{tickDelayAvg.toFixed(2)}ms</span>
-          ({translateText("performance_overlay.max_label")}{" "}
+          <span>{tickDelayAvg.toFixed(2)}ms</span>(
+          {translateText("performance_overlay.max_label")}{" "}
           <span>{tickDelayMax}ms</span>)
         </div>
       </div>

@@ -4,7 +4,6 @@ import { logger } from "../Logger";
 import { getDb } from "../userdb";
 import { createAuthRouter } from "./auth";
 import { getApiConfig } from "./config";
-import { createPlayerRouter, createUsersRouter } from "./users";
 import { createRunsRouter } from "./runs";
 import {
   createChangelogRouter,
@@ -12,6 +11,7 @@ import {
   createLeaderboardRouter,
   createStripeRouter,
 } from "./stubs";
+import { createPlayerRouter, createUsersRouter } from "./users";
 
 const log = logger.child({ comp: "api" });
 

@@ -1,9 +1,5 @@
 import { useEffect } from "react";
-import {
-  EventBus,
-  EventConstructor,
-  GameEvent,
-} from "../../core/EventBus";
+import { EventBus, EventConstructor, GameEvent } from "../../core/EventBus";
 
 /**
  * React hook that subscribes to an {@link EventBus} event for the lifetime
@@ -33,6 +29,5 @@ export function useEventBus<T extends GameEvent>(
     };
     // We intentionally depend on the identity of all three arguments so the
     // subscription is re-created if the bus, event class, or handler changes.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventBus, eventType, callback]);
 }

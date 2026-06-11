@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { GameMode } from "../../core/game/Game";
-import { useGameTick } from "./useGameTick";
 import { useEventBus } from "../bridge/useEventBus";
 import { ImmunityBarVisibleEvent, SpawnBarVisibleEvent } from "./events";
+import { useGameTick } from "./useGameTick";
 
 export function ImmunityTimer(): React.JSX.Element {
   const { gameView, eventBus, tick } = useGameTick();
   const [isActive, setIsActive] = useState(false);
   const [progressRatio, setProgressRatio] = useState(0);
   const [barOffset, setBarOffset] = useState(0);
-  const [previousBarVisible, setPreviousBarVisible] = useState(false);
+  const [, setPreviousBarVisible] = useState(false);
 
   // Listen to spawn bar visibility to adjust position
   useEventBus(eventBus, SpawnBarVisibleEvent, (event) => {

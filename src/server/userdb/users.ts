@@ -50,9 +50,9 @@ function generatePublicId(): string {
 }
 
 export function findUserById(id: string): UserRow | null {
-  const row = getDb()
-    .prepare("SELECT * FROM users WHERE id = ?")
-    .get(id) as DbUserRow | undefined;
+  const row = getDb().prepare("SELECT * FROM users WHERE id = ?").get(id) as
+    | DbUserRow
+    | undefined;
   return row ? fromDb(row) : null;
 }
 
@@ -85,9 +85,7 @@ export interface UpsertDiscordUserInput {
  * generated on first insert and never change. Subsequent OAuth logins
  * refresh the cached Discord profile fields and bump `last_seen_at`.
  */
-export function upsertDiscordUser(
-  input: UpsertDiscordUserInput,
-): UserRow {
+export function upsertDiscordUser(input: UpsertDiscordUserInput): UserRow {
   const db = getDb();
   const now = Date.now();
   const existing = findUserByDiscordId(input.discordId);

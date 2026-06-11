@@ -2,9 +2,14 @@ import { useCallback, useEffect, useState } from "react";
 import type { UserMeResponse } from "../../../core/ApiSchemas";
 import type { Cosmetics, Pattern } from "../../../core/CosmeticSchemas";
 import { UserSettings } from "../../../core/game/UserSettings";
-import { fetchCosmetics, flagRelationship, handlePurchase, patternRelationship } from "../../Cosmetics";
 import { getUserMe } from "../../Api";
 import { userAuth } from "../../Auth";
+import {
+  fetchCosmetics,
+  flagRelationship,
+  handlePurchase,
+  patternRelationship,
+} from "../../Cosmetics";
 import { translateText } from "../../Utils";
 import { ModalContainer, ModalPage } from "../components/ModalPage";
 import { useNavigation } from "../contexts/NavigationContext";
@@ -37,22 +42,40 @@ export function StoreModal() {
     return () => document.removeEventListener("open-store-modal", handler);
   }, [showPage]);
 
-  const selectPattern = useCallback((pattern: Pattern, colorPaletteName?: string) => {
-    const patternName = colorPaletteName
-      ? `${pattern.name}:${colorPaletteName}`
-      : pattern.name;
-    userSettings.setSelectedPatternName(patternName);
-    window.dispatchEvent(new CustomEvent("show-message", {
-      detail: { message: `Selected: ${pattern.name}`, color: "green", duration: 2000 },
-    }));
-  }, [userSettings]);
+  const selectPattern = useCallback(
+    (pattern: Pattern, colorPaletteName?: string) => {
+      const patternName = colorPaletteName
+        ? `${pattern.name}:${colorPaletteName}`
+        : pattern.name;
+      userSettings.setSelectedPatternName(patternName);
+      window.dispatchEvent(
+        new CustomEvent("show-message", {
+          detail: {
+            message: `Selected: ${pattern.name}`,
+            color: "green",
+            duration: 2000,
+          },
+        }),
+      );
+    },
+    [userSettings],
+  );
 
-  const selectFlag = useCallback((flagName: string) => {
-    userSettings.setFlag(flagName);
-    window.dispatchEvent(new CustomEvent("show-message", {
-      detail: { message: `Selected: ${flagName}`, color: "green", duration: 2000 },
-    }));
-  }, [userSettings]);
+  const selectFlag = useCallback(
+    (flagName: string) => {
+      userSettings.setFlag(flagName);
+      window.dispatchEvent(
+        new CustomEvent("show-message", {
+          detail: {
+            message: `Selected: ${flagName}`,
+            color: "green",
+            duration: 2000,
+          },
+        }),
+      );
+    },
+    [userSettings],
+  );
 
   const patternList = cosmetics ? Object.values(cosmetics.patterns) : [];
   const flagList = cosmetics ? Object.values(cosmetics.flags) : [];
@@ -61,18 +84,40 @@ export function StoreModal() {
     <ModalPage pageId="page-item-store" onOpen={loadData}>
       <ModalContainer>
         <div className="flex items-center gap-3 px-4 py-3 border-b border-white/10 shrink-0">
-          <button onClick={() => showPage("page-play")} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors text-white/70 hover:text-white">
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+          <button
+            onClick={() => showPage("page-play")}
+            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors text-white/70 hover:text-white"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="w-5 h-5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
           </button>
-          <h2 className="text-lg font-bold text-white uppercase tracking-widest">{translateText("main.store")}</h2>
+          <h2 className="text-lg font-bold text-white uppercase tracking-widest">
+            {translateText("main.store")}
+          </h2>
         </div>
 
         {/* Tabs */}
         <div className="flex border-b border-white/10 px-4">
-          <button onClick={() => setActiveTab("patterns")} className={`px-4 py-2 text-sm font-medium uppercase tracking-wider transition-colors ${activeTab === "patterns" ? "text-blue-400 border-b-2 border-blue-400" : "text-white/50 hover:text-white/80"}`}>
+          <button
+            onClick={() => setActiveTab("patterns")}
+            className={`px-4 py-2 text-sm font-medium uppercase tracking-wider transition-colors ${activeTab === "patterns" ? "text-blue-400 border-b-2 border-blue-400" : "text-white/50 hover:text-white/80"}`}
+          >
             {translateText("store.patterns")}
           </button>
-          <button onClick={() => setActiveTab("flags")} className={`px-4 py-2 text-sm font-medium uppercase tracking-wider transition-colors ${activeTab === "flags" ? "text-blue-400 border-b-2 border-blue-400" : "text-white/50 hover:text-white/80"}`}>
+          <button
+            onClick={() => setActiveTab("flags")}
+            className={`px-4 py-2 text-sm font-medium uppercase tracking-wider transition-colors ${activeTab === "flags" ? "text-blue-400 border-b-2 border-blue-400" : "text-white/50 hover:text-white/80"}`}
+          >
             {translateText("store.flags")}
           </button>
         </div>
@@ -103,9 +148,13 @@ export function StoreModal() {
                     }`}
                   >
                     <div className="w-12 h-12 rounded bg-white/10" />
-                    <span className="text-xs text-white/70 truncate w-full text-center">{pattern.name}</span>
+                    <span className="text-xs text-white/70 truncate w-full text-center">
+                      {pattern.name}
+                    </span>
                     {rel === "purchasable" && pattern.product && (
-                      <span className="text-xs text-green-400">${pattern.product.price}</span>
+                      <span className="text-xs text-green-400">
+                        ${pattern.product.price}
+                      </span>
                     )}
                   </button>
                 );
@@ -131,8 +180,14 @@ export function StoreModal() {
                         : "bg-white/5 border-white/10 hover:bg-white/10"
                     }`}
                   >
-                    <img src={flag.url} alt={flag.name} className="w-8 h-6 rounded object-cover" />
-                    <span className="text-[10px] text-white/60 truncate w-full text-center">{flag.name}</span>
+                    <img
+                      src={flag.url}
+                      alt={flag.name}
+                      className="w-8 h-6 rounded object-cover"
+                    />
+                    <span className="text-[10px] text-white/60 truncate w-full text-center">
+                      {flag.name}
+                    </span>
                   </button>
                 );
               })}

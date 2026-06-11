@@ -9,9 +9,9 @@ import { useGameView } from "../bridge/GameViewContext";
 import { useEventBus } from "../bridge/useEventBus";
 import {
   ImmunityBarVisibleEvent,
-  SpawnBarVisibleEvent,
   ShowReplayPanelEvent,
   ShowSettingsModalEvent,
+  SpawnBarVisibleEvent,
 } from "./events";
 
 const exitIcon = assetUrl("images/ExitIconWhite.svg");
@@ -57,7 +57,8 @@ function GameRightSidebar(): React.JSX.Element {
   });
 
   useEventBus(eventBus, TogglePauseIntentEvent, () => {
-    const isReplayOrSingleplayer = isSinglePlayer || gameView.config().isReplay();
+    const isReplayOrSingleplayer =
+      isSinglePlayer || gameView.config().isReplay();
     if (isReplayOrSingleplayer || isLobbyCreator) {
       onPauseButtonClick();
     }
@@ -154,9 +155,7 @@ function GameRightSidebar(): React.JSX.Element {
   };
 
   const onSettingsButtonClick = () => {
-    eventBus.emit(
-      new ShowSettingsModalEvent(true, isSinglePlayer, isPaused),
-    );
+    eventBus.emit(new ShowSettingsModalEvent(true, isSinglePlayer, isPaused));
   };
 
   const timerColor =
@@ -179,16 +178,8 @@ function GameRightSidebar(): React.JSX.Element {
 
       {/* Buttons */}
       {isReplayOrSingleplayer && (
-        <div
-          className="cursor-pointer"
-          onClick={toggleReplayPanel}
-        >
-          <img
-            src={FastForwardIconSolid}
-            alt="replay"
-            width={20}
-            height={20}
-          />
+        <div className="cursor-pointer" onClick={toggleReplayPanel}>
+          <img src={FastForwardIconSolid} alt="replay" width={20} height={20} />
         </div>
       )}
 

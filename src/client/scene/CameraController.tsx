@@ -1,20 +1,16 @@
-import React, { useCallback, useEffect, useRef } from "react";
-import { useThree, useFrame } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
-import { Vector3, MOUSE } from "three";
+import { useFrame, useThree } from "@react-three/fiber";
+import React, { useCallback, useEffect, useRef } from "react";
+import { MOUSE, Vector3 } from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { useGameView } from "../bridge/GameViewContext";
 import { useEventBus } from "../bridge/useEventBus";
-import {
-  CenterCameraEvent,
-  DragEvent,
-  ZoomEvent,
-} from "../InputHandler";
 import {
   GoToPlayerEvent,
   GoToPositionEvent,
   GoToUnitEvent,
 } from "../CameraEvents";
+import { CenterCameraEvent, DragEvent, ZoomEvent } from "../InputHandler";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -214,10 +210,16 @@ export function CameraController(): React.JSX.Element {
       const controls = controlsRef.current;
       const dist = camera.position.distanceTo(controls.target);
       const zoomFactor = 1 + e.delta / 600;
-      const newDist = Math.max(MIN_HEIGHT, Math.min(MAX_HEIGHT, dist * zoomFactor));
+      const newDist = Math.max(
+        MIN_HEIGHT,
+        Math.min(MAX_HEIGHT, dist * zoomFactor),
+      );
 
       // Scale camera position along the look direction
-      _v.copy(camera.position).sub(controls.target).normalize().multiplyScalar(newDist);
+      _v.copy(camera.position)
+        .sub(controls.target)
+        .normalize()
+        .multiplyScalar(newDist);
       camera.position.copy(controls.target).add(_v);
       controls.update();
     },
@@ -233,7 +235,12 @@ export function CameraController(): React.JSX.Element {
 
   // ── Per-frame GoTo animation ──────────────────────────────────────────
   useFrame((_, delta) => {
-    if (!animating.current || !targetRef.current || !cameraGoalRef.current || !controlsRef.current)
+    if (
+      !animating.current ||
+      !targetRef.current ||
+      !cameraGoalRef.current ||
+      !controlsRef.current
+    )
       return;
 
     const target = targetRef.current;

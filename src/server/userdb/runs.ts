@@ -77,9 +77,7 @@ export function insertRun(input: InsertRunInput): RunRow {
       now,
     );
   return fromDb(
-    getDb()
-      .prepare("SELECT * FROM runs WHERE id = ?")
-      .get(id) as DbRunRow,
+    getDb().prepare("SELECT * FROM runs WHERE id = ?").get(id) as DbRunRow,
   );
 }
 

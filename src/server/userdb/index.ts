@@ -1,5 +1,11 @@
 export { closeDb, getDb } from "./db";
 export {
+  insertRun,
+  listRunsForUser,
+  type InsertRunInput,
+  type RunRow,
+} from "./runs";
+export {
   createSession,
   findActiveSession,
   revokeAllSessionsForUser,
@@ -7,17 +13,11 @@ export {
   type SessionRow,
 } from "./sessions";
 export {
-  findUserById,
   findUserByDiscordId,
+  findUserById,
   findUserByPublicId,
   touchUser,
   upsertDiscordUser,
   type UpsertDiscordUserInput,
   type UserRow,
 } from "./users";
-export {
-  insertRun,
-  listRunsForUser,
-  type InsertRunInput,
-  type RunRow,
-} from "./runs";

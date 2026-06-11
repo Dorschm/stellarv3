@@ -1,14 +1,14 @@
-import React, { useEffect, useState } from "react";
 import { Colord } from "colord";
+import React, { useEffect, useState } from "react";
 import { assetUrl } from "../../core/AssetUrls";
 import { GameMode, Team } from "../../core/game/Game";
+import { Platform } from "../Platform";
 import { getTranslatedPlayerTeamLabel, translateText } from "../Utils";
 import { useGameView } from "../bridge/GameViewContext";
 import { useEventBus } from "../bridge/useEventBus";
-import { SpawnBarVisibleEvent, ImmunityBarVisibleEvent } from "./events";
-import { Platform } from "../Platform";
 import { Leaderboard } from "./Leaderboard";
 import { TeamStats } from "./TeamStats";
+import { ImmunityBarVisibleEvent, SpawnBarVisibleEvent } from "./events";
 
 const leaderboardRegularIcon = assetUrl(
   "images/LeaderboardIconRegularWhite.svg",
@@ -21,7 +21,8 @@ function GameLeftSidebar(): React.JSX.Element {
   const { gameView, eventBus } = useGameView();
   const [isLeaderboardShow, setIsLeaderboardShow] = useState(false);
   const [isTeamLeaderboardShow, setIsTeamLeaderboardShow] = useState(false);
-  const [isPlayerTeamLabelVisible, setIsPlayerTeamLabelVisible] = useState(false);
+  const [isPlayerTeamLabelVisible, setIsPlayerTeamLabelVisible] =
+    useState(false);
   const [playerTeam, setPlayerTeam] = useState<Team | null>(null);
   const [playerColor, setPlayerColor] = useState<Colord>(new Colord("#FFFFFF"));
   const [spawnBarVisible, setSpawnBarVisible] = useState(false);
@@ -106,9 +107,7 @@ function GameLeftSidebar(): React.JSX.Element {
         >
           <img
             src={
-              isLeaderboardShow
-                ? leaderboardSolidIcon
-                : leaderboardRegularIcon
+              isLeaderboardShow ? leaderboardSolidIcon : leaderboardRegularIcon
             }
             alt={
               translateText("help_modal.icon_alt_player_leaderboard") ||
@@ -125,22 +124,14 @@ function GameLeftSidebar(): React.JSX.Element {
             role="button"
             tabIndex={0}
             onKeyDown={(e) => {
-              if (
-                e.key === "Enter" ||
-                e.key === " " ||
-                e.code === "Space"
-              ) {
+              if (e.key === "Enter" || e.key === " " || e.code === "Space") {
                 e.preventDefault();
                 toggleTeamLeaderboard();
               }
             }}
           >
             <img
-              src={
-                isTeamLeaderboardShow
-                  ? teamSolidIcon
-                  : teamRegularIcon
-              }
+              src={isTeamLeaderboardShow ? teamSolidIcon : teamRegularIcon}
               alt={
                 translateText("help_modal.icon_alt_team_leaderboard") ||
                 "Team Leaderboard Icon"

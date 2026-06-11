@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
 import DOMPurify from "dompurify";
+import React, { useEffect, useState } from "react";
 import { MessageType } from "../../core/game/Game";
 import {
   DisplayMessageUpdate,
@@ -118,9 +118,7 @@ export function ChatDisplay(): React.JSX.Element {
           <tbody>
             {chatEvents.map((chat, idx) => (
               <tr key={idx} className="border-b border-gray-200/0">
-                <td className="lg:p-3 p-1 text-left">
-                  {getChatContent(chat)}
-                </td>
+                <td className="lg:p-3 p-1 text-left">{getChatContent(chat)}</td>
               </tr>
             ))}
           </tbody>

@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef } from "react";
 import { Colord } from "colord";
 import { base64url } from "jose";
-import { PlayerPattern } from "../../../core/Schemas";
+import { useEffect, useRef, useState } from "react";
 import { PatternDecoder } from "../../../core/PatternDecoder";
+import { PlayerPattern } from "../../../core/Schemas";
 import { getPlayerCosmetics } from "../../Cosmetics";
 import { crazyGamesSDK } from "../../CrazyGamesSDK";
 import { translateText } from "../../Utils";

@@ -1,12 +1,12 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
+import { useGameView } from "../bridge/GameViewContext";
+import { useEventBus } from "../bridge/useEventBus";
 import { ReplaySpeedChangeEvent } from "../InputHandler";
 import {
   defaultReplaySpeedMultiplier,
   ReplaySpeedMultiplier,
 } from "../utilities/ReplaySpeedMultiplier";
 import { translateText } from "../Utils";
-import { useGameView } from "../bridge/GameViewContext";
-import { useEventBus } from "../bridge/useEventBus";
 import { ShowReplayPanelEvent } from "./events";
 
 interface ReplayPanelProps {
@@ -20,7 +20,7 @@ function ReplayPanel({
 }: ReplayPanelProps): React.JSX.Element {
   const { gameView, eventBus } = useGameView();
   const [visible, setVisible] = useState(initialVisible);
-  const [isSingleplayer, setIsSingleplayer] = useState(initialIsSingleplayer);
+  const [, setIsSingleplayer] = useState(initialIsSingleplayer);
   const [replaySpeedMultiplier, setReplaySpeedMultiplier] = useState(
     defaultReplaySpeedMultiplier,
   );

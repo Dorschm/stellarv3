@@ -58,8 +58,6 @@ CREATE INDEX IF NOT EXISTS idx_runs_user_id_created
   ON runs(user_id, created_at DESC);
 `;
 
-export function applySchema(
-  db: { exec(sql: string): unknown },
-): void {
+export function applySchema(db: { exec(sql: string): unknown }): void {
   db.exec(SCHEMA_SQL);
 }

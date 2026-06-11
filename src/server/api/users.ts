@@ -1,9 +1,5 @@
 import { Router } from "express";
-import {
-  findUserById,
-  findUserByPublicId,
-  type UserRow,
-} from "../userdb";
+import { findUserById, findUserByPublicId, type UserRow } from "../userdb";
 import { requireAuthUser } from "./authMiddleware";
 
 function discordPayload(user: UserRow) {

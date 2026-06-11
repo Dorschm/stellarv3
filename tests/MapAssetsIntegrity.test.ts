@@ -21,7 +21,10 @@ const REQUIRED_ASSETS = [
   "thumbnail.webp",
 ] as const;
 
-const BINARY_SECTIONS: { file: "map.bin" | "map4x.bin" | "map16x.bin"; section: keyof Manifest }[] = [
+const BINARY_SECTIONS: {
+  file: "map.bin" | "map4x.bin" | "map16x.bin";
+  section: keyof Manifest;
+}[] = [
   { file: "map.bin", section: "map" },
   { file: "map4x.bin", section: "map4x" },
   { file: "map16x.bin", section: "map16x" },
@@ -46,9 +49,7 @@ describe("Map assets integrity", () => {
     }
 
     if (errors.length > 0) {
-      throw new Error(
-        "Map asset presence violations:\n" + errors.join("\n"),
-      );
+      throw new Error("Map asset presence violations:\n" + errors.join("\n"));
     }
   });
 
@@ -62,7 +63,9 @@ describe("Map assets integrity", () => {
       const mapDir = path.dirname(manifestPath);
       let manifest: Manifest;
       try {
-        manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8")) as Manifest;
+        manifest = JSON.parse(
+          fs.readFileSync(manifestPath, "utf8"),
+        ) as Manifest;
       } catch (err) {
         errors.push(
           `Failed to parse ${manifestPath}: ${(err as Error).message}`,
@@ -100,9 +103,7 @@ describe("Map assets integrity", () => {
     }
 
     if (errors.length > 0) {
-      throw new Error(
-        "Map binary size violations:\n" + errors.join("\n"),
-      );
+      throw new Error("Map binary size violations:\n" + errors.join("\n"));
     }
   });
 });

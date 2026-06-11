@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { UserSettings } from "../../../core/game/UserSettings";
 import { resolveFlagUrl } from "../../Cosmetics";
 import { translateText } from "../../Utils";
@@ -48,7 +48,10 @@ export function FlagInput({
       }
     };
 
-    window.addEventListener("event:user-settings-changed:flag", handleFlagChange);
+    window.addEventListener(
+      "event:user-settings-changed:flag",
+      handleFlagChange,
+    );
 
     return () => {
       window.removeEventListener(

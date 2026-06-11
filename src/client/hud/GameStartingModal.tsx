@@ -22,9 +22,11 @@ let moduleIsVisible = true;
 let moduleSetter: ((visible: boolean) => void) | null = null;
 
 if (typeof window !== "undefined") {
-  (window as unknown as {
-    __gameStartingModal: { show: () => void; hide: () => void };
-  }).__gameStartingModal = {
+  (
+    window as unknown as {
+      __gameStartingModal: { show: () => void; hide: () => void };
+    }
+  ).__gameStartingModal = {
     show: () => {
       moduleIsVisible = true;
       moduleSetter?.(true);
