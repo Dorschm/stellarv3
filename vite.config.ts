@@ -83,6 +83,11 @@ export default defineConfig(({ mode }) => {
         "**/.{idea,git,cache,output,temp}/**",
         "**/.claude/worktrees/**",
         "**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,tsup,build,eslint,prettier}.config.*",
+        // Playwright specs — run by `npm run test:e2e` / smoke scripts, not
+        // vitest. Without these exclusions vitest collects them and they
+        // fail at load on test.describe(), breaking `npm test` and CI.
+        "tests/e2e/**",
+        "prod-smoke/**",
       ],
     },
     root: "./",

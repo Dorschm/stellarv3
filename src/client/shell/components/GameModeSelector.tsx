@@ -30,8 +30,7 @@ const CARD_BG = "bg-sky-950";
 
 export function GameModeSelector() {
   const { showPage } = useNavigation();
-  const { eventBus, getValidateUsernameRef, joinLobby, lobbyHandle } =
-    useClient();
+  const { eventBus, getValidateUsernameRef, lobbyHandle } = useClient();
   const [lobbies, setLobbies] = useState<PublicGames | null>(null);
   const [mapAspectRatios, setMapAspectRatios] = useState<
     Map<GameMapType, number>

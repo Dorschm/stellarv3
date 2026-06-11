@@ -26,7 +26,7 @@ export function ModalPage({
     if (isVisible) {
       onOpen?.();
     }
-  }, [isVisible]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isVisible]); // intentionally omits onOpen: fire only on visibility change
 
   const handleClose = useCallback(() => {
     if (confirmBeforeClose && !confirmBeforeClose()) return;
