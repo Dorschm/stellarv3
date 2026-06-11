@@ -331,6 +331,9 @@ export function respondToMIRV(
   random: PseudoRandom,
   mirvTarget: Player,
 ) {
+  // Only AI nations auto-emote (same guard as respondToEmoji) — never make a
+  // human broadcast an emoji they didn't send or burn their emoji cooldown.
+  if (mirvTarget.type() !== PlayerType.Nation) return;
   if (!random.chance(8)) return;
   if (!mirvTarget.canSendEmoji(AllPlayers)) return;
 

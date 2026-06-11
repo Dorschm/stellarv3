@@ -19,6 +19,15 @@ import {
 } from "./NationEmojiBehavior";
 
 export class NationAllianceBehavior {
+  // Renewal decisions already rolled, keyed by alliance id + expiry tick.
+  // The probabilistic accept/reject must be rolled exactly once per renewal
+  // request — re-rolling on every AI tick would compound the per-roll accept
+  // chance toward near-certain acceptance, erasing the difficulty-tuned
+  // rejection odds. extend() bumps expiresAt, so a later renewal cycle of
+  // the same alliance gets a fresh key (and a fresh roll). Stale entries are
+  // bounded by renewal cycles per game, so no cleanup is needed.
+  private readonly extensionDecisions = new Map<string, boolean>();
+
   constructor(
     private random: PseudoRandom,
     private game: Game,
@@ -36,7 +45,14 @@ export class NationAllianceBehavior {
         continue;
       }
       if (this.getAllianceDecision(req.requestor(), true)) {
-        req.accept();
+        // Accept via a reciprocal request so AllianceRequestExecution's
+        // auto-accept branch runs — the same path a human acceptance takes.
+        // A bare req.accept() would skip its side effects (mutual +100
+        // relation, temporary-embargo cleanup, and destroying in-flight
+        // nukes between the new allies).
+        this.game.addExecution(
+          new AllianceRequestExecution(this.player, req.requestor().id()),
+        );
       } else {
         req.reject();
       }
@@ -50,7 +66,13 @@ export class NationAllianceBehavior {
       if (!alliance.onlyOneAgreedToExtend()) continue;
 
       const human = alliance.other(this.player);
-      if (!this.getAllianceDecision(human, true)) continue;
+      const decisionKey = `${alliance.id()}:${alliance.expiresAt()}`;
+      let decision = this.extensionDecisions.get(decisionKey);
+      if (decision === undefined) {
+        decision = this.getAllianceDecision(human, true);
+        this.extensionDecisions.set(decisionKey, decision);
+      }
+      if (!decision) continue;
 
       this.game.addExecution(
         new AllianceExtensionExecution(this.player, human.id()),

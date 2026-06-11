@@ -89,6 +89,14 @@ function randTerritoryTile(
   p: Player,
   boundingBox: { min: Cell; max: Cell } | null = null,
 ): TileRef | null {
+  // Eliminated players own no tiles: their bounding box degenerates to
+  // Infinity coordinates and `randElement` would throw on the empty tile
+  // array, aborting the whole game tick. Bail out instead — callers already
+  // handle a null/empty result.
+  if (p.numTilesOwned() === 0) {
+    return null;
+  }
+
   // Prefer sampling inside the bounding box first (fast, usually good enough)
   boundingBox ??= calculateBoundingBox(mg, p.borderTiles());
   for (let i = 0; i < 100; i++) {

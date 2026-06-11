@@ -23,12 +23,27 @@ import {
 // 30 seconds at 10 ticks/second
 const MIRV_COOLDOWN_TICKS = 300;
 
-export class NationClusterWarheadBehavior {
-  // Shared across all NationClusterWarheadBehavior instances.
-  // Tracks the last tick a ClusterWarhead was sent at each player, so multiple nations don't pile-on the same target.
-  // Especially important for games with very high starting credit settings.
-  private static recentClusterWarheadTargets = new Map<PlayerID, Tick>();
+// Shared across all NationClusterWarheadBehavior instances within one game.
+// Tracks the last tick a ClusterWarhead was sent at each player, so multiple nations don't pile-on the same target.
+// Especially important for games with very high starting credit settings.
+// Keyed by the `Game` instance via a `WeakMap` (like NukeExecution's
+// per-game detonation budget) so the state never leaks between simultaneous
+// games or between tests and is garbage-collected with the game.
+const recentClusterWarheadTargetsByGame = new WeakMap<
+  Game,
+  Map<PlayerID, Tick>
+>();
 
+function recentClusterWarheadTargets(game: Game): Map<PlayerID, Tick> {
+  let targets = recentClusterWarheadTargetsByGame.get(game);
+  if (targets === undefined) {
+    targets = new Map();
+    recentClusterWarheadTargetsByGame.set(game, targets);
+  }
+  return targets;
+}
+
+export class NationClusterWarheadBehavior {
   constructor(
     private random: PseudoRandom,
     private game: Game,
@@ -235,17 +250,13 @@ export class NationClusterWarheadBehavior {
 
   // ClusterWarhead Cooldown Methods
   private wasRecentlyMirved(target: Player): boolean {
-    const lastTick =
-      NationClusterWarheadBehavior.recentClusterWarheadTargets.get(target.id());
+    const lastTick = recentClusterWarheadTargets(this.game).get(target.id());
     if (lastTick === undefined) return false;
     return this.game.ticks() - lastTick < MIRV_COOLDOWN_TICKS;
   }
 
   private recordMirvHit(target: Player): void {
-    NationClusterWarheadBehavior.recentClusterWarheadTargets.set(
-      target.id(),
-      this.game.ticks(),
-    );
+    recentClusterWarheadTargets(this.game).set(target.id(), this.game.ticks());
   }
 
   // ClusterWarhead Helper Methods
