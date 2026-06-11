@@ -19,12 +19,18 @@ import { NukeExecution } from "./NukeExecution";
  * Max submunitions spawned per game tick once the MRV separates. The full
  * payload (`warheadCount = 350`) used to be added in a single tick, which
  * spiked the executor queue and the render side hard. Spreading the spawns
- * over ~7 ticks (50 × 7 = 350) softens that into a ~700ms arrival window
- * without changing total damage or submunition count.
+ * over more ticks (20 × ~18 = 350) rolls the payload out in slower waves so
+ * fewer new submunition units appear per tick, without changing total damage
+ * or submunition count — only the arrival cadence.
+ *
+ * Lowered 50 → 20: even spread over ~7 ticks, a 50-submunition batch was
+ * still spiking the render/unit-creation side enough to lag. The slower
+ * cadence pairs with the detonation throttle
+ * (`CLUSTER_SUBMUNITION_DETONATIONS_PER_TICK` in NukeExecution.ts).
  *
  * Issue #5 — see plan §6.
  */
-const MIRV_SPAWN_PER_TICK = 50;
+const MIRV_SPAWN_PER_TICK = 20;
 
 export class MirvExecution implements Execution {
   private active = true;

@@ -120,11 +120,11 @@ async function buildGiantMapFixture(): Promise<Fixture> {
  *
  * The full payload (`warheadCount = 350`) used to land in a single tick
  * with a measurable executor-queue spike. Spreading the spawns over
- * `MIRV_SPAWN_PER_TICK = 50` ticks softens the worst tick into a
- * predictable 50-submunition batch. If a future change ever reintroduces
+ * `MIRV_SPAWN_PER_TICK = 20` ticks softens the worst tick into a
+ * predictable 20-submunition batch. If a future change ever reintroduces
  * the single-tick spike (e.g. drainPendingSpawns is removed or its
  * batch size is set to `Infinity`), the worst-tick measurement below
- * regresses by ~7× and the budget assertion fires immediately.
+ * regresses by ~18× and the budget assertion fires immediately.
  *
  * Budget is expressed in milliseconds; tune up if a slower CI runner
  * trips it without an actual regression. 15ms covers a full single-tick
@@ -249,7 +249,7 @@ console.log(
 );
 
 // Worst-tick budget regression check: the spread-spawn drain
-// (`MIRV_SPAWN_PER_TICK = 50`) must keep every tick under the budget on
+// (`MIRV_SPAWN_PER_TICK = 20`) must keep every tick under the budget on
 // every independent run. Computed across the fresh-fixture samples so a
 // single bad iteration cannot be masked by other iterations' cached
 // state. A reintroduced single-tick spawn would push the giant-map

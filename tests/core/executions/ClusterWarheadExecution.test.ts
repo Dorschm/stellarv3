@@ -1,5 +1,6 @@
 import { MirvExecution } from "../../../src/core/execution/ClusterWarheadExecution";
 import { NukeExecution } from "../../../src/core/execution/NukeExecution";
+import { PointDefenseArrayExecution } from "../../../src/core/execution/PointDefenseArrayExecution";
 import {
   Game,
   MessageType,
@@ -395,8 +396,8 @@ describe("ClusterWarheadExecution", () => {
     //      Manhattan-distance order from `dst` (the furthest target
     //      spawns first so the arrival window converges on the centre).
     //   3. The tick-spread drain spawns at most `MIRV_SPAWN_PER_TICK`
-    //      (= 50) NukeExecutions per tick, and the total drains in
-    //      exactly `ceil(total / 50)` ticks.
+    //      (= 20) NukeExecutions per tick, and the total drains in
+    //      exactly `ceil(total / 20)` ticks.
     //   4. Every spawned `NukeExecution` uses the captured separation
     //      tile as its `src` argument (not the silo). This is the
     //      original regression in Issue #5 and remains the load-bearing
@@ -433,7 +434,7 @@ describe("ClusterWarheadExecution", () => {
 
     // Drive the spread-drain. Track per-tick batch sizes via the spy's
     // call count delta and assert the per-tick cap.
-    const PER_TICK_CAP = 50;
+    const PER_TICK_CAP = 20;
     const WARHEAD_COUNT = 350;
     const batchSizes: number[] = [];
     let prevCount = 0;
@@ -520,10 +521,10 @@ describe("ClusterWarheadExecution", () => {
     }
   });
 
-  test("cluster submunition detonations are throttled to 3 per tick", async () => {
-    // Spawn more than 3 `ClusterWarheadSubmunition` NukeExecutions whose
+  test("cluster submunition detonations are throttled to 2 per tick", async () => {
+    // Spawn more than 2 `ClusterWarheadSubmunition` NukeExecutions whose
     // `src === dst`, so every one of them reaches `PathStatus.COMPLETE` on
-    // the same tick. The per-tick throttle must let at most 3 detonate per
+    // the same tick. The per-tick throttle must let at most 2 detonate per
     // tick, leaving the rest active to retry on later ticks — total count
     // and eventual damage are preserved, only the timing spreads.
     const targetTile = game.ref(50, 50);
@@ -559,15 +560,96 @@ describe("ClusterWarheadExecution", () => {
       prevInactive = inactive;
     }
 
-    // Acceptance criterion 1 — no tick detonates more than 3.
+    // Acceptance criterion 1 — no tick detonates more than 2.
     for (const detonations of perTickDetonations) {
-      expect(detonations).toBeLessThanOrEqual(3);
+      expect(detonations).toBeLessThanOrEqual(2);
     }
     // Acceptance criterion 4 — every submunition eventually detonates.
     expect(prevInactive).toBe(SUBMUNITION_COUNT);
-    // Acceptance criterion 6 — 8 submunitions at 3/tick must spread across
-    // at least ceil(8 / 3) = 3 ticks.
-    expect(perTickDetonations.length).toBeGreaterThanOrEqual(3);
+    // Acceptance criterion 6 — 8 submunitions at 2/tick must spread across
+    // at least ceil(8 / 2) = 4 ticks.
+    expect(perTickDetonations.length).toBeGreaterThanOrEqual(4);
+  });
+
+  test("throttled-but-ready submunitions are not erased by point defense", async () => {
+    // Regression — throttled cluster submunitions must keep their damage.
+    //
+    // A `ClusterWarheadSubmunition` that has reached `PathStatus.COMPLETE`
+    // but was deferred by the per-tick detonation throttle is guaranteed to
+    // detonate on a later tick. While deferred it stays an active unit, so a
+    // PDA covering the impact area used to scan it as an ordinary in-flight
+    // submunition and delete it — erasing an explosion that was only delayed
+    // for performance and cutting total submunition damage below the
+    // un-throttled baseline. Every deferred submunition must still detonate.
+    const targetTile = game.ref(50, 50);
+    expect(game.owner(targetTile)).toBe(otherPlayer);
+
+    // Defender PDA sitting on the impact area: every submunition's
+    // `targetTile` is inside `clusterWarheadProtectionRadius` (50 manhattan
+    // tiles of the PDA), so the PDA would intercept any submunition it is
+    // allowed to scan.
+    const pdaTile = game.ref(52, 52);
+    expect(game.map().isSector(pdaTile)).toBe(true);
+    const pda = otherPlayer.buildUnit(UnitType.PointDefenseArray, pdaTile, {});
+    expect(pda.isUnderConstruction()).toBe(false);
+
+    // Count real detonations vs PDA interceptions via the stats sink.
+    const stats = game.stats();
+    const landSpy = vi.spyOn(stats, "bombLand");
+    const interceptSpy = vi.spyOn(stats, "bombIntercept");
+
+    // More than the 2/tick throttle cap, so several submunitions are always
+    // sitting in the deferred pending-detonation state at once.
+    const SUBMUNITION_COUNT = 15;
+    const execs: NukeExecution[] = [];
+    for (let i = 0; i < SUBMUNITION_COUNT; i++) {
+      // src === dst → degenerate parabola, so every submunition reaches
+      // COMPLETE on the same tick and the throttle must defer most of them.
+      const exec = new NukeExecution(
+        UnitType.ClusterWarheadSubmunition,
+        player,
+        targetTile,
+        targetTile,
+      );
+      execs.push(exec);
+      game.addExecution(exec);
+    }
+
+    // Run until the submunition units have been built (they are now
+    // in-flight, none deferred yet). Only then add the PDA execution — this
+    // keeps the PDA inactive during the legitimate in-flight tick and makes
+    // its first scan land on a tick where submunitions are already deferred,
+    // exactly the "later PDA execution" the regression describes.
+    let guard = 0;
+    while (
+      player.units(UnitType.ClusterWarheadSubmunition).length <
+        SUBMUNITION_COUNT &&
+      guard < 20
+    ) {
+      game.executeNextTick();
+      guard++;
+    }
+    expect(player.units(UnitType.ClusterWarheadSubmunition).length).toBe(
+      SUBMUNITION_COUNT,
+    );
+    game.addExecution(new PointDefenseArrayExecution(otherPlayer, null, pda));
+
+    while (execs.some((e) => e.isActive()) && guard < 80) {
+      game.executeNextTick();
+      guard++;
+    }
+    expect(execs.some((e) => e.isActive())).toBe(false);
+
+    // Every submunition detonated; the PDA intercepted none of them.
+    const detonations = landSpy.mock.calls.filter(
+      (call) => call[2] === UnitType.ClusterWarheadSubmunition,
+    ).length;
+    expect(detonations).toBe(SUBMUNITION_COUNT);
+
+    const intercepted = interceptSpy.mock.calls
+      .filter((call) => call[1] === UnitType.ClusterWarheadSubmunition)
+      .reduce((sum, call) => sum + (call[2] as number), 0);
+    expect(intercepted).toBe(0);
   });
 
   test("non-cluster nukes (AntimatterTorpedo) are not throttled", async () => {

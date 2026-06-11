@@ -9,6 +9,7 @@ import {
 } from "../game/Game";
 import { TileRef } from "../game/GameMap";
 import { PseudoRandom } from "../PseudoRandom";
+import { isPendingClusterDetonation } from "./NukeExecution";
 import { PointDefenseMissileExecution } from "./PointDefenseMissileExecution";
 
 type Target = {
@@ -286,6 +287,13 @@ export class PointDefenseArrayExecution implements Execution {
       ({ unit }) => {
         if (!isUnit(unit)) return false;
         if (unit.owner() === this.player) return false;
+
+        // A submunition that has already reached its target and is only
+        // waiting on the per-tick detonation throttle is no longer an
+        // in-flight interceptable unit — its explosion is guaranteed.
+        // Skip it so point defense cannot erase a merely-delayed blast.
+        // Normal in-flight submunitions are still interceptable.
+        if (isPendingClusterDetonation(unit)) return false;
 
         // After game-over in team games, PDAs also target teammate cluster warheads (aftergame fun)
         const nukeOwner = unit.owner();

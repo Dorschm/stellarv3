@@ -42,13 +42,18 @@ const KILLABLE_BY_NUKE: readonly UnitType[] = (
  * the same tick; each `detonate()` runs tile destruction, population
  * damage, unit deletion, building redraw touches, and stats. Letting
  * them all fire at once produces a visible freeze/stutter. Throttling
- * to 3/tick spreads the work over more ticks without changing the total
+ * to 2/tick spreads the work over more ticks without changing the total
  * submunition count or total damage — only the detonation timing.
+ *
+ * Lowered 3 → 2: 3 detonations/tick was still spiking on large payloads.
+ * Fewer explosions per tick trades a slightly longer bombardment for a
+ * smoother frame. Pairs with the slower spawn cadence
+ * (`MIRV_SPAWN_PER_TICK` in ClusterWarheadExecution.ts).
  *
  * Only `UnitType.ClusterWarheadSubmunition` is throttled; AntimatterTorpedo,
  * NovaBomb, and the parent ClusterWarhead detonate immediately.
  */
-const CLUSTER_SUBMUNITION_DETONATIONS_PER_TICK = 3;
+const CLUSTER_SUBMUNITION_DETONATIONS_PER_TICK = 2;
 
 /**
  * Per-game cluster-submunition detonation budget, reset every tick. Keyed
@@ -62,6 +67,31 @@ const clusterDetonationBudget = new WeakMap<
   Game,
   { tick: number; count: number }
 >();
+
+/**
+ * Submunitions that have reached `PathStatus.COMPLETE` but were deferred by
+ * the per-tick detonation throttle. A pending submunition is guaranteed to
+ * detonate on a later tick — it is *not* an in-flight unit and must never be
+ * intercepted, otherwise point defense would erase an explosion that was
+ * only delayed for performance, cutting total submunition damage below the
+ * un-throttled baseline.
+ *
+ * Tracked in a module-level `WeakSet` keyed by the `Unit` so
+ * `PointDefenseArrayExecution` can exclude these units from MIRV warhead
+ * interception. `WeakSet` membership is deterministic, and entries are
+ * garbage-collected with the unit so the set never leaks between games or
+ * between tests.
+ */
+const pendingClusterDetonations = new WeakSet<Unit>();
+
+/**
+ * Returns `true` if `unit` is a `ClusterWarheadSubmunition` that has reached
+ * its target and is only waiting on the per-tick detonation throttle to fire.
+ * Such a unit's explosion is already guaranteed; point defense must skip it.
+ */
+export function isPendingClusterDetonation(unit: Unit): boolean {
+  return pendingClusterDetonations.has(unit);
+}
 
 /**
  * Returns `true` and consumes one detonation slot if the current tick
@@ -295,6 +325,11 @@ export class NukeExecution implements Execution {
         this.nuke.type() === UnitType.ClusterWarheadSubmunition &&
         !tryConsumeClusterDetonationBudget(this.mg)
       ) {
+        // Ready to detonate but throttled this tick. Mark the submunition as
+        // pending-detonation so a later (or subsequent-tick) PDA execution
+        // does not intercept a unit whose explosion is already guaranteed —
+        // it is no longer an interceptable in-flight unit.
+        pendingClusterDetonations.add(this.nuke);
         return;
       }
       this.detonate();
