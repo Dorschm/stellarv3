@@ -5,7 +5,10 @@ import { ColorPalette } from "../CosmeticSchemas";
 import { PatternDecoder } from "../PatternDecoder";
 import { ClientID, GameID, Player, PlayerCosmetics } from "../Schemas";
 import { createRandomName, formatPlayerDisplayName } from "../Util";
-import { WorkerClient } from "../worker/WorkerClient";
+import {
+  GameUpdateViewDataWithHabitabilityDamage,
+  WorkerClient,
+} from "../worker/WorkerClient";
 import {
   BuildableUnit,
   Cell,
@@ -903,6 +906,32 @@ export class GameView implements GameMap {
         const tile = terrainPacked[i];
         const nextTerrain = terrainPacked[i + 1] as TerrainType;
         this.setTerrainType(tile, nextTerrain);
+        this.updatedTiles.push(tile);
+      }
+    }
+
+    // LRW habitability damage mirrored from the worker sim (see
+    // `appendHabitabilityDamageUpdates` in Worker.worker.ts). Each pair is
+    // `[tileRef, damageDelta]`. Replaying the deltas through the same
+    // `applyHabitabilityDamage` the sim runs keeps the client overlay,
+    // habitability bucket counters and weighted yield sums consistent with
+    // the authoritative worker SectorMap — without this, HUD economy rates
+    // (max population, troop growth, credit rate) permanently overstate the
+    // sim values after any orbital strike. Ownership updates for this tick
+    // were applied above, so the owner read here matches the worker's
+    // end-of-tick state; the per-player running sums converge identically
+    // regardless of the within-tick damage/conquest ordering.
+    const habDamagePairs = (gu as GameUpdateViewDataWithHabitabilityDamage)
+      .habitabilityDamageUpdates;
+    if (habDamagePairs && habDamagePairs.length > 0) {
+      for (let i = 0; i + 1 < habDamagePairs.length; i += 2) {
+        const tile = habDamagePairs[i] as TileRef;
+        const amount = habDamagePairs[i + 1];
+        this._sectorMap.applyHabitabilityDamage(
+          tile,
+          amount,
+          this._map.hasOwner(tile) ? this._map.ownerID(tile) : null,
+        );
         this.updatedTiles.push(tile);
       }
     }

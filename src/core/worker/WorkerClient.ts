@@ -13,6 +13,21 @@ import { ClientID, GameStartInfo, Turn } from "../Schemas";
 import { generateID } from "../Util";
 import { WorkerMessage } from "./WorkerMessages";
 
+/**
+ * `GameUpdateViewData` extended with the worker-boundary habitability-damage
+ * channel. Long-Range Weapon strikes apply habitability damage directly to
+ * the sim's SectorMap (OrbitalStrikePlatformExecution.applyLrwImpact) without
+ * emitting any GameUpdate, so the worker drain diffs the authoritative
+ * overlay after each tick and ships the new flat `[tileRef, damageDelta]`
+ * pairs here (see Worker.worker.ts). GameView.update() replays them into the
+ * client-side SectorMap mirror so HUD economy rates stay consistent after
+ * orbital strikes. Declared at this boundary (rather than GameUpdates.ts)
+ * because both the producer and the consumer sit on either side of it.
+ */
+export type GameUpdateViewDataWithHabitabilityDamage = GameUpdateViewData & {
+  habitabilityDamageUpdates?: number[];
+};
+
 export class WorkerClient {
   private worker: Worker;
   private isInitialized = false;
@@ -103,6 +118,48 @@ export class WorkerClient {
     this.gameUpdateCallback = gameUpdate;
   }
 
+  /**
+   * Register the reply handler for a request/response RPC. Resolves with the
+   * reply's `result`; rejects when the worker reports an error (see
+   * `sendErrorResult` in Worker.worker.ts), when the reply has an unexpected
+   * shape, or when no reply arrives within the timeout (the pending entry is
+   * deleted so it cannot leak). This extends the timeout-and-reject pattern
+   * attackClusteredPositions established to the remaining RPCs — without it,
+   * a worker-side throw left the promise pending forever and the
+   * messageHandlers entry leaked for the session.
+   */
+  private awaitResult<T>(
+    messageId: string,
+    expectedType: WorkerMessage["type"],
+    resolve: (result: T) => void,
+    reject: (error: Error) => void,
+  ): void {
+    const timeout = setTimeout(() => {
+      this.messageHandlers.delete(messageId);
+      reject(new Error(`${expectedType} request timed out`));
+    }, 5000);
+
+    this.messageHandlers.set(messageId, (message) => {
+      clearTimeout(timeout);
+      const error = (message as { error?: string }).error;
+      if (error !== undefined) {
+        reject(new Error(error));
+        return;
+      }
+      const result =
+        message.type === expectedType
+          ? (message as { result?: T }).result
+          : undefined;
+      if (result === undefined) {
+        reject(
+          new Error(`Unexpected ${message.type} reply for ${expectedType}`),
+        );
+        return;
+      }
+      resolve(result);
+    });
+  }
+
   sendTurn(turn: Turn) {
     if (!this.isInitialized) {
       throw new Error("Worker not initialized");
@@ -123,14 +180,12 @@ export class WorkerClient {
 
       const messageId = generateID();
 
-      this.messageHandlers.set(messageId, (message) => {
-        if (
-          message.type === "player_profile_result" &&
-          message.result !== undefined
-        ) {
-          resolve(message.result);
-        }
-      });
+      this.awaitResult<PlayerProfile>(
+        messageId,
+        "player_profile_result",
+        resolve,
+        reject,
+      );
 
       this.worker.postMessage({
         type: "player_profile",
@@ -149,14 +204,12 @@ export class WorkerClient {
 
       const messageId = generateID();
 
-      this.messageHandlers.set(messageId, (message) => {
-        if (
-          message.type === "player_border_tiles_result" &&
-          message.result !== undefined
-        ) {
-          resolve(message.result);
-        }
-      });
+      this.awaitResult<PlayerBorderTiles>(
+        messageId,
+        "player_border_tiles_result",
+        resolve,
+        reject,
+      );
 
       this.worker.postMessage({
         type: "player_border_tiles",
@@ -180,14 +233,12 @@ export class WorkerClient {
 
       const messageId = generateID();
 
-      this.messageHandlers.set(messageId, (message) => {
-        if (
-          message.type === "player_actions_result" &&
-          message.result !== undefined
-        ) {
-          resolve(message.result);
-        }
-      });
+      this.awaitResult<PlayerActions>(
+        messageId,
+        "player_actions_result",
+        resolve,
+        reject,
+      );
 
       this.worker.postMessage({
         type: "player_actions",
@@ -215,14 +266,12 @@ export class WorkerClient {
 
       const messageId = generateID();
 
-      this.messageHandlers.set(messageId, (message) => {
-        if (
-          message.type === "player_buildables_result" &&
-          message.result !== undefined
-        ) {
-          resolve(message.result);
-        }
-      });
+      this.awaitResult<BuildableUnit[]>(
+        messageId,
+        "player_buildables_result",
+        resolve,
+        reject,
+      );
 
       this.worker.postMessage({
         type: "player_buildables",
@@ -293,14 +342,14 @@ export class WorkerClient {
 
       const messageId = generateID();
 
-      this.messageHandlers.set(messageId, (message) => {
-        if (
-          message.type === "assault_shuttle_spawn_result" &&
-          message.result !== undefined
-        ) {
-          resolve(message.result);
-        }
-      });
+      // `result` is `false` (not undefined) when no spawn tile exists, so
+      // the undefined-result rejection in awaitResult stays unambiguous.
+      this.awaitResult<TileRef | false>(
+        messageId,
+        "assault_shuttle_spawn_result",
+        resolve,
+        reject,
+      );
 
       this.worker.postMessage({
         type: "assault_shuttle_spawn",

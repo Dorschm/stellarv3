@@ -1,7 +1,10 @@
 import { assetUrl } from "../AssetUrls";
 import { createGameRunner, GameRunner } from "../GameRunner";
 import { FetchGameMapLoader } from "../game/FetchGameMapLoader";
+import { Game } from "../game/Game";
+import { TileRef } from "../game/GameMap";
 import { ErrorUpdate, GameUpdateViewData } from "../game/GameUpdates";
+import type { GameUpdateViewDataWithHabitabilityDamage } from "./WorkerClient";
 import {
   AssaultShuttleSpawnResultMessage,
   AttackClusteredPositionsResultMessage,
@@ -12,6 +15,7 @@ import {
   PlayerBuildablesResultMessage,
   PlayerProfileResultMessage,
   WorkerMessage,
+  WorkerMessageType,
 } from "./WorkerMessages";
 
 const ctx: Worker = self as any;
@@ -25,8 +29,17 @@ const MAX_TICKS_BEFORE_YIELD = 4;
 let drainScheduled = false;
 let draining = false;
 let drainRequested = false;
+// Latched when the sim throws mid-tick. GameRunner advances currTurn before
+// the throw, so the errored tick is partially applied — executing further
+// turns on top of it would silently diverge from every other client. Once
+// set, no more drains run; the forwarded ErrorUpdate (see drain) lets
+// ClientGameRunner show the error modal and stop the game.
+let fatalSimError = false;
 
 function scheduleDrain(): void {
+  if (fatalSimError) {
+    return;
+  }
   drainRequested = true;
   if (drainScheduled || draining) {
     return;
@@ -58,10 +71,16 @@ async function drain(): Promise<void> {
     }
 
     const batch: GameUpdateViewData[] = [];
+    const errors: ErrorUpdate[] = [];
     const onTickUpdate = (gu: GameUpdateViewData | ErrorUpdate) => {
       if (!("updates" in gu)) {
+        // ErrorUpdate — the sim threw mid-tick and GameRunner.executeNextTick
+        // caught it. Collect it for forwarding after the batch flush below so
+        // the ticks that completed before the error still render in order.
+        errors.push(gu);
         return;
       }
+      appendHabitabilityDamageUpdates(gr.game, gu);
       batch.push(gu);
     };
 
@@ -81,7 +100,23 @@ async function drain(): Promise<void> {
 
     sendGameUpdateBatch(batch);
 
-    shouldContinue = gr.pendingTurns() > 0;
+    if (errors.length > 0) {
+      fatalSimError = true;
+      for (const err of errors) {
+        // Forward on the singular "game_update" channel, which WorkerClient
+        // routes to the same callback as batches; ClientGameRunner already
+        // handles it ("errMsg" in gu → error modal + stop). GameUpdateMessage
+        // is declared with a GameUpdateViewData payload, but the runtime
+        // contract of WorkerClient.start's callback is
+        // GameUpdateViewData | ErrorUpdate — hence the cast.
+        ctx.postMessage({
+          type: "game_update",
+          gameUpdate: err,
+        } as unknown as WorkerMessage);
+      }
+    }
+
+    shouldContinue = !fatalSimError && gr.pendingTurns() > 0;
   } finally {
     tickUpdateSink = null;
     draining = false;
@@ -126,6 +161,67 @@ function sendMessage(message: WorkerMessage) {
   ctx.postMessage(message);
 }
 
+/**
+ * Reply to a request/response RPC whose handler failed. The result-message
+ * shapes in WorkerMessages.ts don't model an error variant, so the reply
+ * reuses the matching result `type` and carries an `error` string instead of
+ * a `result`; WorkerClient.awaitResult rejects the pending promise when it
+ * sees one. Without a reply, a throwing handler would leave the main-thread
+ * promise pending forever and leak its messageHandlers entry.
+ */
+function sendErrorResult(
+  type: WorkerMessageType,
+  id: string | undefined,
+  error: unknown,
+): void {
+  ctx.postMessage({
+    type,
+    id,
+    error: error instanceof Error ? error.message : String(error),
+  } as unknown as WorkerMessage);
+}
+
+// Last habitability-damage value shipped to the main thread, per tile. LRW
+// strikes write damage straight into the sim's SectorMap
+// (OrbitalStrikePlatformExecution.applyLrwImpact) without emitting any
+// GameUpdate, so after each tick the drain diffs the authoritative overlay
+// against this snapshot and attaches the new `[tileRef, damageDelta]` pairs
+// to that tick's view data for GameView.update() to replay into the
+// client-side SectorMap mirror. Damage only ever accumulates (it saturates
+// at the tile's base habitability), so entries are never removed.
+const sentHabitabilityDamage = new Map<TileRef, number>();
+
+function appendHabitabilityDamageUpdates(
+  game: Game,
+  gu: GameUpdateViewData,
+): void {
+  // The overlay is private to SectorMap; read it structurally (the same
+  // pattern GameView uses to wire setSectorMap into DefaultConfig) so a
+  // rename degrades to "no mirror" instead of a crash.
+  const overlay = (
+    game.sectorMap() as unknown as {
+      habitabilityDamage?: ReadonlyMap<TileRef, number>;
+    }
+  ).habitabilityDamage;
+  if (!(overlay instanceof Map) || overlay.size === 0) {
+    return;
+  }
+  let pairs: number[] | null = null;
+  for (const [tile, damage] of overlay) {
+    const prev = sentHabitabilityDamage.get(tile) ?? 0;
+    if (damage === prev) {
+      continue;
+    }
+    pairs ??= [];
+    pairs.push(tile, damage - prev);
+    sentHabitabilityDamage.set(tile, damage);
+  }
+  if (pairs !== null) {
+    (gu as GameUpdateViewDataWithHabitabilityDamage).habitabilityDamageUpdates =
+      pairs;
+  }
+}
+
 ctx.addEventListener("message", async (e: MessageEvent<MainThreadMessage>) => {
   const message = e.data;
 
@@ -167,7 +263,12 @@ ctx.addEventListener("message", async (e: MessageEvent<MainThreadMessage>) => {
 
     case "player_actions":
       if (!gameRunner) {
-        throw new Error("Game runner not initialized");
+        sendErrorResult(
+          "player_actions_result",
+          message.id,
+          "Game runner not initialized",
+        );
+        break;
       }
 
       try {
@@ -184,12 +285,17 @@ ctx.addEventListener("message", async (e: MessageEvent<MainThreadMessage>) => {
         } as PlayerActionsResultMessage);
       } catch (error) {
         console.error("Failed to get actions:", error);
-        throw error;
+        sendErrorResult("player_actions_result", message.id, error);
       }
       break;
     case "player_buildables":
       if (!gameRunner) {
-        throw new Error("Game runner not initialized");
+        sendErrorResult(
+          "player_buildables_result",
+          message.id,
+          "Game runner not initialized",
+        );
+        break;
       }
 
       try {
@@ -212,12 +318,17 @@ ctx.addEventListener("message", async (e: MessageEvent<MainThreadMessage>) => {
         } as PlayerBuildablesResultMessage);
       } catch (error) {
         console.error("Failed to get buildables:", error);
-        throw error;
+        sendErrorResult("player_buildables_result", message.id, error);
       }
       break;
     case "player_profile":
       if (!gameRunner) {
-        throw new Error("Game runner not initialized");
+        sendErrorResult(
+          "player_profile_result",
+          message.id,
+          "Game runner not initialized",
+        );
+        break;
       }
 
       try {
@@ -229,12 +340,17 @@ ctx.addEventListener("message", async (e: MessageEvent<MainThreadMessage>) => {
         } as PlayerProfileResultMessage);
       } catch (error) {
         console.error("Failed to get profile:", error);
-        throw error;
+        sendErrorResult("player_profile_result", message.id, error);
       }
       break;
     case "player_border_tiles":
       if (!gameRunner) {
-        throw new Error("Game runner not initialized");
+        sendErrorResult(
+          "player_border_tiles_result",
+          message.id,
+          "Game runner not initialized",
+        );
+        break;
       }
 
       try {
@@ -248,12 +364,19 @@ ctx.addEventListener("message", async (e: MessageEvent<MainThreadMessage>) => {
         } as PlayerBorderTilesResultMessage);
       } catch (error) {
         console.error("Failed to get border tiles:", error);
-        throw error;
+        sendErrorResult("player_border_tiles_result", message.id, error);
       }
       break;
     case "attack_clustered_positions":
       if (!gameRunner) {
-        throw new Error("Game runner not initialized");
+        // Mirror the catch below: this RPC's reply shape carries `attacks`
+        // (not `result`), so reply empty rather than with an error variant.
+        sendMessage({
+          type: "attack_clustered_positions_result",
+          id: message.id,
+          attacks: [],
+        } as AttackClusteredPositionsResultMessage);
+        break;
       }
 
       try {
@@ -277,7 +400,12 @@ ctx.addEventListener("message", async (e: MessageEvent<MainThreadMessage>) => {
       break;
     case "assault_shuttle_spawn":
       if (!gameRunner) {
-        throw new Error("Game runner not initialized");
+        sendErrorResult(
+          "assault_shuttle_spawn_result",
+          message.id,
+          "Game runner not initialized",
+        );
+        break;
       }
 
       try {
@@ -292,6 +420,7 @@ ctx.addEventListener("message", async (e: MessageEvent<MainThreadMessage>) => {
         } as AssaultShuttleSpawnResultMessage);
       } catch (error) {
         console.error("Failed to spawn assault shuttle:", error);
+        sendErrorResult("assault_shuttle_spawn_result", message.id, error);
       }
       break;
     default:
