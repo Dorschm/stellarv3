@@ -389,12 +389,123 @@ export function replacer(_key: string, value: any): any {
   return typeof value === "bigint" ? value.toString() : value;
 }
 
+/**
+ * Deterministic transcendental replacements for sim code.
+ *
+ * ECMA-262 specifies Math.exp / Math.log / Math.pow (and the other
+ * transcendentals) as *implementation-approximated*: V8, JavaScriptCore and
+ * SpiderMonkey may legally differ in the last ULP. Any such value feeding the
+ * lockstep simulation is a cross-engine desync vector — a Math.floor or
+ * BigInt() conversion amplifies a 1-ULP wobble into a whole credit/unit.
+ *
+ * IEEE-754 basic operations (+ - * / and Math.sqrt) ARE exactly specified
+ * (correctly rounded), so the functions below are built from those only and
+ * return bit-identical results on every engine. Deterministic game state must
+ * use these instead of Math.exp / Math.pow / Math.log.
+ */
+
+// ln(2) and 1/ln(2) as the nearest-double literals (numeric literals round
+// deterministically per ECMA-262 §6.1.6.1).
+const DET_LN2 = 0.6931471805599453;
+const DET_INV_LN2 = 1.4426950408889634;
+
+/**
+ * 2**k for integer k via repeated squaring. Every intermediate is an exact
+ * power of two, so each multiply is exact — never calls Math.pow. Covers the
+ * whole finite double range; |k| beyond it over/underflows to Infinity/0
+ * exactly like 2**k would.
+ */
+export function detPow2(k: number): number {
+  let result = 1;
+  let base = k < 0 ? 0.5 : 2;
+  let e = Math.abs(k);
+  while (e > 0) {
+    if (e % 2 === 1) result *= base;
+    base *= base;
+    e = Math.floor(e / 2);
+  }
+  return result;
+}
+
+/**
+ * Deterministic Math.exp replacement (basic IEEE-754 ops only).
+ *
+ * Argument reduction x = k·ln2 + r with |r| ≤ ln2/2, exp(r) via a fixed
+ * 14-term Taylor series (truncation < 1e-17), exact 2**k scaling. Max
+ * relative error vs. true exp: < 1e-14 for |x| ≤ 100 (the sim's range),
+ * < 2e-13 over the whole finite domain — far below the cross-engine ULP
+ * wobble this replaces, and identical on every engine.
+ */
+export function detExp(x: number): number {
+  if (Number.isNaN(x)) return NaN;
+  if (x > 709.9) return Infinity; // Math.exp overflow threshold ≈ 709.78
+  if (x < -745.2) return 0; // underflow threshold ≈ -745.13
+  const k = Math.round(x * DET_INV_LN2);
+  const r = x - k * DET_LN2;
+  let term = 1;
+  let sum = 1;
+  for (let i = 1; i <= 14; i++) {
+    term = (term * r) / i;
+    sum += term;
+  }
+  return sum * detPow2(k);
+}
+
+/**
+ * Deterministic Math.log (natural log) replacement (basic ops only).
+ *
+ * Reduction x = m·2**k with m ∈ [√½, √2) via exact doublings/halvings, then
+ * ln(m) = 2·atanh(t), t = (m-1)/(m+1), |t| ≤ 0.1716, as a fixed 11-term odd
+ * series (truncation < 1e-19). Max absolute error ≈ 1e-16·(1 + |k|), i.e.
+ * relative error < ~1e-13 in a subsequent exp.
+ */
+export function detLog(x: number): number {
+  if (Number.isNaN(x) || x < 0) return NaN;
+  if (x === 0) return -Infinity;
+  if (x === Infinity) return Infinity;
+  let m = x;
+  let k = 0;
+  while (m >= 1.4142135623730951) {
+    m *= 0.5;
+    k++;
+  }
+  while (m < 0.7071067811865476) {
+    m *= 2;
+    k--;
+  }
+  const t = (m - 1) / (m + 1);
+  const t2 = t * t;
+  let term = t;
+  let sum = t;
+  for (let i = 3; i <= 21; i += 2) {
+    term *= t2;
+    sum += term / i;
+  }
+  return 2 * sum + k * DET_LN2;
+}
+
+/**
+ * Deterministic Math.pow replacement for non-integer exponents:
+ * detExp(exponent · detLog(base)). Defined for base ≥ 0; max relative error
+ * < ~1e-13 for the |exponent·ln(base)| ≤ 100 range the sim uses. For 2**k
+ * with integer k use detPow2 (exact) instead.
+ */
+export function detPow(base: number, exponent: number): number {
+  if (exponent === 0) return 1;
+  if (base === 1) return 1;
+  if (Number.isNaN(base) || base < 0) return NaN;
+  if (base === 0) return exponent > 0 ? 0 : Infinity;
+  return detExp(exponent * detLog(base));
+}
+
 export function sigmoid(
   value: number,
   decayRate: number,
   midpoint: number,
 ): number {
-  return 1 / (1 + Math.exp(-decayRate * (value - midpoint)));
+  // detExp (not Math.exp): sigmoid feeds deterministic sim state — see the
+  // deterministic-transcendentals block above.
+  return 1 / (1 + detExp(-decayRate * (value - midpoint)));
 }
 
 export function formatPlayerDisplayName(

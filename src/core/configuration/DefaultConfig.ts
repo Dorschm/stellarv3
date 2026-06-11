@@ -22,7 +22,16 @@ import { SectorMap } from "../game/SectorMap";
 import { UserSettings } from "../game/UserSettings";
 import { GameConfig, GameID, TeamCountConfig } from "../Schemas";
 import { NukeType } from "../StatsSchemas";
-import { assertNever, sigmoid, simpleHash, toInt, within } from "../Util";
+import {
+  assertNever,
+  detExp,
+  detPow,
+  detPow2,
+  sigmoid,
+  simpleHash,
+  toInt,
+  within,
+} from "../Util";
 import { Config, GameEnv, NukeMagnitude, ServerConfig, Theme } from "./Config";
 import { Env } from "./Env";
 import { PastelTheme } from "./PastelTheme";
@@ -657,9 +666,11 @@ export class DefaultConfig implements Config {
 
   tradeFreighterCredits(dist: number): Credits {
     // Sigmoid: concave start, sharp S-curve middle, linear end - heavily punishes trades under range debuff.
+    // detExp (not Math.exp): the result is floored into bigint Credits, so a
+    // cross-engine ULP difference would desync player balances.
     const debuff = this.tradeFreighterShortRangeDebuff();
     const baseCredits =
-      75_000 / (1 + Math.exp(-0.03 * (dist - debuff))) + 50 * dist;
+      75_000 / (1 + detExp(-0.03 * (dist - debuff))) + 50 * dist;
     const multiplier = this.creditMultiplier();
     return BigInt(Math.floor(baseCredits * multiplier));
   }
@@ -787,8 +798,7 @@ export class DefaultConfig implements Config {
         // same as the prior linear curve; divergence starts at unit 2.
         info = {
           cost: this.costWrapper(
-            (numUnits: number) =>
-              Math.min(800_000, Math.pow(2, numUnits) * 50_000),
+            (numUnits: number) => Math.min(800_000, detPow2(numUnits) * 50_000),
             UnitType.DefenseStation,
           ),
           constructionDuration: this.instantBuild() ? 0 : 5 * 10,
@@ -801,7 +811,7 @@ export class DefaultConfig implements Config {
         info = {
           cost: this.costWrapper(
             (numUnits: number) =>
-              Math.min(6_000_000, Math.pow(2, numUnits) * 1_500_000),
+              Math.min(6_000_000, detPow2(numUnits) * 1_500_000),
             UnitType.PointDefenseArray,
           ),
           constructionDuration: this.instantBuild()
@@ -814,7 +824,7 @@ export class DefaultConfig implements Config {
         info = {
           cost: this.costWrapper(
             (numUnits: number) =>
-              Math.min(1_000_000, Math.pow(2, numUnits) * 125_000),
+              Math.min(1_000_000, detPow2(numUnits) * 125_000),
             UnitType.Colony,
           ),
           constructionDuration: this.instantBuild() ? 0 : 2 * 10,
@@ -825,7 +835,7 @@ export class DefaultConfig implements Config {
         info = {
           cost: this.costWrapper(
             (numUnits: number) =>
-              Math.min(1_000_000, Math.pow(2, numUnits) * 125_000),
+              Math.min(1_000_000, detPow2(numUnits) * 125_000),
             UnitType.Foundry,
             UnitType.Spaceport,
           ),
@@ -846,7 +856,7 @@ export class DefaultConfig implements Config {
         info = {
           cost: this.costWrapper(
             (numUnits: number) =>
-              Math.min(2_000_000, Math.pow(2, numUnits) * 125_000),
+              Math.min(2_000_000, detPow2(numUnits) * 125_000),
             UnitType.JumpGate,
           ),
           constructionDuration: this.instantBuild() ? 0 : 2 * 10,
@@ -1064,13 +1074,22 @@ export class DefaultConfig implements Config {
       const largeDefenderSpeedDebuff = 0.7 + 0.3 * defenseSig;
       const largeDefenderAttackDebuff = 0.7 + 0.3 * defenseSig;
 
+      // detPow (not **): non-integer exponents are implementation-approximated
+      // and this feeds combat losses. Math.sqrt is exactly specified, so it
+      // can stay.
       let largeAttackBonus = 1;
       if (attacker.numTilesOwned() > 100_000) {
-        largeAttackBonus = Math.sqrt(100_000 / attacker.numTilesOwned()) ** 0.7;
+        largeAttackBonus = detPow(
+          Math.sqrt(100_000 / attacker.numTilesOwned()),
+          0.7,
+        );
       }
       let largeAttackerSpeedBonus = 1;
       if (attacker.numTilesOwned() > 100_000) {
-        largeAttackerSpeedBonus = (100_000 / attacker.numTilesOwned()) ** 0.6;
+        largeAttackerSpeedBonus = detPow(
+          100_000 / attacker.numTilesOwned(),
+          0.6,
+        );
       }
 
       const defenderTroopLoss =
@@ -1419,7 +1438,8 @@ export class DefaultConfig implements Config {
 
     const steepness = 2;
     const normalizedExcess = excessPopulation / maxPopulation;
-    return scalingFactor * (1 - Math.exp(-steepness * normalizedExcess));
+    // detExp (not Math.exp): death counts feed deterministic population state.
+    return scalingFactor * (1 - detExp(-steepness * normalizedExcess));
   }
 
   structureMinDist(): number {
