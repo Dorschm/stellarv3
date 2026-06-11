@@ -475,6 +475,14 @@ export class NukeExecution implements Execution {
       true,
     );
     for (const entry of killable) {
+      // `UnitImpl.delete` cascade-deletes a Battlecruiser's slotted
+      // structure, which shares the cruiser's tile and so appears in this
+      // same snapshot. Guard on `isActive()` (mirroring
+      // `PlayerExecution.removeOnDeath`) so we never double-delete it —
+      // `delete()` throws on inactive units, which would abort the tick.
+      if (!entry.unit.isActive()) {
+        continue;
+      }
       // `nearbyUnits` uses an axis-aligned grid; re-check euclidean
       // distance against `outer2` so the damage footprint matches the
       // legacy loop exactly.

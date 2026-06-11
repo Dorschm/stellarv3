@@ -39,6 +39,11 @@ export class PointDefenseMissileExecution implements Execution {
       {},
     );
     if (!this.SAMMissile.isActive()) {
+      // The interceptor was destroyed externally (e.g. its owner was
+      // eliminated). Clear the flag so other SAMs can re-target this nuke.
+      if (this.target.isActive()) {
+        this.target.setTargetedByPointDefense(false);
+      }
       this.active = false;
       return;
     }

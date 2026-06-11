@@ -335,7 +335,10 @@ export class OrbitalStrikePlatformExecution implements Execution {
         if (!tileOwner.isPlayer()) continue;
         const tilePlayer = tileOwner as Player;
         if (tilePlayer === owner) continue;
-        if (tilePlayer.isFriendly(owner)) continue;
+        // Same gate as the ship-target branch: covers both friendliness and
+        // spawn immunity, so ground bombardment can't hit players who are
+        // still inside their immunity window.
+        if (!owner.canAttackPlayer(tilePlayer)) continue;
         bestTile = this.mg.ref(tx, ty);
         bestSmallID = tilePlayer.smallID();
         bestDistSquared = distSquared;

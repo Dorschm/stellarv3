@@ -140,6 +140,16 @@ export class MirvExecution implements Execution {
         this.targetPlayer.id(),
         { name: this.player.displayName() },
       );
+
+      // after sending a nuke set the orbital strike platform on cooldown
+      // (mirrors NukeExecution.tick so MIRV launches consume a missile
+      // slot like every other launch)
+      const platform = this.player
+        .units(UnitType.OrbitalStrikePlatform)
+        .find((platform) => platform.tile() === spawn);
+      if (platform) {
+        platform.launch();
+      }
     }
 
     const result = this.pathFinder.next(
