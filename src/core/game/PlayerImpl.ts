@@ -947,7 +947,20 @@ export class PlayerImpl implements Player {
     if (population <= 0) {
       return 0;
     }
-    const toRemove = minInt(this._population, toInt(population));
+    // A living player (still holds territory) must never be drained to 0:
+    // logistic growth is 0 at population 0, so 0 is an absorbing state that
+    // permanently freezes a player who still owns tiles — whether they were
+    // nuked, over-committed to an attack, or sent their whole population off
+    // on a fleet. Reserve a survival floor so the population can always
+    // recover. Callers that transfer population (donate / trade freighter /
+    // attack / shuttle) use the returned amount as the payload, so reserving
+    // the floor conserves population — the source simply keeps the floor.
+    // A dead player (no tiles) has no floor and can still reach 0.
+    const floor = this.isAlive()
+      ? toInt(this.mg.config().minPopulation(this))
+      : 0n;
+    const available = this._population > floor ? this._population - floor : 0n;
+    const toRemove = minInt(available, toInt(population));
     this._population -= toRemove;
     return Number(toRemove);
   }

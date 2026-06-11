@@ -101,11 +101,11 @@ export class AttackExecution implements Execution {
       .config()
       .attackAmount(this._owner, this.target);
     if (this.removePopulation) {
-      this.startPopulation = Math.min(
-        this._owner.population(),
-        this.startPopulation,
-      );
-      this._owner.removePopulation(this.startPopulation);
+      // removePopulation caps at the owner's available population and reserves
+      // a living player's survival floor, returning the amount actually
+      // committed. Carry exactly that into the attack so population is
+      // conserved (no duplication) and a player can't drain themselves to 0.
+      this.startPopulation = this._owner.removePopulation(this.startPopulation);
     }
     this.attack = this._owner.createAttack(
       this.target,

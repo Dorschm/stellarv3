@@ -149,8 +149,10 @@ describe("ScoutSwarmExecution — launch cost", () => {
     // population availability. A launcher at 0 still spawns the swarm,
     // and removePopulation simply caps at available (i.e. removes 0).
     launcher.addCredits(1_000n);
-    // Drain population to zero.
-    launcher.removePopulation(launcher.population());
+    // Force population to zero directly: removePopulation now reserves a
+    // survival floor for a living player, so it can no longer drain to
+    // exactly 0. setPopulation establishes the 0-population precondition.
+    launcher.setPopulation(0);
     expect(launcher.population()).toBe(0);
 
     const target = game.ref(5, 5);

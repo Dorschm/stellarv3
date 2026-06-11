@@ -112,6 +112,16 @@ export interface Config {
 
   startPopulation(playerInfo: PlayerInfo): number;
   troopIncreaseRate(player: Player | PlayerView): number;
+  /**
+   * Minimum population a *living* player (one that still owns territory) may
+   * be reduced to by population loss (nuke damage, attack commitment, fleet
+   * sends...). Population growth is logistic — `rate × current × (1 −
+   * current/max)` — so `current = 0` is an absorbing state a player can never
+   * climb out of while still holding tiles. Reserving a small survival floor
+   * (and seeding {@link troopIncreaseRate} from it) guarantees a devastated
+   * player can always recover instead of being permanently frozen at 0.
+   */
+  minPopulation(player: Player | PlayerView): number;
   creditAdditionRate(player: Player | PlayerView): Credits;
   attackTilesPerTick(
     attckPopulation: number,

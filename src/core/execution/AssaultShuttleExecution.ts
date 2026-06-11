@@ -100,7 +100,20 @@ export class AssaultShuttleExecution implements Execution {
     this.population ??= this.mg
       .config()
       .shuttleAttackAmount(this.attacker, this.target);
-    this.population = Math.min(this.population, this.attacker.population());
+    // Reserve the attacker's survival floor so launching a fleet can't drain
+    // them to 0 population (an unrecoverable state). The shuttle carries only
+    // what's above the floor, matching removePopulation's reservation so
+    // population stays conserved when the unit is built.
+    const reserve = this.mg.config().minPopulation(this.attacker);
+    this.population = Math.min(
+      this.population,
+      Math.max(0, this.attacker.population() - reserve),
+    );
+    if (this.population <= 0) {
+      // Not enough spare population above the survival floor to crew a fleet.
+      this.active = false;
+      return;
+    }
 
     this.dst = targetShuttleTile(this.mg, this.ref);
 

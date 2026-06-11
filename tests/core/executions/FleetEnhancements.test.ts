@@ -127,8 +127,11 @@ describe("TradeFreighterExecution — population transport (GDD §7)", () => {
     stubPathFinder(exec, 5);
 
     const STARTING_TROOPS = 10_000;
-    sender.removePopulation(sender.population());
-    sender.addPopulation(STARTING_TROOPS);
+    // Set the exact starting population directly: removePopulation now
+    // reserves a survival floor for a living player, so the old
+    // "removePopulation(population())" drain-to-zero idiom would leave the
+    // floor behind and skew these exact-delta assertions.
+    sender.setPopulation(STARTING_TROOPS);
     expect(sender.population()).toBe(STARTING_TROOPS);
 
     exec.tick(0);
@@ -146,9 +149,12 @@ describe("TradeFreighterExecution — population transport (GDD §7)", () => {
     stubPathFinder(exec, 1);
 
     const STARTING_TROOPS = 10_000;
-    sender.removePopulation(sender.population());
-    sender.addPopulation(STARTING_TROOPS);
-    receiver.removePopulation(receiver.population());
+    // Set the exact starting population directly: removePopulation now
+    // reserves a survival floor for a living player, so the old
+    // "removePopulation(population())" drain-to-zero idiom would leave the
+    // floor behind and skew these exact-delta assertions.
+    sender.setPopulation(STARTING_TROOPS);
+    receiver.setPopulation(0);
     const dstStart = receiver.population();
 
     // First tick builds the freighter, deducts source population, and the stub
@@ -172,7 +178,7 @@ describe("TradeFreighterExecution — population transport (GDD §7)", () => {
     exec.init(game, 0);
     stubPathFinder(exec, 5);
 
-    sender.removePopulation(sender.population());
+    sender.setPopulation(0);
     expect(sender.population()).toBe(0);
 
     exec.tick(0);
@@ -204,8 +210,11 @@ describe("TradeFreighterExecution — population transport (GDD §7)", () => {
     };
 
     const STARTING_TROOPS = 10_000;
-    sender.removePopulation(sender.population());
-    sender.addPopulation(STARTING_TROOPS);
+    // Set the exact starting population directly: removePopulation now
+    // reserves a survival floor for a living player, so the old
+    // "removePopulation(population())" drain-to-zero idiom would leave the
+    // floor behind and skew these exact-delta assertions.
+    sender.setPopulation(STARTING_TROOPS);
     expect(sender.population()).toBe(STARTING_TROOPS);
 
     // Suppress the expected "captured trade freighter cannot find route"
@@ -235,8 +244,11 @@ describe("TradeFreighterExecution — population transport (GDD §7)", () => {
     stubPathFinder(exec, 5);
 
     const STARTING_TROOPS = 10_000;
-    sender.removePopulation(sender.population());
-    sender.addPopulation(STARTING_TROOPS);
+    // Set the exact starting population directly: removePopulation now
+    // reserves a survival floor for a living player, so the old
+    // "removePopulation(population())" drain-to-zero idiom would leave the
+    // floor behind and skew these exact-delta assertions.
+    sender.setPopulation(STARTING_TROOPS);
 
     // First tick builds the freighter and deducts the payload.
     exec.tick(0);

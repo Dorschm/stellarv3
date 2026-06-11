@@ -1260,6 +1260,19 @@ export class DefaultConfig implements Config {
     return Math.max(scaled, startFloor);
   }
 
+  minPopulation(): number {
+    // Survival floor: the smallest population a living player can be reduced
+    // to. Deliberately a cheap flat constant rather than a fraction of
+    // maxPopulation, because removePopulation() consults it in hot paths —
+    // notably the per-impacted-tile nuke damage loop — and maxPopulation()
+    // walks the player's unit list. It sits far below the maxPopulation
+    // start-floor (>= 15k for every player type), so it can never inflate a
+    // small player above their cap. At ~10% of a bot's starting population it
+    // still lets nukes and attacks inflict 99%+ losses, while keeping logistic
+    // recovery from the floor perceptible rather than glacial. Tunable.
+    return 1_000;
+  }
+
   troopIncreaseRate(player: Player): number {
     // May 2026 balance pass (issue #6) — logistic population growth.
     //
@@ -1281,7 +1294,14 @@ export class DefaultConfig implements Config {
     const current = player.population();
     if (current >= max) return 0;
 
-    let perTick = LOGISTIC_BASE_RATE * current * (1 - current / max);
+    // Seed growth off the zero-population absorbing state: the logistic term
+    // is `rate × current × (1 - current/max)`, which is 0 at current = 0, so a
+    // player nuked or fleet-drained to nothing could never recover. Lifting
+    // the growth base to at least minPopulation guarantees a positive
+    // increment when the player is at/below the survival floor, while leaving
+    // the curve identical once they're comfortably above it.
+    const growthBase = Math.max(current, this.minPopulation());
+    let perTick = LOGISTIC_BASE_RATE * growthBase * (1 - current / max);
 
     if (player.type() === PlayerType.Bot) {
       perTick *= 0.6;

@@ -942,7 +942,7 @@ describe.skip("Economy formulas (PlayerView integration)", () => {
  * half-max growth, and `current ≥ max` returns 0.
  */
 describe("troopIncreaseRate (logistic curve)", () => {
-  test("logistic curve: zero at current=0, peaks near half max, tapers toward 0 near cap, zero at/above cap", async () => {
+  test("logistic curve: seeded positive at current=0, peaks near half max, tapers toward 0 near cap, zero at/above cap", async () => {
     const game = await setup(
       "big_plains",
       {
@@ -960,9 +960,10 @@ describe("troopIncreaseRate (logistic curve)", () => {
     expect(max).toBeGreaterThan(1000);
 
     // Sample the curve at five anchor points: zero, small, half-cap,
-    // near-cap, exactly-at-cap. With the pure logistic term the
-    // zero-population sample must be 0; the half-cap rate must strictly
-    // exceed both the small and near-cap rates; near-cap remains
+    // near-cap, exactly-at-cap. The growth base is lifted off zero by the
+    // survival floor, so the zero-population sample must be strictly positive
+    // (a nuked/fleet-drained player can always recover); the half-cap rate
+    // must strictly exceed both the small and near-cap rates; near-cap remains
     // positive; the at-cap rate collapses to 0.
     const sample = (pop: number): number => {
       player.setPopulation(Math.floor(pop));
@@ -975,7 +976,9 @@ describe("troopIncreaseRate (logistic curve)", () => {
     const nearCap = sample(max * 0.95);
     const atCap = sample(max);
 
-    expect(zero).toBe(0);
+    // Floor-seeded: growth at population 0 equals the logistic term evaluated
+    // at minPopulation, which is strictly positive for a living player.
+    expect(zero).toBeGreaterThan(0);
     expect(half).toBeGreaterThan(small);
     expect(half).toBeGreaterThan(nearCap);
     expect(nearCap).toBeGreaterThan(0);
