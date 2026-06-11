@@ -97,6 +97,16 @@ RUN find ./resources/maps -type f ! -name 'manifest.json' -delete \
 COPY tsconfig.json ./
 COPY src ./src
 
+# The self-hosted backend (src/server/userdb/db.ts) opens a SQLite DB at
+# ./data/userdb.sqlite and mkdir's ./data on first boot. The node process
+# runs as the unprivileged `node` user (see supervisord.conf [program:node]
+# user=node), but /usr/src/app is root-owned — so without this the mkdir
+# fails with EACCES and the master crash-loops (nginx stays up → 502).
+# Create the dir up front and hand it to node. For persistence across
+# redeploys, bind-mount a host dir here at runtime (DEPLOY-STELLAR-GAME.md
+# §7.5); a bind mount inherits the host dir's ownership, so keep that dir
+# writable by uid 1000 too.
+RUN mkdir -p /usr/src/app/data && chown -R node:node /usr/src/app/data
 
 ARG GIT_COMMIT=unknown
 RUN echo "$GIT_COMMIT" > static/commit.txt
