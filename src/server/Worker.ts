@@ -170,10 +170,13 @@ export async function startWorker() {
         return res.status(401).json({ error: "Invalid creator token" });
       }
     } else if (
-      !req.headers[config.adminHeader()] // Public games use admin token instead
+      // Public games use admin token instead. Validate the header's VALUE,
+      // not mere presence — otherwise any request with a dummy x-admin-key
+      // header could mint creatorless lobbies that bypass start/cancel auth.
+      req.headers[config.adminHeader()] !== config.adminToken()
     ) {
       return res
-        .status(400)
+        .status(401)
         .json({ error: "Authorization header required to create a game" });
     }
 
@@ -487,134 +490,166 @@ export async function startWorker() {
           return;
         }
 
-        let roles: string[] | undefined;
-        let flares: string[] | undefined;
+        // Reserve this persistentID for the rest of the join. The awaits
+        // below (getUserMe, Turnstile) yield between the rejoin check above
+        // and joinClient, so without a synchronous reservation two
+        // concurrent joins for the same account would both pass the guard
+        // and register twice (duplicate player, or self-kick in Prod).
+        const joinKey = `${clientMsg.gameID}:${persistentId}`;
+        if (joiningPersistentIds.has(joinKey)) {
+          log.warn(`join already in progress for game ${clientMsg.gameID}`, {
+            gameID: clientMsg.gameID,
+          });
+          ws.close(1002, "Join already in progress");
+          return;
+        }
+        joiningPersistentIds.add(joinKey);
+        try {
+          let roles: string[] | undefined;
+          let flares: string[] | undefined;
 
-        const allowedFlares = config.allowedFlares();
-        if (claims === null) {
-          if (allowedFlares !== undefined) {
-            log.warn("Unauthorized: Anonymous user attempted to join game");
-            ws.close(1002, "Unauthorized");
-            return;
+          const allowedFlares = config.allowedFlares();
+          if (claims === null) {
+            if (allowedFlares !== undefined) {
+              log.warn("Unauthorized: Anonymous user attempted to join game");
+              ws.close(1002, "Unauthorized");
+              return;
+            }
+          } else {
+            // Verify token and get player permissions
+            const result = await getUserMe(clientMsg.token, config);
+            if (result.type === "error") {
+              log.warn(`Unauthorized: ${result.message}`, {
+                persistentID: persistentId,
+                gameID: clientMsg.gameID,
+              });
+              ws.close(1002, "Unauthorized: user me fetch failed");
+              return;
+            }
+            roles = result.response.player.roles;
+            flares = result.response.player.flares;
+
+            if (allowedFlares !== undefined) {
+              const allowed =
+                allowedFlares.length === 0 ||
+                allowedFlares.some((f) => flares?.includes(f));
+              if (!allowed) {
+                log.warn(
+                  "Forbidden: player without an allowed flare attempted to join game",
+                );
+                ws.close(1002, "Forbidden");
+                return;
+              }
+            }
           }
-        } else {
-          // Verify token and get player permissions
-          const result = await getUserMe(clientMsg.token, config);
-          if (result.type === "error") {
-            log.warn(`Unauthorized: ${result.message}`, {
+
+          const cosmeticResult = privilegeRefresher
+            .get()
+            .isAllowed(flares ?? [], clientMsg.cosmetics ?? {});
+
+          if (cosmeticResult.type === "forbidden") {
+            log.warn(`Forbidden: ${cosmeticResult.reason}`, {
               persistentID: persistentId,
               gameID: clientMsg.gameID,
             });
-            ws.close(1002, "Unauthorized: user me fetch failed");
+            ws.close(1002, cosmeticResult.reason);
             return;
           }
-          roles = result.response.player.roles;
-          flares = result.response.player.flares;
 
-          if (allowedFlares !== undefined) {
-            const allowed =
-              allowedFlares.length === 0 ||
-              allowedFlares.some((f) => flares?.includes(f));
-            if (!allowed) {
-              log.warn(
-                "Forbidden: player without an allowed flare attempted to join game",
+          if (config.env() !== GameEnv.Dev) {
+            // Host exemption — a client whose persistentID matches the
+            // lobby's recorded creator is already cryptographically
+            // identified via the Bearer token they used on create_game
+            // (see POST /api/create_game/:id). Requiring a second
+            // Turnstile challenge on their own WS join is redundant and
+            // causes flakes: the Turnstile widget's token is single-use,
+            // so by the time the WS handshake arrives the token has
+            // often already been consumed or the widget returned
+            // invalid-input-response on a retry. Cloudflare rejects,
+            // the server returns 1002, and the creator bounces out of
+            // their own lobby. Skip verification for the creator; every
+            // other join (public/private/matchmaking guests) still hits
+            // the full Turnstile pipeline.
+            const hostGame = gm.game(clientMsg.gameID);
+            const isCreator =
+              hostGame !== null &&
+              hostGame.getCreatorPersistentID() === persistentId;
+            if (!isCreator) {
+              const turnstileResult = await verifyTurnstileToken(
+                ip,
+                clientMsg.turnstileToken,
+                config.turnstileSecretKey(),
               );
-              ws.close(1002, "Forbidden");
-              return;
+              switch (turnstileResult.status) {
+                case "approved":
+                  break;
+                case "rejected":
+                  log.warn("Unauthorized: Turnstile token rejected", {
+                    persistentID: persistentId,
+                    gameID: clientMsg.gameID,
+                    reason: turnstileResult.reason,
+                  });
+                  ws.close(1002, "Unauthorized: Turnstile token rejected");
+                  return;
+                case "error":
+                  // Fail open, allow the client to join.
+                  log.error("Turnstile token error", {
+                    persistentID: persistentId,
+                    gameID: clientMsg.gameID,
+                    reason: turnstileResult.reason,
+                  });
+              }
             }
           }
-        }
 
-        const cosmeticResult = privilegeRefresher
-          .get()
-          .isAllowed(flares ?? [], clientMsg.cosmetics ?? {});
+          // Re-check for an existing registration now that the awaits are
+          // done: belt-and-suspenders against a join for this account that
+          // completed through another path while this one was being verified.
+          if (
+            gm.rejoinClient(ws, persistentId, clientMsg.gameID, 0, {
+              username: censoredUsername,
+              clanTag: censoredClanTag,
+            })
+          ) {
+            return;
+          }
 
-        if (cosmeticResult.type === "forbidden") {
-          log.warn(`Forbidden: ${cosmeticResult.reason}`, {
-            persistentID: persistentId,
-            gameID: clientMsg.gameID,
-          });
-          ws.close(1002, cosmeticResult.reason);
-          return;
-        }
+          // Create client and add to game
+          const client = new Client(
+            generateID(),
+            persistentId,
+            claims,
+            roles,
+            flares,
+            ip,
+            censoredUsername,
+            censoredClanTag,
+            ws,
+            cosmeticResult.cosmetics,
+          );
 
-        if (config.env() !== GameEnv.Dev) {
-          // Host exemption — a client whose persistentID matches the
-          // lobby's recorded creator is already cryptographically
-          // identified via the Bearer token they used on create_game
-          // (see POST /api/create_game/:id). Requiring a second
-          // Turnstile challenge on their own WS join is redundant and
-          // causes flakes: the Turnstile widget's token is single-use,
-          // so by the time the WS handshake arrives the token has
-          // often already been consumed or the widget returned
-          // invalid-input-response on a retry. Cloudflare rejects,
-          // the server returns 1002, and the creator bounces out of
-          // their own lobby. Skip verification for the creator; every
-          // other join (public/private/matchmaking guests) still hits
-          // the full Turnstile pipeline.
-          const hostGame = gm.game(clientMsg.gameID);
-          const isCreator =
-            hostGame !== null &&
-            hostGame.getCreatorPersistentID() === persistentId;
-          if (!isCreator) {
-            const turnstileResult = await verifyTurnstileToken(
-              ip,
-              clientMsg.turnstileToken,
-              config.turnstileSecretKey(),
+          const joinResult = gm.joinClient(client, clientMsg.gameID);
+
+          if (joinResult === "not_found") {
+            log.info(
+              `game ${clientMsg.gameID} not found on worker ${workerId}`,
             );
-            switch (turnstileResult.status) {
-              case "approved":
-                break;
-              case "rejected":
-                log.warn("Unauthorized: Turnstile token rejected", {
-                  persistentID: persistentId,
-                  gameID: clientMsg.gameID,
-                  reason: turnstileResult.reason,
-                });
-                ws.close(1002, "Unauthorized: Turnstile token rejected");
-                return;
-              case "error":
-                // Fail open, allow the client to join.
-                log.error("Turnstile token error", {
-                  persistentID: persistentId,
-                  gameID: clientMsg.gameID,
-                  reason: turnstileResult.reason,
-                });
-            }
+            ws.close(1002, "Game not found");
+          } else if (joinResult === "kicked") {
+            log.warn(`kicked client tried to join game ${clientMsg.gameID}`, {
+              gameID: clientMsg.gameID,
+              workerId,
+            });
+            ws.close(1002, "Cannot join game");
+          } else if (joinResult === "rejected") {
+            log.info(`client rejected from game ${clientMsg.gameID}`, {
+              gameID: clientMsg.gameID,
+              workerId,
+            });
+            ws.close(1002, "Lobby full");
           }
-        }
-
-        // Create client and add to game
-        const client = new Client(
-          generateID(),
-          persistentId,
-          claims,
-          roles,
-          flares,
-          ip,
-          censoredUsername,
-          censoredClanTag,
-          ws,
-          cosmeticResult.cosmetics,
-        );
-
-        const joinResult = gm.joinClient(client, clientMsg.gameID);
-
-        if (joinResult === "not_found") {
-          log.info(`game ${clientMsg.gameID} not found on worker ${workerId}`);
-          ws.close(1002, "Game not found");
-        } else if (joinResult === "kicked") {
-          log.warn(`kicked client tried to join game ${clientMsg.gameID}`, {
-            gameID: clientMsg.gameID,
-            workerId,
-          });
-          ws.close(1002, "Cannot join game");
-        } else if (joinResult === "rejected") {
-          log.info(`client rejected from game ${clientMsg.gameID}`, {
-            gameID: clientMsg.gameID,
-            workerId,
-          });
-          ws.close(1002, "Lobby full");
+        } finally {
+          joiningPersistentIds.delete(joinKey);
         }
 
         // Handle other message types
@@ -742,6 +777,12 @@ function generateGameIdForWorker(): GameID | null {
   log.warn(`Failed to generate game ID for worker ${workerId}`);
   return null;
 }
+
+// persistentIDs (scoped per game) with a join currently in flight. Makes
+// the rejoin/duplicate guard in the WebSocket join handler atomic across
+// its awaits: a second concurrent join for the same account is rejected
+// instead of racing the first one into a duplicate registration.
+const joiningPersistentIds = new Set<string>();
 
 // Per-IP rate limiter for pre-join WebSocket messages.
 // Prevents unauthenticated connections from spamming messages

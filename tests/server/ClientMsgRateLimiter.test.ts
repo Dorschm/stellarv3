@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { ClientMsgRateLimiter } from "../../src/server/ClientMsgRateLimiter";
 
 const CLIENT_A = "clientA" as any;
@@ -46,15 +46,15 @@ describe("ClientMsgRateLimiter", () => {
     });
   });
 
-  describe("total bytes limit", () => {
-    it("kicks when cumulative bytes reach 2MB", () => {
+  describe("byte rate limit", () => {
+    it("kicks when bytes exceed 2MB within one minute", () => {
       const limiter = new ClientMsgRateLimiter();
       const chunkSize = 512 * 1024; // 512KB
-      // Send 3 chunks = 1.5MB, should be ok
-      for (let i = 0; i < 3; i++) {
+      // 4 chunks = 2MB fits within the burst budget
+      for (let i = 0; i < 4; i++) {
         expect(limiter.check(CLIENT_A, "other", chunkSize)).toBe("ok");
       }
-      // 4th chunk pushes to 2MB, should kick
+      // 5th chunk exceeds the per-minute budget, should kick
       expect(limiter.check(CLIENT_A, "other", chunkSize)).toBe("kick");
     });
 
@@ -68,8 +68,28 @@ describe("ClientMsgRateLimiter", () => {
 
     it("kicks on bytes regardless of message type", () => {
       const limiter = new ClientMsgRateLimiter();
-      const twoMB = 2 * 1024 * 1024;
-      expect(limiter.check(CLIENT_A, "intent", twoMB)).toBe("kick");
+      const overBudget = 2 * 1024 * 1024 + 1;
+      expect(limiter.check(CLIENT_A, "intent", overBudget)).toBe("kick");
+    });
+
+    it("refills the budget over time instead of accumulating forever", () => {
+      // The limiter library reads performance.now(); fake it so a minute
+      // can pass instantly.
+      vi.useFakeTimers({ toFake: ["performance"] });
+      try {
+        const limiter = new ClientMsgRateLimiter();
+        const chunkSize = 512 * 1024; // 512KB
+        for (let i = 0; i < 4; i++) {
+          expect(limiter.check(CLIENT_A, "other", chunkSize)).toBe("ok");
+        }
+        expect(limiter.check(CLIENT_A, "other", chunkSize)).toBe("kick");
+        // A minute later the window has refilled — steady legitimate
+        // traffic in a long game must never accumulate into a kick.
+        vi.advanceTimersByTime(61_000);
+        expect(limiter.check(CLIENT_A, "other", chunkSize)).toBe("ok");
+      } finally {
+        vi.useRealTimers();
+      }
     });
   });
 });

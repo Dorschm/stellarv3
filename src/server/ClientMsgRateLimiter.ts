@@ -4,13 +4,17 @@ import { ClientID } from "../core/Schemas";
 const INTENTS_PER_SECOND = 10;
 const INTENTS_PER_MINUTE = 150;
 const MAX_INTENT_SIZE = 500;
-const TOTAL_BYTES = 2 * 1024 * 1024; // 2MB per client
+// Sliding-window byte budget (token bucket with a full 2MB burst).
+// Legitimate traffic (intents, pings, hashes) stays far below this rate,
+// so only clients flooding the socket get kicked — unlike a lifetime
+// cap, which normal traffic would eventually cross in long games.
+const BYTES_PER_MINUTE = 2 * 1024 * 1024; // 2MB per client per minute
 export type RateLimitResult = "ok" | "limit" | "kick";
 
 interface ClientBucket {
   perSecond: RateLimiter;
   perMinute: RateLimiter;
-  totalBytes: number;
+  bytesPerMinute: RateLimiter;
 }
 
 export class ClientMsgRateLimiter {
@@ -18,9 +22,10 @@ export class ClientMsgRateLimiter {
 
   check(clientID: ClientID, type: string, bytes: number): RateLimitResult {
     const bucket = this.getOrCreate(clientID);
-    bucket.totalBytes += bytes;
 
-    if (bucket.totalBytes >= TOTAL_BYTES) return "kick";
+    // tryRemoveTokens also returns false when a single message exceeds
+    // the whole budget, so oversized messages kick immediately.
+    if (!bucket.bytesPerMinute.tryRemoveTokens(bytes)) return "kick";
 
     if (type === "intent") {
       // Intents are stored in turn history for the duration of the game, so
@@ -56,7 +61,10 @@ export class ClientMsgRateLimiter {
         tokensPerInterval: INTENTS_PER_MINUTE,
         interval: "minute",
       }),
-      totalBytes: 0,
+      bytesPerMinute: new RateLimiter({
+        tokensPerInterval: BYTES_PER_MINUTE,
+        interval: "minute",
+      }),
     };
     this.buckets.set(clientID, bucket);
     return bucket;

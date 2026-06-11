@@ -111,28 +111,38 @@ export async function startMaster() {
 
   log.info(`Instance ID: ${INSTANCE_ID}`);
 
-  // Fork workers
-  for (let i = 0; i < config.numWorkers(); i++) {
+  // cluster does not expose the fork-time env on the Worker object
+  // (worker.process.env is undefined at runtime), so track each worker's
+  // assigned WORKER_ID ourselves, keyed by cluster's unique worker.id.
+  const workerIdByClusterId = new Map<number, number>();
+
+  const forkWorker = (workerId: number) => {
     const worker = cluster.fork({
-      WORKER_ID: i,
+      WORKER_ID: workerId,
       ADMIN_TOKEN,
       INSTANCE_ID,
     });
+    workerIdByClusterId.set(worker.id, workerId);
+    lobbyService.registerWorker(workerId, worker);
+    return worker;
+  };
 
-    lobbyService.registerWorker(i, worker);
+  // Fork workers
+  for (let i = 0; i < config.numWorkers(); i++) {
+    const worker = forkWorker(i);
     log.info(`Started worker ${i} (PID: ${worker.process.pid})`);
   }
 
   // Handle worker crashes
   cluster.on("exit", (worker, code, signal) => {
-    const workerId = (worker as any).process?.env?.WORKER_ID;
+    const workerId = workerIdByClusterId.get(worker.id);
+    workerIdByClusterId.delete(worker.id);
     if (workerId === undefined) {
       log.error(`worker crashed could not find id`);
       return;
     }
 
-    const workerIdNum = parseInt(workerId);
-    lobbyService.removeWorker(workerIdNum);
+    lobbyService.removeWorker(workerId);
 
     log.warn(
       `Worker ${workerId} (PID: ${worker.process.pid}) died with code: ${code} and signal: ${signal}`,
@@ -140,13 +150,7 @@ export async function startMaster() {
     log.info(`Restarting worker ${workerId}...`);
 
     // Restart the worker with the same ID
-    const newWorker = cluster.fork({
-      WORKER_ID: workerId,
-      ADMIN_TOKEN,
-      INSTANCE_ID,
-    });
-
-    lobbyService.registerWorker(workerIdNum, newWorker);
+    const newWorker = forkWorker(workerId);
     log.info(
       `Restarted worker ${workerId} (New PID: ${newWorker.process.pid})`,
     );
